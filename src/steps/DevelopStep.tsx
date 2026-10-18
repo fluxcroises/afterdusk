@@ -1,5 +1,6 @@
-import { Placeholder } from "../components/Placeholder";
+import { SlidersHorizontal } from "lucide-react";
+import { UpcomingScreen } from "../components/UpcomingScreen";
 
 export function DevelopStep() {
-  return <Placeholder titleKey="steps.develop" version="V0.2" />;
+  return <UpcomingScreen screen="develop" icon={SlidersHorizontal} />;
 }

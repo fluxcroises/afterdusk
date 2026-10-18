@@ -5,8 +5,12 @@
   --ad-panel: #22252a;
   --ad-surface: #2c3036;
   --ad-hover: #383d44;
+  /* Blocs en retrait dans les panneaux (aperçu, histogramme, pellicule). */
+  --ad-inset: #17191c;
 
   --ad-border: #383d44;
+  /* Séparation entre panneaux, plus sombre que le fond des panneaux. */
+  --ad-border-strong: #0d0e10;
 
   --ad-text: #f0f2f5;
   --ad-text-secondary: #aab0b9;
@@ -20,6 +24,13 @@
   --ad-warning: #dbad69;
   --ad-danger: #d97878;
 
+  /* Étiquettes de couleur, désaturées pour ne pas gêner la lecture des photos. */
+  --ad-label-red: #c8605c;
+  --ad-label-yellow: #c9a64e;
+  --ad-label-green: #6b9e6c;
+  --ad-label-blue: #5f82c4;
+  --ad-label-purple: #9372b6;
+
   --ad-space-1: 4px;
   --ad-space-2: 8px;
   --ad-space-3: 12px;
@@ -30,16 +41,23 @@
   --ad-radius-md: 6px;
   --ad-radius-lg: 10px;
 
-  --ad-topbar-height: 48px;
+  --ad-topbar-height: 44px;
   --ad-sidebar-width: 280px;
+  --ad-section-height: 30px;
+  --ad-row-height: 22px;
+  --ad-toolbar-height: 36px;
+  --ad-filmstrip-height: 96px;
+  --ad-statusbar-height: 22px;
   --ad-control-height: 34px;
-  --ad-icon-size: 18px;
+  --ad-field-height: 24px;
 
   --ad-font:
-    Inter, "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    sans-serif;
+  --ad-font-ui: 400 12px/1.4 var(--ad-font);
+  --ad-font-module: 400 14px/1 var(--ad-font);
   --ad-font-panel-title: 600 14px/1.4 var(--ad-font);
   --ad-font-section: 600 12px/1.4 var(--ad-font);
-  --ad-font-label: 400 13px/1.4 var(--ad-font);
   --ad-font-value: 500 12px/1.4 var(--ad-font);
   --ad-font-meta: 400 11px/1.4 var(--ad-font);
 

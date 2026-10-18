@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Sidebar } from "./components/Sidebar";
+import { StatusBar } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
 import { CullStep } from "./steps/CullStep";
 import { DeliverStep } from "./steps/DeliverStep";
@@ -30,12 +30,8 @@ export default function App() {
   return (
     <div className="app">
       <TopBar />
-      <div className="app-body">
-        <Sidebar />
-        <main className="app-main">
-          <Current />
-        </main>
-      </div>
+      <Current />
+      <StatusBar />
     </div>
   );
 }

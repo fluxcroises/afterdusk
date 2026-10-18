@@ -1,15 +1,17 @@
 import { useTranslation } from "react-i18next";
-import { StepBar } from "./StepBar";
+import { ModulePicker } from "./ModulePicker";
 
+/** Barre supérieure : identité et bibliothèque à gauche, modules à droite. */
 export function TopBar() {
   const { t } = useTranslation();
   return (
     <header className="top-bar">
       <div className="brand">
         <span className="logo" aria-hidden="true" />
-        {t("app.name")}
+        <span className="brand-name">{t("app.name")}</span>
+        <span className="brand-library">{t("app.noLibrary")}</span>
       </div>
-      <StepBar />
+      <ModulePicker />
     </header>
   );
 }

@@ -1,0 +1,50 @@
+import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { useLayout } from "../store/layout";
+
+interface ScreenLayoutProps {
+  left?: ReactNode;
+  right?: ReactNode;
+  /** Barre d'outils sous l'espace de travail. */
+  toolbar?: ReactNode;
+  /** Pied du panneau droit (bouton d'action principale). */
+  rightFooter?: ReactNode;
+  filmstrip?: ReactNode;
+  children: ReactNode;
+}
+
+/** Disposition commune : panneau gauche, espace de travail, panneau droit, pellicule. */
+export function ScreenLayout({
+  left,
+  right,
+  toolbar,
+  rightFooter,
+  filmstrip,
+  children,
+}: ScreenLayoutProps) {
+  const { t } = useTranslation();
+  const visible = useLayout((s) => s.visible);
+
+  return (
+    <div className="screen">
+      <div className="screen-row">
+        {left && visible.left && (
+          <aside className="side-panel side-panel-left" aria-label={t("panels.left")}>
+            <div className="side-panel-scroll">{left}</div>
+          </aside>
+        )}
+        <div className="workspace-column">
+          <main className="workspace">{children}</main>
+          {toolbar && <div className="toolbar">{toolbar}</div>}
+        </div>
+        {right && visible.right && (
+          <aside className="side-panel side-panel-right" aria-label={t("panels.right")}>
+            <div className="side-panel-scroll">{right}</div>
+            {rightFooter && <div className="side-panel-footer">{rightFooter}</div>}
+          </aside>
+        )}
+      </div>
+      {filmstrip && visible.filmstrip && <div className="filmstrip">{filmstrip}</div>}
+    </div>
+  );
+}

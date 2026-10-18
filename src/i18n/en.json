@@ -1,22 +1,183 @@
 {
   "app": {
-    "name": "Afterdusk"
+    "name": "Afterdusk",
+    "noLibrary": "No library"
   },
-  "steps": {
-    "label": "Steps",
+  "modules": {
+    "label": "Modules",
     "import": "Import",
     "cull": "Cull",
     "develop": "Develop",
-    "deliver": "Deliver"
-  },
-  "views": {
-    "label": "Views",
+    "deliver": "Deliver",
     "library": "Library",
     "map": "Map",
     "gear": "Gear",
-    "settings": "Settings"
+    "settings": "Settings",
+    "availableIn": "Available in version {{version}}"
   },
-  "placeholder": {
-    "comingSoon": "This screen is coming in version {{version}}."
+  "panels": {
+    "left": "Left panel",
+    "right": "Right panel"
+  },
+  "toolbar": {
+    "grid": "Grid",
+    "loupe": "Loupe",
+    "compare": "Compare",
+    "sort": "Sort",
+    "sortCaptureTime": "Capture time",
+    "sortFileName": "File name",
+    "sortRating": "Rating",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "pick": "Pick",
+    "reject": "Reject",
+    "rating": "Rating",
+    "stars_one": "{{count}} star",
+    "stars_other": "{{count}} stars",
+    "colorLabel": "Color label",
+    "colors": {
+      "red": "Red",
+      "yellow": "Yellow",
+      "green": "Green",
+      "blue": "Blue",
+      "purple": "Purple"
+    }
+  },
+  "filmstrip": {
+    "empty": "No photos",
+    "source": "Source: {{source}}",
+    "count_one": "{{count}} photo / {{selected}} selected",
+    "count_other": "{{count}} photos / {{selected}} selected",
+    "filter": "Filter:",
+    "noFilter": "No filter"
+  },
+  "import": {
+    "devices": "Cards and cameras",
+    "noDevice": "No memory card or camera detected.",
+    "folders": "Folders",
+    "noFolder": "File > Import from Folder… to choose a folder.",
+    "destination": "Destination",
+    "album": "Album",
+    "folderTemplate": "Organize",
+    "defaultFolderTemplate": "YYYY/YYYY-MM-DD Album",
+    "renaming": "File Renaming",
+    "renameTemplate": "Template",
+    "keepOriginalName": "Original name",
+    "backup": "Backup",
+    "backupLocation": "Copy to",
+    "noBackup": "None",
+    "metadata": "Metadata",
+    "copyright": "Copyright",
+    "keywords": "Keywords",
+    "start": "Import",
+    "selectedCount_one": "{{count}} photo selected",
+    "selectedCount_other": "{{count}} photos selected",
+    "emptyTitle": "Insert a memory card or connect a camera",
+    "emptyText": "Photos and videos will appear here, grouped by day. Those already imported will be dimmed."
+  },
+  "catalog": {
+    "title": "Catalog",
+    "allPhotos": "All Photographs",
+    "lastImport": "Previous Import",
+    "trash": "Trash",
+    "albums": "Albums",
+    "noAlbums": "No albums.",
+    "collections": "Collections",
+    "noCollections": "No collections."
+  },
+  "info": {
+    "histogram": "Histogram",
+    "metadata": "Metadata",
+    "fileName": "File",
+    "captureTime": "Capture time",
+    "camera": "Camera",
+    "lens": "Lens",
+    "exposure": "Exposure",
+    "iso": "ISO",
+    "keywords": "Keywords",
+    "noSelection": "No photo selected."
+  },
+  "cull": {
+    "emptyTitle": "No photos to cull",
+    "emptyText": "Import a card to get started. Culling is done with the keyboard:",
+    "pick": "pick",
+    "reject": "reject",
+    "stars": "stars",
+    "colors": "colors"
+  },
+  "library": {
+    "emptyTitle": "The library is empty",
+    "emptyText": "Albums created during import will appear here."
+  },
+  "upcoming": {
+    "title": "{{module}} is coming in version {{version}}",
+    "develop": "Non-destructive editing of your picks, with settings saved to XMP.",
+    "deliver": "Export with presets, watermark and metadata cleanup.",
+    "map": "A world map of your albums.",
+    "gear": "Inventory, statistics and maintenance of your gear."
+  },
+  "settings": {
+    "general": "General",
+    "library": "Libraries",
+    "import": "Import",
+    "identity": "Identity",
+    "trash": "Trash and cache",
+    "language": "Language",
+    "languages": {
+      "fr": "Français",
+      "en": "English"
+    },
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "notYet": "These settings come with the first-run setup."
+  },
+  "menu": {
+    "app": "Afterdusk",
+    "about": "About Afterdusk",
+    "preferences": "Settings…",
+    "hide": "Hide Afterdusk",
+    "hideOthers": "Hide Others",
+    "quit": "Quit Afterdusk",
+    "file": "File",
+    "importDevice": "Import from Card or Camera…",
+    "importFolder": "Import from Folder…",
+    "newLibrary": "New Library…",
+    "closeWindow": "Close Window",
+    "edit": "Edit",
+    "undo": "Undo",
+    "redo": "Redo",
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste",
+    "selectAll": "Select All",
+    "selectNone": "Select None",
+    "photo": "Photo",
+    "setRating": "Set Rating",
+    "setFlag": "Set Flag",
+    "setColor": "Set Color Label",
+    "moveToTrash": "Move to Trash",
+    "view": "View",
+    "goTo": "Go to",
+    "toggleLeft": "Left Panel",
+    "toggleRight": "Right Panel",
+    "toggleFilmstrip": "Filmstrip",
+    "toggleSides": "Side Panels",
+    "fullscreen": "Full Screen",
+    "window": "Window",
+    "minimize": "Minimize",
+    "help": "Help",
+    "shortcuts": "Keyboard Shortcuts"
+  },
+  "status": {
+    "selection_one": "{{count}} photo · {{selected}} selected",
+    "selection_other": "{{count}} photos · {{selected}} selected",
+    "safety": "Originals read-only · XMP",
+    "safetyHint": "Afterdusk never modifies your originals: ratings and settings are written to the database and to an XMP sidecar file."
+  },
+  "navigator": {
+    "title": "Navigator",
+    "fit": "Fit",
+    "full": "100%",
+    "empty": "No photo"
   }
 }

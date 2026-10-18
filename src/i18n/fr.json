@@ -1,22 +1,183 @@
 {
   "app": {
-    "name": "Afterdusk"
+    "name": "Afterdusk",
+    "noLibrary": "Aucune bibliothèque"
   },
-  "steps": {
-    "label": "Étapes",
+  "modules": {
+    "label": "Modules",
     "import": "Importer",
     "cull": "Trier",
     "develop": "Retoucher",
-    "deliver": "Livrer"
-  },
-  "views": {
-    "label": "Vues",
+    "deliver": "Livrer",
     "library": "Bibliothèque",
     "map": "Carte",
     "gear": "Matériel",
-    "settings": "Réglages"
+    "settings": "Réglages",
+    "availableIn": "Disponible en version {{version}}"
   },
-  "placeholder": {
-    "comingSoon": "Cet écran arrive dans la version {{version}}."
+  "panels": {
+    "left": "Panneau de gauche",
+    "right": "Panneau de droite"
+  },
+  "toolbar": {
+    "grid": "Grille",
+    "loupe": "Loupe",
+    "compare": "Comparer",
+    "sort": "Tri",
+    "sortCaptureTime": "Date de prise de vue",
+    "sortFileName": "Nom de fichier",
+    "sortRating": "Note",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "pick": "Retenue",
+    "reject": "Rejetée",
+    "rating": "Note",
+    "stars_one": "{{count}} étoile",
+    "stars_other": "{{count}} étoiles",
+    "colorLabel": "Étiquette de couleur",
+    "colors": {
+      "red": "Rouge",
+      "yellow": "Jaune",
+      "green": "Vert",
+      "blue": "Bleu",
+      "purple": "Violet"
+    }
+  },
+  "filmstrip": {
+    "empty": "Aucune photo",
+    "source": "Source : {{source}}",
+    "count_one": "{{count}} photo / {{selected}} sélectionnée",
+    "count_other": "{{count}} photos / {{selected}} sélectionnée(s)",
+    "filter": "Filtre :",
+    "noFilter": "Aucun filtre"
+  },
+  "import": {
+    "devices": "Cartes et boîtiers",
+    "noDevice": "Aucune carte ni aucun boîtier détecté.",
+    "folders": "Dossiers",
+    "noFolder": "Fichier > Importer depuis un dossier… pour choisir un dossier.",
+    "destination": "Destination",
+    "album": "Album",
+    "folderTemplate": "Rangement",
+    "defaultFolderTemplate": "AAAA/AAAA-MM-JJ Album",
+    "renaming": "Renommage",
+    "renameTemplate": "Modèle",
+    "keepOriginalName": "Nom d'origine",
+    "backup": "Sauvegarde",
+    "backupLocation": "Copie sur",
+    "noBackup": "Aucune",
+    "metadata": "Métadonnées",
+    "copyright": "Copyright",
+    "keywords": "Mots-clés",
+    "start": "Importer",
+    "selectedCount_one": "{{count}} photo sélectionnée",
+    "selectedCount_other": "{{count}} photos sélectionnées",
+    "emptyTitle": "Insérez une carte mémoire ou branchez un boîtier",
+    "emptyText": "Les photos et vidéos apparaîtront ici, groupées par jour. Celles déjà importées seront grisées."
+  },
+  "catalog": {
+    "title": "Catalogue",
+    "allPhotos": "Toutes les photos",
+    "lastImport": "Importation précédente",
+    "trash": "Corbeille",
+    "albums": "Albums",
+    "noAlbums": "Aucun album.",
+    "collections": "Collections",
+    "noCollections": "Aucune collection."
+  },
+  "info": {
+    "histogram": "Histogramme",
+    "metadata": "Informations",
+    "fileName": "Fichier",
+    "captureTime": "Prise de vue",
+    "camera": "Boîtier",
+    "lens": "Objectif",
+    "exposure": "Exposition",
+    "iso": "ISO",
+    "keywords": "Mots-clés",
+    "noSelection": "Aucune photo sélectionnée."
+  },
+  "cull": {
+    "emptyTitle": "Aucune photo à trier",
+    "emptyText": "Importez une carte pour commencer. Le tri se fait au clavier :",
+    "pick": "retenue",
+    "reject": "rejetée",
+    "stars": "étoiles",
+    "colors": "couleurs"
+  },
+  "library": {
+    "emptyTitle": "La bibliothèque est vide",
+    "emptyText": "Les albums créés à l'import apparaîtront ici."
+  },
+  "upcoming": {
+    "title": "{{module}} arrive en version {{version}}",
+    "develop": "Retouche non destructive des photos retenues, réglages enregistrés dans le XMP.",
+    "deliver": "Export avec presets, filigrane et nettoyage des métadonnées.",
+    "map": "Carte du monde de vos albums.",
+    "gear": "Inventaire, statistiques et entretien de votre matériel."
+  },
+  "settings": {
+    "general": "Général",
+    "library": "Bibliothèques",
+    "import": "Import",
+    "identity": "Identité",
+    "trash": "Corbeille et cache",
+    "language": "Langue",
+    "languages": {
+      "fr": "Français",
+      "en": "English"
+    },
+    "theme": "Thème",
+    "themeDark": "Sombre",
+    "notYet": "Ces réglages arrivent avec la première ouverture guidée."
+  },
+  "menu": {
+    "app": "Afterdusk",
+    "about": "À propos d'Afterdusk",
+    "preferences": "Réglages…",
+    "hide": "Masquer Afterdusk",
+    "hideOthers": "Masquer les autres",
+    "quit": "Quitter Afterdusk",
+    "file": "Fichier",
+    "importDevice": "Importer depuis une carte ou un boîtier…",
+    "importFolder": "Importer depuis un dossier…",
+    "newLibrary": "Nouvelle bibliothèque…",
+    "closeWindow": "Fermer la fenêtre",
+    "edit": "Édition",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "cut": "Couper",
+    "copy": "Copier",
+    "paste": "Coller",
+    "selectAll": "Tout sélectionner",
+    "selectNone": "Ne rien sélectionner",
+    "photo": "Photo",
+    "setRating": "Note",
+    "setFlag": "Drapeau",
+    "setColor": "Étiquette de couleur",
+    "moveToTrash": "Envoyer dans la corbeille",
+    "view": "Affichage",
+    "goTo": "Aller à",
+    "toggleLeft": "Panneau de gauche",
+    "toggleRight": "Panneau de droite",
+    "toggleFilmstrip": "Pellicule",
+    "toggleSides": "Panneaux latéraux",
+    "fullscreen": "Plein écran",
+    "window": "Fenêtre",
+    "minimize": "Réduire",
+    "help": "Aide",
+    "shortcuts": "Raccourcis clavier"
+  },
+  "status": {
+    "selection_one": "{{count}} photo · {{selected}} sélectionnée",
+    "selection_other": "{{count}} photos · {{selected}} sélectionnée(s)",
+    "safety": "Originaux en lecture seule · XMP",
+    "safetyHint": "Afterdusk ne modifie jamais vos originaux : notes et réglages sont écrits dans la base et dans un fichier XMP à côté."
+  },
+  "navigator": {
+    "title": "Navigateur",
+    "fit": "Ajuster",
+    "full": "100 %",
+    "empty": "Aucune photo"
   }
 }

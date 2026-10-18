@@ -1,5 +1,54 @@
-import { Placeholder } from "../components/Placeholder";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { FieldRow, ListRow, PanelSection } from "../components/PanelSection";
+import { ScreenLayout } from "../components/ScreenLayout";
+import i18n, { type Language, resources } from "../i18n";
+
+const CATEGORIES = ["general", "library", "import", "identity", "trash"] as const;
+type Category = (typeof CATEGORIES)[number];
 
 export function SettingsView() {
-  return <Placeholder titleKey="views.settings" version="V0.1" />;
+  const { t } = useTranslation();
+  const [category, setCategory] = useState<Category>("general");
+
+  const left = (
+    <PanelSection id="settings.categories" title={t("modules.settings")}>
+      {CATEGORIES.map((c) => (
+        <ListRow
+          key={c}
+          label={t(`settings.${c}`)}
+          selected={c === category}
+          onClick={() => setCategory(c)}
+        />
+      ))}
+    </PanelSection>
+  );
+
+  return (
+    <ScreenLayout left={left}>
+      <div className="settings-page">
+        <h1 className="settings-title">{t(`settings.${category}`)}</h1>
+        {category === "general" ? (
+          <div className="settings-form">
+            <label className="field-row">
+              <span className="field-row-label">{t("settings.language")}</span>
+              <select
+                value={i18n.language}
+                onChange={(e) => void i18n.changeLanguage(e.target.value as Language)}
+              >
+                {Object.keys(resources).map((lng) => (
+                  <option key={lng} value={lng}>
+                    {t(`settings.languages.${lng}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <FieldRow label={t("settings.theme")} value={t("settings.themeDark")} />
+          </div>
+        ) : (
+          <p className="panel-note">{t("settings.notYet")}</p>
+        )}
+      </div>
+    </ScreenLayout>
+  );
 }

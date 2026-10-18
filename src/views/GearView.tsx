@@ -1,5 +1,6 @@
-import { Placeholder } from "../components/Placeholder";
+import { Camera } from "lucide-react";
+import { UpcomingScreen } from "../components/UpcomingScreen";
 
 export function GearView() {
-  return <Placeholder titleKey="views.gear" version="V0.3" />;
+  return <UpcomingScreen screen="gear" icon={Camera} />;
 }

@@ -1,5 +1,6 @@
-import { Placeholder } from "../components/Placeholder";
+import { Map as MapIcon } from "lucide-react";
+import { UpcomingScreen } from "../components/UpcomingScreen";
 
 export function MapView() {
-  return <Placeholder titleKey="views.map" version="V0.3" />;
+  return <UpcomingScreen screen="map" icon={MapIcon} />;
 }

@@ -1,5 +1,6 @@
-import { Placeholder } from "../components/Placeholder";
+import { Share } from "lucide-react";
+import { UpcomingScreen } from "../components/UpcomingScreen";
 
 export function DeliverStep() {
-  return <Placeholder titleKey="steps.deliver" version="V0.2" />;
+  return <UpcomingScreen screen="deliver" icon={Share} />;
 }

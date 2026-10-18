@@ -1,5 +1,27 @@
-import { Placeholder } from "../components/Placeholder";
+import { Images } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { CatalogPanel, PhotoInfoPanel } from "../components/CatalogPanels";
+import { EmptyState, Kbd } from "../components/EmptyState";
+import { Filmstrip } from "../components/Filmstrip";
+import { GridToolbar } from "../components/GridToolbar";
+import { ScreenLayout } from "../components/ScreenLayout";
 
 export function CullStep() {
-  return <Placeholder titleKey="steps.cull" version="V0.1" />;
+  const { t } = useTranslation();
+  return (
+    <ScreenLayout
+      left={<CatalogPanel scope="cull" navigator />}
+      right={<PhotoInfoPanel scope="cull" />}
+      toolbar={<GridToolbar count={0} culling />}
+      filmstrip={<Filmstrip />}
+    >
+      <EmptyState icon={Images} title={t("cull.emptyTitle")}>
+        <p>{t("cull.emptyText")}</p>
+        <p className="shortcut-hint">
+          <Kbd>P</Kbd> {t("cull.pick")} · <Kbd>X</Kbd> {t("cull.reject")} · <Kbd>1</Kbd>–
+          <Kbd>5</Kbd> {t("cull.stars")} · <Kbd>6</Kbd>–<Kbd>9</Kbd> {t("cull.colors")}
+        </p>
+      </EmptyState>
+    </ScreenLayout>
+  );
 }

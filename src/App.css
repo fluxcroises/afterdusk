@@ -1,33 +1,116 @@
 @import "./theme.css";
 
+/* ---------- Base : une application de bureau, pas une page web ---------- */
+
 :root {
   color-scheme: dark;
-  font: var(--ad-font-label);
+  font: var(--ad-font-ui);
   color: var(--ad-text);
   background: var(--ad-bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
 }
 
-body {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
+  overflow: hidden;
   background: var(--ad-bg);
 }
 
+/* Pas de sélection de texte ni de glisser-déposer d'éléments d'interface. */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+/* Les commandes d'un logiciel de bureau gardent le curseur flèche. */
 button {
   font: inherit;
   color: inherit;
   background: none;
   border: 0;
-  cursor: pointer;
+  padding: 0;
+  cursor: default;
+}
+
+button:disabled {
+  color: var(--ad-text-muted);
+}
+
+:focus {
+  outline: none;
 }
 
 :focus-visible {
-  outline: 2px solid var(--ad-accent);
-  outline-offset: 2px;
+  outline: 1px solid var(--ad-accent);
+  outline-offset: -1px;
 }
+
+select {
+  height: var(--ad-field-height);
+  padding: 0 var(--ad-space-2);
+  font: inherit;
+  color: var(--ad-text);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+}
+
+select:disabled {
+  color: var(--ad-text-muted);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ad-hover);
+  border: 3px solid transparent;
+  border-radius: 5px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Fenêtre ---------- */
 
 .app {
   display: flex;
@@ -35,138 +118,576 @@ button {
   height: 100vh;
 }
 
-/* Barre supérieure : logo et étapes du flux. */
+/* ---------- Barre supérieure : identité à gauche, modules à droite ---------- */
+
 .top-bar {
-  display: grid;
-  grid-template-columns: var(--ad-sidebar-width) 1fr var(--ad-sidebar-width);
+  display: flex;
   align-items: center;
+  gap: var(--ad-space-4);
   height: var(--ad-topbar-height);
   padding: 0 var(--ad-space-4);
-  background: var(--ad-panel);
-  border-bottom: 1px solid var(--ad-border);
+  background: var(--ad-bg);
+  border-bottom: 1px solid var(--ad-border-strong);
+  flex: none;
 }
 
 .brand {
   display: flex;
-  align-items: center;
-  gap: var(--ad-space-2);
-  font: var(--ad-font-panel-title);
+  align-items: baseline;
+  gap: var(--ad-space-3);
+  min-width: 0;
 }
 
 .logo {
-  width: 22px;
-  height: 22px;
+  align-self: center;
+  width: 20px;
+  height: 20px;
   background: currentColor;
   mask: url("./assets/logo.svg") center / contain no-repeat;
 }
 
-.step-bar ol {
+.brand-name {
+  font: var(--ad-font-panel-title);
+}
+
+.brand-library {
+  color: var(--ad-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.module-picker {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: var(--ad-space-3);
+  margin-left: auto;
+}
+
+.module-group {
+  display: flex;
   gap: var(--ad-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.nav-button {
-  display: flex;
-  align-items: center;
-  gap: var(--ad-space-2);
-  height: var(--ad-control-height);
-  padding: 0 var(--ad-space-3);
-  border-radius: var(--ad-radius-md);
+.module {
+  height: 28px;
+  padding: 0 var(--ad-space-2);
+  font: var(--ad-font-module);
   color: var(--ad-text-secondary);
-  transition:
-    background var(--ad-transition),
-    color var(--ad-transition);
+  transition: color var(--ad-transition);
 }
 
-.nav-button svg {
-  width: var(--ad-icon-size);
-  height: var(--ad-icon-size);
-  flex: none;
-}
-
-.nav-button:hover {
-  background: var(--ad-hover);
+.module:hover {
   color: var(--ad-text);
 }
 
-/* L'état actif ne repose pas que sur la couleur : fond et graisse changent aussi. */
-.nav-button[aria-current] {
-  background: var(--ad-surface);
+.module[data-later] {
+  color: var(--ad-text-muted);
+}
+
+/* Actif : plus clair et plus gras, sans fond, comme le sélecteur de Lightroom. */
+.module[aria-current] {
   color: var(--ad-text);
   font-weight: 600;
 }
 
-.nav-button[aria-current] svg {
-  color: var(--ad-accent);
+.module-separator {
+  width: 1px;
+  height: 16px;
+  background: var(--ad-border);
 }
 
-.step-index {
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  font: var(--ad-font-meta);
-  font-variant-numeric: tabular-nums;
+/* ---------- Disposition d'un module ---------- */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
-.step-bar .nav-button[aria-current] .step-index {
-  border-color: var(--ad-accent);
-  background: var(--ad-accent);
-  color: var(--ad-on-accent);
-}
-
-.app-body {
+.screen-row {
   display: flex;
   flex: 1;
   min-height: 0;
 }
 
-.sidebar {
+.side-panel {
+  display: flex;
+  flex-direction: column;
   width: var(--ad-sidebar-width);
   flex: none;
   background: var(--ad-panel);
-  border-right: 1px solid var(--ad-border);
 }
 
-.sidebar ul {
+.side-panel-left {
+  border-right: 1px solid var(--ad-border-strong);
+}
+
+.side-panel-right {
+  border-left: 1px solid var(--ad-border-strong);
+}
+
+.side-panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.side-panel-footer {
+  padding: var(--ad-space-3);
+  border-top: 1px solid var(--ad-border-strong);
+}
+
+.workspace-column {
   display: flex;
   flex-direction: column;
-  gap: var(--ad-space-1);
-  margin: 0;
-  padding: var(--ad-space-3);
-  list-style: none;
+  flex: 1;
+  min-width: 0;
+  container-type: inline-size;
 }
 
-.sidebar .nav-button {
-  width: 100%;
-}
-
-/* Espace de travail : fond le plus neutre, réservé aux photos. */
-.app-main {
+.workspace {
+  position: relative;
   flex: 1;
   overflow: auto;
-  padding: var(--ad-space-5);
   background: var(--ad-workspace);
 }
 
-.placeholder h1 {
-  margin: 0 0 var(--ad-space-2);
-  font: var(--ad-font-panel-title);
+/* ---------- Sections repliables ---------- */
+
+.panel-section {
+  border-bottom: 1px solid var(--ad-border-strong);
 }
 
-.placeholder p {
-  margin: 0;
+.panel-section-header {
+  display: flex;
+  align-items: center;
+  height: var(--ad-section-height);
+  padding-right: var(--ad-space-3);
+  font: var(--ad-font-section);
+}
+
+.panel-section-header > button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ad-space-1);
+  height: 100%;
+  padding-left: var(--ad-space-2);
+  text-align: left;
+  color: var(--ad-text);
+}
+
+.chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--ad-text-secondary);
+  transition: transform var(--ad-transition);
+}
+
+.panel-section-header > button[aria-expanded="false"] .chevron {
+  transform: rotate(-90deg);
+}
+
+.panel-section-aside {
+  display: flex;
+  gap: var(--ad-space-2);
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-section-body {
+  padding: 0 var(--ad-space-3) var(--ad-space-3);
+}
+
+.panel-note {
+  padding: var(--ad-space-1) 0;
+  color: var(--ad-text-muted);
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  width: calc(100% + 2 * var(--ad-space-3));
+  height: var(--ad-row-height);
+  margin: 0 calc(-1 * var(--ad-space-3));
+  padding: 0 var(--ad-space-3) 0 calc(var(--ad-space-3) + 14px);
+  text-align: left;
   color: var(--ad-text-secondary);
 }
 
-@media (max-width: 1100px) {
+.list-row:hover {
+  background: var(--ad-hover);
+  color: var(--ad-text);
+}
+
+.list-row[aria-current] {
+  background: var(--ad-surface);
+  color: var(--ad-text);
+}
+
+.list-row-label {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.list-row-count,
+.field-row-value {
+  font: var(--ad-font-value);
+  font-variant-numeric: tabular-nums;
+  color: var(--ad-text-secondary);
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-3);
+  min-height: var(--ad-row-height);
+}
+
+.field-row-label {
+  width: 40%;
+  flex: none;
+  color: var(--ad-text-secondary);
+}
+
+.field-row-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.field-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Blocs en retrait (aperçu, histogramme), plus sombres que le panneau. */
+.navigator-preview,
+.histogram {
+  display: grid;
+  place-items: center;
+  background: var(--ad-inset);
+  border: 1px solid var(--ad-border-strong);
+  color: var(--ad-text-muted);
+}
+
+.navigator-preview {
+  aspect-ratio: 3 / 2;
+}
+
+.navigator-preview svg {
+  width: 24px;
+  height: 24px;
+}
+
+.histogram {
+  height: 96px;
+}
+
+.histogram-exif {
+  display: flex;
+  justify-content: space-between;
+  padding-top: var(--ad-space-2);
+  font: var(--ad-font-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--ad-text-secondary);
+}
+
+/* ---------- Barre d'outils ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-3);
+  height: var(--ad-toolbar-height);
+  padding: 0 var(--ad-space-3);
+  flex: none;
+  overflow: hidden;
+  background: var(--ad-panel);
+  border-top: 1px solid var(--ad-border-strong);
+  color: var(--ad-text-secondary);
+}
+
+/* Espace de travail étroit : le choix du tri est masqué en premier. */
+@container (max-width: 680px) {
+  .toolbar-field {
+    display: none;
+  }
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--ad-border);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-field {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.toolbar-status {
+  font-variant-numeric: tabular-nums;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--ad-radius-sm);
+  color: var(--ad-text-secondary);
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--ad-hover);
+  color: var(--ad-text);
+}
+
+.icon-button[aria-pressed="true"] {
+  background: var(--ad-surface);
+  color: var(--ad-text);
+}
+
+.icon-button:disabled {
+  color: var(--ad-text-muted);
+  opacity: 0.6;
+}
+
+.stars .icon-button {
+  width: 20px;
+}
+
+.stars svg {
+  width: 14px;
+  height: 14px;
+}
+
+.color-chip {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin: 0 2px;
+  border-radius: 2px;
+}
+
+button.color-chip:disabled {
+  opacity: 0.45;
+}
+
+.color-red {
+  background: var(--ad-label-red);
+}
+.color-yellow {
+  background: var(--ad-label-yellow);
+}
+.color-green {
+  background: var(--ad-label-green);
+}
+.color-blue {
+  background: var(--ad-label-blue);
+}
+.color-purple {
+  background: var(--ad-label-purple);
+}
+
+/* ---------- Pellicule ---------- */
+
+.filmstrip {
+  flex: none;
+  background: var(--ad-inset);
+  border-top: 1px solid var(--ad-border-strong);
+}
+
+.filmstrip-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-4);
+  height: 26px;
+  padding: 0 var(--ad-space-3);
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+  background: var(--ad-panel);
+  border-bottom: 1px solid var(--ad-border-strong);
+}
+
+.filmstrip-source {
+  color: var(--ad-text);
+}
+
+.filmstrip-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.filmstrip-filter svg {
+  width: 12px;
+  height: 12px;
+  color: var(--ad-text-muted);
+}
+
+.filmstrip-filter .stars {
+  display: flex;
+}
+
+.filmstrip-filter .color-chip {
+  width: 9px;
+  height: 9px;
+  opacity: 0.5;
+}
+
+.filmstrip-filter-value {
+  color: var(--ad-text);
+}
+
+.filmstrip-thumbs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ad-filmstrip-height);
+  color: var(--ad-text-muted);
+}
+
+/* ---------- États vides ---------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ad-space-2);
+  height: 100%;
+  padding: var(--ad-space-5);
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--ad-space-2);
+  color: var(--ad-text-muted);
+}
+
+.empty-state-title {
+  font: var(--ad-font-panel-title);
+  color: var(--ad-text);
+}
+
+.empty-state-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  max-width: 420px;
+  color: var(--ad-text-secondary);
+}
+
+.shortcut-hint {
+  color: var(--ad-text-muted);
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 4px;
+  font: var(--ad-font-value);
+  color: var(--ad-text);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+}
+
+/* ---------- Boutons ---------- */
+
+.button {
+  width: 100%;
+  height: var(--ad-control-height);
+  padding: 0 var(--ad-space-3);
+  border-radius: var(--ad-radius-md);
+  font-weight: 600;
+  background: var(--ad-surface);
+  transition: background var(--ad-transition);
+}
+
+.button-primary {
+  background: var(--ad-accent);
+  color: var(--ad-on-accent);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--ad-accent-hover);
+}
+
+.button:disabled {
+  background: var(--ad-surface);
+  color: var(--ad-text-muted);
+}
+
+/* ---------- Réglages ---------- */
+
+.settings-page {
+  max-width: 560px;
+  padding: var(--ad-space-5);
+}
+
+.settings-title {
+  margin-bottom: var(--ad-space-4);
+  font: var(--ad-font-panel-title);
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+}
+
+/* ---------- Barre d'état ---------- */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-3);
+  height: var(--ad-statusbar-height);
+  padding: 0 var(--ad-space-3);
+  flex: none;
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+  background: var(--ad-bg);
+  border-top: 1px solid var(--ad-border-strong);
+}
+
+.status-bar-spacer {
+  flex: 1;
+}
+
+@media (max-width: 1200px) {
   :root {
-    --ad-sidebar-width: 220px;
+    --ad-sidebar-width: 240px;
   }
 }
