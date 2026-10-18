@@ -19,6 +19,7 @@ pub fn sample(name: &str) -> PathBuf {
     path
 }
 
+#[allow(dead_code)]
 pub fn sha256(path: &std::path::Path) -> String {
     let bytes = std::fs::read(path).expect("lecture de l'échantillon");
     Sha256::digest(bytes)

@@ -72,6 +72,7 @@ CREATE TABLE imports (
   files_total      INTEGER NOT NULL DEFAULT 0,
   files_done       INTEGER NOT NULL DEFAULT 0,
   backup_path      TEXT,
+  options          TEXT NOT NULL DEFAULT '{}', -- JSON : album, mots-clés, copyright, sauvegarde (pour la reprise)
   started_at       TEXT NOT NULL,
   finished_at      TEXT
 );

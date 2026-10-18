@@ -1,4 +1,7 @@
 pub mod commands;
+pub mod db;
+pub mod import;
+pub mod library;
 pub mod metadata;
 pub mod raw;
 
