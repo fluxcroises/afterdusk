@@ -530,6 +530,8 @@ button.color-chip:disabled {
   align-items: center;
   gap: var(--ad-space-4);
   height: 26px;
+  overflow: hidden;
+  white-space: nowrap;
   padding: 0 var(--ad-space-3);
   font: var(--ad-font-meta);
   color: var(--ad-text-secondary);
@@ -539,6 +541,16 @@ button.color-chip:disabled {
 
 .filmstrip-source {
   color: var(--ad-text);
+}
+
+.filmstrip-header > span:not(.toolbar-spacer) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filmstrip-filter {
+  flex: none;
 }
 
 .filmstrip-filter {
@@ -943,24 +955,9 @@ input[type="checkbox"] {
 }
 
 .import-tile-preview {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 2px;
+  display: block;
   aspect-ratio: 3 / 2;
   margin-bottom: var(--ad-space-1);
-  background: var(--ad-inset);
-  color: var(--ad-text-muted);
-}
-
-.import-tile-preview svg {
-  width: 22px;
-  height: 22px;
-}
-
-.import-tile-format {
-  font: var(--ad-font-meta);
-  letter-spacing: 0.04em;
 }
 
 .import-tile-name,
@@ -977,5 +974,127 @@ input[type="checkbox"] {
 
 .import-tile-meta {
   font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+}
+
+/* ---------- Miniatures ---------- */
+
+.thumbnail {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ad-inset);
+  color: var(--ad-text-muted);
+}
+
+/* Photo entière, sans recadrage ni bordure décorative. */
+.thumbnail img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.thumbnail-fallback {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+}
+
+.thumbnail-fallback svg {
+  width: 22px;
+  height: 22px;
+}
+
+.thumbnail-label {
+  font: var(--ad-font-meta);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Grille de la bibliothèque ---------- */
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--ad-space-2);
+  padding: var(--ad-space-3);
+}
+
+.media-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+  padding: var(--ad-space-2);
+  background: var(--ad-panel);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-sm);
+  /* Les cellules hors écran ne sont ni mises en page ni peintes. */
+  content-visibility: auto;
+  contain-intrinsic-size: 160px 150px;
+}
+
+.media-cell:hover {
+  background: var(--ad-surface);
+}
+
+.media-cell[aria-pressed="true"] {
+  background: var(--ad-hover);
+  border-color: var(--ad-accent);
+}
+
+.media-cell-image {
+  display: block;
+  aspect-ratio: 3 / 2;
+}
+
+.media-cell-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+}
+
+.media-cell[aria-pressed="true"] .media-cell-name {
+  color: var(--ad-text);
+}
+
+/* ---------- Miniatures de la pellicule ---------- */
+
+.filmstrip-thumbs:has(.strip) {
+  justify-content: flex-start;
+}
+
+.strip {
+  display: flex;
+  gap: var(--ad-space-1);
+  height: 100%;
+  padding: var(--ad-space-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.strip-cell {
+  flex: none;
+  height: 100%;
+  aspect-ratio: 3 / 2;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--ad-radius-sm);
+}
+
+.strip-cell[aria-pressed="true"] {
+  border-color: var(--ad-accent);
+}
+
+.list-row-hint {
+  margin-left: var(--ad-space-2);
+  font: var(--ad-font-meta);
+  color: var(--ad-text-muted);
+}
+
+.keyword-list {
+  padding: var(--ad-space-1) 0;
   color: var(--ad-text-secondary);
 }

@@ -110,7 +110,6 @@
   "catalog": {
     "title": "Catalog",
     "allPhotos": "All Photographs",
-    "lastImport": "Previous Import",
     "trash": "Trash",
     "albums": "Albums",
     "noAlbums": "No albums.",
@@ -124,10 +123,12 @@
     "captureTime": "Capture time",
     "camera": "Camera",
     "lens": "Lens",
-    "exposure": "Exposure",
-    "iso": "ISO",
     "keywords": "Keywords",
-    "noSelection": "No photo selected."
+    "noSelection": "No photo selected.",
+    "originalName": "Original name",
+    "dimensions": "Dimensions",
+    "exposureCompensation": "Exposure comp.",
+    "noKeywords": "No keywords."
   },
   "cull": {
     "emptyTitle": "No photos to cull",

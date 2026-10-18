@@ -1,7 +1,9 @@
-import { Check, FileImage } from "lucide-react";
+import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SourceEntry } from "../api/core";
+import { sourceThumbnailUrl } from "../api/previews";
 import { useImport } from "../store/import";
+import { Thumbnail } from "./Thumbnail";
 
 function dayLabel(day: string, language: string): string {
   const date = new Date(`${day}T12:00:00`);
@@ -36,9 +38,11 @@ function Tile({ file }: { file: SourceEntry }) {
       <span className="import-tile-check" aria-hidden="true">
         {checked && <Check strokeWidth={2.5} />}
       </span>
-      <span className="import-tile-preview" aria-hidden="true">
-        <FileImage strokeWidth={1.25} />
-        <span className="import-tile-format">{file.fileName.split(".").pop()?.toUpperCase()}</span>
+      <span className="import-tile-preview">
+        <Thumbnail
+          src={sourceThumbnailUrl(file.path)}
+          fallback={file.fileName.split(".").pop()?.toUpperCase()}
+        />
       </span>
       <span className="import-tile-name">{file.fileName}</span>
       <span className="import-tile-meta">

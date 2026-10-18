@@ -3,6 +3,8 @@
 pub mod error;
 pub mod import;
 pub mod library;
+pub mod media;
+pub mod previews;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -18,15 +20,21 @@ use error::{CommandError, CommandResult};
 /// État partagé entre les commandes.
 pub struct AppState {
     pub db_path: PathBuf,
+    /// Dossier du cache d'aperçus, dans les données de l'application.
+    pub cache_root: PathBuf,
     /// Drapeau d'arrêt de l'import en cours, s'il y en a un.
     pub running_import: Mutex<Option<Arc<AtomicBool>>>,
+    /// Source analysée : seule source dont le protocole `preview://` peut lire les fichiers.
+    pub source_root: Mutex<Option<PathBuf>>,
 }
 
 impl AppState {
-    pub fn new(db_path: PathBuf) -> Self {
+    pub fn new(db_path: PathBuf, cache_root: PathBuf) -> Self {
         Self {
             db_path,
+            cache_root,
             running_import: Mutex::new(None),
+            source_root: Mutex::new(None),
         }
     }
 

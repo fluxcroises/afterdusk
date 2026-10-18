@@ -1,5 +1,6 @@
 //! Bibliothèques, albums et matériel détecté.
 
+pub mod media;
 pub mod paths;
 pub mod template;
 

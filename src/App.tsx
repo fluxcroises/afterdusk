@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { useAppEvents } from "./appEvents";
 import { StatusBar } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
 import { CullStep } from "./steps/CullStep";
@@ -24,6 +25,7 @@ const SCREENS: Record<Screen, () => ReactElement> = {
 };
 
 export default function App() {
+  useAppEvents();
   const screen = useNavigation((s) => s.screen);
   const Current = SCREENS[screen];
 

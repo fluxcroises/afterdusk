@@ -1,5 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { useLayout } from "./store/layout";
+import { useLibrary } from "./store/library";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
 
 /**
@@ -35,6 +36,16 @@ export function handleShortcut(e: KeyboardEvent): boolean {
   const layout = useLayout.getState();
   const mod = isMac ? e.metaKey : e.ctrlKey;
 
+  // Flèches : photo précédente ou suivante dans Trier et Bibliothèque.
+  const screen = useNavigation.getState().screen;
+  if ((screen === "cull" || screen === "library") && !mod && !e.altKey) {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      useLibrary.getState().move(e.key === "ArrowLeft" ? -1 : 1);
+      return true;
+    }
+  }
+
+  // Dans l'application, les raccourcis suivants passent par la barre de menus.
   if (isTauri()) return false;
 
   if (e.key === "F7") {

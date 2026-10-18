@@ -22,6 +22,8 @@ tauri-build = { version = "2", features = [] }
 afterdusk-libraw-sys = { path = "libraw-sys" }
 blake3 = "1.8"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "tiff"] }
+jpeg-decoder = "0.3"
 kamadak-exif = "0.6"
 rusqlite = { version = "0.40", features = ["bundled"] }
 tauri = { version = "2", features = [] }
@@ -51,3 +53,13 @@ opt-level = 2
 
 [profile.dev.package.xmp_toolkit]
 opt-level = 2
+
+# Décodage et redimensionnement d'images : trop lents sans optimisation.
+[profile.dev.package.image]
+opt-level = 3
+
+[profile.dev.package.jpeg-decoder]
+opt-level = 3
+
+[profile.dev.package.zune-jpeg]
+opt-level = 3

@@ -8,6 +8,8 @@ use std::ffi::{CStr, CString, c_char};
 use std::path::{Path, PathBuf};
 use std::ptr::NonNull;
 
+pub mod preview;
+
 use afterdusk_libraw_sys as sys;
 use serde::Serialize;
 
@@ -242,6 +244,20 @@ impl RawFile {
             .max_by_key(|p| (p.is_jpeg, p.length))
             .ok_or(RawError::NoPreview)?;
         self.preview_at(best.index)
+    }
+
+    /// Extrait le plus petit aperçu JPEG dont le côté long atteint `min_side`,
+    /// ou à défaut le plus grand : une miniature n'a pas besoin du plein format.
+    pub fn preview_for(&mut self, min_side: u32) -> Result<Preview, RawError> {
+        let fitting = self
+            .embedded_previews()
+            .into_iter()
+            .filter(|p| p.is_jpeg && u32::from(p.width.max(p.height)) >= min_side)
+            .min_by_key(|p| p.length);
+        match fitting {
+            Some(p) => self.preview_at(p.index),
+            None => self.preview(),
+        }
     }
 
     /// Extrait l'aperçu `index` de [`RawFile::embedded_previews`].

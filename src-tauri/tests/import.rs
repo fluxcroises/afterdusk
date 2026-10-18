@@ -438,3 +438,50 @@ fn cinq_cents_fichiers_sans_perte() {
         .count();
     assert_eq!(copies, 500);
 }
+
+/// Après l'import : aperçus en cache, albums, fiche d'informations.
+#[test]
+fn apercus_et_fiche_apres_import() {
+    use afterdusk_lib::library::media;
+
+    let mut s = setup();
+    let opts = options(&s, scanned(&s));
+    let id = import::plan(&mut s.conn, &opts).unwrap();
+    let mut imported = Vec::new();
+    import::run(&mut s.conn, id, &AtomicBool::new(false), |p| {
+        imported.extend(p.media_id)
+    })
+    .unwrap();
+
+    let cache = s.root.with_file_name("cache");
+    assert_eq!(media::missing_previews(&s.conn).unwrap().len(), 4);
+    let mut generated = 0;
+    for media_id in &imported {
+        // Le RAW illisible et le JPEG vide n'ont pas d'aperçu : c'est toléré.
+        if media::generate_previews(&s.conn, &cache, *media_id).is_ok() {
+            generated += 1;
+        }
+    }
+    assert_eq!(generated, 2);
+    assert_eq!(media::missing_previews(&s.conn).unwrap().len(), 2);
+
+    let list = media::list_media(&s.conn, s.library_id, None).unwrap();
+    assert_eq!(list.len(), 4);
+    assert_eq!(list.iter().filter(|m| m.has_preview).count(), 2);
+    for m in list.iter().filter(|m| m.has_preview) {
+        assert!(media::cached_preview(&cache, m.id, 256).is_some());
+    }
+
+    let albums = media::list_albums(&s.conn, s.library_id).unwrap();
+    assert_eq!(albums.iter().map(|a| a.count).sum::<i64>(), 4);
+
+    let canon = list
+        .iter()
+        .find(|m| m.file_name.contains("EOS-R6"))
+        .unwrap();
+    let details = media::media_details(&s.conn, canon.id).unwrap().unwrap();
+    assert_eq!(details.camera.as_deref(), Some("Canon EOS R6"));
+    assert_eq!(details.original_name, "IMG_0001.CR3");
+    assert_eq!(details.keywords, ["test"]);
+    assert_eq!(details.iso, Some(100.0));
+}

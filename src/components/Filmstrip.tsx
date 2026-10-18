@@ -1,17 +1,29 @@
 import { Flag, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useLibrary } from "../store/library";
 import { COLOR_LABELS } from "../ui/labels";
+import { FilmstripThumbs } from "./MediaGrid";
 
 /** Pellicule : en-tête (source, nombre, filtre rapide) puis miniatures. */
 export function Filmstrip() {
   const { t } = useTranslation();
+  const media = useLibrary((s) => s.media);
+  const albums = useLibrary((s) => s.albums);
+  const albumId = useLibrary((s) => s.albumId);
+  const selected = useLibrary((s) => s.media.find((m) => m.id === s.selectedId));
+  const sourceName =
+    albumId === null
+      ? t("catalog.allPhotos")
+      : (albums.find((a) => a.id === albumId)?.name ?? t("catalog.allPhotos"));
+
   return (
     <>
       <div className="filmstrip-header">
-        <span className="filmstrip-source">
-          {t("filmstrip.source", { source: t("catalog.allPhotos") })}
+        <span className="filmstrip-source">{t("filmstrip.source", { source: sourceName })}</span>
+        <span>
+          {t("filmstrip.count", { count: media.length, selected: selected ? 1 : 0 })}
+          {selected && ` / ${selected.fileName}`}
         </span>
-        <span>{t("filmstrip.count", { count: 0, selected: 0 })}</span>
         <span className="toolbar-spacer" />
         <span className="filmstrip-filter" aria-label={t("filmstrip.filter")}>
           {t("filmstrip.filter")}
@@ -30,7 +42,11 @@ export function Filmstrip() {
         </span>
       </div>
       <div className="filmstrip-thumbs">
-        <span className="filmstrip-empty">{t("filmstrip.empty")}</span>
+        {media.length > 0 ? (
+          <FilmstripThumbs />
+        ) : (
+          <span className="filmstrip-empty">{t("filmstrip.empty")}</span>
+        )}
       </div>
     </>
   );

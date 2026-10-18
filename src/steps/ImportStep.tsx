@@ -1,33 +1,12 @@
-import { isTauri } from "@tauri-apps/api/core";
 import { FolderOpen, HardDriveDownload, RefreshCw, TriangleAlert } from "lucide-react";
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { pickFolder } from "../actions";
-import { events } from "../api/core";
 import { EmptyState } from "../components/EmptyState";
 import { IconButton } from "../components/IconButton";
 import { ImportGrid } from "../components/ImportGrid";
 import { FieldRow, PanelNote, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useImport } from "../store/import";
-
-/** Abonne le store aux événements de progression du cœur. */
-function useImportEvents() {
-  const onProgress = useImport((s) => s.onProgress);
-  const onFinished = useImport((s) => s.onFinished);
-  const loadLibraries = useImport((s) => s.loadLibraries);
-  useEffect(() => {
-    if (!isTauri()) return;
-    void loadLibraries();
-    const subscriptions = [
-      events.onImportProgress(onProgress),
-      events.onImportFinished(onFinished),
-    ];
-    return () => {
-      for (const s of subscriptions) void s.then((unlisten) => unlisten());
-    };
-  }, [onProgress, onFinished, loadLibraries]);
-}
 
 function SourcePanel() {
   const { t } = useTranslation();
@@ -306,7 +285,6 @@ function StatusLine() {
 
 export function ImportStep() {
   const { t } = useTranslation();
-  useImportEvents();
   const source = useImport((s) => s.source);
   const scanning = useImport((s) => s.scanning);
   const error = useImport((s) => s.error);

@@ -9,6 +9,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use super::error::{CommandError, CommandResult};
+use super::previews::PreviewQueue;
 use super::{AppState, blocking};
 use crate::import::{self, ImportOptions, ImportOutcome, ResumableImport, scan};
 use crate::metadata::media::MediaFormat;
@@ -53,6 +54,9 @@ pub async fn source_scan(
     library_id: Option<i64>,
 ) -> CommandResult<SourceView> {
     let conn = state.connect()?;
+    if let Ok(mut root) = state.source_root.lock() {
+        *root = Some(path.clone());
+    }
     blocking(move || {
         let known = match library_id {
             Some(id) => import::known_fingerprints(&conn, id)?,
@@ -122,7 +126,12 @@ fn release_slot(app: &AppHandle) {
 fn spawn_run(app: AppHandle, import_id: i64, cancel: Arc<AtomicBool>) {
     std::thread::spawn(move || {
         let result = app.state::<AppState>().connect().and_then(|mut conn| {
+            let queue = app.state::<PreviewQueue>();
             import::run(&mut conn, import_id, &cancel, |progress| {
+                // Aperçus dès la fin de la copie de chaque fichier, en parallèle de l'import.
+                if let Some(media_id) = progress.media_id {
+                    queue.push(media_id);
+                }
                 let _ = app.emit(EVENT_PROGRESS, progress);
             })
             .map_err(CommandError::from)

@@ -110,7 +110,6 @@
   "catalog": {
     "title": "Catalogue",
     "allPhotos": "Toutes les photos",
-    "lastImport": "Importation précédente",
     "trash": "Corbeille",
     "albums": "Albums",
     "noAlbums": "Aucun album.",
@@ -124,10 +123,12 @@
     "captureTime": "Prise de vue",
     "camera": "Boîtier",
     "lens": "Objectif",
-    "exposure": "Exposition",
-    "iso": "ISO",
     "keywords": "Mots-clés",
-    "noSelection": "Aucune photo sélectionnée."
+    "noSelection": "Aucune photo sélectionnée.",
+    "originalName": "Nom d'origine",
+    "dimensions": "Dimensions",
+    "exposureCompensation": "Correction",
+    "noKeywords": "Aucun mot-clé."
   },
   "cull": {
     "emptyTitle": "Aucune photo à trier",

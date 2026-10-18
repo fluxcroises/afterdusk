@@ -42,13 +42,15 @@ export function PanelSection({ id, title, aside, children }: PanelSectionProps) 
 
 interface ListRowProps {
   label: string;
+  /** Précision discrète sous le libellé (date d'un album). */
+  hint?: string;
   count?: number;
   selected?: boolean;
   onClick?: () => void;
 }
 
 /** Ligne de navigation d'un panneau (catalogue, album, collection). */
-export function ListRow({ label, count, selected, onClick }: ListRowProps) {
+export function ListRow({ label, hint, count, selected, onClick }: ListRowProps) {
   return (
     <button
       type="button"
@@ -56,7 +58,10 @@ export function ListRow({ label, count, selected, onClick }: ListRowProps) {
       aria-current={selected || undefined}
       onClick={onClick}
     >
-      <span className="list-row-label">{label}</span>
+      <span className="list-row-label">
+        {label}
+        {hint && <span className="list-row-hint">{hint}</span>}
+      </span>
       {count !== undefined && <span className="list-row-count">{count}</span>}
     </button>
   );
