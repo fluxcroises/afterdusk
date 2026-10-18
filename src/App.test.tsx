@@ -65,3 +65,11 @@ describe("App", () => {
     expect(within(modules).getByRole("button", { name: "Library" })).toBeInTheDocument();
   });
 });
+
+describe("Accueil", () => {
+  it("n'est plus un module de la fenêtre principale", () => {
+    render(<App />);
+    const modules = screen.getByRole("navigation", { name: "Modules" });
+    expect(within(modules).queryByRole("button", { name: "Accueil" })).toBeNull();
+  });
+});

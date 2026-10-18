@@ -1,6 +1,6 @@
 import { FolderOpen, HardDriveDownload, RefreshCw, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { pickFolder } from "../actions";
+import { newLibrary, pickFolder } from "../actions";
 import { EmptyState } from "../components/EmptyState";
 import { IconButton } from "../components/IconButton";
 import { ImportGrid } from "../components/ImportGrid";
@@ -87,16 +87,10 @@ function DestinationPanel() {
   const libraries = useImport((s) => s.libraries);
   const libraryId = useImport((s) => s.libraryId);
   const selectLibrary = useImport((s) => s.selectLibrary);
-  const createLibrary = useImport((s) => s.createLibrary);
   const form = useImport((s) => s.form);
   const update = useImport((s) => s.updateForm);
   const running = useImport((s) => s.running);
   const library = libraries.find((l) => l.id === libraryId);
-
-  const newLibrary = async () => {
-    const path = await pickFolder(t("import.newLibrary"));
-    if (path) await createLibrary(path);
-  };
 
   return (
     <fieldset className="form-fieldset" disabled={running}>

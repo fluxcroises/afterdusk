@@ -14,7 +14,8 @@
     "map": "Map",
     "gear": "Gear",
     "settings": "Settings",
-    "availableIn": "Available in version {{version}}"
+    "availableIn": "Available in version {{version}}",
+    "home": "Home"
   },
   "panels": {
     "left": "Left panel",
@@ -199,7 +200,8 @@
     "window": "Window",
     "minimize": "Minimize",
     "help": "Help",
-    "shortcuts": "Keyboard Shortcuts"
+    "shortcuts": "Keyboard Shortcuts",
+    "welcome": "Welcome Screen"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -224,5 +226,31 @@
     "libraryNotFound": "Library not found.",
     "databaseTooNew": "The database was created by a newer version of Afterdusk.",
     "importRunning": "An import is already running."
+  },
+  "home": {
+    "morning": "Hello",
+    "evening": "Good evening",
+    "intro": "Import the day, cull with the keyboard, edit the best shots and deliver them. Your originals are never modified.",
+    "recent": "Recent activity",
+    "lastImport": "Last import: {{source}}, {{date}}",
+    "viewAll": "View all photos",
+    "addPhotos": "Add photos",
+    "dropHint": "Insert a memory card, drop a folder onto the window, or",
+    "firstStepsTitle": "Getting started",
+    "firstSteps": "Choose the folder where Afterdusk will store your photos: internal drive, external drive or NAS. Your files stay readable without Afterdusk.",
+    "journey": "The Afterdusk journey",
+    "journeyText": "Four steps, from memory card to delivery.",
+    "available": "Available",
+    "steps": {
+      "import": "Verified copy, organizing and backup, without ever touching the card.",
+      "cull": "Ratings, flags and colors from the keyboard, side-by-side comparison.",
+      "develop": "Non-destructive editing, presets and settings sync.",
+      "deliver": "Web, Instagram or print export, watermark and client gallery."
+    },
+    "yourPhotos": "Your photos",
+    "recentAlbums": "Recent albums",
+    "interrupted_one": "An import from “{{source}}” was interrupted: {{count}} file left to copy.",
+    "interrupted_other": "An import from “{{source}}” was interrupted: {{count}} files left to copy.",
+    "showOnStartup": "Show at startup"
   }
 }

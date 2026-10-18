@@ -6,6 +6,7 @@ import { CullStep } from "./steps/CullStep";
 import { DeliverStep } from "./steps/DeliverStep";
 import { DevelopStep } from "./steps/DevelopStep";
 import { ImportStep } from "./steps/ImportStep";
+import { useLayout } from "./store/layout";
 import { type Screen, useNavigation } from "./store/navigation";
 import { GearView } from "./views/GearView";
 import { LibraryView } from "./views/LibraryView";
@@ -25,12 +26,13 @@ const SCREENS: Record<Screen, () => ReactElement> = {
 };
 
 export default function App() {
-  useAppEvents();
+  useAppEvents("main");
   const screen = useNavigation((s) => s.screen);
   const Current = SCREENS[screen];
+  const dropping = useLayout((s) => s.dropping);
 
   return (
-    <div className="app">
+    <div className="app" data-dropping={dropping || undefined}>
       <TopBar />
       <Current />
       <StatusBar />

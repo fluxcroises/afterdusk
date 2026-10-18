@@ -15,3 +15,9 @@ export async function importFromFolder(): Promise<void> {
   const path = await pickFolder(i18n.t("import.chooseFolder"));
   if (path) await useImport.getState().scanSource(path);
 }
+
+/** Choisit le dossier d'une nouvelle bibliothèque et la crée. */
+export async function newLibrary(): Promise<void> {
+  const path = await pickFolder(i18n.t("import.newLibrary"));
+  if (path) await useImport.getState().createLibrary(path);
+}

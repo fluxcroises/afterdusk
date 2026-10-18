@@ -13,6 +13,27 @@ use commands::previews::{self, PreviewQueue};
 const DATABASE_FILE: &str = "afterdusk.db";
 const PREVIEW_DIR: &str = "previews";
 
+pub const MAIN_WINDOW: &str = "main";
+pub const WELCOME_WINDOW: &str = "welcome";
+
+/// Fermer la fenêtre principale quitte l'application. Fermer l'accueil le
+/// masque seulement (il peut être rouvert), sauf s'il était seul à l'écran.
+fn on_close_requested(window: &tauri::Window, api: &tauri::CloseRequestApi) {
+    let app = window.app_handle();
+    let main_visible = app
+        .get_webview_window(MAIN_WINDOW)
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    match window.label() {
+        MAIN_WINDOW => app.exit(0),
+        WELCOME_WINDOW if main_visible => {
+            api.prevent_close();
+            let _ = window.hide();
+        }
+        _ => app.exit(0),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let result = tauri::Builder::default()
@@ -43,6 +64,11 @@ pub fn run() {
             previews::enqueue_missing(app.handle());
             Ok(())
         })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                on_close_requested(window, api);
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             commands::app_info,
             commands::library::libraries_list,
@@ -52,6 +78,7 @@ pub fn run() {
             commands::import::import_resume,
             commands::import::import_cancel,
             commands::import::imports_resumable,
+            commands::import::imports_recent,
             commands::media::media_list,
             commands::media::albums_list,
             commands::media::media_details,

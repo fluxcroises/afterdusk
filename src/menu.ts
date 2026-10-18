@@ -9,6 +9,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { TFunction } from "i18next";
 import { importFromFolder } from "./actions";
 import i18n from "./i18n";
+import { showWelcome } from "./windows";
 import { useLayout } from "./store/layout";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
 
@@ -150,12 +151,21 @@ export function buildMenuItems(t: TFunction): Item[] {
 
   const windowMenu: SubmenuOptions = {
     text: t("menu.window"),
-    items: [{ item: "Minimize", text: t("menu.minimize") }],
+    items: [
+      {
+        id: "welcome",
+        text: t("menu.welcome"),
+        accelerator: "CmdOrCtrl+Alt+0",
+        action: () => void showWelcome(),
+      },
+      separator,
+      { item: "Minimize", text: t("menu.minimize") },
+    ],
   };
 
   return isMac
     ? [appMenu, file, edit, photo, view, windowMenu, help]
-    : [file, edit, photo, view, help];
+    : [file, edit, photo, view, windowMenu, help];
 }
 
 async function toggleFullscreen(): Promise<void> {

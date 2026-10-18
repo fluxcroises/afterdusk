@@ -1,7 +1,15 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions de la fen\u00c3\u00aatre principale",
-  "windows": ["main"],
-  "permissions": ["core:default", "core:window:allow-set-fullscreen", "dialog:allow-open"]
+  "description": "Permissions de la fen\u00eatre principale et de la fen\u00eatre d'accueil",
+  "windows": ["main", "welcome"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "core:window:allow-unminimize",
+    "dialog:allow-open"
+  ]
 }

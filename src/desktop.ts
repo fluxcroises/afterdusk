@@ -2,6 +2,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
+import { showWelcome } from "./windows";
 
 /**
  * Comportements d'une application de bureau plutôt que d'une page web :
@@ -61,6 +62,10 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     return true;
   }
   // Ctrl+Alt+1… : changer de module, comme dans Lightroom.
+  if (mod && e.altKey && e.code === "Digit0") {
+    void showWelcome();
+    return true;
+  }
   if (mod && e.altKey && /^Digit[1-7]$/.test(e.code)) {
     const screens = [...STEPS, ...VIEWS];
     const target = screens[Number(e.code.slice(5)) - 1];

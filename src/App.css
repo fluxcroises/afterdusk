@@ -1098,3 +1098,295 @@ input[type="checkbox"] {
   padding: var(--ad-space-1) 0;
   color: var(--ad-text-secondary);
 }
+
+/* ---------- Accueil ---------- */
+
+.brand-home {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+  height: 30px;
+  padding: 0 var(--ad-space-2);
+  margin-left: calc(-1 * var(--ad-space-2));
+  border-radius: var(--ad-radius-md);
+}
+
+.brand-home:hover {
+  background: var(--ad-surface);
+}
+
+.home-actions {
+  padding: var(--ad-space-3);
+  border-bottom: 1px solid var(--ad-border-strong);
+}
+
+.home {
+  max-width: 1040px;
+  padding: var(--ad-space-5) 40px 48px;
+}
+
+.home-title {
+  font: 600 24px/1.3 var(--ad-font);
+  color: var(--ad-text);
+}
+
+.home-intro {
+  max-width: 620px;
+  margin-top: var(--ad-space-2);
+  font-size: 13px;
+  color: var(--ad-text-secondary);
+}
+
+.home > .banner {
+  position: static;
+  margin-top: var(--ad-space-4);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-md);
+}
+
+.banner-info {
+  background: var(--ad-panel);
+}
+
+.home-section {
+  margin-top: 32px;
+}
+
+.home-heading {
+  font: 600 15px/1.4 var(--ad-font);
+  color: var(--ad-text);
+}
+
+.home-subheading {
+  margin-top: 2px;
+  color: var(--ad-text-secondary);
+}
+
+.home-card {
+  margin-top: var(--ad-space-3);
+  background: var(--ad-panel);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-lg);
+}
+
+.home-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ad-space-3);
+  padding: var(--ad-space-3) var(--ad-space-4);
+  color: var(--ad-text-secondary);
+}
+
+.link-button {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+  color: var(--ad-text-secondary);
+}
+
+.link-button:hover {
+  color: var(--ad-text);
+}
+
+.link-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.home-strip {
+  display: flex;
+  gap: 2px;
+  padding: 0 var(--ad-space-4) var(--ad-space-4);
+  overflow: hidden;
+}
+
+.home-strip-cell {
+  flex: none;
+  width: 150px;
+  aspect-ratio: 3 / 2;
+}
+
+.home-strip-cell:hover {
+  outline: 1px solid var(--ad-text-secondary);
+}
+
+.home-strip-more {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  color: var(--ad-text-secondary);
+}
+
+.drop-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ad-space-4);
+  max-width: 620px;
+  margin-top: var(--ad-space-3);
+  padding: var(--ad-space-5);
+  border: 1px dashed var(--ad-text-muted);
+  border-radius: var(--ad-radius-lg);
+  color: var(--ad-text-secondary);
+}
+
+.drop-zone p {
+  flex: 1 1 260px;
+}
+
+.drop-zone-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  color: var(--ad-text);
+}
+
+.button-inline {
+  width: auto;
+  flex: none;
+}
+
+/* Glisser un dossier au-dessus de la fenêtre. */
+.app[data-dropping] .drop-zone {
+  border-color: var(--ad-accent);
+  background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
+}
+
+.app[data-dropping] .workspace {
+  outline: 2px dashed var(--ad-accent);
+  outline-offset: -8px;
+}
+
+.journey {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--ad-space-3);
+  margin-top: var(--ad-space-3);
+}
+
+.journey-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+  padding: 0 0 var(--ad-space-3);
+  text-align: left;
+  background: var(--ad-panel);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-lg);
+  overflow: hidden;
+  transition: border-color var(--ad-transition);
+}
+
+.journey-card:hover {
+  border-color: var(--ad-text-muted);
+}
+
+.journey-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 112px;
+  margin-bottom: var(--ad-space-2);
+  background: var(--ad-inset);
+  color: var(--ad-text-secondary);
+}
+
+.journey-art svg {
+  width: 44px;
+  height: 44px;
+}
+
+.journey-index {
+  position: absolute;
+  top: var(--ad-space-2);
+  left: var(--ad-space-3);
+  font: var(--ad-font-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--ad-text-muted);
+}
+
+.journey-title,
+.journey-text,
+.journey-meta {
+  padding: 0 var(--ad-space-3);
+}
+
+.journey-title {
+  font: var(--ad-font-panel-title);
+  color: var(--ad-text);
+}
+
+.journey-text {
+  color: var(--ad-text-secondary);
+}
+
+.journey-meta {
+  margin-top: var(--ad-space-1);
+  font: var(--ad-font-meta);
+  color: var(--ad-success);
+}
+
+.journey-card[data-later] .journey-meta {
+  color: var(--ad-text-muted);
+}
+
+.journey-card[data-later] .journey-art svg {
+  color: var(--ad-text-muted);
+}
+
+/* ---------- Fenêtre d'accueil ---------- */
+
+.welcome {
+  display: flex;
+  height: 100vh;
+}
+
+.welcome-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 248px;
+  flex: none;
+  background: var(--ad-panel);
+  border-right: 1px solid var(--ad-border-strong);
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+  height: var(--ad-topbar-height);
+  padding: 0 var(--ad-space-4);
+  border-bottom: 1px solid var(--ad-border-strong);
+}
+
+.welcome-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: var(--ad-workspace);
+}
+
+.welcome-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.welcome-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-3);
+  height: 36px;
+  padding: 0 var(--ad-space-5);
+  flex: none;
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+  border-top: 1px solid var(--ad-border-strong);
+}
+
+.welcome[data-dropping] .drop-zone {
+  border-color: var(--ad-accent);
+  background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
+}

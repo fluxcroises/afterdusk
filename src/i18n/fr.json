@@ -14,7 +14,8 @@
     "map": "Carte",
     "gear": "Matériel",
     "settings": "Réglages",
-    "availableIn": "Disponible en version {{version}}"
+    "availableIn": "Disponible en version {{version}}",
+    "home": "Accueil"
   },
   "panels": {
     "left": "Panneau de gauche",
@@ -199,7 +200,8 @@
     "window": "Fenêtre",
     "minimize": "Réduire",
     "help": "Aide",
-    "shortcuts": "Raccourcis clavier"
+    "shortcuts": "Raccourcis clavier",
+    "welcome": "Accueil"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -224,5 +226,31 @@
     "libraryNotFound": "Bibliothèque introuvable.",
     "databaseTooNew": "La base a été créée par une version plus récente d'Afterdusk.",
     "importRunning": "Un import est déjà en cours."
+  },
+  "home": {
+    "morning": "Bonjour",
+    "evening": "Bonsoir",
+    "intro": "Importez la journée, triez au clavier, retouchez les meilleures et livrez-les. Vos originaux ne sont jamais modifiés.",
+    "recent": "Activité récente",
+    "lastImport": "Dernier import : {{source}}, {{date}}",
+    "viewAll": "Voir toutes les photos",
+    "addPhotos": "Ajouter des photos",
+    "dropHint": "Insérez une carte mémoire, glissez un dossier dans la fenêtre, ou",
+    "firstStepsTitle": "Pour commencer",
+    "firstSteps": "Choisissez le dossier où Afterdusk rangera vos photos : disque interne, disque externe ou NAS. Vos fichiers y resteront lisibles sans Afterdusk.",
+    "journey": "Le parcours Afterdusk",
+    "journeyText": "Quatre étapes, de la carte mémoire à la livraison.",
+    "available": "Disponible",
+    "steps": {
+      "import": "Copie vérifiée, rangement et sauvegarde, sans jamais toucher la carte.",
+      "cull": "Notes, drapeaux et couleurs au clavier, comparaison côte à côte.",
+      "develop": "Retouche non destructive, presets et synchronisation des réglages.",
+      "deliver": "Export web, Instagram ou impression, filigrane et galerie client."
+    },
+    "yourPhotos": "Vos photos",
+    "recentAlbums": "Albums récents",
+    "interrupted_one": "Un import depuis « {{source}} » a été interrompu : {{count}} fichier reste à copier.",
+    "interrupted_other": "Un import depuis « {{source}} » a été interrompu : {{count}} fichiers restent à copier.",
+    "showOnStartup": "Afficher l'accueil au démarrage"
   }
 }

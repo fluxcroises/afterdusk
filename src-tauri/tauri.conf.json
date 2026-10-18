@@ -16,7 +16,22 @@
         "width": 1280,
         "height": 820,
         "minWidth": 960,
-        "minHeight": 600
+        "minHeight": 600,
+        "backgroundColor": "#17191C",
+        "label": "main",
+        "visible": false,
+        "center": true
+      },
+      {
+        "label": "welcome",
+        "title": "Afterdusk",
+        "width": 1040,
+        "height": 700,
+        "minWidth": 820,
+        "minHeight": 560,
+        "center": true,
+        "visible": false,
+        "backgroundColor": "#17191C"
       }
     ],
     "security": {

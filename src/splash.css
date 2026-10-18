@@ -1,0 +1,88 @@
+/*
+ * Écran de démarrage : le symbole tourne puis le nom apparaît.
+ * Chargé depuis index.html pour s'afficher avant l'interface React.
+ */
+
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: #17191c;
+  color: #f0f2f5;
+  transition: opacity 320ms ease;
+}
+
+#splash.splash-done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Même composition que le logo de la barre supérieure (.brand), en plus grand. */
+.splash-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.splash-logo {
+  width: 64px;
+  height: 64px;
+  background: currentColor;
+  mask: url("./assets/logo.svg") center / contain no-repeat;
+  animation:
+    splash-spin 1.6s cubic-bezier(0.22, 1, 0.36, 1) both,
+    splash-fade 0.5s ease-out both;
+}
+
+/* Police et graisse de .brand-name (var(--ad-font), 600). */
+.splash-name {
+  font:
+    600 40px/1 Inter,
+    "Segoe UI Variable Text",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  animation: splash-name 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+}
+
+@keyframes splash-spin {
+  from {
+    transform: rotate(-200deg) scale(0.85);
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes splash-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splash-name {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo,
+  .splash-name {
+    animation: splash-fade 0.4s ease-out both;
+  }
+}

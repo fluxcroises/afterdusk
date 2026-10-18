@@ -750,3 +750,52 @@ fn record_media(
     item.status = "done".into();
     Ok(media_id)
 }
+
+/// Import terminé, pour l'activité récente de l'accueil.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentImport {
+    pub id: i64,
+    pub source_label: String,
+    pub date: String,
+    pub count: i64,
+    /// Premiers médias importés, pour les miniatures.
+    pub media_ids: Vec<i64>,
+}
+
+/// Derniers imports ayant ajouté des photos, du plus récent au plus ancien.
+pub fn recent_imports(
+    conn: &Connection,
+    library_id: i64,
+    limit: usize,
+    media_per_import: usize,
+) -> Result<Vec<RecentImport>, ImportError> {
+    let mut stmt = conn.prepare(
+        "SELECT i.id, i.source_label, coalesce(i.finished_at, i.started_at),
+                (SELECT count(*) FROM media m WHERE m.import_id = i.id AND m.state = 'normal') AS n
+         FROM imports i
+         WHERE i.library_id = ?1 AND n > 0
+         ORDER BY i.id DESC LIMIT ?2",
+    )?;
+    let mut imports: Vec<RecentImport> = stmt
+        .query_map(params![library_id, limit as i64], |r| {
+            Ok(RecentImport {
+                id: r.get(0)?,
+                source_label: r.get(1)?,
+                date: r.get(2)?,
+                count: r.get(3)?,
+                media_ids: Vec::new(),
+            })
+        })?
+        .collect::<Result<_, _>>()?;
+    let mut media = conn.prepare(
+        "SELECT id FROM media WHERE import_id = ?1 AND state = 'normal'
+         ORDER BY captured_at, path LIMIT ?2",
+    )?;
+    for import in &mut imports {
+        import.media_ids = media
+            .query_map(params![import.id, media_per_import as i64], |r| r.get(0))?
+            .collect::<Result<_, _>>()?;
+    }
+    Ok(imports)
+}

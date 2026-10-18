@@ -77,6 +77,14 @@ export interface CommandError {
   detail: string;
 }
 
+export interface RecentImport {
+  id: number;
+  sourceLabel: string;
+  date: string;
+  count: number;
+  mediaIds: number[];
+}
+
 export interface ImportFinished {
   importId: number;
   outcome: "done" | "interrupted" | null;
@@ -102,6 +110,8 @@ export const api = {
   importResume: (importId: number) => invoke<null>("import_resume", { importId }),
   importCancel: () => invoke<null>("import_cancel"),
   importsResumable: () => invoke<ResumableImport[]>("imports_resumable"),
+  importsRecent: (libraryId: number) => invoke<RecentImport[]>("imports_recent", { libraryId }),
+  appInfo: () => invoke<{ version: string; libraw: string }>("app_info"),
 };
 
 export const events = {

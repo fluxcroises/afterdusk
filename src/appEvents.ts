@@ -1,15 +1,51 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useEffect } from "react";
 import { events } from "./api/core";
 import { useImport } from "./store/import";
+import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
+import { useNavigation } from "./store/navigation";
+import {
+  EVENT_OPEN_MAIN,
+  EVENT_WELCOME_REFRESH,
+  type MainAction,
+  type WindowLabel,
+  openMain,
+  showSelf,
+} from "./windows";
+
+/** Applique dans la fenêtre principale une action venue de l'accueil. */
+async function applyMainAction(action: MainAction): Promise<void> {
+  const imp = useImport.getState();
+  const library = useLibrary.getState();
+  // L'accueil a pu créer une bibliothèque.
+  await imp.loadLibraries();
+  useNavigation.getState().goTo(action.screen);
+  await showSelf();
+  if (action.albumId !== undefined) await library.showAlbum(action.albumId);
+  if (action.mediaId !== undefined) await library.select(action.mediaId);
+  if (action.scanPath) await imp.scanSource(action.scanPath);
+  if (action.resumeImportId !== undefined) await imp.resume(action.resumeImportId);
+}
+
+/** Dossier déposé sur la fenêtre : il devient la source de l'import. */
+function onDrop(label: WindowLabel, path: string): void {
+  if (useImport.getState().running) return;
+  if (label === "welcome") {
+    void openMain({ screen: "import", scanPath: path });
+  } else {
+    useNavigation.getState().goTo("import");
+    void useImport.getState().scanSource(path);
+  }
+}
 
 /**
- * Abonnements de l'application aux événements du cœur, montés une seule fois :
- * progression d'import, aperçus prêts, bibliothèque courante.
+ * Abonnements d'une fenêtre aux événements du cœur, montés une seule fois :
+ * progression d'import, aperçus prêts, dépôt de dossier, échanges entre fenêtres.
  */
-export function useAppEvents(): void {
+export function useAppEvents(label: WindowLabel): void {
   const libraryId = useImport((s) => s.libraryId);
   const running = useImport((s) => s.running);
 
@@ -23,11 +59,24 @@ export function useAppEvents(): void {
       listen<{ mediaId: number }>("preview-ready", (e) =>
         useLibrary.getState().previewReady(e.payload.mediaId),
       ),
+      getCurrentWebview().onDragDropEvent((e) => {
+        const layout = useLayout.getState();
+        if (e.payload.type === "enter" || e.payload.type === "over") {
+          if (!layout.dropping) layout.setDropping(true);
+          return;
+        }
+        layout.setDropping(false);
+        const path = e.payload.type === "drop" ? e.payload.paths[0] : undefined;
+        if (path) onDrop(label, path);
+      }),
+      label === "main"
+        ? listen<MainAction>(EVENT_OPEN_MAIN, (e) => void applyMainAction(e.payload))
+        : listen(EVENT_WELCOME_REFRESH, () => void useImport.getState().loadLibraries()),
     ];
     return () => {
       for (const s of subscriptions) void s.then((unlisten) => unlisten());
     };
-  }, []);
+  }, [label]);
 
   // Recharger la bibliothèque quand elle change ou quand un import se termine.
   useEffect(() => {

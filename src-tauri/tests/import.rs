@@ -472,6 +472,10 @@ fn apercus_et_fiche_apres_import() {
         assert!(media::cached_preview(&cache, m.id, 256).is_some());
     }
 
+    let recent = import::recent_imports(&s.conn, s.library_id, 5, 3).unwrap();
+    assert_eq!(recent.len(), 1);
+    assert_eq!((recent[0].count, recent[0].media_ids.len()), (4, 3));
+
     let albums = media::list_albums(&s.conn, s.library_id).unwrap();
     assert_eq!(albums.iter().map(|a| a.count).sum::<i64>(), 4);
 

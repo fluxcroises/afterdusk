@@ -11,7 +11,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use super::error::{CommandError, CommandResult};
 use super::previews::PreviewQueue;
 use super::{AppState, blocking};
-use crate::import::{self, ImportOptions, ImportOutcome, ResumableImport, scan};
+use crate::import::{self, ImportOptions, ImportOutcome, RecentImport, ResumableImport, scan};
 use crate::metadata::media::MediaFormat;
 
 pub const EVENT_PROGRESS: &str = "import-progress";
@@ -207,4 +207,14 @@ pub fn import_cancel(state: State<'_, AppState>) -> CommandResult<()> {
 pub async fn imports_resumable(state: State<'_, AppState>) -> CommandResult<Vec<ResumableImport>> {
     let conn = state.connect()?;
     blocking(move || Ok(import::resumable_imports(&conn)?)).await
+}
+
+/// Activité récente de l'accueil : derniers imports et leurs premières photos.
+#[tauri::command]
+pub async fn imports_recent(
+    state: State<'_, AppState>,
+    library_id: i64,
+) -> CommandResult<Vec<RecentImport>> {
+    let conn = state.connect()?;
+    blocking(move || Ok(import::recent_imports(&conn, library_id, 5, 24)?)).await
 }

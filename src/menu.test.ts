@@ -15,7 +15,14 @@ describe("barre de menus", () => {
   it("suit l'ordre habituel des logiciels de bureau (Windows)", async () => {
     await i18n.changeLanguage("fr");
     const top = buildMenuItems(i18n.t) as Node[];
-    expect(top.map((m) => m.text)).toEqual(["Fichier", "Édition", "Photo", "Affichage", "Aide"]);
+    expect(top.map((m) => m.text)).toEqual([
+      "Fichier",
+      "Édition",
+      "Photo",
+      "Affichage",
+      "Fenêtre",
+      "Aide",
+    ]);
   });
 
   it("n'a aucun libellé non traduit ni raccourci en double", async () => {
