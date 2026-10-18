@@ -31,6 +31,17 @@ pub fn open(path: &Path) -> Result<Connection, DbError> {
     Ok(conn)
 }
 
+/// Connexion à une base déjà ouverte par [`open`] au démarrage : ni passage en
+/// WAL ni migrations, qui demandent un verrou exclusif. Plusieurs fenêtres et
+/// fils d'aperçus se connectent en même temps sans se gêner.
+pub fn connect(path: &Path) -> Result<Connection, DbError> {
+    let conn = Connection::open(path)?;
+    conn.busy_timeout(Duration::from_secs(5))?;
+    conn.pragma_update(None, "synchronous", "NORMAL")?;
+    conn.pragma_update(None, "foreign_keys", true)?;
+    Ok(conn)
+}
+
 /// Base en mémoire, pour les tests.
 pub fn open_in_memory() -> Result<Connection, DbError> {
     let mut conn = Connection::open_in_memory()?;
@@ -104,6 +115,26 @@ mod tests {
             .unwrap();
         drop(conn);
         assert!(matches!(open(&path), Err(DbError::TooNew { .. })));
+    }
+
+    #[test]
+    fn connexions_simultanees() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("afterdusk.db");
+        drop(open(&path).unwrap());
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let path = path.clone();
+                std::thread::spawn(move || {
+                    let conn = connect(&path).unwrap();
+                    conn.query_row("SELECT count(*) FROM libraries", [], |r| r.get::<_, i64>(0))
+                        .unwrap()
+                })
+            })
+            .collect();
+        for h in handles {
+            assert_eq!(h.join().unwrap(), 0);
+        }
     }
 
     #[test]

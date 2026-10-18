@@ -9,17 +9,21 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { TFunction } from "i18next";
 import { importFromFolder } from "./actions";
 import i18n from "./i18n";
+import { drawsOwnMenus, isMac } from "./platform";
 import { showWelcome } from "./windows";
 import { useLayout } from "./store/layout";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
 
 type Item = MenuItemOptions | PredefinedMenuItemOptions | SubmenuOptions;
 
-const isMac = navigator.userAgent.includes("Mac");
 const separator: PredefinedMenuItemOptions = { item: "Separator" };
 
+export type MenuEntry = Item;
+
 /**
- * Barre de menus native, construite ici pour être traduite par i18next.
+ * Arborescence des menus, construite ici pour être traduite par i18next.
+ * macOS l'affiche dans la barre de menus du système ; sous Windows, elle est
+ * dessinée dans la barre de titre (`components/MenuBar.tsx`).
  * Les commandes pas encore disponibles sont visibles mais grisées, pour que
  * l'on retrouve d'emblée l'organisation des logiciels de bureau habituels.
  * Les raccourcis à une seule touche (P, X, 1 à 5…) restent gérés par
@@ -178,12 +182,142 @@ async function applyMenu(): Promise<void> {
   await menu.setAsAppMenu();
 }
 
-/** Installe la barre de menus et la reconstruit à chaque changement de langue. */
+/** macOS : barre de menus du système, reconstruite à chaque changement de langue. */
 export function installMenu(): void {
-  if (!isTauri()) return;
+  if (!isTauri() || !isMac) return;
   const apply = () => {
     applyMenu().catch((error: unknown) => console.error("menu", error));
   };
   apply();
   i18n.on("languageChanged", apply);
+}
+
+/* ---------- Menus dessinés (Windows) ---------- */
+
+export function isSubmenu(entry: Item): entry is SubmenuOptions {
+  return "items" in entry && Array.isArray(entry.items);
+}
+
+/** Entrées d'un sous-menu ; buildMenuItems n'y met que des options simples. */
+export function children(entry: SubmenuOptions): Item[] {
+  return (entry.items ?? []) as Item[];
+}
+
+export function isPredefined(entry: Item): entry is PredefinedMenuItemOptions {
+  return "item" in entry;
+}
+
+export function isSeparator(entry: Item): boolean {
+  return isPredefined(entry) && entry.item === "Separator";
+}
+
+async function showAbout(): Promise<void> {
+  const { message } = await import("@tauri-apps/plugin-dialog");
+  const { api } = await import("./api/core");
+  const info = await api.appInfo();
+  await message(i18n.t("menu.aboutText", { version: info.version, libraw: info.libraw }), {
+    title: i18n.t("menu.about"),
+    kind: "info",
+  });
+}
+
+/** Exécute une entrée prédéfinie (presse-papiers, fenêtre, à propos). */
+export async function runPredefined(entry: PredefinedMenuItemOptions): Promise<void> {
+  const item = entry.item;
+  if (typeof item === "object") return showAbout();
+  const win = getCurrentWindow();
+  switch (item) {
+    case "Cut":
+    case "Copy":
+    case "Paste":
+      document.execCommand(item.toLowerCase());
+      return;
+    case "SelectAll":
+      document.execCommand("selectAll");
+      return;
+    case "Minimize":
+      return win.minimize();
+    case "CloseWindow":
+    case "Quit":
+      return win.close();
+    default:
+      return;
+  }
+}
+
+/** Raccourci d'une entrée prédéfinie, pour l'affichage. */
+export function predefinedAccelerator(entry: PredefinedMenuItemOptions): string | undefined {
+  switch (entry.item) {
+    case "Cut":
+      return "CmdOrCtrl+X";
+    case "Copy":
+      return "CmdOrCtrl+C";
+    case "Paste":
+      return "CmdOrCtrl+V";
+    case "SelectAll":
+      return "CmdOrCtrl+A";
+    case "CloseWindow":
+      return "CmdOrCtrl+W";
+    case "Quit":
+      return "Alt+F4";
+    default:
+      return undefined;
+  }
+}
+
+/** « CmdOrCtrl+Shift+I » → « Ctrl+Maj+I » (libellés de touches traduits). */
+export function formatAccelerator(accelerator: string, t: TFunction): string {
+  return accelerator
+    .split("+")
+    .map((part) => {
+      switch (part) {
+        case "CmdOrCtrl":
+        case "CommandOrControl":
+          return isMac ? "⌘" : t("keys.ctrl");
+        case "Shift":
+          return t("keys.shift");
+        case "Alt":
+          return t("keys.alt");
+        default:
+          return part;
+      }
+    })
+    .join("+");
+}
+
+/** L'événement clavier correspond-il au raccourci ? */
+export function matchesAccelerator(accelerator: string, e: KeyboardEvent): boolean {
+  const parts = accelerator.split("+");
+  const key = parts.pop() ?? "";
+  const wants = (name: string) => parts.includes(name);
+  const ctrl = wants("CmdOrCtrl") || wants("CommandOrControl") || wants("Ctrl");
+  if (ctrl !== (isMac ? e.metaKey : e.ctrlKey)) return false;
+  if (wants("Shift") !== e.shiftKey || wants("Alt") !== e.altKey) return false;
+  if (/^F\d+$/.test(key)) return e.key === key;
+  if (/^\d$/.test(key)) return e.code === `Digit${key}`;
+  if (key === ",") return e.key === ",";
+  return e.code === `Key${key.toUpperCase()}`;
+}
+
+function* actionable(items: Item[]): Generator<MenuItemOptions> {
+  for (const entry of items) {
+    if (isSubmenu(entry)) yield* actionable(children(entry));
+    else if (!isPredefined(entry)) yield entry as MenuItemOptions;
+  }
+}
+
+/**
+ * Raccourcis des menus dessinés : sans menu natif, c'est l'interface qui les
+ * reconnaît. Renvoie vrai si une commande a été exécutée.
+ */
+export function handleMenuShortcut(e: KeyboardEvent): boolean {
+  if (!drawsOwnMenus) return false;
+  for (const entry of actionable(buildMenuItems(i18n.t))) {
+    if (entry.enabled === false || !entry.accelerator || !entry.action) continue;
+    if (matchesAccelerator(entry.accelerator, e)) {
+      entry.action(entry.id ?? "");
+      return true;
+    }
+  }
+  return false;
 }

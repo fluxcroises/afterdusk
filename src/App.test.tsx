@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
-import { handleShortcut } from "./desktop";
+import { handleMenuShortcut } from "./menu";
 import i18n from "./i18n";
 import { useLayout } from "./store/layout";
 import { useNavigation } from "./store/navigation";
@@ -54,7 +54,7 @@ describe("App", () => {
   it("masque le panneau de gauche avec F7, comme Lightroom", () => {
     render(<App />);
     expect(screen.getByRole("complementary", { name: "Panneau de gauche" })).toBeInTheDocument();
-    handleShortcut(new KeyboardEvent("keydown", { key: "F7" }));
+    handleMenuShortcut(new KeyboardEvent("keydown", { key: "F7" }));
     expect(useLayout.getState().visible.left).toBe(false);
   });
 

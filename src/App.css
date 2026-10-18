@@ -123,25 +123,24 @@ select:disabled {
 .top-bar {
   display: flex;
   align-items: center;
-  gap: var(--ad-space-4);
+  gap: var(--ad-space-2);
   height: var(--ad-topbar-height);
-  padding: 0 var(--ad-space-4);
+  padding-left: var(--ad-space-3);
   background: var(--ad-bg);
   border-bottom: 1px solid var(--ad-border-strong);
   flex: none;
 }
 
-.brand {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ad-space-3);
-  min-width: 0;
+/* macOS : place pour les trois pastilles de la barre de titre transparente. */
+html[data-platform="mac"] .top-bar {
+  padding-left: 84px;
+  padding-right: var(--ad-space-3);
 }
 
 .logo {
-  align-self: center;
   width: 20px;
   height: 20px;
+  flex: none;
   background: currentColor;
   mask: url("./assets/logo.svg") center / contain no-repeat;
 }
@@ -150,18 +149,29 @@ select:disabled {
   font: var(--ad-font-panel-title);
 }
 
-.brand-library {
-  color: var(--ad-text-muted);
-  white-space: nowrap;
+/* Zone de titre : déplace la fenêtre, affiche la bibliothèque comme un titre. */
+.title-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 24px;
+  height: 100%;
   overflow: hidden;
+}
+
+.brand-library {
+  overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
+  color: var(--ad-text-muted);
 }
 
 .module-picker {
   display: flex;
   align-items: center;
   gap: var(--ad-space-3);
-  margin-left: auto;
+  padding-right: var(--ad-space-2);
 }
 
 .module-group {
@@ -704,6 +714,29 @@ button.color-chip:disabled {
   }
 }
 
+/* Fenêtre moyenne : la barre de titre se resserre (menus, modules). */
+@media (max-width: 1280px) {
+  .module {
+    padding: 0 6px;
+    font-size: 13px;
+  }
+
+  .module-picker {
+    gap: var(--ad-space-1);
+  }
+
+  .menu-title {
+    padding: 0 6px;
+  }
+}
+
+/* Fenêtre étroite : le logo seul, comme l'icône de Capture One. */
+@media (max-width: 1180px) {
+  .top-bar .brand-name {
+    display: none;
+  }
+}
+
 /* ---------- Champs de formulaire ---------- */
 
 input[type="text"] {
@@ -1103,11 +1136,11 @@ input[type="checkbox"] {
 
 .brand-home {
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--ad-space-2);
   height: 30px;
   padding: 0 var(--ad-space-2);
-  margin-left: calc(-1 * var(--ad-space-2));
   border-radius: var(--ad-radius-md);
 }
 
@@ -1389,4 +1422,139 @@ input[type="checkbox"] {
 .welcome[data-dropping] .drop-zone {
   border-color: var(--ad-accent);
   background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
+}
+
+/* ---------- Barre de menus dessinée (Windows) ---------- */
+
+.menu-bar {
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: 100%;
+}
+
+.menu {
+  position: relative;
+}
+
+.menu-title {
+  height: 28px;
+  padding: 0 var(--ad-space-2);
+  border-radius: var(--ad-radius-sm);
+  color: var(--ad-text-secondary);
+}
+
+.menu-title:hover,
+.menu-title[aria-expanded="true"] {
+  background: var(--ad-hover);
+  color: var(--ad-text);
+}
+
+.menu-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  min-width: 240px;
+  padding: var(--ad-space-1);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-md);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+.menu-sub {
+  position: relative;
+}
+
+.menu-sub > .menu-list {
+  top: calc(-1 * var(--ad-space-1) - 1px);
+  left: 100%;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-4);
+  width: 100%;
+  height: 26px;
+  padding: 0 var(--ad-space-2) 0 var(--ad-space-3);
+  text-align: left;
+  border-radius: var(--ad-radius-sm);
+  color: var(--ad-text);
+}
+
+.menu-row:hover:not(:disabled),
+.menu-row:focus-visible,
+.menu-row[aria-expanded="true"] {
+  background: var(--ad-hover);
+  outline: none;
+}
+
+.menu-row:disabled {
+  color: var(--ad-text-muted);
+}
+
+.menu-label {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.menu-accelerator {
+  font: var(--ad-font-meta);
+  color: var(--ad-text-muted);
+  white-space: nowrap;
+}
+
+.menu-chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--ad-text-secondary);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: var(--ad-space-1) var(--ad-space-2);
+  background: var(--ad-border);
+}
+
+/* ---------- Boutons de fenêtre (Windows) ---------- */
+
+.window-controls {
+  display: flex;
+  align-self: stretch;
+  flex: none;
+}
+
+.window-control {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  color: var(--ad-text-secondary);
+}
+
+.window-control:hover {
+  background: var(--ad-hover);
+  color: var(--ad-text);
+}
+
+/* Seule exception à la palette : le rouge de fermeture attendu sous Windows. */
+.window-control-close:hover {
+  background: #c42b1c;
+  color: #ffffff;
+}
+
+/* ---------- Barre de titre de l'accueil ---------- */
+
+.welcome-titlebar {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  height: var(--ad-topbar-height);
+  flex: none;
+  border-bottom: 1px solid var(--ad-border-strong);
+}
+
+html[data-platform="mac"] .welcome-brand {
+  padding-left: 84px;
 }

@@ -1,0 +1,40 @@
+{
+  "app": {
+    "windows": [
+      {
+        "title": "Afterdusk",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 1024,
+        "minHeight": 600,
+        "backgroundColor": "#17191C",
+        "label": "main",
+        "visible": false,
+        "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 16,
+          "y": 22
+        }
+      },
+      {
+        "label": "welcome",
+        "title": "Afterdusk",
+        "width": 1040,
+        "height": 700,
+        "minWidth": 820,
+        "minHeight": 560,
+        "center": true,
+        "visible": false,
+        "backgroundColor": "#17191C",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 16,
+          "y": 22
+        }
+      }
+    ]
+  }
+}

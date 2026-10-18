@@ -201,7 +201,9 @@
     "minimize": "Minimize",
     "help": "Help",
     "shortcuts": "Keyboard Shortcuts",
-    "welcome": "Welcome Screen"
+    "welcome": "Welcome Screen",
+    "aboutText": "Afterdusk {{version}}\nLibRaw {{libraw}}\n\nFree software under the GPL v3 license.",
+    "menuBar": "Menu bar"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -252,5 +254,16 @@
     "interrupted_one": "An import from “{{source}}” was interrupted: {{count}} file left to copy.",
     "interrupted_other": "An import from “{{source}}” was interrupted: {{count}} files left to copy.",
     "showOnStartup": "Show at startup"
+  },
+  "keys": {
+    "ctrl": "Ctrl",
+    "shift": "Shift",
+    "alt": "Alt"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore Down",
+    "close": "Close"
   }
 }

@@ -64,7 +64,7 @@ impl PreviewQueue {
 }
 
 fn worker(app: &AppHandle, db_path: &Path, cache_root: &Path, receiver: &Mutex<Receiver<i64>>) {
-    let Ok(conn) = db::open(db_path) else {
+    let Ok(conn) = db::connect(db_path) else {
         return;
     };
     loop {

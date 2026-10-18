@@ -5,6 +5,7 @@ import App from "./App";
 import { installDesktopBehavior } from "./desktop";
 import "./i18n";
 import { installMenu } from "./menu";
+import { applyPlatform } from "./platform";
 import { hideSplash, removeSplash } from "./splash";
 import { WelcomeApp } from "./welcome/WelcomeApp";
 import { currentWindow, showSelf, welcomeOnStartup } from "./windows";
@@ -14,7 +15,8 @@ const label = currentWindow();
 // l'autre reste masquée jusqu'à ce qu'on la demande.
 const opensFirst = (label === "welcome") === welcomeOnStartup();
 
-installDesktopBehavior();
+applyPlatform();
+installDesktopBehavior(label);
 if (label === "main") installMenu();
 if (opensFirst) void showSelf();
 

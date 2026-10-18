@@ -309,7 +309,9 @@ export function ImportStep() {
       {error && (
         <div className="banner banner-error" role="alert">
           <TriangleAlert aria-hidden="true" strokeWidth={1.75} />
-          <span>{t(`errors.${error.code}`, { defaultValue: t("errors.internal") })}</span>
+          <span title={error.detail}>
+            {t(`errors.${error.code}`, { defaultValue: t("errors.internal") })}
+          </span>
           <button type="button" className="button button-small" onClick={dismissError}>
             {t("import.dismiss")}
           </button>

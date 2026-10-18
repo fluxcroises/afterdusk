@@ -40,7 +40,7 @@ impl AppState {
 
     /// Une connexion par appel : SQLite en WAL le permet sans verrou applicatif.
     pub fn connect(&self) -> CommandResult<Connection> {
-        Ok(db::open(&self.db_path)?)
+        Ok(db::connect(&self.db_path)?)
     }
 }
 

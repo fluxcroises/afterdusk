@@ -201,7 +201,9 @@
     "minimize": "Réduire",
     "help": "Aide",
     "shortcuts": "Raccourcis clavier",
-    "welcome": "Accueil"
+    "welcome": "Accueil",
+    "aboutText": "Afterdusk {{version}}\nLibRaw {{libraw}}\n\nLogiciel libre sous licence GPL v3.",
+    "menuBar": "Barre de menus"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -252,5 +254,16 @@
     "interrupted_one": "Un import depuis « {{source}} » a été interrompu : {{count}} fichier reste à copier.",
     "interrupted_other": "Un import depuis « {{source}} » a été interrompu : {{count}} fichiers restent à copier.",
     "showOnStartup": "Afficher l'accueil au démarrage"
+  },
+  "keys": {
+    "ctrl": "Ctrl",
+    "shift": "Maj",
+    "alt": "Alt"
+  },
+  "window": {
+    "minimize": "Réduire",
+    "maximize": "Agrandir",
+    "restore": "Niveau inférieur",
+    "close": "Fermer"
   }
 }

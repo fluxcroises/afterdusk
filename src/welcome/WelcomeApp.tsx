@@ -17,6 +17,8 @@ import { previewUrl } from "../api/previews";
 import { useAppEvents } from "../appEvents";
 import { ListRow, PanelSection } from "../components/PanelSection";
 import { Thumbnail } from "../components/Thumbnail";
+import { WindowControls } from "../components/WindowControls";
+import { drawsOwnMenus } from "../platform";
 import { useImport } from "../store/import";
 import { useLayout } from "../store/layout";
 import { useLibrary } from "../store/library";
@@ -197,7 +199,7 @@ function Sidebar() {
 
   return (
     <aside className="welcome-sidebar" aria-label={t("panels.left")}>
-      <div className="welcome-brand">
+      <div className="welcome-brand" data-tauri-drag-region>
         <span className="logo" aria-hidden="true" />
         <span className="brand-name">{t("app.name")}</span>
       </div>
@@ -248,6 +250,9 @@ export function WelcomeApp() {
     <div className="welcome" data-dropping={dropping || undefined}>
       <Sidebar />
       <div className="welcome-main">
+        <div className="welcome-titlebar" data-tauri-drag-region>
+          {drawsOwnMenus && <WindowControls />}
+        </div>
         <main className="welcome-scroll">
           <div className="home">
             <h1 className="home-title">{t(greetingKey())}</h1>
