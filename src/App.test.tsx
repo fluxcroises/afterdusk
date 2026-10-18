@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
 import { handleShortcut } from "./desktop";
@@ -61,6 +61,7 @@ describe("App", () => {
   it("bascule en anglais", async () => {
     await i18n.changeLanguage("en");
     render(<App />);
-    expect(screen.getByRole("button", { name: "Library" })).toBeInTheDocument();
+    const modules = screen.getByRole("navigation", { name: "Modules" });
+    expect(within(modules).getByRole("button", { name: "Library" })).toBeInTheDocument();
   });
 });

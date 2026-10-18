@@ -378,3 +378,63 @@ fn bibliotheque_hors_ligne() {
         Err(ImportError::LibraryOffline(_))
     ));
 }
+
+/// 500 fichiers, coupure au milieu, reprise : aucun fichier perdu ni en double.
+#[test]
+fn cinq_cents_fichiers_sans_perte() {
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("carte").join("DCIM").join("100_FUJI");
+    fs::create_dir_all(&card).unwrap();
+    for i in 0..500u32 {
+        // Contenus distincts pour des empreintes distinctes.
+        let mut data = vec![0u8; 20_000];
+        data[..4].copy_from_slice(&i.to_le_bytes());
+        fs::write(card.join(format!("DSCF{i:04}.RAF")), data).unwrap();
+    }
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let mut conn = db::open(&dir.path().join("afterdusk.db")).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let files: Vec<PathBuf> = scan::scan(&card)
+        .unwrap()
+        .files
+        .into_iter()
+        .map(|f| f.path)
+        .collect();
+    assert_eq!(files.len(), 500);
+    let opts = ImportOptions {
+        library_id: lib.id,
+        source_path: card.clone(),
+        source_label: "Carte".into(),
+        files,
+        album_name: "Volume".into(),
+        album_per_day: false,
+        rename: false,
+        backup: false,
+        keywords: vec![],
+        creator: None,
+        rights: None,
+    };
+    let id = import::plan(&mut conn, &opts).unwrap();
+
+    let cancel = AtomicBool::new(false);
+    let outcome = import::run(&mut conn, id, &cancel, |p| {
+        if p.processed == 250 {
+            cancel.store(true, Ordering::SeqCst);
+        }
+    })
+    .unwrap();
+    assert_eq!(outcome, ImportOutcome::Interrupted);
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+
+    assert_eq!(count(&conn, "SELECT count(*) FROM media"), 500);
+    assert_eq!(
+        count(&conn, "SELECT count(DISTINCT content_hash) FROM media"),
+        500
+    );
+    let copies = walkdir(&root)
+        .into_iter()
+        .filter(|p| p.extension().is_some_and(|e| e == "RAF"))
+        .count();
+    assert_eq!(copies, 500);
+}

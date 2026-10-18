@@ -7,6 +7,7 @@ import {
 } from "@tauri-apps/api/menu";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { TFunction } from "i18next";
+import { importFromFolder } from "./actions";
 import i18n from "./i18n";
 import { useLayout } from "./store/layout";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
@@ -56,7 +57,12 @@ export function buildMenuItems(t: TFunction): Item[] {
         accelerator: "CmdOrCtrl+Shift+I",
         action: () => nav.goTo("import"),
       },
-      { id: "import-folder", text: t("menu.importFolder"), enabled: false },
+      {
+        id: "import-folder",
+        text: t("menu.importFolder"),
+        accelerator: "CmdOrCtrl+Shift+O",
+        action: () => void importFromFolder(),
+      },
       separator,
       { id: "new-library", text: t("menu.newLibrary"), enabled: false },
       separator,

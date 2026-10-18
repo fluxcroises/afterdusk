@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "Afterdusk",
-    "noLibrary": "Aucune bibliothèque"
+    "noLibrary": "Aucune bibliothèque",
+    "libraryOffline": "{{name}} (hors ligne)"
   },
   "modules": {
     "label": "Modules",
@@ -55,7 +56,6 @@
     "devices": "Cartes et boîtiers",
     "noDevice": "Aucune carte ni aucun boîtier détecté.",
     "folders": "Dossiers",
-    "noFolder": "Fichier > Importer depuis un dossier… pour choisir un dossier.",
     "destination": "Destination",
     "album": "Album",
     "folderTemplate": "Rangement",
@@ -69,11 +69,43 @@
     "metadata": "Métadonnées",
     "copyright": "Copyright",
     "keywords": "Mots-clés",
-    "start": "Importer",
-    "selectedCount_one": "{{count}} photo sélectionnée",
-    "selectedCount_other": "{{count}} photos sélectionnées",
     "emptyTitle": "Insérez une carte mémoire ou branchez un boîtier",
-    "emptyText": "Les photos et vidéos apparaîtront ici, groupées par jour. Celles déjà importées seront grisées."
+    "emptyText": "Les photos et vidéos apparaîtront ici, groupées par jour. Celles déjà importées seront grisées.",
+    "chooseFolder": "Choisir un dossier…",
+    "rescan": "Analyser à nouveau",
+    "interrupted": "Imports interrompus",
+    "remaining_one": " · {{count}} restant sur {{total}}",
+    "remaining_other": " · {{count}} restants sur {{total}}",
+    "resume": "Reprendre",
+    "library": "Bibliothèque",
+    "libraryName": "Bibliothèque",
+    "noLibrary": "Aucune bibliothèque. Choisissez le dossier où ranger vos photos.",
+    "newLibrary": "Nouvelle bibliothèque…",
+    "albumPlaceholder": "Nom de l'album",
+    "albumPerDay": "Un album par jour",
+    "renameFiles": "Renommer les fichiers",
+    "defaultRenameTemplate": "AAAAMMJJ_HHMMSS_Boîtier_0001",
+    "makeBackup": "Copie de sauvegarde",
+    "keywordsPlaceholder": "séparés par des virgules",
+    "progress": "{{done}} / {{total}}",
+    "stop": "Arrêter",
+    "startCount_one": "Importer {{count}} photo",
+    "startCount_other": "Importer {{count}} photos",
+    "selectedOf_one": "{{count}} sélectionnée sur {{total}}",
+    "selectedOf_other": "{{count}} sélectionnées sur {{total}}",
+    "copying": "Copie et vérification de {{file}}…",
+    "summary": "Import terminé : {{imported}} importée(s), {{duplicates}} déjà présente(s), {{failed}} en échec.",
+    "summaryInterrupted": "Import interrompu : {{imported}} importée(s). Il pourra être repris.",
+    "selectAll": "Tout sélectionner",
+    "selectNone": "Ne rien sélectionner",
+    "scanning": "Analyse de la source…",
+    "sourceEmpty": "Aucune photo dans ce dossier",
+    "dismiss": "Fermer",
+    "alreadyImported": "Déjà importée",
+    "dayCount_one": "{{count}} photo",
+    "dayCount_other": "{{count}} photos",
+    "dayImported_one": "{{count}} déjà importée",
+    "dayImported_other": "{{count}} déjà importées"
   },
   "catalog": {
     "title": "Catalogue",
@@ -179,5 +211,17 @@
     "fit": "Ajuster",
     "full": "100 %",
     "empty": "Aucune photo"
+  },
+  "errors": {
+    "internal": "Une erreur inattendue est survenue.",
+    "libraryOffline": "La bibliothèque est hors ligne : rebranchez le disque.",
+    "sourceUnavailable": "La source n'est plus accessible. Rebranchez la carte pour reprendre l'import.",
+    "unsupportedFile": "Un fichier sélectionné n'est pas un média reconnu.",
+    "sourceUnreadable": "Impossible de lire la source.",
+    "invalidTemplate": "Le modèle de nommage n'est pas valide.",
+    "missingFolder": "Ce dossier n'existe pas ou n'est pas accessible.",
+    "libraryNotFound": "Bibliothèque introuvable.",
+    "databaseTooNew": "La base a été créée par une version plus récente d'Afterdusk.",
+    "importRunning": "Un import est déjà en cours."
   }
 }

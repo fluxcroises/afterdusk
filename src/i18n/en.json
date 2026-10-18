@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "Afterdusk",
-    "noLibrary": "No library"
+    "noLibrary": "No library",
+    "libraryOffline": "{{name}} (offline)"
   },
   "modules": {
     "label": "Modules",
@@ -55,7 +56,6 @@
     "devices": "Cards and cameras",
     "noDevice": "No memory card or camera detected.",
     "folders": "Folders",
-    "noFolder": "File > Import from Folder… to choose a folder.",
     "destination": "Destination",
     "album": "Album",
     "folderTemplate": "Organize",
@@ -69,11 +69,43 @@
     "metadata": "Metadata",
     "copyright": "Copyright",
     "keywords": "Keywords",
-    "start": "Import",
-    "selectedCount_one": "{{count}} photo selected",
-    "selectedCount_other": "{{count}} photos selected",
     "emptyTitle": "Insert a memory card or connect a camera",
-    "emptyText": "Photos and videos will appear here, grouped by day. Those already imported will be dimmed."
+    "emptyText": "Photos and videos will appear here, grouped by day. Those already imported will be dimmed.",
+    "chooseFolder": "Choose Folder…",
+    "rescan": "Rescan",
+    "interrupted": "Interrupted imports",
+    "remaining_one": " · {{count}} of {{total}} left",
+    "remaining_other": " · {{count}} of {{total}} left",
+    "resume": "Resume",
+    "library": "Library",
+    "libraryName": "Library",
+    "noLibrary": "No library yet. Choose the folder where your photos will be stored.",
+    "newLibrary": "New Library…",
+    "albumPlaceholder": "Album name",
+    "albumPerDay": "One album per day",
+    "renameFiles": "Rename files",
+    "defaultRenameTemplate": "YYYYMMDD_HHMMSS_Camera_0001",
+    "makeBackup": "Make a backup copy",
+    "keywordsPlaceholder": "comma separated",
+    "progress": "{{done}} / {{total}}",
+    "stop": "Stop",
+    "startCount_one": "Import {{count}} photo",
+    "startCount_other": "Import {{count}} photos",
+    "selectedOf_one": "{{count}} of {{total}} selected",
+    "selectedOf_other": "{{count}} of {{total}} selected",
+    "copying": "Copying and verifying {{file}}…",
+    "summary": "Import complete: {{imported}} imported, {{duplicates}} already present, {{failed}} failed.",
+    "summaryInterrupted": "Import interrupted: {{imported}} imported. It can be resumed.",
+    "selectAll": "Select All",
+    "selectNone": "Select None",
+    "scanning": "Scanning source…",
+    "sourceEmpty": "No photos in this folder",
+    "dismiss": "Dismiss",
+    "alreadyImported": "Already imported",
+    "dayCount_one": "{{count}} photo",
+    "dayCount_other": "{{count}} photos",
+    "dayImported_one": "{{count}} already imported",
+    "dayImported_other": "{{count}} already imported"
   },
   "catalog": {
     "title": "Catalog",
@@ -179,5 +211,17 @@
     "fit": "Fit",
     "full": "100%",
     "empty": "No photo"
+  },
+  "errors": {
+    "internal": "An unexpected error occurred.",
+    "libraryOffline": "The library is offline: reconnect the drive.",
+    "sourceUnavailable": "The source is no longer available. Reconnect the card to resume the import.",
+    "unsupportedFile": "A selected file is not a supported media file.",
+    "sourceUnreadable": "The source cannot be read.",
+    "invalidTemplate": "The naming template is not valid.",
+    "missingFolder": "This folder does not exist or cannot be accessed.",
+    "libraryNotFound": "Library not found.",
+    "databaseTooNew": "The database was created by a newer version of Afterdusk.",
+    "importRunning": "An import is already running."
   }
 }

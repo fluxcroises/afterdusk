@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Permissions de la fen\u00c3\u00aatre principale",
   "windows": ["main"],
-  "permissions": ["core:default", "core:window:allow-set-fullscreen"]
+  "permissions": ["core:default", "core:window:allow-set-fullscreen", "dialog:allow-open"]
 }
