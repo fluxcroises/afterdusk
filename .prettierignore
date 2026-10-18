@@ -1,0 +1,10 @@
+dist
+node_modules
+src-tauri/target
+src-tauri/gen
+test-assets
+package-lock.json
+docs/cahier-des-charges.md
+src-tauri/libraw-sys/LibRaw
+CLAUDE.md
+docs/charte-graphique.md

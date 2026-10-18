@@ -1,0 +1,36 @@
+{
+  "source": "https://raw.pixls.us",
+  "license": "CC0 1.0 (raw.pixls.us)",
+  "files": [
+    {
+      "name": "fujifilm_x-t3.RAF",
+      "url": "https://raw.pixls.us/data/Fujifilm/X-T3/AFXT2720.RAF",
+      "sha256": "24abd27b4a200f3170ea1579672944b807d0eb35bf21422a3937bb644f27f2eb"
+    },
+    {
+      "name": "canon_eos_r6.CR3",
+      "url": "https://raw.pixls.us/data/Canon/EOS%20R6/Canon_EOS_R6_RAW_ISO_100_nocrop_nodual.CR3",
+      "sha256": "81fab349ae9080fd0172583b7fd5ea36806e95ffa434909d2ccc6527dde34ee6"
+    },
+    {
+      "name": "nikon_z6.NEF",
+      "url": "https://raw.pixls.us/data/Nikon/Z%206/DSC_0750.NEF",
+      "sha256": "b4cdb8ecf8a971ec023dd242251c6cbfb19966914e37c2311dc9813a7ab5e15f"
+    },
+    {
+      "name": "sony_ilce-7m3.ARW",
+      "url": "https://raw.pixls.us/data/Sony/ILCE-7M3/_DSC0009.ARW",
+      "sha256": "250784580ea527442c09004417bb0eead484f2bf3ee8f9121a776ac65bb50d0f"
+    },
+    {
+      "name": "panasonic_dc-g9.RW2",
+      "url": "https://raw.pixls.us/data/Panasonic/DC-G9/P1000475.RW2",
+      "sha256": "7c24fefb1f73ad45c42a0be0078e15b7e91deab1d623efceebfc3c4d0d06135c"
+    },
+    {
+      "name": "ricoh_gr-iii.DNG",
+      "url": "https://raw.pixls.us/data/Ricoh/GR%20III/R0000357.DNG",
+      "sha256": "05513ee72f7cac4165534c9f64995412084f414a033c80c473c79fd94154292e"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "app": {
+    "name": "Afterdusk"
+  },
+  "steps": {
+    "label": "Étapes",
+    "import": "Importer",
+    "cull": "Trier",
+    "develop": "Retoucher",
+    "deliver": "Livrer"
+  },
+  "views": {
+    "label": "Vues",
+    "library": "Bibliothèque",
+    "map": "Carte",
+    "gear": "Matériel",
+    "settings": "Réglages"
+  },
+  "placeholder": {
+    "comingSoon": "Cet écran arrive dans la version {{version}}."
+  }
+}

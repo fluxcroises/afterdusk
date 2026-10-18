@@ -1,0 +1,22 @@
+{
+  "app": {
+    "name": "Afterdusk"
+  },
+  "steps": {
+    "label": "Steps",
+    "import": "Import",
+    "cull": "Cull",
+    "develop": "Develop",
+    "deliver": "Deliver"
+  },
+  "views": {
+    "label": "Views",
+    "library": "Library",
+    "map": "Map",
+    "gear": "Gear",
+    "settings": "Settings"
+  },
+  "placeholder": {
+    "comingSoon": "This screen is coming in version {{version}}."
+  }
+}

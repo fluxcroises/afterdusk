@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Échantillons RAW (cache)
+        uses: actions/cache@v4
+        with:
+          path: |
+            test-assets/*
+            !test-assets/manifest.json
+          key: test-assets-${{ hashFiles('test-assets/manifest.json') }}
+
+      - name: Télécharger les échantillons manquants
+        run: node scripts/fetch-test-assets.mjs
+
+      - name: Dépendances de l'interface
+        run: npm ci
+
+      - name: Interface — format, lint, types, tests
+        run: |
+          npm run format:check
+          npm run lint
+          npm run typecheck
+          npm test
+
+      - name: Cœur — cargo fmt
+        working-directory: src-tauri
+        run: cargo fmt --all --check
+
+      - name: Cœur — cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Cœur — cargo test
+        working-directory: src-tauri
+        run: cargo test --workspace
+
+      - name: Application — compilation Tauri
+        run: npm run tauri build -- --debug --no-bundle
