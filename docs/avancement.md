@@ -175,4 +175,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 
 - Sur une carte ou un boîtier (dossier `DCIM` à la racine), seul `DCIM` est analysé (norme DCF). Les vignettes JPEG que les boîtiers Sony écrivent pour leurs vidéos (`PRIVATE/M4ROOT/THMBNL/C0002T01.JPG`) apparaissaient comme des photos ; les dossiers `THMBNL` sont aussi ignorés dans un dossier quelconque.
 - Les photos en hauteur étiraient leur case (et toute la rangée) dans la grille d'import : toutes les miniatures s'inscrivent désormais dans un cadre 3:2, photo entière.
-- Paires reconnues sur la carte (« DSC00028.ARW + JPG ») ; 439 déclenchements proposés.
+- Revérifié dans l'application compilée sur la carte de l'utilisateur : « Carte SONY (I:) », photos en hauteur inscrites dans le cadre, paires reconnues, 375 déclenchements proposés au lieu de 439 (64 vignettes de vidéos écartées).
