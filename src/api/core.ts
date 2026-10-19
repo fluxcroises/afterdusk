@@ -115,7 +115,7 @@ export const api = {
   importCancel: () => invoke<null>("import_cancel"),
   importsResumable: () => invoke<ResumableImport[]>("imports_resumable"),
   importsRecent: (libraryId: number) => invoke<RecentImport[]>("imports_recent", { libraryId }),
-  appInfo: () => invoke<{ version: string; libraw: string }>("app_info"),
+  appInfo: () => invoke<AppInfo>("app_info"),
   librarySetBackup: (id: number, backup: string | null) =>
     invoke<Library>("library_set_backup", { id, backup }),
   librarySetTemplates: (id: number, folderTemplate: string, renameTemplate: string | null) =>
@@ -128,6 +128,17 @@ export const api = {
   identityGet: () => invoke<Identity>("identity_get"),
   identitySet: (identity: Identity) => invoke<Identity>("identity_set", { identity }),
 };
+
+/** Versions d'Afterdusk et de ses composants (« À propos », informations système). */
+export interface AppInfo {
+  version: string;
+  libraw: string;
+  sqlite: string;
+  tauri: string;
+  webview: string | null;
+  os: string;
+  arch: string;
+}
 
 /** Bibliothèque hors ligne : notes en attente d'écriture et dernier passage du disque. */
 export interface OfflineInfo {

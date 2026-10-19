@@ -253,7 +253,6 @@
     "help": "Aide",
     "shortcuts": "Raccourcis clavier",
     "welcome": "Accueil",
-    "aboutText": "Afterdusk {{version}}\nLibRaw {{libraw}}\n\nLogiciel libre sous licence GPL v3.\nPhoto d'accueil : Cabourg, © Lewis Bedar.",
     "menuBar": "Barre de menus",
     "noRating": "Aucune note",
     "noFlag": "Sans drapeau",
@@ -455,5 +454,17 @@
     "lastSeen": "Vu pour la dernière fois le {{date}}.",
     "back": "« {{name}} » est de nouveau disponible.",
     "importDisabled": "La bibliothèque est hors ligne : rebranchez le disque pour importer."
+  },
+  "about": {
+    "version": "Version {{version}}",
+    "copyright": "© 2026 Lewis Bedar et les contributeurs d'Afterdusk.",
+    "components": "Composants",
+    "photo": "Coucher de soleil à Cabourg, photo © Lewis Bedar, tous droits réservés.",
+    "notice": "Afterdusk est un logiciel libre : vous pouvez le redistribuer et le modifier selon les termes de la licence publique générale GNU, version 3. Il est fourni sans aucune garantie.",
+    "ok": "OK",
+    "license": "Licence…",
+    "systemInfo": "Informations système…",
+    "copied": "Copiées dans le presse-papiers",
+    "publicDomain": "domaine public"
   }
 }

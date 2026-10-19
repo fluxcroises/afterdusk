@@ -15,7 +15,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
 - [x] Corbeille interne avec restauration et vidage après 30 jours
 - [x] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
-- [ ] Bibliothèque sur disque externe débranché consultable via le cache
+- [x] Bibliothèque sur disque externe débranché consultable via le cache
 - [x] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
 - [x] Interface en français et en anglais
 
@@ -205,3 +205,9 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Hors ligne, la bibliothèque reste consultable : grille, albums, filtres, fiche et aperçus en cache ; les notes, drapeaux et couleurs sont posés en base et leurs XMP attendent le disque. Bandeau « « Disque externe » est hors ligne. Rebranchez le disque (X:\Photos) pour importer, supprimer ou zoomer à 100 %. Vous pouvez parcourir et noter vos photos. 1 note sera écrite dans son XMP au retour du disque. Vu pour la dernière fois le … », dans la fenêtre principale et l'accueil ; « … est de nouveau disponible » à son retour. Import désactivé tant que le disque manque.
 - Test d'intégration : bibliothèque débranchée parcourue (liste, aperçus en cache, fiche, pas de zoom 100 %), note posée et XMP en attente, corbeille et import refusés, puis disque rebranché : XMP écrit, originaux identiques (empreintes).
 - Vérifié dans l'application compilée sous Windows, avec une bibliothèque sur un lecteur virtuel `X:` (base de l'utilisateur mise de côté puis remise) : bandeau moins de 4 s après le débranchement, miniatures toujours affichées, note de 5 étoiles posée hors ligne ; au rebranchement, message de retour et XMP écrit 3,4 s plus tard.
+- Critère « Bibliothèque sur disque externe débranché consultable via le cache » coché : CI verte sur Windows et macOS (run 39285661736).
+
+### 2026-10-19 (suite) : boîte « À propos »
+
+- Aide > À propos d'Afterdusk (menu Afterdusk sur Mac, à la place du panneau standard du système) ouvre une boîte dessinée par l'application, sur le modèle des « À propos » des logiciels de bureau : bande photo à gauche (Cabourg, cadrée sur les deux silhouettes) avec le logo posé dessus ; à droite la version, le copyright, les composants et leur licence (LibRaw LGPL 2.1, XMP Toolkit BSD 3, SQLite domaine public, Tauri MIT / Apache 2.0, React MIT, Lucide ISC), le crédit de la photo et l'avis de licence GPL v3 ; boutons OK, Licence… (texte complet de la GPL) et Informations système… (version, système, WebView, composants copiés dans le presse-papiers pour un signalement).
+- Vérifié dans l'application compilée sous Windows : ouverture depuis le menu Aide, licence, copie des informations système. Non vérifié sur Mac.

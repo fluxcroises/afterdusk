@@ -2515,3 +2515,138 @@ input[type="radio"] {
 .offline-last-seen {
   color: var(--ad-text-secondary);
 }
+
+/* ---------- À propos ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 55%);
+}
+
+/* Comme les boîtes « À propos » des logiciels de bureau : bande photo à gauche. */
+.about-dialog {
+  display: flex;
+  width: min(640px, calc(100vw - 48px));
+  height: min(440px, calc(100vh - 48px));
+  overflow: hidden;
+  background: var(--ad-panel);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-lg);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 45%);
+}
+
+.about-strip {
+  position: relative;
+  flex: none;
+  width: 150px;
+  background: var(--ad-bg);
+}
+
+.about-strip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Les deux silhouettes du coucher de soleil. */
+  object-position: 57% center;
+}
+
+/* Le logo posé sur la photo, en haut, sur un léger dégradé. */
+.about-strip::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 120px;
+  background: linear-gradient(rgb(0 0 0 / 55%), transparent);
+}
+
+.about-logo {
+  position: absolute;
+  top: var(--ad-space-4);
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  color: #fff;
+  transform: translateX(-50%);
+}
+
+.about-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ad-space-3);
+  min-width: 0;
+  padding: var(--ad-space-4) var(--ad-space-5);
+}
+
+.about-body p,
+.about-body h3,
+.about-body ul {
+  margin: 0;
+}
+
+.about-title {
+  margin: 0 0 var(--ad-space-1);
+  font-family: var(--ad-font);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.about-muted {
+  color: var(--ad-text-secondary);
+}
+
+.about-components {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  min-height: 0;
+}
+
+.about-components h3 {
+  font: var(--ad-font-panel-title);
+}
+
+.about-components ul {
+  padding: 0;
+  list-style: none;
+}
+
+.about-license {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--ad-space-2);
+  overflow: auto;
+  font-size: 11px;
+  white-space: pre-wrap;
+  background: var(--ad-inset);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+}
+
+.about-footer {
+  display: flex;
+  gap: var(--ad-space-4);
+  align-items: flex-end;
+  padding-top: var(--ad-space-3);
+  border-top: 1px solid var(--ad-border);
+}
+
+.about-notice {
+  flex: 1;
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+}
+
+.about-buttons {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  width: 190px;
+}

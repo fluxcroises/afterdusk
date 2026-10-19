@@ -48,10 +48,19 @@ impl AppState {
     }
 }
 
+/// Version d'Afterdusk et de ses composants, pour « À propos » et les
+/// informations système jointes à un signalement de bogue.
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppInfo {
     pub version: &'static str,
     pub libraw: String,
+    pub sqlite: &'static str,
+    pub tauri: &'static str,
+    /// Moteur d'affichage : WebView2 sous Windows, WebKit sous macOS.
+    pub webview: Option<String>,
+    pub os: &'static str,
+    pub arch: &'static str,
 }
 
 #[tauri::command]
@@ -59,6 +68,11 @@ pub fn app_info() -> AppInfo {
     AppInfo {
         version: env!("CARGO_PKG_VERSION"),
         libraw: crate::raw::libraw_version(),
+        sqlite: rusqlite::version(),
+        tauri: tauri::VERSION,
+        webview: tauri::webview_version().ok(),
+        os: std::env::consts::OS,
+        arch: std::env::consts::ARCH,
     }
 }
 

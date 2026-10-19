@@ -10,7 +10,8 @@ import type { TFunction } from "i18next";
 import { importFromFolder } from "./actions";
 import i18n from "./i18n";
 import { drawsOwnMenus, isMac } from "./platform";
-import { showWelcome, toggleSecondary } from "./windows";
+import { showSelf, showWelcome, toggleSecondary } from "./windows";
+import { useAbout } from "./store/about";
 import { purgeSelection, trashRejected } from "./trash";
 import { focusSearch } from "./search";
 import { useLayout } from "./store/layout";
@@ -65,10 +66,21 @@ export function buildMenuItems(t: TFunction): Item[] {
     action: () => nav.goTo("settings"),
   };
 
+  // Boîte « À propos » d'Afterdusk, la même sur Windows et macOS (et non le
+  // panneau standard du système).
+  const about: MenuItemOptions = {
+    id: "about",
+    text: t("menu.about"),
+    action: () => {
+      void showSelf();
+      useAbout.getState().show();
+    },
+  };
+
   const appMenu: SubmenuOptions = {
     text: t("menu.app"),
     items: [
-      { item: { About: null }, text: t("menu.about") },
+      about,
       separator,
       preferences,
       separator,
@@ -318,7 +330,7 @@ export function buildMenuItems(t: TFunction): Item[] {
     text: t("menu.help"),
     items: [
       { id: "shortcuts", text: t("menu.shortcuts"), enabled: false },
-      ...(isMac ? [] : [separator, { item: { About: null }, text: t("menu.about") }]),
+      ...(isMac ? [] : [separator, about]),
     ],
   };
 
@@ -386,20 +398,13 @@ export function isSeparator(entry: Item): boolean {
   return isPredefined(entry) && entry.item === "Separator";
 }
 
-async function showAbout(): Promise<void> {
-  const { message } = await import("@tauri-apps/plugin-dialog");
-  const { api } = await import("./api/core");
-  const info = await api.appInfo();
-  await message(i18n.t("menu.aboutText", { version: info.version, libraw: info.libraw }), {
-    title: i18n.t("menu.about"),
-    kind: "info",
-  });
-}
-
 /** Exécute une entrée prédéfinie (presse-papiers, fenêtre, à propos). */
 export async function runPredefined(entry: PredefinedMenuItemOptions): Promise<void> {
   const item = entry.item;
-  if (typeof item === "object") return showAbout();
+  if (typeof item === "object") {
+    useAbout.getState().show();
+    return;
+  }
   const win = getCurrentWindow();
   switch (item) {
     case "Cut":
