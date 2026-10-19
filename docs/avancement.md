@@ -14,7 +14,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
 - [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
 - [x] Corbeille interne avec restauration et vidage après 30 jours
-- [ ] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
+- [x] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
 - [ ] Bibliothèque sur disque externe débranché consultable via le cache
 - [ ] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
 - [ ] Interface en français et en anglais
@@ -123,3 +123,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur (é
 - Vue Albums dans Bibliothèque (bouton à gauche des vues) : couvertures, dates, lieu, nombre de photos ; tri par date, nom ou lieu ; la recherche porte alors sur les albums ; un clic ouvre l'album.
 - Tests : filtres combinés, boîtier, objectif, période, recherche (accents, morceau de nom, caractères spéciaux), tri et corbeille sur les six RAW de test-assets ; côté interface, transmission du filtre, champs vidés, recherche et tri des albums.
 - Vérifié dans l'application compilée sous Windows (bibliothèque de contrôle de deux albums, base de l'utilisateur mise de côté puis remise) : vue Albums, note, retenues, recherche, boîtier, tri par note.
+- Critère « Vue Bibliothèque avec albums, filtres de base et recherche » coché : CI verte sur Windows et macOS (run 39249029586).
