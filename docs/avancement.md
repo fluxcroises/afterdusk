@@ -184,3 +184,10 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Vérifié dans l'application compilée sous Windows (base vide, celle de l'utilisateur mise de côté puis remise) : les quatre étapes, et l'étape 3 en mode personnalisé, sans barre de défilement.
 - Descriptions des étapes sur une ligne : largeur du formulaire au lieu de 60 caractères, textes resserrés (110 caractères au plus en français). Le retour à la ligne reste possible en fenêtre étroite. Vérifié à l'écran sur les quatre étapes.
 - Précédent et Suivant restent au même endroit d'une étape à l'autre : l'assistant occupe toute la hauteur sous la photo, le pied en bas. Vérifié à l'écran (étapes 1 et 3).
+
+### 2026-10-19 (suite) : sauvegarde dans un dossier cloud
+
+- Les dossiers synchronisés par OneDrive (personnel et entreprise), Dropbox (lu dans son `info.json`), Google Drive, iCloud Drive, Box, Synology Drive, Nextcloud et pCloud sont détectés (variables d'environnement, dossiers personnels, `~/Library/CloudStorage` sur Mac) et proposés en un clic comme sauvegarde, dans un sous-dossier `Afterdusk`, à la première ouverture et dans Réglages > Bibliothèques.
+- Pour une sauvegarde dans un dossier cloud, l'avertissement « même disque » est remplacé par « Copie envoyée en ligne par OneDrive » : Afterdusk vérifie la copie locale ; l'envoi et l'espace disponible relèvent du service. Afterdusk ne fait aucun appel réseau (règle absolue) : c'est le logiciel du service qui envoie.
+- Tests : détection (OneDrive par variable, Dropbox par `info.json`, dossiers personnels, sans doublon), dossiers `CloudStorage` du Mac, reconnaissance d'une sauvegarde dans un dossier cloud.
+- Vérifié dans l'application compilée sous Windows avec le OneDrive de l'utilisateur (base vide, la sienne mise de côté puis remise ; rien créé dans OneDrive). Non vérifié sur Mac.

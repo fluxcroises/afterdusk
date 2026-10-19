@@ -1,4 +1,4 @@
-import { FolderOpen, TriangleAlert } from "lucide-react";
+import { Cloud, FolderOpen, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { pickFolder } from "../actions";
@@ -6,7 +6,10 @@ import type { Identity } from "../api/core";
 import {
   FOLDER_PRESETS,
   RENAME_PRESETS,
+  cloudBackupPath,
+  cloudOf,
   defaultCopyright,
+  useCloudFolders,
   useSameVolume,
   useTemplatePreview,
 } from "./presets";
@@ -52,10 +55,56 @@ export function FolderField({
   );
 }
 
-/** Une sauvegarde sur le disque de la bibliothèque ne protège pas d'une panne. */
+/** Dossiers cloud trouvés sur l'ordinateur, en un clic. */
+export function CloudSuggestions({
+  current,
+  onPick,
+}: {
+  current: string | null;
+  onPick: (path: string) => void;
+}) {
+  const { t } = useTranslation();
+  const folders = useCloudFolders();
+  if (folders.length === 0) return null;
+  return (
+    <div className="cloud-suggestions" role="group" aria-label={t("settings.cloudFolders")}>
+      <span className="field-row-label">{t("settings.cloudFolders")}</span>
+      {folders.map((f) => {
+        const path = cloudBackupPath(f);
+        return (
+          <button
+            key={f.path}
+            type="button"
+            className="button button-small cloud-button"
+            aria-pressed={current === path}
+            title={path}
+            onClick={() => onPick(path)}
+          >
+            <Cloud aria-hidden="true" strokeWidth={1.75} />
+            {f.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Une sauvegarde sur le disque de la bibliothèque ne protège pas d'une panne,
+ * sauf si un service de cloud l'envoie en ligne : on le dit alors.
+ */
 export function BackupWarning({ root, backup }: { root: string | null; backup: string | null }) {
   const { t } = useTranslation();
   const same = useSameVolume(root, backup);
+  const cloud = cloudOf(useCloudFolders(), backup);
+  if (cloud) {
+    return (
+      <p className="settings-info" role="note">
+        <Cloud aria-hidden="true" strokeWidth={1.75} />
+        {t("settings.cloudBackup", { service: cloud.label })}
+      </p>
+    );
+  }
   if (!same) return null;
   return (
     <p className="settings-warning" role="note">

@@ -212,7 +212,9 @@
       "propose": "Proposer l'import",
       "open": "Ouvrir l'import",
       "nothing": "Ne rien faire"
-    }
+    },
+    "cloudFolders": "Dossiers cloud",
+    "cloudBackup": "Copie envoyée en ligne par {{service}}. Afterdusk vérifie la copie sur l'ordinateur ; l'envoi et l'espace disponible dépendent de votre abonnement."
   },
   "menu": {
     "app": "Afterdusk",

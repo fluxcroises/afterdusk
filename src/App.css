@@ -2452,3 +2452,41 @@ input[type="radio"] {
 .onboarding-layout .onboarding-footer {
   margin-top: auto;
 }
+
+/* Sauvegarde : dossiers cloud proposés, et note quand la copie part en ligne. */
+.cloud-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.cloud-button {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+}
+
+.cloud-button svg,
+.settings-info svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.cloud-button[aria-pressed="true"] {
+  color: var(--ad-on-accent);
+  background: var(--ad-accent);
+}
+
+.settings-info {
+  display: flex;
+  gap: var(--ad-space-2);
+  margin: 0;
+  color: var(--ad-text-secondary);
+}
+
+.settings-info svg {
+  margin-top: 2px;
+  color: var(--ad-accent);
+}

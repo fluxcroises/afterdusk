@@ -123,9 +123,17 @@ export const api = {
   templatePreview: (folderTemplate: string, renameTemplate: string | null, album: string) =>
     invoke<string>("template_preview", { folderTemplate, renameTemplate, album }),
   sameVolume: (a: string, b: string) => invoke<boolean | null>("same_volume", { a, b }),
+  cloudFolders: () => invoke<CloudFolder[]>("cloud_folders"),
   identityGet: () => invoke<Identity>("identity_get"),
   identitySet: (identity: Identity) => invoke<Identity>("identity_set", { identity }),
 };
+
+/** Dossier synchronisé par un service de cloud (OneDrive, Dropbox…). */
+export interface CloudFolder {
+  service: string;
+  label: string;
+  path: string;
+}
 
 /** Identité du photographe : écrite dans les XMP à l'import. */
 export interface Identity {

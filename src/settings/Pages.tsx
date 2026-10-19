@@ -6,7 +6,13 @@ import { ErrorBanner } from "../components/ErrorBanner";
 import { FieldRow } from "../components/PanelSection";
 import { type InsertBehavior, useDevices } from "../store/devices";
 import { useImport } from "../store/import";
-import { BackupWarning, FolderField, IdentityFields, TemplateChoice } from "./Fields";
+import {
+  BackupWarning,
+  CloudSuggestions,
+  FolderField,
+  IdentityFields,
+  TemplateChoice,
+} from "./Fields";
 
 function useCurrentLibrary() {
   const libraries = useImport((s) => s.libraries);
@@ -49,6 +55,10 @@ export function LibrarySettings() {
         placeholder={t("onboarding.backup.none")}
         onChange={(backup) => void save(() => api.librarySetBackup(library.id, backup))}
         onClear={() => void save(() => api.librarySetBackup(library.id, null))}
+      />
+      <CloudSuggestions
+        current={library.backupPath}
+        onPick={(backup) => void save(() => api.librarySetBackup(library.id, backup))}
       />
       <BackupWarning root={library.rootPath} backup={library.backupPath} />
       <p className="panel-note">{t("settings.backupHint")}</p>

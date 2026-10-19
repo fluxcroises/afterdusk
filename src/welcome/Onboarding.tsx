@@ -3,7 +3,13 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toCommandError } from "../api/core";
 import { ErrorBanner } from "../components/ErrorBanner";
-import { BackupWarning, FolderField, IdentityFields, TemplateChoice } from "../settings/Fields";
+import {
+  BackupWarning,
+  CloudSuggestions,
+  FolderField,
+  IdentityFields,
+  TemplateChoice,
+} from "../settings/Fields";
 import { DEFAULT_FOLDER_TEMPLATE } from "../settings/presets";
 import { useImport } from "../store/import";
 import { type OnboardingChoices, applyChoices, defaultRoot } from "../settings/onboarding";
@@ -121,6 +127,7 @@ export function Onboarding() {
                 onChange={(backup) => update({ backup })}
                 onClear={() => update({ backup: null })}
               />
+              <CloudSuggestions current={c.backup} onPick={(backup) => update({ backup })} />
               <BackupWarning root={c.root} backup={c.backup} />
             </div>
           )}

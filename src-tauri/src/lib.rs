@@ -105,6 +105,7 @@ pub fn run() {
             commands::library::library_set_templates,
             commands::library::template_preview,
             commands::library::same_volume,
+            commands::library::cloud_folders,
             commands::library::identity_get,
             commands::library::identity_set,
             commands::import::source_scan,

@@ -4,6 +4,7 @@ use tauri::State;
 
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
+use crate::library::cloud::{self, CloudFolder};
 use crate::library::identity::{self, Identity};
 use crate::library::{self, Library, paths, template};
 
@@ -84,6 +85,12 @@ pub fn template_preview(
 ) -> CommandResult<String> {
     template::preview(&folder_template, rename_template.as_deref(), &album)
         .map_err(|e| CommandError::new("invalidTemplate", e))
+}
+
+/// Dossiers synchronisés par un service de cloud, proposés comme sauvegarde.
+#[tauri::command]
+pub async fn cloud_folders() -> CommandResult<Vec<CloudFolder>> {
+    blocking(|| Ok(cloud::detect(&cloud::Places::current()))).await
 }
 
 /// La sauvegarde serait-elle sur le même disque que la bibliothèque ?

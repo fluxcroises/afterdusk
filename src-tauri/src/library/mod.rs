@@ -1,5 +1,6 @@
 //! Bibliothèques, albums et matériel détecté.
 
+pub mod cloud;
 pub mod filter;
 pub mod identity;
 pub mod marks;

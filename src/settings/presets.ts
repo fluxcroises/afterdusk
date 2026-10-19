@@ -1,6 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import { api, toCommandError } from "../api/core";
+import { type CloudFolder, api, toCommandError } from "../api/core";
 
 /** Modèles de rangement proposés (cahier des charges §4.1) ; « custom » pour les autres. */
 export const FOLDER_PRESETS = [
@@ -61,4 +61,41 @@ export function useSameVolume(root: string | null, backup: string | null): boole
     };
   }, [root, backup]);
   return same && !!root && !!backup;
+}
+
+/** Dossiers cloud de l'ordinateur, relevés une fois par fenêtre. */
+let cloudCache: Promise<CloudFolder[]> | null = null;
+
+export function useCloudFolders(): CloudFolder[] {
+  const [folders, setFolders] = useState<CloudFolder[]>([]);
+  useEffect(() => {
+    if (!isTauri()) return;
+    let current = true;
+    cloudCache ??= api.cloudFolders().catch(() => []);
+    void cloudCache.then((f) => current && setFolders(f));
+    return () => {
+      current = false;
+    };
+  }, []);
+  return folders;
+}
+
+const normalize = (p: string) => p.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+
+/** Le dossier de sauvegarde est-il synchronisé par un service de cloud ? */
+export function cloudOf(folders: CloudFolder[], path: string | null): CloudFolder | null {
+  if (!path) return null;
+  const target = normalize(path);
+  return (
+    folders.find((f) => {
+      const base = normalize(f.path);
+      return target === base || target.startsWith(`${base}/`);
+    }) ?? null
+  );
+}
+
+/** Sous-dossier « Afterdusk » d'un dossier cloud, pour ne pas mêler la sauvegarde au reste. */
+export function cloudBackupPath(folder: CloudFolder): string {
+  const sep = folder.path.includes("\\") ? "\\" : "/";
+  return folder.path.replace(/[\\/]+$/, "") + sep + "Afterdusk";
 }
