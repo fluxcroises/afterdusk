@@ -165,7 +165,7 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Mesure dans l'application compilée sous Windows, avec un lecteur virtuel (`subst X:` vers un dossier contenant `DCIM/100_FUJI`), base de l'utilisateur mise de côté puis remise : bandeau affiché 330, 1 074 et 836 ms après l'apparition du lecteur ; retrait relevé en moins de 0,5 s. « Importer » ouvre la fenêtre principale sur la carte analysée.
 - Critère « carte détectée en moins de 5 secondes » non coché : à vérifier avec une vraie carte SD (sous Windows, un lecteur virtuel n'est pas un lecteur amovible) et sur un Mac. Les deux corrections ci-dessus n'ont pas été revérifiées à l'écran (couvertes par les tests pour le bandeau).
 
-### 2026-10-19 (suite) : récapitulatif de la première ouverture
+### 2026-10-19 (suite) : illustration de la première ouverture
 
-- À droite de l'assistant, « Votre bibliothèque » récapitule les choix au fil des étapes : nom et dossier, sauvegarde (avec l'avertissement « même disque »), arborescence d'exemple du rangement et du nom de fichier, identité. L'étape en cours est mise en évidence ; un clic sur une ligne y ramène. Fenêtre étroite : le récapitulatif passe sous l'assistant.
-- Vérifié dans l'application compilée sous Windows (base vide, celle de l'utilisateur mise de côté puis remise) : étapes 1 et 3.
+- L'espace à droite de l'assistant porte une icône par étape (photos, disque, arborescence, personne) sur un halo discret, qui change avec l'étape ; masquée quand la fenêtre est étroite. Un récapitulatif des choix a été essayé à cette place puis retiré : il alourdissait la fenêtre.
+- Vérifié dans l'application compilée sous Windows (base vide, celle de l'utilisateur mise de côté puis remise) : les quatre étapes. L'alignement de l'icône à hauteur du titre, ajusté ensuite, n'a pas été revérifié à l'écran.

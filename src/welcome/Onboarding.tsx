@@ -1,99 +1,30 @@
-import { Check, File, Folder, TriangleAlert } from "lucide-react";
+import { Check, FolderTree, HardDrive, Images, type LucideIcon, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toCommandError } from "../api/core";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { BackupWarning, FolderField, IdentityFields, TemplateChoice } from "../settings/Fields";
-import { DEFAULT_FOLDER_TEMPLATE, useSameVolume, useTemplatePreview } from "../settings/presets";
+import { DEFAULT_FOLDER_TEMPLATE } from "../settings/presets";
 import { useImport } from "../store/import";
 import { type OnboardingChoices, applyChoices, defaultRoot } from "../settings/onboarding";
 
 const STEPS = ["library", "backup", "folders", "identity"] as const;
 type Step = (typeof STEPS)[number];
 
-/** Arborescence d'exemple : un dossier par ligne, le fichier en dernier. */
-function ExampleTree({ path }: { path: string }) {
-  const parts = path.split("/");
-  return (
-    <ul className="summary-tree">
-      {parts.map((part, i) => {
-        const Icon = i === parts.length - 1 ? File : Folder;
-        return (
-          <li key={i} style={{ paddingLeft: `${i * 14}px` }}>
-            <Icon aria-hidden="true" strokeWidth={1.75} />
-            {part}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
+/** Illustration de chaque étape, dans l'espace à droite de l'assistant. */
+const STEP_ICONS: Record<Step, LucideIcon> = {
+  library: Images,
+  backup: HardDrive,
+  folders: FolderTree,
+  identity: UserRound,
+};
 
-/**
- * Récapitulatif des choix, rempli au fil des étapes : ce qui sera créé, et la
- * confirmation avant « Créer la bibliothèque ». Un clic ramène à l'étape.
- */
-function Summary({
-  choices: c,
-  step,
-  onStep,
-}: {
-  choices: OnboardingChoices;
-  step: Step;
-  onStep: (step: Step) => void;
-}) {
-  const { t } = useTranslation();
-  const sameDisk = useSameVolume(c.root, c.backup);
-  const { path } = useTemplatePreview(
-    c.folderTemplate,
-    c.renameTemplate,
-    t("settings.exampleAlbum"),
-  );
-  const row = (s: Step, value: React.ReactNode) => (
-    <button
-      type="button"
-      className="summary-row"
-      data-current={s === step || undefined}
-      disabled={!c.root}
-      onClick={() => onStep(s)}
-    >
-      <span className="summary-label">{t(`onboarding.steps.${s}`)}</span>
-      <span className="summary-value">{value}</span>
-    </button>
-  );
-  const identity = [c.identity.name, c.identity.copyright].filter(Boolean).join(" · ");
+function StepIllustration({ step }: { step: Step }) {
+  const Icon = STEP_ICONS[step];
   return (
-    <aside className="onboarding-summary" aria-label={t("onboarding.summary")}>
-      <h3>{t("onboarding.summary")}</h3>
-      {row(
-        "library",
-        <>
-          <strong>{c.name || t("onboarding.defaultName")}</strong>
-          <span className="summary-path">{c.root ?? t("onboarding.toChoose")}</span>
-        </>,
-      )}
-      {row(
-        "backup",
-        c.backup ? (
-          <>
-            <span className="summary-path">{c.backup}</span>
-            {sameDisk && (
-              <span className="summary-warning">
-                <TriangleAlert aria-hidden="true" strokeWidth={1.75} />
-                {t("onboarding.sameDiskShort")}
-              </span>
-            )}
-          </>
-        ) : (
-          <span className="summary-muted">{t("onboarding.backup.none")}</span>
-        ),
-      )}
-      {row("folders", path ? <ExampleTree path={path} /> : "—")}
-      {row(
-        "identity",
-        identity ? identity : <span className="summary-muted">{t("onboarding.noIdentity")}</span>,
-      )}
-    </aside>
+    <div className="onboarding-illustration" aria-hidden="true">
+      <Icon key={step} strokeWidth={1} />
+    </div>
   );
 }
 
@@ -239,7 +170,7 @@ export function Onboarding() {
           )}
         </footer>
       </section>
-      <Summary choices={c} step={step} onStep={setStep} />
+      <StepIllustration step={step} />
     </div>
   );
 }

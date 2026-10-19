@@ -40,12 +40,6 @@ describe("fenêtre d'accueil", () => {
         .getAllByRole("listitem")
         .map((li) => li.textContent),
     ).toEqual(["1Bibliothèque", "2Sauvegarde", "3Rangement", "4Identité"]);
-    // Récapitulatif des choix, rempli au fil des étapes.
-    const summary = screen.getByRole("complementary", { name: "Votre bibliothèque" });
-    expect(summary).toHaveTextContent("Photos");
-    expect(summary).toHaveTextContent("À choisir");
-    expect(summary).toHaveTextContent("Pas de sauvegarde pour l'instant");
-    expect(summary).toHaveTextContent("Non renseignée");
     // Sans dossier choisi (pas de dossier Images hors de l'application), pas de suite.
     expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Importer" })).toBeDisabled();

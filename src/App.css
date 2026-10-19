@@ -2311,10 +2311,10 @@ input[type="radio"] {
   border-radius: var(--ad-radius-md);
 }
 
-/* Première ouverture : l'assistant et, à droite, le récapitulatif des choix. */
+/* Première ouverture : l'assistant et, à droite, l'illustration de l'étape. */
 .onboarding-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  grid-template-columns: minmax(0, 1fr) 200px;
   gap: var(--ad-space-5);
   align-items: start;
   margin: var(--ad-space-5);
@@ -2325,92 +2325,49 @@ input[type="radio"] {
   margin: 0;
 }
 
-.onboarding-summary {
-  display: flex;
-  flex-direction: column;
-  padding: var(--ad-space-3);
-  background: var(--ad-panel);
-  border: 1px solid var(--ad-border);
-  border-radius: var(--ad-radius-lg);
-}
-
-.onboarding-summary h3 {
-  margin: 0 0 var(--ad-space-2);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.summary-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--ad-space-2);
-  text-align: left;
-  border-radius: var(--ad-radius-md);
-  border-left: 2px solid transparent;
-}
-
-.summary-row:hover:not(:disabled) {
-  background: var(--ad-hover);
-}
-
-.summary-row[data-current] {
-  border-left-color: var(--ad-accent);
-  background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
-}
-
-.summary-label {
-  font: var(--ad-font-meta);
-  color: var(--ad-text-muted);
-}
-
-.summary-value {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  color: var(--ad-text);
-}
-
-.summary-path {
-  overflow-wrap: anywhere;
+.onboarding-illustration {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 160px;
+  justify-self: center;
+  /* À hauteur du titre de l'étape, quelle que soit la longueur du formulaire. */
+  margin-top: var(--ad-space-5);
   color: var(--ad-text-secondary);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ad-accent) 14%, transparent) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
 }
 
-.summary-muted {
-  color: var(--ad-text-muted);
+.onboarding-illustration svg {
+  width: 88px;
+  height: 88px;
+  animation: onboarding-icon 240ms ease-out;
 }
 
-.summary-warning {
-  display: flex;
-  align-items: center;
-  gap: var(--ad-space-1);
-  color: var(--ad-warning);
+@keyframes onboarding-icon {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 
-.summary-warning svg,
-.summary-tree svg {
-  width: 13px;
-  height: 13px;
-  flex: none;
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-illustration svg {
+    animation: none;
+  }
 }
 
-.summary-tree {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.summary-tree li {
-  display: flex;
-  align-items: center;
-  gap: var(--ad-space-1);
-  overflow-wrap: anywhere;
-}
-
-/* Fenêtre étroite : le récapitulatif passe sous l'assistant. */
+/* Fenêtre étroite : pas d'illustration. */
 @media (max-width: 760px) {
   .onboarding-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .onboarding-illustration {
+    display: none;
   }
 }

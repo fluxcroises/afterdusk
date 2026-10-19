@@ -437,11 +437,7 @@
     },
     "back": "Précédent",
     "next": "Suivant",
-    "finish": "Créer la bibliothèque",
-    "summary": "Votre bibliothèque",
-    "toChoose": "À choisir",
-    "sameDiskShort": "Même disque que la bibliothèque",
-    "noIdentity": "Non renseignée"
+    "finish": "Créer la bibliothèque"
   },
   "devices": {
     "card": "Carte ({{volume}})",
