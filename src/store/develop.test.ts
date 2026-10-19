@@ -373,6 +373,43 @@ describe("Retoucher", () => {
     });
   });
 
+  it("courbes, TSL et effets : JSON creux, une étape par réglage", async () => {
+    const { IDENTITY_CURVE } = await import("./develop");
+    await useDevelop.getState().open(7);
+    const st = useDevelop.getState();
+    st.setCurve("rgb", [
+      [0, 10.4],
+      [128, 140.6],
+      [255, 255],
+    ]);
+    expect(useDevelop.getState().settings?.curve).toEqual({
+      rgb: [
+        [0, 10],
+        [128, 141],
+        [255, 255],
+      ],
+    });
+    st.setCurve("rgb", IDENTITY_CURVE);
+    expect(useDevelop.getState().settings?.curve).toBeUndefined();
+    st.setHsl("saturation", "blue", -40);
+    st.setHsl("saturation", "blue", 0);
+    expect(useDevelop.getState().settings?.hsl).toBeUndefined();
+    st.setEffect("vignette", "amount", -30);
+    st.setEffect("vignette", "midpoint", 70);
+    st.setEffect("vignette", "midpoint", 50);
+    expect(useDevelop.getState().settings?.effects).toEqual({ vignette: { amount: -30 } });
+    st.setEffect("grain", "size", 25);
+    expect(useDevelop.getState().settings?.effects?.grain).toBeUndefined();
+    await useDevelop.getState().flush();
+    expect(saves().map((a) => (a as { label: string }).label)).toEqual([
+      "curve.rgb",
+      "hsl.saturation.blue",
+      "effects.vignette.amount",
+      "effects.vignette.midpoint",
+      "effects.grain.size",
+    ]);
+  });
+
   it("curseur de température régulier en mireds", () => {
     expect(temperatureFromPosition(0)).toBe(2000);
     expect(temperatureFromPosition(1)).toBe(50000);

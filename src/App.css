@@ -2838,3 +2838,84 @@ input[type="radio"] {
   padding: 0 var(--ad-space-2);
   font: var(--ad-font-ui);
 }
+
+.develop-segmented {
+  display: flex;
+  margin-bottom: var(--ad-space-2);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-sm);
+  overflow: hidden;
+}
+
+.develop-segmented button {
+  flex: 1;
+  height: 24px;
+  color: var(--ad-text-secondary);
+  font: var(--ad-font-meta);
+}
+
+.develop-segmented button + button {
+  border-left: 1px solid var(--ad-border-strong);
+}
+
+.develop-segmented button[aria-checked="true"] {
+  background: var(--ad-hover);
+  color: var(--ad-text);
+}
+
+.develop-curve {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--ad-inset);
+  border: 1px solid var(--ad-border-strong);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.develop-curve-histogram {
+  fill: var(--ad-hover);
+}
+
+.develop-curve-grid line,
+.develop-curve-diagonal {
+  stroke: var(--ad-border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.develop-curve-line {
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.develop-curve-point {
+  fill: var(--ad-panel);
+  stroke: var(--ad-text);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.develop-curve-point[data-active] {
+  fill: var(--ad-accent);
+}
+
+.develop-subheading {
+  margin: var(--ad-space-2) 0 0;
+  color: var(--ad-text-secondary);
+  font: var(--ad-font-meta);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Pastille de la teinte devant chaque curseur TSL. */
+.develop-hue-row .develop-slider-head > span:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--ad-space-1);
+  border-radius: 50%;
+  background: var(--hue);
+}

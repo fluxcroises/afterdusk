@@ -533,7 +533,10 @@
       "undo": "Undo",
       "redo": "Redo",
       "snapshot": "Snapshot: {{name}}",
-      "versionCreated": "Virtual copy created"
+      "versionCreated": "Virtual copy created",
+      "curve": "Curve: {{channel}}",
+      "hsl": "{{kind}}: {{hue}} {{value}}",
+      "effect": "{{group}}: {{name}} {{value}}"
     },
     "compare": {
       "hold": "Before (hold to see the original)",
@@ -558,6 +561,44 @@
       "empty": "No snapshots. The + button keeps the current settings under a name.",
       "hint": "Click to apply, double-click to rename.",
       "confirmDelete": "Delete the snapshot \"{{name}}\"?"
+    },
+    "curve": {
+      "title": "Tone curve",
+      "editor": "Tone curve",
+      "channel": "Channel",
+      "rgb": "RGB",
+      "red": "Red",
+      "green": "Green",
+      "blue": "Blue",
+      "reset": "Reset the channel's curve",
+      "hint": "Click to add a point, drag to move it, double-click to remove it."
+    },
+    "hsl": {
+      "title": "Color (HSL)",
+      "hue": "Hue",
+      "saturation": "Saturation",
+      "luminance": "Luminance"
+    },
+    "hues": {
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "aqua": "Aqua",
+      "blue": "Blue",
+      "purple": "Purple",
+      "magenta": "Magenta"
+    },
+    "effects": {
+      "title": "Effects",
+      "vignette": "Vignetting",
+      "grain": "Grain",
+      "vignette_amount": "Amount",
+      "vignette_midpoint": "Midpoint",
+      "vignette_feather": "Feather",
+      "grain_amount": "Amount",
+      "grain_size": "Size",
+      "grain_roughness": "Roughness"
     }
   }
 }

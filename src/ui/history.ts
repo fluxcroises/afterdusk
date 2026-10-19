@@ -1,5 +1,13 @@
 import type { TFunction } from "i18next";
-import type { DevelopSettings, HistoryStep, WhitePreset } from "../store/develop";
+import {
+  type DevelopSettings,
+  EFFECT_DEFAULTS,
+  type EffectGroup,
+  type HistoryStep,
+  type HslKind,
+  type Hue,
+  type WhitePreset,
+} from "../store/develop";
 
 /** Valeur signée, à la manière des curseurs (« +0,70 », « −25 »). */
 function signed(value: number, digits: number, language: string): string {
@@ -58,6 +66,27 @@ export function describeStep(
     return auto
       ? t("develop.history.autoValue", { name, value })
       : t("develop.history.value", { name, value });
+  }
+  if (section === "curve" && key) {
+    return t("develop.history.curve", { channel: t(`develop.curve.${key}`) });
+  }
+  if (section === "hsl" && key && auto) {
+    const hue = auto as Hue;
+    return t("develop.history.hsl", {
+      kind: t(`develop.hsl.${key}`),
+      hue: t(`develop.hues.${hue}`),
+      value: signed(s.hsl?.[key as HslKind]?.[hue] ?? 0, 0, language),
+    });
+  }
+  if (section === "effects" && key && auto) {
+    const group = key as EffectGroup;
+    const fallback = (EFFECT_DEFAULTS[group] as Record<string, number>)[auto] ?? 0;
+    const v = (s.effects?.[group] as Record<string, number> | undefined)?.[auto] ?? fallback;
+    return t("develop.history.effect", {
+      group: t(`develop.effects.${group}`),
+      name: t(`develop.effects.${group}_${auto}`).toLowerCase(),
+      value: group === "vignette" && auto === "amount" ? signed(v, 0, language) : String(v),
+    });
   }
   if (section === "color" && key === "whiteBalance") {
     const value = whiteBalance(s, t, language, presets);

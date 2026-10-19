@@ -270,3 +270,14 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Corrigé : une retouche enregistrée pendant l'écriture du XMP pouvait être retirée de la file sans être écrite (seules la note, le drapeau et la couleur étaient comparés). `media.xmp_pending` devient un compteur de modifications ; le fil d'écriture ne retire la photo que si le compteur n'a pas bougé.
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : instantané, copie virtuelle retouchée à part, retour à l'originale, application de l'instantané, XMP complet, originaux identiques. Non vérifié à l'écran : renommer par double-clic et supprimer (couverts par les tests du cœur).
 - Reste : les copies virtuelles n'apparaissent pas encore comme vignettes séparées dans Trier et Bibliothèque ; elles viendront avec les aperçus rendus d'après les retouches (étape de l'export).
+
+### 2026-10-19 (suite) : V0.2, réglages intermédiaires (1/3) : courbes, TSL, effets
+
+- Instantanés et copies virtuelles verts sur Windows et macOS.
+- Courbe de tonalité par points (RVB, rouge, vert, bleu) : clic pour ajouter un point, glisser pour le déplacer, double-clic pour le retirer, histogramme du canal en fond. Interpolation cubique monotone (Fritsch–Carlson), tables de 1024 entrées lues de la même façon par le processeur et le GPU.
+- Couleurs par teinte (TSL) : teinte, saturation et luminance sur huit couleurs, interpolées entre les centres voisins avec un plateau autour de chaque centre ; les gris ne bougent pas.
+- Effets : vignetage (intensité, point milieu, progressivité) et grain (quantité, taille, irrégularité), grain par hachage entier placé en pixels de l'original.
+- Format : sections `curve`, `hsl`, `effects`, JSON creux toujours en version 1 ; rendu neutre inchangé (six formats, calibration du processus 1).
+- Jumeau GPU : au plus un niveau d'écart sur les six formats avec tous ces réglages ; rendu 3 à 10 ms au GPU, 30 à 40 ms au processeur à 2048 px.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : courbe en S et courbe bleue, vignetage, saturation du vert et du jaune, historique en clair, XMP complet, originaux identiques. Le grain, défini en pixels de l'original, est presque invisible dans l'aperçu ajusté à l'écran : il se jugera au zoom 100 % (sous-étape C).
+- Reste pour ce critère : netteté et réduction du bruit (sous-étape B), zoom 100 % dans le Retoucher (sous-étape C).

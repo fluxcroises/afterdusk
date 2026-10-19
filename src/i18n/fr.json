@@ -533,7 +533,10 @@
       "undo": "Annuler",
       "redo": "Rétablir",
       "snapshot": "Instantané : {{name}}",
-      "versionCreated": "Copie virtuelle créée"
+      "versionCreated": "Copie virtuelle créée",
+      "curve": "Courbe : {{channel}}",
+      "hsl": "{{kind}} : {{hue}} {{value}}",
+      "effect": "{{group}} : {{name}} {{value}}"
     },
     "compare": {
       "hold": "Avant (maintenir pour voir l'original)",
@@ -558,6 +561,44 @@
       "empty": "Aucun instantané. Le bouton + garde les réglages affichés sous un nom.",
       "hint": "Cliquez pour appliquer, double-cliquez pour renommer.",
       "confirmDelete": "Supprimer l'instantané « {{name}} » ?"
+    },
+    "curve": {
+      "title": "Courbe de tonalité",
+      "editor": "Courbe de tonalité",
+      "channel": "Canal",
+      "rgb": "RVB",
+      "red": "Rouge",
+      "green": "Vert",
+      "blue": "Bleu",
+      "reset": "Réinitialiser la courbe du canal",
+      "hint": "Cliquez pour ajouter un point, glissez pour le déplacer, double-cliquez pour le retirer."
+    },
+    "hsl": {
+      "title": "Couleurs (TSL)",
+      "hue": "Teinte",
+      "saturation": "Saturation",
+      "luminance": "Luminance"
+    },
+    "hues": {
+      "red": "Rouge",
+      "orange": "Orange",
+      "yellow": "Jaune",
+      "green": "Vert",
+      "aqua": "Cyan",
+      "blue": "Bleu",
+      "purple": "Violet",
+      "magenta": "Magenta"
+    },
+    "effects": {
+      "title": "Effets",
+      "vignette": "Vignetage",
+      "grain": "Grain",
+      "vignette_amount": "Intensité",
+      "vignette_midpoint": "Point milieu",
+      "vignette_feather": "Progressivité",
+      "grain_amount": "Quantité",
+      "grain_size": "Taille",
+      "grain_roughness": "Irrégularité"
     }
   }
 }

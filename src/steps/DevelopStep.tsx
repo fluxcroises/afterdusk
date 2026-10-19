@@ -9,6 +9,7 @@ import {
   HistorySection,
   LightSection,
 } from "../components/DevelopPanels";
+import { CurveSection, EffectsSection, HslSection } from "../components/DevelopAdvanced";
 import { SnapshotsSection, VersionsSection } from "../components/DevelopVersions";
 import { EmptyState } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
@@ -82,6 +83,9 @@ function SettingsPanel() {
       <HistogramSection />
       <LightSection />
       <ColorSection />
+      <CurveSection />
+      <HslSection />
+      <EffectsSection />
     </>
   );
 }

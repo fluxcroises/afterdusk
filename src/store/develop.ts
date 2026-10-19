@@ -21,12 +21,73 @@ export type LightKey = (typeof LIGHT_KEYS)[number];
 export const COLOR_KEYS = ["vibrance", "saturation"] as const;
 export type ColorKey = (typeof COLOR_KEYS)[number];
 
+export const CURVE_CHANNELS = ["rgb", "red", "green", "blue"] as const;
+export type CurveChannel = (typeof CURVE_CHANNELS)[number];
+/** Point d'une courbe : entrée et sortie de 0 à 255. */
+export type CurvePoint = [number, number];
+
+export const HUES = [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "aqua",
+  "blue",
+  "purple",
+  "magenta",
+] as const;
+export type Hue = (typeof HUES)[number];
+export const HSL_KINDS = ["hue", "saturation", "luminance"] as const;
+export type HslKind = (typeof HSL_KINDS)[number];
+
+/** Effets et leurs valeurs par défaut (absentes du JSON creux). */
+export const EFFECT_DEFAULTS = {
+  vignette: { amount: 0, midpoint: 50, feather: 50 },
+  grain: { amount: 0, size: 25, roughness: 50 },
+} as const;
+export type EffectGroup = keyof typeof EFFECT_DEFAULTS;
+export type EffectKey<G extends EffectGroup> = keyof (typeof EFFECT_DEFAULTS)[G];
+
 /** Réglages de retouche, miroir de `develop::settings::DevelopSettings` (JSON creux). */
 export interface DevelopSettings {
   version: number;
   process: number;
   light?: Partial<Record<LightKey, number>>;
   color?: Partial<Record<ColorKey, number>> & { whiteBalance?: WhiteBalance };
+  curve?: Partial<Record<CurveChannel, CurvePoint[]>>;
+  hsl?: Partial<Record<HslKind, Partial<Record<Hue, number>>>>;
+  effects?: {
+    vignette?: Partial<Record<EffectKey<"vignette">, number>>;
+    grain?: Partial<Record<EffectKey<"grain">, number>>;
+  };
+}
+
+/** Courbe identité : deux points aux extrémités. */
+export const IDENTITY_CURVE: CurvePoint[] = [
+  [0, 0],
+  [255, 255],
+];
+
+function isIdentityCurve(points: CurvePoint[]): boolean {
+  return (
+    points.length < 2 ||
+    (points.length === 2 &&
+      points[0]?.[0] === 0 &&
+      points[0]?.[1] === 0 &&
+      points[1]?.[0] === 255 &&
+      points[1]?.[1] === 255)
+  );
+}
+
+/** Copie de `obj` avec `key` à `value`, ou sans `key` si `value` est absente. */
+function put<T extends object, K extends keyof T>(obj: T, key: K, value: T[K] | undefined): T {
+  const rest = Object.fromEntries(Object.entries(obj).filter(([k]) => k !== key)) as T;
+  return value === undefined ? rest : { ...rest, [key]: value };
+}
+
+/** Retire les sections devenues vides, pour un JSON creux. */
+function prune<T extends object>(section: T): T | undefined {
+  return Object.keys(section).length === 0 ? undefined : section;
 }
 
 export interface WhitePoint {
@@ -192,6 +253,10 @@ interface DevelopState {
   setPicking: (picking: boolean) => void;
   pickWhite: (x: number, y: number) => Promise<void>;
   toggleClipping: (which: keyof ClippingWarnings) => void;
+  /** Courbe d'un canal ; l'identité retire la courbe. */
+  setCurve: (channel: CurveChannel, points: CurvePoint[]) => void;
+  setHsl: (kind: HslKind, hue: Hue, value: number) => void;
+  setEffect: <G extends EffectGroup>(group: G, key: EffectKey<G>, value: number) => void;
   /** Auto de la section Lumière, ou d'un seul curseur. */
   autoLight: (key?: LightKey) => Promise<void>;
   autoWhite: () => Promise<void>;
@@ -424,6 +489,42 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     },
 
     setWhiteBalance: (wb) => applyWhiteBalance(wb, "color.whiteBalance"),
+
+    setCurve: (channel, points) => {
+      const { settings } = get();
+      if (!settings) return;
+      const rounded = points.map(([x, y]) => [Math.round(x), Math.round(y)] as CurvePoint);
+      const curve = put(
+        settings.curve ?? {},
+        channel,
+        isIdentityCurve(rounded) ? undefined : rounded,
+      );
+      change(put(settings, "curve", prune(curve)), `curve.${channel}`);
+    },
+
+    setHsl: (kind, hue, value) => {
+      const { settings } = get();
+      if (!settings) return;
+      const set = prune(withValue(settings.hsl?.[kind], hue, Math.round(value)));
+      const hsl = put(settings.hsl ?? {}, kind, set);
+      change(put(settings, "hsl", prune(hsl)), `hsl.${kind}.${hue}`);
+    },
+
+    setEffect: (group, key, value) => {
+      const { settings } = get();
+      if (!settings) return;
+      const v = Math.round(value);
+      const name = key as string;
+      const fallback = (EFFECT_DEFAULTS[group] as Record<string, number>)[name];
+      const current: Record<string, number> = { ...settings.effects?.[group] };
+      const section = put(current, name, v === fallback ? undefined : v);
+      const effects = put(
+        (settings.effects ?? {}) as Record<string, unknown>,
+        group,
+        prune(section),
+      ) as DevelopSettings["effects"] & object;
+      change(put(settings, "effects", prune(effects)), `effects.${group}.${name}`);
+    },
 
     setTemperature: (kelvin) => {
       const { settings, asShot, presets } = get();

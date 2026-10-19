@@ -72,6 +72,23 @@ describe("libellés de l'historique", () => {
     expect(describeStep(step("version.create", {}), t, "fr")).toBe("Copie virtuelle créée");
   });
 
+  it("courbes, couleurs par teinte et effets", () => {
+    const t = i18next.getFixedT("fr");
+    expect(describeStep(step("curve.blue", {}), t, "fr")).toBe("Courbe : Bleu");
+    expect(
+      describeStep(step("hsl.saturation.blue", { hsl: { saturation: { blue: -40 } } }), t, "fr"),
+    ).toBe("Saturation : Bleu -40");
+    expect(
+      describeStep(
+        step("effects.vignette.amount", { effects: { vignette: { amount: -30 } } }),
+        t,
+        "fr",
+      ),
+    ).toBe("Vignetage : intensité -30");
+    // Valeur par défaut absente du JSON : on affiche le défaut.
+    expect(describeStep(step("effects.grain.size", {}), t, "fr")).toBe("Grain : taille 25");
+  });
+
   it("en anglais", () => {
     const t = i18next.getFixedT("en");
     expect(describeStep(step("light.exposure", { light: { exposure: -1.5 } }), t, "en")).toBe(
