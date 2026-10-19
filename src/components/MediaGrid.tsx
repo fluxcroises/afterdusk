@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
-import { type MediaSummary, useLibrary } from "../store/library";
+import { type MediaSummary, type SelectMode, useLibrary } from "../store/library";
 import { Thumbnail } from "./Thumbnail";
 
 /** Menu contextuel d'une miniature (clic droit). */
@@ -106,7 +106,21 @@ function MarkBadges({ media, isCover }: { media: MediaSummary; isCover: boolean 
   );
 }
 
-function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean }) {
+/** Clic simple, Ctrl+clic (ajouter, retirer) ou Maj+clic (plage), comme partout. */
+function selectMode(e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }): SelectMode {
+  if (e.shiftKey) return "range";
+  return e.ctrlKey || e.metaKey ? "toggle" : "replace";
+}
+
+function MediaCell({
+  media,
+  selected,
+  active,
+}: {
+  media: MediaSummary;
+  selected: boolean;
+  active: boolean;
+}) {
   const version = useLibrary((s) => s.versions[media.id] ?? 0);
   const select = useLibrary((s) => s.select);
   const isCover = useLibrary((s) =>
@@ -116,8 +130,8 @@ function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean
   const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (selected) ref.current?.scrollIntoView({ block: "nearest" });
-  }, [selected]);
+    if (active) ref.current?.scrollIntoView({ block: "nearest" });
+  }, [active]);
 
   return (
     <button
@@ -125,13 +139,14 @@ function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean
       type="button"
       className="media-cell"
       aria-pressed={selected}
+      data-active={active || undefined}
       data-rejected={media.flag === -1 || undefined}
       title={media.fileName}
-      onClick={() => void select(media.id)}
+      onClick={(e) => void select(media.id, selectMode(e))}
       onDoubleClick={() => useLibrary.getState().setView("loupe")}
       onContextMenu={(e) => {
         e.preventDefault();
-        void select(media.id);
+        if (!selected) void select(media.id);
         setMenu({ x: e.clientX, y: e.clientY });
       }}
     >
@@ -152,23 +167,33 @@ function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean
 export function MediaGrid() {
   const media = useLibrary((s) => s.media);
   const selectedId = useLibrary((s) => s.selectedId);
+  const selectedIds = useLibrary((s) => s.selectedIds);
+  const chosen = new Set(selectedIds);
   return (
     <div className="media-grid">
       {media.map((m) => (
-        <MediaCell key={m.id} media={m} selected={m.id === selectedId} />
+        <MediaCell key={m.id} media={m} selected={chosen.has(m.id)} active={m.id === selectedId} />
       ))}
     </div>
   );
 }
 
-function StripCell({ media, selected }: { media: MediaSummary; selected: boolean }) {
+function StripCell({
+  media,
+  selected,
+  active,
+}: {
+  media: MediaSummary;
+  selected: boolean;
+  active: boolean;
+}) {
   const version = useLibrary((s) => s.versions[media.id] ?? 0);
   const select = useLibrary((s) => s.select);
   const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (selected) ref.current?.scrollIntoView({ inline: "nearest", block: "nearest" });
-  }, [selected]);
+    if (active) ref.current?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [active]);
 
   return (
     <button
@@ -176,8 +201,9 @@ function StripCell({ media, selected }: { media: MediaSummary; selected: boolean
       type="button"
       className="strip-cell"
       aria-pressed={selected}
+      data-active={active || undefined}
       title={media.fileName}
-      onClick={() => void select(media.id)}
+      onClick={(e) => void select(media.id, selectMode(e))}
     >
       <Thumbnail src={media.hasPreview ? previewUrl(media.id, 256, version) : null} />
     </button>
@@ -188,10 +214,12 @@ function StripCell({ media, selected }: { media: MediaSummary; selected: boolean
 export function FilmstripThumbs() {
   const media = useLibrary((s) => s.media);
   const selectedId = useLibrary((s) => s.selectedId);
+  const selectedIds = useLibrary((s) => s.selectedIds);
+  const chosen = new Set(selectedIds);
   return (
     <div className="strip">
       {media.map((m) => (
-        <StripCell key={m.id} media={m} selected={m.id === selectedId} />
+        <StripCell key={m.id} media={m} selected={chosen.has(m.id)} active={m.id === selectedId} />
       ))}
     </div>
   );

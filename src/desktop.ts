@@ -78,12 +78,17 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     library.setView("grid");
     return true;
   }
+  if (e.code === "KeyC" || (e.code === "" && e.key.toLowerCase() === "c")) {
+    if (library.view === "compare") library.setView("grid");
+    else if (library.media.length >= 2 && library.selectedId !== null) library.setView("compare");
+    return true;
+  }
   if (e.code === "KeyF" || (e.code === "" && e.key.toLowerCase() === "f")) {
     if (!layout.immersive && library.selectedId !== null) library.setView("loupe");
     layout.setImmersive(!layout.immersive);
     return true;
   }
-  if (e.key === " " && library.view === "loupe") {
+  if (e.key === " " && (library.view === "loupe" || library.view === "compare")) {
     library.setZoom(library.zoom ? null : { fx: 0.5, fy: 0.5 });
     return true;
   }

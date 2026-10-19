@@ -1,3 +1,10 @@
+import { previewUrl } from "../api/previews";
+import type { MediaSummary } from "../store/library";
+
+/** Aperçu affiché par la visionneuse et la comparaison. */
+export const displaySrc = (m: MediaSummary, version: number) =>
+  m.hasPreview ? previewUrl(m.id, 2048, version) : null;
+
 /** Images décodées d'avance, gardées en vie pour que le décodage serve. */
 const decoded = new Map<string, { img: HTMLImageElement; ready: Promise<void> }>();
 const KEEP = 12;

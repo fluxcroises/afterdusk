@@ -75,6 +75,33 @@ export const libraryApi = {
 
 type Marks = Pick<MediaSummary, "rating" | "flag" | "color">;
 
+export type LibraryView = "grid" | "loupe" | "compare";
+export type SelectMode = "replace" | "toggle" | "range";
+
+/** Comparaison : 2 à 4 photos de la sélection, ou la photo active et la suivante. */
+export const MAX_COMPARE = 4;
+
+export function compareIds(s: {
+  media: MediaSummary[];
+  selectedId: number | null;
+  selectedIds: number[];
+}): number[] {
+  if (s.selectedIds.length >= 2) {
+    // Dans l'ordre de la grille, pas dans l'ordre des clics.
+    const chosen = new Set(s.selectedIds);
+    return s.media
+      .filter((m) => chosen.has(m.id))
+      .slice(0, MAX_COMPARE)
+      .map((m) => m.id);
+  }
+  const index = s.media.findIndex((m) => m.id === s.selectedId);
+  if (index < 0) return [];
+  const next = s.media[index + 1] ?? s.media[index - 1];
+  const current = s.media[index];
+  if (!current) return [];
+  return next ? [current.id, next.id] : [current.id];
+}
+
 interface LibraryState {
   libraryId: number | null;
   albums: AlbumSummary[];
@@ -83,15 +110,18 @@ interface LibraryState {
   media: MediaSummary[];
   /** Nombre total de photos de la bibliothèque. */
   total: number;
+  /** Photo active : fiche d'informations, visionneuse, cible du clavier. */
   selectedId: number | null;
+  /** Sélection (Ctrl+clic, Maj+clic) ; contient toujours la photo active. */
+  selectedIds: number[];
   details: MediaDetails | null;
   /** Incrémenté à chaque aperçu régénéré, pour rafraîchir l'image. */
   versions: Record<number, number>;
   error: CommandError | null;
   /** Passer à la photo suivante après une note ou un drapeau (option). */
   autoAdvance: boolean;
-  /** Grille ou visionneuse (une photo à la fois). */
-  view: "grid" | "loupe";
+  /** Grille, visionneuse (une photo) ou comparaison (2 à 4). */
+  view: LibraryView;
   /** Zoom 100 % de la visionneuse : point visé, en fraction de l'image ; `null` = ajusté. */
   zoom: { fx: number; fy: number } | null;
   /** Instant de la dernière navigation, pour mesurer l'affichage de la suivante. */
@@ -99,7 +129,9 @@ interface LibraryState {
 
   load: (libraryId: number | null) => Promise<void>;
   showAlbum: (albumId: number | null) => Promise<void>;
-  select: (mediaId: number) => Promise<void>;
+  select: (mediaId: number, mode?: SelectMode) => Promise<void>;
+  /** Change la photo active sans toucher à la sélection (panneaux de comparaison). */
+  activate: (mediaId: number) => Promise<void>;
   /** `at` : horodatage de la frappe, pour mesurer l'affichage de la suivante. */
   move: (delta: number, at?: number) => void;
   previewReady: (mediaId: number) => void;
@@ -108,7 +140,7 @@ interface LibraryState {
   /** Pose la couleur, ou la retire si la photo l'a déjà (comme Lightroom). */
   toggleColor: (color: ColorName) => Promise<void>;
   setAutoAdvance: (value: boolean) => void;
-  setView: (view: "grid" | "loupe") => void;
+  setView: (view: LibraryView) => void;
   setZoom: (zoom: { fx: number; fy: number } | null) => void;
   /** La photo devient la couverture de son album. */
   setAsCover: (mediaId: number) => Promise<void>;
@@ -124,18 +156,27 @@ export const useLibrary = create<LibraryState>((set, get) => {
     send: (ids: number[]) => Promise<number>,
     advance: boolean,
   ): Promise<void> {
-    const id = get().selectedId;
-    const before = get().media.find((m) => m.id === id);
-    if (id === null || !before) return;
-    const apply = (values: Partial<Marks>) =>
-      set((s) => ({ media: s.media.map((m) => (m.id === id ? { ...m, ...values } : m)) }));
-    apply(patch);
-    if (advance && get().autoAdvance) get().move(1);
+    const { selectedId, selectedIds, view, media } = get();
+    if (selectedId === null) return;
+    // Dans la grille, toute la sélection ; ailleurs, la photo active.
+    const ids = view === "grid" && selectedIds.length > 1 ? selectedIds : [selectedId];
+    const targets = new Set(ids);
+    const before = new Map(media.filter((m) => targets.has(m.id)).map((m) => [m.id, m] as const));
+    if (before.size === 0) return;
+    set((s) => ({
+      media: s.media.map((m) => (targets.has(m.id) ? { ...m, ...patch } : m)),
+    }));
+    if (advance && ids.length === 1 && get().autoAdvance) get().move(1);
     try {
-      await send([id]);
+      await send(ids);
     } catch (e) {
-      apply({ rating: before.rating, flag: before.flag, color: before.color });
-      set({ error: toCommandError(e) });
+      set((s) => ({
+        media: s.media.map((m) => {
+          const b = before.get(m.id);
+          return b ? { ...m, rating: b.rating, flag: b.flag, color: b.color } : m;
+        }),
+        error: toCommandError(e),
+      }));
     }
   }
 
@@ -146,6 +187,7 @@ export const useLibrary = create<LibraryState>((set, get) => {
     media: [],
     total: 0,
     selectedId: null,
+    selectedIds: [],
     details: null,
     versions: {},
     error: null,
@@ -191,9 +233,32 @@ export const useLibrary = create<LibraryState>((set, get) => {
       }
     },
 
-    select: async (mediaId) => {
+    select: async (mediaId, mode = "replace") => {
+      const { media, selectedId, selectedIds } = get();
+      let ids = [mediaId];
+      let active = mediaId;
+      if (mode === "toggle") {
+        const removing = selectedIds.includes(mediaId) && selectedIds.length > 1;
+        ids = removing ? selectedIds.filter((id) => id !== mediaId) : [...selectedIds, mediaId];
+        // Photo retirée : la dernière restante devient active.
+        active = removing ? (ids[ids.length - 1] ?? mediaId) : mediaId;
+      } else if (mode === "range" && selectedId !== null) {
+        const a = media.findIndex((m) => m.id === selectedId);
+        const b = media.findIndex((m) => m.id === mediaId);
+        if (a >= 0 && b >= 0) {
+          ids = media.slice(Math.min(a, b), Math.max(a, b) + 1).map((m) => m.id);
+        }
+      }
       // Une autre photo s'affiche ajustée, comme dans Lightroom.
-      set({ selectedId: mediaId, zoom: null });
+      set(mode === "replace" ? { selectedIds: ids, zoom: null } : { selectedIds: ids });
+      await get().activate(active);
+    },
+
+    activate: async (mediaId) => {
+      set((s) => ({
+        selectedId: mediaId,
+        selectedIds: s.selectedIds.includes(mediaId) ? s.selectedIds : [mediaId],
+      }));
       try {
         const details = await libraryApi.mediaDetails(mediaId);
         // Une sélection plus récente a pu arriver pendant la requête.
@@ -204,8 +269,15 @@ export const useLibrary = create<LibraryState>((set, get) => {
     },
 
     move: (delta, at) => {
-      const { media, selectedId } = get();
+      const { media, selectedId, view } = get();
       if (media.length === 0) return;
+      if (view === "compare") {
+        const ids = compareIds(get());
+        const i = ids.indexOf(selectedId ?? -1);
+        const next = ids[(i + delta + ids.length) % ids.length];
+        if (next !== undefined) void get().activate(next);
+        return;
+      }
       const index = media.findIndex((m) => m.id === selectedId);
       const next = media[Math.min(Math.max(index + delta, 0), media.length - 1)];
       if (next && next.id !== selectedId) {
@@ -214,7 +286,11 @@ export const useLibrary = create<LibraryState>((set, get) => {
       }
     },
 
-    setView: (view) => set({ view, zoom: null }),
+    setView: (view) => {
+      // La comparaison fige ses photos : la sélection en tient lieu.
+      if (view === "compare") set({ selectedIds: compareIds(get()) });
+      set({ view, zoom: null });
+    },
 
     setZoom: (zoom) => set({ zoom }),
 

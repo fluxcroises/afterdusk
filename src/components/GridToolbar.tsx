@@ -10,12 +10,13 @@ interface GridToolbarProps {
   culling?: boolean;
 }
 
-/** Grille ou visionneuse (G, Entrée) ; la comparaison viendra ensuite. */
+/** Grille (G), visionneuse (Entrée) ou comparaison (C). */
 function ViewModes({ disabled }: { disabled: boolean }) {
   const { t } = useTranslation();
   const view = useLibrary((s) => s.view);
   const setView = useLibrary((s) => s.setView);
   const hasSelection = useLibrary((s) => s.selectedId !== null);
+  const canCompare = useLibrary((s) => s.media.length >= 2 && s.selectedId !== null);
   return (
     <div className="toolbar-group">
       <IconButton
@@ -34,7 +35,14 @@ function ViewModes({ disabled }: { disabled: boolean }) {
         disabled={disabled || !hasSelection}
         onClick={() => setView("loupe")}
       />
-      <IconButton icon={Columns2} label={t("toolbar.compare")} shortcut="C" disabled />
+      <IconButton
+        icon={Columns2}
+        label={t("toolbar.compare")}
+        shortcut="C"
+        pressed={view === "compare"}
+        disabled={disabled || !canCompare}
+        onClick={() => setView("compare")}
+      />
     </div>
   );
 }

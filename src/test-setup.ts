@@ -6,3 +6,10 @@ import "./i18n";
 afterEach(() => {
   cleanup();
 });
+
+// jsdom ne fournit pas ResizeObserver (visionneuse, comparaison).
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

@@ -5,7 +5,7 @@ import { useLibrary } from "../store/library";
 export function StatusBar() {
   const { t } = useTranslation();
   const count = useLibrary((s) => s.media.length);
-  const selected = useLibrary((s) => (s.selectedId === null ? 0 : 1));
+  const selected = useLibrary((s) => s.selectedIds.length);
   return (
     <footer className="status-bar">
       <span>{t("status.selection", { count, selected })}</span>

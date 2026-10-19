@@ -11,6 +11,7 @@ export function Filmstrip() {
   const albums = useLibrary((s) => s.albums);
   const albumId = useLibrary((s) => s.albumId);
   const selected = useLibrary((s) => s.media.find((m) => m.id === s.selectedId));
+  const selectedCount = useLibrary((s) => s.selectedIds.length);
   const sourceName =
     albumId === null
       ? t("catalog.allPhotos")
@@ -21,7 +22,7 @@ export function Filmstrip() {
       <div className="filmstrip-header">
         <span className="filmstrip-source">{t("filmstrip.source", { source: sourceName })}</span>
         <span>
-          {t("filmstrip.count", { count: media.length, selected: selected ? 1 : 0 })}
+          {t("filmstrip.count", { count: media.length, selected: selectedCount })}
           {selected && ` / ${selected.fileName}`}
         </span>
         <span className="toolbar-spacer" />

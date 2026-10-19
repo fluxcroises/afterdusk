@@ -1,5 +1,6 @@
 import { Library } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Compare } from "../components/Compare";
 import { Loupe } from "../components/Loupe";
 import { MediaGrid } from "../components/MediaGrid";
 import { useLibrary } from "../store/library";
@@ -24,6 +25,8 @@ export function LibraryView() {
       {count > 0 ? (
         view === "loupe" ? (
           <Loupe />
+        ) : view === "compare" ? (
+          <Compare />
         ) : (
           <MediaGrid />
         )
