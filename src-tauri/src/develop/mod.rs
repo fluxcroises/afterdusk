@@ -3,6 +3,7 @@
 
 pub mod auto;
 pub mod curve;
+pub mod detail;
 pub mod gpu;
 pub mod pipeline;
 pub mod settings;

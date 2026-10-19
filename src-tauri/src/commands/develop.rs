@@ -197,6 +197,18 @@ fn render_frame(
     uploaded: Option<&GpuImage>,
     params: &RenderParams,
 ) -> Vec<u8> {
+    render_frame_cut(engine, image, uploaded, params, None)
+}
+
+/// Comme [`render_frame`], en ne gardant que la partie `cut` (gauche, haut,
+/// largeur, hauteur) de l'image rendue : la marge autour d'une région zoomée.
+fn render_frame_cut(
+    engine: &DevelopEngine,
+    image: &WorkingImage,
+    uploaded: Option<&GpuImage>,
+    params: &RenderParams,
+    cut: Option<(u32, u32, u32, u32)>,
+) -> Vec<u8> {
     let started = Instant::now();
     let gpu = engine.gpu().zip(uploaded).and_then(|(r, img)| {
         r.render(img, params)
@@ -206,14 +218,19 @@ fn render_frame(
     let on_gpu = gpu.is_some();
     let rendered = gpu.unwrap_or_else(|| render(image, params));
     let micros = u32::try_from(started.elapsed().as_micros()).unwrap_or(u32::MAX);
-    let mut out = Vec::with_capacity(HEADER + rendered.histogram.len() * 4 + rendered.rgba.len());
-    for v in [image.width, image.height, micros, u32::from(on_gpu)] {
+    let (cx, cy, cw, ch) = cut.unwrap_or((0, 0, image.width, image.height));
+    let mut out =
+        Vec::with_capacity(HEADER + rendered.histogram.len() * 4 + (cw * ch * 4) as usize);
+    for v in [cw, ch, micros, u32::from(on_gpu)] {
         out.extend_from_slice(&v.to_le_bytes());
     }
     for v in &rendered.histogram {
         out.extend_from_slice(&v.to_le_bytes());
     }
-    out.extend_from_slice(&rendered.rgba);
+    for y in cy..cy + ch {
+        let start = ((y * image.width + cx) * 4) as usize;
+        out.extend_from_slice(&rendered.rgba[start..start + (cw * 4) as usize]);
+    }
     out
 }
 
@@ -336,14 +353,23 @@ pub async fn develop_zoom_render(
                 .and_then(|s| s.full.clone())
                 .ok_or_else(|| CommandError::new("internal", "zoom non préparé"))?
         };
-        let region = WorkingImage::crop_from_raw(&full, left, top, width, height);
         let params = RenderParams::from_settings(
             &settings.sanitized(),
-            region.as_shot_white,
+            full.as_shot_white,
             clipping.unwrap_or_default(),
         );
+        // Réduction du bruit et netteté regardent les voisins : la région est
+        // rendue avec une marge, puis rognée, pour des bords justes.
+        let (region, cut) =
+            WorkingImage::region_with_margin(&full, &params, left, top, width, height);
         let uploaded = engine.gpu().and_then(|r| r.upload(&region).ok());
-        Ok(render_frame(&engine, &region, uploaded.as_ref(), &params))
+        Ok(render_frame_cut(
+            &engine,
+            &region,
+            uploaded.as_ref(),
+            &params,
+            Some(cut),
+        ))
     })
     .await?;
     Ok(Response::new(bytes))

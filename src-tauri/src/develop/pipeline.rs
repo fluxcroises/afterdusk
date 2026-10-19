@@ -13,6 +13,7 @@ use std::thread;
 use serde::Deserialize;
 
 use super::curve;
+use super::detail::{self, DetailParams, Radii};
 use super::settings::DevelopSettings;
 use super::white;
 #[cfg(test)]
@@ -121,6 +122,8 @@ pub const FLAG_CURVE: u32 = 8;
 pub const FLAG_HSL: u32 = 16;
 pub const FLAG_VIGNETTE: u32 = 32;
 pub const FLAG_GRAIN: u32 = 64;
+pub const FLAG_DENOISE: u32 = 128;
+pub const FLAG_SHARPEN: u32 = 256;
 
 /// Couleurs des avertissements d'écrêtage peints sur l'image.
 pub const CLIP_HIGHLIGHT_RGB: [u8; 3] = [255, 40, 40];
@@ -300,6 +303,37 @@ impl WorkingImage {
         }
     }
 
+    /// Région à rendre pour afficher (left, top, width, height) de l'original :
+    /// agrandie de la portée des passes de voisinage, et la partie à garder
+    /// de son rendu (gauche, haut, largeur, hauteur).
+    pub fn region_with_margin(
+        raw: &DevelopedRaw,
+        params: &RenderParams,
+        left: u32,
+        top: u32,
+        width: u32,
+        height: u32,
+    ) -> (Self, (u32, u32, u32, u32)) {
+        let margin = if params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0 {
+            Radii::at(&params.detail, 1.0).margin()
+        } else {
+            0
+        };
+        let left = left.min(raw.width.saturating_sub(1));
+        let top = top.min(raw.height.saturating_sub(1));
+        let width = width.clamp(1, raw.width - left);
+        let height = height.clamp(1, raw.height - top);
+        let (l0, t0) = (left.saturating_sub(margin), top.saturating_sub(margin));
+        let region = Self::crop_from_raw(
+            raw,
+            l0,
+            t0,
+            width + (left - l0) + margin,
+            height + (top - t0) + margin,
+        );
+        (region, (left - l0, top - t0, width, height))
+    }
+
     /// Origine de l'image dans l'image entière, et taille de celle-ci.
     pub fn frame(&self) -> (u32, u32, u32, u32) {
         self.crop.map_or((0, 0, self.width, self.height), |c| {
@@ -364,6 +398,8 @@ pub struct RenderParams {
     pub grain: [f32; 3],
     /// Tables des courbes (RVB, rouge, vert, bleu), vide sans courbe.
     pub curve: Vec<f32>,
+    /// Réduction du bruit et netteté (passes de voisinage).
+    pub detail: DetailParams,
 }
 
 impl RenderParams {
@@ -432,6 +468,13 @@ impl RenderParams {
         if !curve.is_empty() {
             flags |= FLAG_CURVE;
         }
+        let detail = DetailParams::from_settings(&settings.detail);
+        if detail.denoises() {
+            flags |= FLAG_DENOISE;
+        }
+        if detail.sharpens() {
+            flags |= FLAG_SHARPEN;
+        }
         Self {
             matrix,
             tone,
@@ -442,6 +485,7 @@ impl RenderParams {
             vignette,
             grain,
             curve,
+            detail,
         }
     }
 }
@@ -613,7 +657,19 @@ pub fn render_pixel(rgb: [f32; 3], p: &RenderParams) -> [f32; 3] {
 /// Rendu d'un pixel de travail en sRGB codé (0 à 1), à sa place dans l'image.
 #[inline]
 pub fn render_pixel_at(rgb: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
-    let lin = mul(&p.matrix, rgb);
+    let out = display_of(mul(&p.matrix, rgb), p, at);
+    if p.flags & FLAG_GRAIN != 0 {
+        apply_grain(out, &p.grain, at)
+    } else {
+        out
+    }
+}
+
+/// De l'image linéaire (exposition et balance appliquées) aux valeurs codées,
+/// avant netteté et grain : courbe neutre, tonalité, couleur, vignetage,
+/// sRGB, TSL, courbes.
+#[inline]
+pub fn display_of(lin: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
     let mut v = lin.map(neutral_curve);
     if p.flags & FLAG_TONE != 0 {
         let y = LUMA_REC2020[0] * v[0] + LUMA_REC2020[1] * v[1] + LUMA_REC2020[2] * v[2];
@@ -647,10 +703,51 @@ pub fn render_pixel_at(rgb: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
     if p.flags & FLAG_CURVE != 0 {
         out = apply_curve(out, &p.curve);
     }
-    if p.flags & FLAG_GRAIN != 0 {
-        out = apply_grain(out, &p.grain, at);
-    }
     out
+}
+
+/// Rendu par passes, quand une étape regarde les voisins : image linéaire,
+/// réduction du bruit, valeurs codées, netteté. Renvoie les valeurs codées
+/// (trois par pixel), avant grain.
+fn staged_display(image: &WorkingImage, p: &RenderParams) -> Vec<f32> {
+    let (w, h) = (image.width as usize, image.height as usize);
+    let (ox, oy, fw, fh) = image.frame();
+    let radii = Radii::at(&p.detail, image.scale);
+    let mut lin: Vec<f32> = image
+        .rgb
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .flat_map(|c| mul(&p.matrix, *c))
+        .collect();
+    if p.flags & FLAG_DENOISE != 0 {
+        detail::denoise(&mut lin, w, h, &p.detail, &radii);
+    }
+    let mut enc = vec![0.0f32; w * h * 3];
+    let rows = h.div_ceil(workers()).max(1);
+    thread::scope(|s| {
+        for (k, chunk) in enc.chunks_mut(rows * w * 3).enumerate() {
+            let lin = &lin;
+            s.spawn(move || {
+                for (i, out) in chunk.as_chunks_mut::<3>().0.iter_mut().enumerate() {
+                    let index = k * rows * w + i;
+                    let at = At {
+                        x: ox + (index % w) as u32,
+                        y: oy + (index / w) as u32,
+                        width: fw,
+                        height: fh,
+                        scale: image.scale,
+                    };
+                    let px = [lin[index * 3], lin[index * 3 + 1], lin[index * 3 + 2]];
+                    *out = display_of(px, p, &at);
+                }
+            });
+        }
+    });
+    if p.flags & FLAG_SHARPEN != 0 {
+        detail::sharpen(&mut enc, w, h, &p.detail, &radii);
+    }
+    enc
 }
 
 /// Pixel codé sur 8 bits, comme le shader (`pack4x8unorm`).
@@ -721,6 +818,9 @@ pub fn histogram_of(rgba: &[u8]) -> Vec<u32> {
 /// Rendu complet, réparti sur les cœurs du processeur.
 pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
     let (ox, oy, fw, fh) = image.frame();
+    let staged =
+        (params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0).then(|| staged_display(image, params));
+    let staged = staged.as_deref();
     let pixels = (image.width * image.height) as usize;
     let mut out = vec![0u8; pixels * 4];
     let chunk = pixels.div_ceil(workers()).max(1);
@@ -741,11 +841,21 @@ pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
                             height: fh,
                             scale: image.scale,
                         };
-                        let v = render_pixel_at(
-                            [src[i * 3], src[i * 3 + 1], src[i * 3 + 2]],
-                            params,
-                            &at,
-                        );
+                        let v = match staged {
+                            Some(enc) => {
+                                let e = [enc[index * 3], enc[index * 3 + 1], enc[index * 3 + 2]];
+                                if params.flags & FLAG_GRAIN != 0 {
+                                    apply_grain(e, &params.grain, &at)
+                                } else {
+                                    e
+                                }
+                            }
+                            None => render_pixel_at(
+                                [src[i * 3], src[i * 3 + 1], src[i * 3 + 2]],
+                                params,
+                                &at,
+                            ),
+                        };
                         let q = v.map(quantize);
                         hist[usize::from(q[0])] += 1;
                         hist[256 + usize::from(q[1])] += 1;
@@ -1099,6 +1209,71 @@ mod tests {
         // Région débordante : ramenée à l'image.
         let edge = WorkingImage::crop_from_raw(&raw, 35, 28, 20, 20);
         assert_eq!((edge.width, edge.height), (5, 2));
+    }
+
+    #[test]
+    fn rendu_par_passes_identique_au_rendu_direct() {
+        // Netteté sur une image unie : le rendu par passes doit donner les
+        // mêmes valeurs que le rendu direct (même chaîne, découpée).
+        let image = WorkingImage {
+            width: 16,
+            height: 12,
+            rgb: vec![0.12; 16 * 12 * 3],
+            as_shot_white: D65_WHITE,
+            scale: 1.0,
+            crop: None,
+        };
+        let mut s = DevelopSettings::default();
+        s.light.contrast = 30.0;
+        s.effects.grain.amount = 50.0;
+        let direct = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
+        s.detail.sharpening.amount = 80.0;
+        let staged = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
+        assert_ne!(staged.flags & FLAG_SHARPEN, 0);
+        let a = render(&image, &direct).rgba;
+        let b = render(&image, &staged).rgba;
+        // Un aplat n'a rien à accentuer : identique, grain compris.
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn region_avec_marge_identique_a_l_image_entiere() {
+        let (w, h) = (60u32, 50u32);
+        let xyz: Vec<u16> = (0..w * h)
+            .flat_map(|i| {
+                let (x, y) = (i % w, i / w);
+                let v = (8000 + (x * 400) % 30000 + ((x * 131 + y * 71) % 13) * 400) as u16;
+                [
+                    v,
+                    v / 2,
+                    (v / 3).saturating_add(((y * 97) % 9) as u16 * 300),
+                ]
+            })
+            .collect();
+        let raw = DevelopedRaw {
+            width: w,
+            height: h,
+            xyz,
+            as_shot_white: D65_WHITE,
+            full_long_side: w,
+        };
+        let mut s = DevelopSettings::default();
+        s.detail.noise.luminance = 80.0;
+        s.detail.noise.color = 70.0;
+        s.detail.sharpening.amount = 120.0;
+        s.detail.sharpening.masking = 20.0;
+        let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
+        let whole = render(&WorkingImage::from_raw(&raw, w), &p).rgba;
+        let (region, (cx, cy, cw, ch)) = WorkingImage::region_with_margin(&raw, &p, 25, 20, 12, 9);
+        let part = render(&region, &p).rgba;
+        assert_eq!((cw, ch), (12, 9));
+        for y in 0..ch {
+            for x in 0..cw {
+                let i = (((y + cy) * region.width + x + cx) * 4) as usize;
+                let j = (((y + 20) * w + x + 25) * 4) as usize;
+                assert_eq!(part[i..i + 3], whole[j..j + 3], "({x}, {y})");
+            }
+        }
     }
 
     #[test]

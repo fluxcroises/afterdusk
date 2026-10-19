@@ -7,7 +7,7 @@ mod common;
 
 use std::time::Instant;
 
-use afterdusk_lib::develop::gpu::GpuRenderer;
+use afterdusk_lib::develop::gpu::{GpuError, GpuRenderer};
 use afterdusk_lib::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
 use afterdusk_lib::develop::settings::{DevelopSettings, WhiteBalance};
 use afterdusk_lib::raw::{D65_WHITE, RawFile};
@@ -82,16 +82,20 @@ fn histograms_agree(a: &[u32], b: &[u32], differing_values: usize) -> bool {
     l1 <= 4 * differing_values as u64
 }
 
+/// Le processeur graphique, ou rien s'il n'y en a pas (le test est alors
+/// sauté). Toute autre erreur (shader refusé, disposition invalide) échoue :
+/// elle ne doit jamais passer pour une machine sans GPU.
 fn renderer() -> Option<GpuRenderer> {
     match GpuRenderer::new() {
         Ok(r) => {
             println!("processeur graphique : {}", r.adapter_name());
             Some(r)
         }
-        Err(e) => {
+        Err(e @ (GpuError::NoAdapter(_) | GpuError::Device(_))) => {
             println!("test GPU sauté : {e}");
             None
         }
+        Err(e) => panic!("processeur graphique présent mais inutilisable : {e}"),
     }
 }
 
@@ -124,6 +128,17 @@ fn cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
     look.effects.grain.amount = 60.0;
     look.effects.grain.size = 40.0;
     look.effects.grain.roughness = 70.0;
+    let mut detail = DevelopSettings::default();
+    detail.light.exposure = 1.2;
+    detail.detail.noise.luminance = 70.0;
+    detail.detail.noise.color = 60.0;
+    detail.detail.sharpening.amount = 90.0;
+    detail.detail.sharpening.radius = 1.4;
+    detail.detail.sharpening.masking = 30.0;
+    detail.effects.grain.amount = 30.0;
+    let mut sharp_only = DevelopSettings::default();
+    sharp_only.detail.sharpening.amount = 150.0;
+    sharp_only.detail.sharpening.detail = 100.0;
     let mut dark = DevelopSettings::default();
     dark.light.exposure = -2.0;
     dark.light.contrast = -60.0;
@@ -140,6 +155,8 @@ fn cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
         ("tous les curseurs", all, both),
         ("sombre et tungstène", dark, Clipping::default()),
         ("courbes, TSL, effets", look, Clipping::default()),
+        ("bruit et netteté", detail, Clipping::default()),
+        ("netteté seule", sharp_only, Clipping::default()),
     ]
 }
 

@@ -291,6 +291,90 @@ impl Effects {
     }
 }
 
+fn one() -> f64 {
+    1.0
+}
+
+fn is_one(v: &f64) -> bool {
+    *v == 1.0
+}
+
+/// Netteté : quantité de 0 à 150, rayon de 0,5 à 3 pixels de l'original,
+/// détail (retenue des halos) et masquage (zones unies épargnées) de 0 à 100.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Sharpening {
+    #[serde(skip_serializing_if = "is_zero")]
+    pub amount: f64,
+    #[serde(skip_serializing_if = "is_one")]
+    pub radius: f64,
+    #[serde(skip_serializing_if = "is_twenty_five")]
+    pub detail: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub masking: f64,
+}
+
+impl Default for Sharpening {
+    fn default() -> Self {
+        Self {
+            amount: 0.0,
+            radius: one(),
+            detail: twenty_five(),
+            masking: 0.0,
+        }
+    }
+}
+
+/// Réduction du bruit, de 0 à 100 : luminance (et part du détail gardée),
+/// couleur.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NoiseReduction {
+    #[serde(skip_serializing_if = "is_zero")]
+    pub luminance: f64,
+    #[serde(skip_serializing_if = "is_fifty")]
+    pub luminance_detail: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub color: f64,
+}
+
+impl Default for NoiseReduction {
+    fn default() -> Self {
+        Self {
+            luminance: 0.0,
+            luminance_detail: fifty(),
+            color: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Detail {
+    #[serde(skip_serializing_if = "Sharpening::is_default")]
+    pub sharpening: Sharpening,
+    #[serde(skip_serializing_if = "NoiseReduction::is_default")]
+    pub noise: NoiseReduction,
+}
+
+impl Sharpening {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+impl NoiseReduction {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+impl Detail {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
 /// Points d'une courbe ramenés dans [0, 255], triés, une seule sortie par
 /// entrée ; moins de deux points : l'identité.
 fn sanitize_curve(points: &mut Vec<CurvePoint>) {
@@ -322,6 +406,8 @@ pub struct DevelopSettings {
     pub curve: Curve,
     #[serde(default, skip_serializing_if = "Hsl::is_default")]
     pub hsl: Hsl,
+    #[serde(default, skip_serializing_if = "Detail::is_default")]
+    pub detail: Detail,
     #[serde(default, skip_serializing_if = "Effects::is_default")]
     pub effects: Effects,
 }
@@ -336,6 +422,7 @@ impl Default for DevelopSettings {
             color: Color::default(),
             curve: Curve::default(),
             hsl: Hsl::default(),
+            detail: Detail::default(),
             effects: Effects::default(),
         }
     }
@@ -423,6 +510,19 @@ impl DevelopSettings {
                 *v = clamp(*v, -100.0, 100.0);
             }
         }
+        let sh = &mut self.detail.sharpening;
+        sh.amount = clamp(sh.amount, 0.0, 150.0);
+        sh.radius = if sh.radius.is_finite() {
+            sh.radius.clamp(0.5, 3.0)
+        } else {
+            1.0
+        };
+        sh.detail = clamp(sh.detail, 0.0, 100.0);
+        sh.masking = clamp(sh.masking, 0.0, 100.0);
+        let nr = &mut self.detail.noise;
+        nr.luminance = clamp(nr.luminance, 0.0, 100.0);
+        nr.luminance_detail = clamp(nr.luminance_detail, 0.0, 100.0);
+        nr.color = clamp(nr.color, 0.0, 100.0);
         let v = &mut self.effects.vignette;
         v.amount = clamp(v.amount, -100.0, 100.0);
         v.midpoint = clamp(v.midpoint, 0.0, 100.0);
@@ -439,6 +539,7 @@ impl DevelopSettings {
             && self.color.is_default()
             && self.curve.is_default()
             && self.hsl.is_default()
+            && self.detail.is_default()
             && self.effects.is_default()
     }
 }
@@ -503,6 +604,19 @@ mod tests {
         let json = s.to_json();
         assert!(!json.contains("midpoint") && !json.contains("size") && !json.contains("green"));
         assert_eq!(DevelopSettings::from_json(&json).unwrap(), s);
+        let d = DevelopSettings::from_json(
+            r#"{"version":1,"detail":{"sharpening":{"amount":400,"radius":9},"noise":{"color":25}}}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            (d.detail.sharpening.amount, d.detail.sharpening.radius),
+            (150.0, 3.0)
+        );
+        assert_eq!(d.detail.sharpening.detail, 25.0);
+        assert_eq!(
+            d.to_json(),
+            r#"{"version":1,"process":1,"detail":{"sharpening":{"amount":150.0,"radius":3.0},"noise":{"color":25.0}}}"#
+        );
         // Une courbe identité ou d'un seul point n'est pas enregistrée.
         let id = DevelopSettings::from_json(
             r#"{"version":1,"curve":{"rgb":[[0,0],[255,255]],"red":[[10,20]]}}"#,

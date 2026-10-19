@@ -10,10 +10,11 @@ use std::sync::{Arc, mpsc};
 use wgpu::util::DeviceExt;
 
 use super::curve;
+use super::detail::{self, Radii};
 use super::pipeline::{
-    FLAG_CURVE, FLAG_GRAIN, FLAG_HSL, FLAG_TONE, FLAG_VIGNETTE, HISTOGRAM_BINS, HUE_CENTERS,
-    LUMA_REC2020, REC2020_TO_SRGB, RenderParams, Rendered, WorkingImage, histogram_of,
-    paint_clipping, process1,
+    FLAG_CURVE, FLAG_DENOISE, FLAG_GRAIN, FLAG_HSL, FLAG_SHARPEN, FLAG_TONE, FLAG_VIGNETTE,
+    HISTOGRAM_BINS, HUE_CENTERS, LUMA_REC2020, REC2020_TO_SRGB, RenderParams, Rendered,
+    WorkingImage, histogram_of, paint_clipping, process1,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -33,7 +34,7 @@ pub enum GpuError {
 const WORKGROUP: u32 = 16;
 
 /// Taille du bloc de paramètres (voir `Params` dans le shader).
-const UNIFORM_SIZE: u64 = 240;
+const UNIFORM_SIZE: u64 = 288;
 
 /// Tables des quatre courbes (RVB, rouge, vert, bleu).
 const CURVE_BYTES: u64 = 4 * curve::LUT_SIZE as u64 * 4;
@@ -58,6 +59,9 @@ struct Params {{
     vignette: vec4<f32>,
     grain: vec4<f32>,
     frame: vec4<u32>,
+    detail_a: vec4<f32>,
+    detail_b: vec4<f32>,
+    radii: vec4<u32>,
 }}
 
 @group(0) @binding(0) var<storage, read> src: array<f32>;
@@ -245,6 +249,14 @@ fn apply_grain(c: vec3<f32>, x: u32, y: u32) -> vec3<f32> {{
 
 fn render_pixel(rgb: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     let lin = vec3<f32>(dot(params.m0.xyz, rgb), dot(params.m1.xyz, rgb), dot(params.m2.xyz, rgb));
+    var out = display_pixel(lin, px, py);
+    if ((params.flags & FLAG_GRAIN) != 0u) {{
+        out = apply_grain(out, px, py);
+    }}
+    return out;
+}}
+
+fn display_pixel(lin: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     var v = vec3<f32>(neutral_curve(lin.x), neutral_curve(lin.y), neutral_curve(lin.z));
     if ((params.flags & FLAG_TONE) != 0u) {{
         let y = dot(LUMA, v);
@@ -281,9 +293,6 @@ fn render_pixel(rgb: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     }}
     if ((params.flags & FLAG_CURVE) != 0u) {{
         out = vec3<f32>(lut(1u, lut(0u, out.x)), lut(2u, lut(0u, out.y)), lut(3u, lut(0u, out.z)));
-    }}
-    if ((params.flags & FLAG_GRAIN) != 0u) {{
-        out = apply_grain(out, px, py);
     }}
     return out;
 }}
@@ -344,13 +353,359 @@ fn main(
     )
 }
 
+/// Passes du rendu par étapes (réduction du bruit, netteté), dans l'ordre.
+const STAGED_PASSES: [&str; 16] = [
+    "s_linear",
+    "s_chroma",
+    "s_box_h_color",
+    "s_box_v_color",
+    "s_chroma_apply",
+    "s_guide",
+    "s_box_h_lum1",
+    "s_box_v_lum1",
+    "s_coef",
+    "s_box_h_lum2",
+    "s_box_v_lum2",
+    "s_lum_apply",
+    "s_display",
+    "s_gauss_h",
+    "s_gauss_v",
+    "s_finish",
+];
+
+/// Moyenne de surface d'un tampon à deux valeurs par pixel, sur une ligne
+/// (`horizontal`) ou une colonne, comme `detail::box_blur`.
+fn box_pass(name: &str, from: &str, to: &str, radius: &str, horizontal: bool) -> String {
+    let (pos, len, at) = if horizontal {
+        ("id.x", "params.width", "id.y * params.width + k")
+    } else {
+        ("id.y", "params.height", "k * params.width + id.x")
+    };
+    format!(
+        r#"
+@compute @workgroup_size({wg}, {wg})
+fn {name}(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (id.x >= params.width || id.y >= params.height) {{
+        return;
+    }}
+    let r = params.radii.{radius};
+    var lo = 0u;
+    if ({pos} > r) {{
+        lo = {pos} - r;
+    }}
+    let hi = min({pos} + r, {len} - 1u);
+    let n = f32(hi - lo + 1u);
+    var s0 = 0.0;
+    for (var k = lo; k <= hi; k++) {{
+        s0 = s0 + {from}[({at}) * 2u];
+    }}
+    var s1 = 0.0;
+    for (var k = lo; k <= hi; k++) {{
+        s1 = s1 + {from}[({at}) * 2u + 1u];
+    }}
+    let o = (id.y * params.width + id.x) * 2u;
+    {to}[o] = s0 / n;
+    {to}[o + 1u] = s1 / n;
+}}
+"#,
+        wg = WORKGROUP,
+    )
+}
+
+/// Point d'entrée avec histogramme par groupe de travail (comme `main`) :
+/// `body` calcule `v` (valeurs codées) pour le pixel `i`.
+fn histogram_entry(name: &str, body: &str) -> String {
+    format!(
+        r#"
+@compute @workgroup_size({wg}, {wg})
+fn {name}(
+    @builtin(global_invocation_id) id: vec3<u32>,
+    @builtin(local_invocation_index) li: u32,
+) {{
+    for (var k = 0u; k < 4u; k++) {{
+        atomicStore(&local_hist[li * 4u + k], 0u);
+    }}
+    workgroupBarrier();
+    if (id.x < params.width && id.y < params.height) {{
+        let i = id.y * params.width + id.x;
+        let px = params.frame.x + id.x;
+        let py = params.frame.y + id.y;
+{body}
+        let q = vec3<u32>(quantize(v.x), quantize(v.y), quantize(v.z));
+        atomicAdd(&local_hist[q.x], 1u);
+        atomicAdd(&local_hist[256u + q.y], 1u);
+        atomicAdd(&local_hist[512u + q.z], 1u);
+        let l = (2126u * q.x + 7152u * q.y + 722u * q.z + 5000u) / 10000u;
+        atomicAdd(&local_hist[768u + min(l, 255u)], 1u);
+        dst[i] = q.x | (q.y << 8u) | (q.z << 16u) | (255u << 24u);
+    }}
+    workgroupBarrier();
+    for (var k = 0u; k < 4u; k++) {{
+        let n = atomicLoad(&local_hist[li * 4u + k]);
+        if (n > 0u) {{
+            atomicAdd(&hist[li * 4u + k], n);
+        }}
+    }}
+}}
+"#,
+        wg = WORKGROUP,
+    )
+}
+
+/// Passes de réduction du bruit et de netteté (voir `detail.rs`).
+fn staged_source() -> String {
+    let mut out = format!(
+        r#"
+// Trois tampons seulement (la limite garantie est de huit par étape) : l'image
+// linéaire ; les passes A, B, C (deux valeurs par pixel) bout à bout ; les
+// valeurs codées puis les deux luminances de la netteté.
+@group(0) @binding(5) var<storage, read_write> lin: array<f32>;
+@group(0) @binding(6) var<storage, read_write> abc: array<f32>;
+@group(0) @binding(7) var<storage, read_write> el: array<f32>;
+
+fn npx() -> u32 {{
+    return params.width * params.height;
+}}
+
+fn ob() -> u32 {{
+    return 2u * npx();
+}}
+
+fn oc() -> u32 {{
+    return 4u * npx();
+}}
+
+fn ol() -> u32 {{
+    return 3u * npx();
+}}
+
+fn ol2() -> u32 {{
+    return 4u * npx();
+}}
+
+const FLAG_SHARPEN: u32 = {flag_sharpen}u;
+
+fn lin_at(i: u32) -> vec3<f32> {{
+    return vec3<f32>(lin[i * 3u], lin[i * 3u + 1u], lin[i * 3u + 2u]);
+}}
+
+fn set_lin(i: u32, v: vec3<f32>) {{
+    lin[i * 3u] = v.x;
+    lin[i * 3u + 1u] = v.y;
+    lin[i * 3u + 2u] = v.z;
+}}
+
+fn outside(id: vec3<u32>) -> bool {{
+    return id.x >= params.width || id.y >= params.height;
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_linear(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let i = id.y * params.width + id.x;
+    let rgb = vec3<f32>(src[i * 3u], src[i * 3u + 1u], src[i * 3u + 2u]);
+    set_lin(i, vec3<f32>(dot(params.m0.xyz, rgb), dot(params.m1.xyz, rgb), dot(params.m2.xyz, rgb)));
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_chroma(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let i = id.y * params.width + id.x;
+    let c = lin_at(i);
+    let y = dot(LUMA, c);
+    buf_a[i * 2u] = c.x - y;
+    buf_a[i * 2u + 1u] = c.z - y;
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_chroma_apply(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let i = id.y * params.width + id.x;
+    let c = lin_at(i);
+    let y = dot(LUMA, c);
+    let amount = params.detail_a.y;
+    let cr = buf_a[i * 2u] + (buf_c[i * 2u] - buf_a[i * 2u]) * amount;
+    let cb = buf_a[i * 2u + 1u] + (buf_c[i * 2u + 1u] - buf_a[i * 2u + 1u]) * amount;
+    let red = y + cr;
+    let blue = y + cb;
+    set_lin(i, vec3<f32>(red, (y - LUMA.x * red - LUMA.z * blue) / LUMA.y, blue));
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_guide(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let i = id.y * params.width + id.x;
+    let y = dot(LUMA, lin_at(i));
+    var v = 0.0;
+    if (y > 0.0) {{
+        v = pow(y, 1.0 / TONE_GAMMA);
+    }}
+    buf_a[i * 2u] = v;
+    buf_a[i * 2u + 1u] = v * v;
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_coef(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let i = id.y * params.width + id.x;
+    let m = buf_c[i * 2u];
+    let mm = buf_c[i * 2u + 1u];
+    let variance = max(mm - m * m, 0.0);
+    let a = variance / (variance + params.detail_a.x);
+    buf_b[i * 2u] = a;
+    buf_b[i * 2u + 1u] = m * (1.0 - a);
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_lum_apply(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let i = id.y * params.width + id.x;
+    let c = lin_at(i);
+    let y = dot(LUMA, c);
+    if (y > 1e-6) {{
+        let q = max(buf_b[i * 2u] * buf_a[i * 2u] + buf_b[i * 2u + 1u], 0.0);
+        var ratio = 0.0;
+        if (q > 0.0) {{
+            ratio = pow(q, TONE_GAMMA) / y;
+        }}
+        set_lin(i, c * ratio);
+    }}
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_display(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let i = id.y * params.width + id.x;
+    let e = display_pixel(lin_at(i), params.frame.x + id.x, params.frame.y + id.y);
+    enc[i * 3u] = e.x;
+    enc[i * 3u + 1u] = e.y;
+    enc[i * 3u + 2u] = e.z;
+    lum[i] = 0.2126 * e.x + 0.7152 * e.y + 0.0722 * e.z;
+}}
+
+fn gauss_weight(k: i32) -> f32 {{
+    let sigma = params.detail_b.y;
+    return exp(-f32(k * k) / (2.0 * sigma * sigma));
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_gauss_h(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let kernel = i32(params.radii.z);
+    var sum = 0.0;
+    var total = 0.0;
+    for (var k = -kernel; k <= kernel; k++) {{
+        let xx = i32(id.x) + k;
+        if (xx >= 0 && xx < i32(params.width)) {{
+            let wt = gauss_weight(k);
+            sum = sum + lum[id.y * params.width + u32(xx)] * wt;
+            total = total + wt;
+        }}
+    }}
+    lum2[id.y * params.width + id.x] = sum / total;
+}}
+
+@compute @workgroup_size({wg}, {wg})
+fn s_gauss_v(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (outside(id)) {{
+        return;
+    }}
+    let kernel = i32(params.radii.z);
+    var sum = 0.0;
+    var total = 0.0;
+    for (var k = -kernel; k <= kernel; k++) {{
+        let yy = i32(id.y) + k;
+        if (yy >= 0 && yy < i32(params.height)) {{
+            let wt = gauss_weight(k);
+            sum = sum + lum2[u32(yy) * params.width + id.x] * wt;
+            total = total + wt;
+        }}
+    }}
+    buf_a[(id.y * params.width + id.x) * 2u] = sum / total;
+}}
+
+fn blurred(x: u32, y: u32) -> f32 {{
+    return buf_a[(y * params.width + x) * 2u];
+}}
+"#,
+        flag_sharpen = FLAG_SHARPEN,
+        wg = WORKGROUP,
+    );
+    out.push_str(&box_pass("s_box_h_color", "buf_a", "buf_b", "y", true));
+    out.push_str(&box_pass("s_box_v_color", "buf_b", "buf_c", "y", false));
+    out.push_str(&box_pass("s_box_h_lum1", "buf_a", "buf_b", "x", true));
+    out.push_str(&box_pass("s_box_v_lum1", "buf_b", "buf_c", "x", false));
+    out.push_str(&box_pass("s_box_h_lum2", "buf_b", "buf_c", "x", true));
+    out.push_str(&box_pass("s_box_v_lum2", "buf_c", "buf_b", "x", false));
+    // Noms des tampons logiques vers leur place dans les trois tampons réels.
+    let mut out = out
+        .replace("buf_a[", "abc[")
+        .replace("buf_b[", "abc[ob() + ")
+        .replace("buf_c[", "abc[oc() + ")
+        .replace("lum2[", "el[ol2() + ")
+        .replace("lum[", "el[ol() + ")
+        .replace("enc[", "el[");
+    out.push_str(&histogram_entry(
+        "s_finish",
+        r#"        var v = vec3<f32>(enc[i * 3u], enc[i * 3u + 1u], enc[i * 3u + 2u]);
+        if ((params.flags & FLAG_SHARPEN) != 0u) {
+            let d = lum[i] - blurred(id.x, id.y);
+            let soft = d / (1.0 + abs(d) / params.detail_a.w);
+            var mask = 1.0;
+            if (params.detail_b.z > 0.0) {
+                let edge = params.detail_b.x;
+                let xl = select(id.x - 1u, 0u, id.x == 0u);
+                let xr = min(id.x + 1u, params.width - 1u);
+                let yt = select(id.y - 1u, 0u, id.y == 0u);
+                let yb = min(id.y + 1u, params.height - 1u);
+                let gx = blurred(xr, id.y) - blurred(xl, id.y);
+                let gy = blurred(id.x, yb) - blurred(id.x, yt);
+                mask = smoothstep_(0.5 * edge, 1.5 * edge, 0.5 * sqrt(gx * gx + gy * gy));
+            }
+            v = v + vec3<f32>(params.detail_a.z * soft * mask);
+        }
+        if ((params.flags & FLAG_GRAIN) != 0u) {
+            v = apply_grain(v, px, py);
+        }"#
+        .replace("lum[", "el[ol() + ")
+        .replace("enc[", "el[")
+        .as_str(),
+    ));
+    out
+}
+
 /// Processeur graphique prêt à rendre : appareil, file et pipeline compilé.
 pub struct GpuRenderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipeline: wgpu::ComputePipeline,
     layout: wgpu::BindGroupLayout,
+    /// Passes de voisinage, dans l'ordre de [`STAGED_PASSES`].
+    staged: Vec<wgpu::ComputePipeline>,
+    staged_layout: wgpu::BindGroupLayout,
     adapter: String,
+}
+
+/// Tampons des passes de voisinage, créés au premier rendu qui en a besoin.
+struct Staged {
+    _buffers: Vec<wgpu::Buffer>,
+    bind_group: wgpu::BindGroup,
 }
 
 /// Image de travail chargée sur le processeur graphique, avec ses tampons.
@@ -364,6 +719,8 @@ pub struct GpuImage {
     hist_readback: wgpu::Buffer,
     curves: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
+    src: wgpu::Buffer,
+    staged: std::sync::OnceLock<Staged>,
     scale: f32,
     /// Origine dans l'image entière et taille de celle-ci (voir [`WorkingImage::frame`]).
     frame: (u32, u32, u32, u32),
@@ -381,6 +738,7 @@ fn uniform_bytes(
     scale: f32,
     frame: (u32, u32, u32, u32),
 ) -> Vec<u8> {
+    let radii = Radii::at(&p.detail, scale);
     let mut out = Vec::with_capacity(UNIFORM_SIZE as usize);
     let mut f = |v: f32| out.extend_from_slice(&v.to_le_bytes());
     for row in p.matrix {
@@ -414,6 +772,18 @@ fn uniform_bytes(
     }
     f(scale);
     for v in [frame.0, frame.1, frame.2, frame.3] {
+        out.extend_from_slice(&v.to_le_bytes());
+    }
+    let d = &p.detail;
+    let mut f = |v: f32| out.extend_from_slice(&v.to_le_bytes());
+    for v in [d.eps(), d.color, d.sharpen, d.sharpen_limit()] {
+        f(v);
+    }
+    let edge = detail::process1::SHARPEN_MASK_EDGE * d.masking;
+    for v in [edge, radii.sigma, f32::from(u8::from(d.masking > 0.0)), 0.0] {
+        f(v);
+    }
+    for v in [radii.luminance, radii.color, radii.kernel, 0] {
         out.extend_from_slice(&v.to_le_bytes());
     }
     out
@@ -455,7 +825,7 @@ impl GpuRenderer {
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("process1"),
-            source: wgpu::ShaderSource::Wgsl(shader_source().into()),
+            source: wgpu::ShaderSource::Wgsl((shader_source() + &staged_source()).into()),
         });
         let buffer = |binding, ty| wgpu::BindGroupLayoutEntry {
             binding,
@@ -491,10 +861,43 @@ impl GpuRenderer {
             compilation_options: Default::default(),
             cache: None,
         });
+        let mut staged_entries: Vec<wgpu::BindGroupLayoutEntry> = vec![
+            buffer(0, storage(true)),
+            buffer(1, storage(false)),
+            buffer(2, wgpu::BufferBindingType::Uniform),
+            buffer(3, storage(false)),
+            buffer(4, storage(true)),
+        ];
+        staged_entries.extend((5..8).map(|b| buffer(b, storage(false))));
+        let staged_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("process1-passes"),
+            entries: &staged_entries,
+        });
+        let staged_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("process1-passes"),
+                bind_group_layouts: &[Some(&staged_layout)],
+                immediate_size: 0,
+            });
+        let staged = STAGED_PASSES
+            .iter()
+            .map(|name| {
+                device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                    label: Some(name),
+                    layout: Some(&staged_pipeline_layout),
+                    module: &module,
+                    entry_point: Some(name),
+                    compilation_options: Default::default(),
+                    cache: None,
+                })
+            })
+            .collect();
         if let Some(e) = scope.pop().await {
             return Err(wgpu_err(e));
         }
         Ok(Self {
+            staged_layout,
+            staged,
             device,
             queue,
             pipeline,
@@ -578,9 +981,66 @@ impl GpuRenderer {
             hist_readback,
             curves,
             bind_group,
+            src,
+            staged: std::sync::OnceLock::new(),
             scale: image.scale,
             frame: image.frame(),
         })
+    }
+
+    /// Tampons et liaisons des passes de voisinage d'une image.
+    fn staged_buffers(&self, image: &GpuImage) -> Staged {
+        let pixels = u64::from(image.width) * u64::from(image.height);
+        let make = |label: &str, per_pixel: u64| {
+            self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some(label),
+                size: pixels * per_pixel * 4,
+                usage: wgpu::BufferUsages::STORAGE,
+                mapped_at_creation: false,
+            })
+        };
+        let buffers = vec![
+            make("linéaire", 3),
+            make("passes A, B, C", 6),
+            make("codé et luminances", 5),
+        ];
+        let mut entries = vec![
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: image.src.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: image.dst.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: image.params.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: image.hist.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: image.curves.as_entire_binding(),
+            },
+        ];
+        for (k, b) in buffers.iter().enumerate() {
+            entries.push(wgpu::BindGroupEntry {
+                binding: 5 + k as u32,
+                resource: b.as_entire_binding(),
+            });
+        }
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("process1-passes"),
+            layout: &self.staged_layout,
+            entries: &entries,
+        });
+        Staged {
+            _buffers: buffers,
+            bind_group,
+        }
     }
 
     /// Rendu RGBA 8 bits et histogramme, identiques au rendu processeur à la
@@ -602,18 +1062,40 @@ impl GpuRenderer {
                 label: Some("rendu"),
             });
         encoder.clear_buffer(&image.hist, 0, None);
-        {
+        let groups = (
+            image.width.div_ceil(WORKGROUP),
+            image.height.div_ceil(WORKGROUP),
+        );
+        if params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0 {
+            let staged = image.staged.get_or_init(|| self.staged_buffers(image));
+            let wanted = |name: &str| match name {
+                "s_chroma" | "s_box_h_color" | "s_box_v_color" | "s_chroma_apply" => {
+                    params.detail.color > 0.0
+                }
+                "s_guide" | "s_box_h_lum1" | "s_box_v_lum1" | "s_coef" | "s_box_h_lum2"
+                | "s_box_v_lum2" | "s_lum_apply" => params.detail.luminance > 0.0,
+                "s_gauss_h" | "s_gauss_v" => params.detail.sharpens(),
+                _ => true,
+            };
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("process1-passes"),
+                timestamp_writes: None,
+            });
+            pass.set_bind_group(0, &staged.bind_group, &[]);
+            for (name, pipeline) in STAGED_PASSES.iter().zip(&self.staged) {
+                if wanted(name) {
+                    pass.set_pipeline(pipeline);
+                    pass.dispatch_workgroups(groups.0, groups.1, 1);
+                }
+            }
+        } else {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("process1"),
                 timestamp_writes: None,
             });
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &image.bind_group, &[]);
-            pass.dispatch_workgroups(
-                image.width.div_ceil(WORKGROUP),
-                image.height.div_ceil(WORKGROUP),
-                1,
-            );
+            pass.dispatch_workgroups(groups.0, groups.1, 1);
         }
         encoder.copy_buffer_to_buffer(&image.dst, 0, &image.readback, 0, image.dst.size());
         encoder.copy_buffer_to_buffer(&image.hist, 0, &image.hist_readback, 0, HISTOGRAM_BYTES);
