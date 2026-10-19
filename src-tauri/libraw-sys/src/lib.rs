@@ -91,6 +91,13 @@ unsafe extern "C" {
         colors: *mut u16,
         bits: *mut u16,
     ) -> c_int;
+    pub fn ad_raw_develop(
+        raw: *mut ad_raw,
+        half_size: c_int,
+        data: *mut *const u16,
+        width: *mut u16,
+        height: *mut u16,
+    ) -> c_int;
     pub fn ad_raw_strerror(error: c_int) -> *const c_char;
     pub fn ad_raw_version() -> *const c_char;
 }

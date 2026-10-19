@@ -80,6 +80,15 @@ int ad_raw_thumb_item(const ad_raw* raw, int index, int* format, uint16_t* width
 int ad_raw_thumbnail(ad_raw* raw, int index, const uint8_t** data, size_t* size, int* format,
                      uint16_t* width, uint16_t* height, uint16_t* colors, uint16_t* bits);
 
+/* Développe l'image, sans aucune retouche de LibRaw (ni courbe ni luminosité
+ * automatique) : dématriçage (AHD, ou celui du X-Trans), balance des blancs
+ * du boîtier, matrice couleur du boîtier vers XYZ (D65), linéaire, 16 bits,
+ * trois canaux, orientation appliquée. half_size : moitié de la définition,
+ * pour l'aperçu de retouche. Les données restent valides jusqu'au prochain
+ * appel ou à la fermeture. */
+int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* width,
+                   uint16_t* height);
+
 const char* ad_raw_strerror(int error);
 const char* ad_raw_version(void);
 

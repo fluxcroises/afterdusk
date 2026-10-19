@@ -123,6 +123,7 @@ struct ad_raw {
   ad_raw_info info;
   std::vector<ExifEntry> exif;
   libraw_processed_image_t* thumb = nullptr;
+  libraw_processed_image_t* image = nullptr;
 };
 
 namespace {
@@ -234,6 +235,7 @@ ad_raw* ad_raw_open(const char* utf8_path, int* error) {
 void ad_raw_close(ad_raw* raw) {
   if (!raw) return;
   if (raw->thumb) LibRaw::dcraw_clear_mem(raw->thumb);
+  if (raw->image) LibRaw::dcraw_clear_mem(raw->image);
   raw->processor.recycle();
   delete raw;
 }
@@ -293,6 +295,42 @@ int ad_raw_thumbnail(ad_raw* raw, int index, const uint8_t** data, size_t* size,
   *height = raw->thumb->height ? raw->thumb->height : t.theight;
   *colors = raw->thumb->colors;
   *bits = raw->thumb->bits;
+  return LIBRAW_SUCCESS;
+}
+
+int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* width,
+                   uint16_t* height) {
+  if (!raw) return LIBRAW_UNSPECIFIED_ERROR;
+  if (raw->image) {
+    LibRaw::dcraw_clear_mem(raw->image);
+    raw->image = nullptr;
+  }
+  libraw_output_params_t& p = raw->processor.imgdata.params;
+  p.output_color = 5; /* XYZ */
+  p.gamm[0] = 1.0;    /* linéaire */
+  p.gamm[1] = 1.0;
+  p.no_auto_bright = 1;
+  p.use_camera_wb = 1;
+  p.use_camera_matrix = 1;
+  p.output_bps = 16;
+  p.half_size = half_size ? 1 : 0;
+  p.user_qual = 3; /* AHD ; le X-Trans garde son propre dématriçage */
+  p.highlight = 0; /* hautes lumières écrêtées : la reconstruction viendra avec les réglages */
+
+  int ret = raw->processor.unpack();
+  if (ret != LIBRAW_SUCCESS) return ret;
+  ret = raw->processor.dcraw_process();
+  if (ret != LIBRAW_SUCCESS) return ret;
+  int err = 0;
+  raw->image = raw->processor.dcraw_make_mem_image(&err);
+  if (!raw->image) return err ? err : LIBRAW_UNSPECIFIED_ERROR;
+  if (raw->image->type != LIBRAW_IMAGE_BITMAP || raw->image->colors != 3 ||
+      raw->image->bits != 16) {
+    return LIBRAW_UNSPECIFIED_ERROR;
+  }
+  *data = reinterpret_cast<const uint16_t*>(raw->image->data);
+  *width = raw->image->width;
+  *height = raw->image->height;
   return LIBRAW_SUCCESS;
 }
 

@@ -29,6 +29,17 @@ pub enum RawError {
     NoPreview,
     #[error("format d'aperçu inconnu ({0})")]
     UnknownPreviewFormat(i32),
+    #[error("impossible de développer le RAW : {message} (code LibRaw {code})")]
+    Develop { code: i32, message: String },
+}
+
+/// Image développée par LibRaw : XYZ (D65) linéaire, 16 bits, trois canaux
+/// entrelacés, orientation appliquée.
+#[derive(Debug, Clone)]
+pub struct DevelopedRaw {
+    pub width: u32,
+    pub height: u32,
+    pub xyz: Vec<u16>,
 }
 
 /// Identifiant d'une balise TIFF/EXIF relevée dans le fichier.
@@ -232,6 +243,37 @@ impl RawFile {
                 })
             })
             .collect()
+    }
+
+    /// Développe l'image sans retouche (voir `ad_raw_develop`) ; `half_size` :
+    /// moitié de la définition, pour l'aperçu de retouche. Lecture seule.
+    pub fn develop(&mut self, half_size: bool) -> Result<DevelopedRaw, RawError> {
+        let mut data: *const u16 = std::ptr::null();
+        let (mut width, mut height) = (0u16, 0u16);
+        // SAFETY : pointeurs de sortie valides ; LibRaw garantit
+        // largeur × hauteur × 3 valeurs lisibles jusqu'au prochain appel.
+        let code = unsafe {
+            sys::ad_raw_develop(
+                self.handle.as_ptr(),
+                i32::from(half_size),
+                &mut data,
+                &mut width,
+                &mut height,
+            )
+        };
+        if code != 0 || data.is_null() {
+            return Err(RawError::Develop {
+                code,
+                message: libraw_message(code),
+            });
+        }
+        let len = usize::from(width) * usize::from(height) * 3;
+        let xyz = unsafe { std::slice::from_raw_parts(data, len) }.to_vec();
+        Ok(DevelopedRaw {
+            width: u32::from(width),
+            height: u32::from(height),
+            xyz,
+        })
     }
 
     /// Extrait le plus grand aperçu intégré, en privilégiant le JPEG.
