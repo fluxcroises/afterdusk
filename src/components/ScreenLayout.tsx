@@ -24,27 +24,29 @@ export function ScreenLayout({
 }: ScreenLayoutProps) {
   const { t } = useTranslation();
   const visible = useLayout((s) => s.visible);
+  // Plein écran de la visionneuse : seule la photo reste.
+  const immersive = useLayout((s) => s.immersive);
 
   return (
     <div className="screen">
       <div className="screen-row">
-        {left && visible.left && (
+        {left && visible.left && !immersive && (
           <aside className="side-panel side-panel-left" aria-label={t("panels.left")}>
             <div className="side-panel-scroll">{left}</div>
           </aside>
         )}
         <div className="workspace-column">
           <main className="workspace">{children}</main>
-          {toolbar && <div className="toolbar">{toolbar}</div>}
+          {toolbar && !immersive && <div className="toolbar">{toolbar}</div>}
         </div>
-        {right && visible.right && (
+        {right && visible.right && !immersive && (
           <aside className="side-panel side-panel-right" aria-label={t("panels.right")}>
             <div className="side-panel-scroll">{right}</div>
             {rightFooter && <div className="side-panel-footer">{rightFooter}</div>}
           </aside>
         )}
       </div>
-      {filmstrip && visible.filmstrip && <div className="filmstrip">{filmstrip}</div>}
+      {filmstrip && visible.filmstrip && !immersive && <div className="filmstrip">{filmstrip}</div>}
     </div>
   );
 }

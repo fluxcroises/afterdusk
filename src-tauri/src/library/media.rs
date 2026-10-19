@@ -272,6 +272,41 @@ pub fn generate_previews(
     Ok(generated)
 }
 
+/// JPEG pleine définition pour le zoom 100 % : le plus grand aperçu intégré
+/// au RAW (extrait sans décodage), ou le fichier lui-même pour un JPEG.
+/// L'original est ouvert en lecture seule. `None` si la bibliothèque est
+/// débranchée ou si le format n'en fournit pas : l'interface garde alors
+/// l'aperçu 2048 px. L'orientation n'est pas appliquée (voir `orientation`).
+pub fn full_size_jpeg(conn: &Connection, media_id: i64) -> Result<Option<Vec<u8>>, CacheError> {
+    let (library_id, path): (i64, String) = conn
+        .query_row(
+            "SELECT library_id, path FROM media WHERE id = ?1",
+            [media_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?
+        .ok_or(CacheError::NotFound(media_id))?;
+    let lib = get_library(conn, library_id)?;
+    if !lib.is_online {
+        return Ok(None);
+    }
+    let abs = paths::to_absolute(&lib.root_path, &path)?;
+    let is_jpeg_file = abs
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg"));
+    match format_of(&abs) {
+        Some(MediaFormat::Raw) => {
+            let mut raw = crate::raw::RawFile::open(&abs).map_err(PreviewError::from)?;
+            let preview = raw.preview().map_err(PreviewError::from)?;
+            Ok((preview.format == crate::raw::PreviewFormat::Jpeg).then_some(preview.data))
+        }
+        Some(MediaFormat::Image) if is_jpeg_file => std::fs::read(&abs)
+            .map(Some)
+            .map_err(|source| PreviewError::Io { path: abs, source }.into()),
+        _ => Ok(None),
+    }
+}
+
 /// Médias dont un palier manque (import interrompu, cache vidé).
 pub fn missing_previews(conn: &Connection) -> Result<Vec<i64>, LibraryError> {
     let mut stmt = conn.prepare(

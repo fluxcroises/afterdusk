@@ -480,6 +480,28 @@ fn apercus_et_fiche_apres_import() {
     assert_eq!(recent.len(), 1);
     assert_eq!((recent[0].count, recent[0].media_ids.len()), (4, 3));
 
+    // Zoom 100 % : JPEG pleine taille intégré au CR3, original intact.
+    let canon_path: String = s
+        .conn
+        .query_row(
+            "SELECT path FROM media WHERE path LIKE '%EOS-R6%'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    let canon_abs = library::paths::to_absolute(&s.root, &canon_path).unwrap();
+    let before = common::sha256(&canon_abs);
+    let canon_id: i64 = s
+        .conn
+        .query_row("SELECT id FROM media WHERE path = ?1", [&canon_path], |r| {
+            r.get(0)
+        })
+        .unwrap();
+    let full = media::full_size_jpeg(&s.conn, canon_id).unwrap().unwrap();
+    let img = image::load_from_memory(&full).unwrap();
+    assert_eq!((img.width(), img.height()), (5472, 3648));
+    assert_eq!(common::sha256(&canon_abs), before);
+
     let albums = media::list_albums(&s.conn, s.library_id).unwrap();
     assert_eq!(albums.iter().map(|a| a.count).sum::<i64>(), 4);
     assert!(albums.iter().all(|a| a.cover_media_id.is_some()));

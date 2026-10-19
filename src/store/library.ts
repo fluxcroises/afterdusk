@@ -90,17 +90,26 @@ interface LibraryState {
   error: CommandError | null;
   /** Passer à la photo suivante après une note ou un drapeau (option). */
   autoAdvance: boolean;
+  /** Grille ou visionneuse (une photo à la fois). */
+  view: "grid" | "loupe";
+  /** Zoom 100 % de la visionneuse : point visé, en fraction de l'image ; `null` = ajusté. */
+  zoom: { fx: number; fy: number } | null;
+  /** Instant de la dernière navigation, pour mesurer l'affichage de la suivante. */
+  navigatedAt: number;
 
   load: (libraryId: number | null) => Promise<void>;
   showAlbum: (albumId: number | null) => Promise<void>;
   select: (mediaId: number) => Promise<void>;
-  move: (delta: number) => void;
+  /** `at` : horodatage de la frappe, pour mesurer l'affichage de la suivante. */
+  move: (delta: number, at?: number) => void;
   previewReady: (mediaId: number) => void;
   setRating: (rating: number) => Promise<void>;
   setFlag: (flag: FlagValue) => Promise<void>;
   /** Pose la couleur, ou la retire si la photo l'a déjà (comme Lightroom). */
   toggleColor: (color: ColorName) => Promise<void>;
   setAutoAdvance: (value: boolean) => void;
+  setView: (view: "grid" | "loupe") => void;
+  setZoom: (zoom: { fx: number; fy: number } | null) => void;
   /** La photo devient la couverture de son album. */
   setAsCover: (mediaId: number) => Promise<void>;
 }
@@ -141,6 +150,9 @@ export const useLibrary = create<LibraryState>((set, get) => {
     versions: {},
     error: null,
     autoAdvance: readAutoAdvance(),
+    view: "grid",
+    zoom: null,
+    navigatedAt: 0,
 
     load: async (libraryId) => {
       if (libraryId === null) {
@@ -180,7 +192,8 @@ export const useLibrary = create<LibraryState>((set, get) => {
     },
 
     select: async (mediaId) => {
-      set({ selectedId: mediaId });
+      // Une autre photo s'affiche ajustée, comme dans Lightroom.
+      set({ selectedId: mediaId, zoom: null });
       try {
         const details = await libraryApi.mediaDetails(mediaId);
         // Une sélection plus récente a pu arriver pendant la requête.
@@ -190,13 +203,20 @@ export const useLibrary = create<LibraryState>((set, get) => {
       }
     },
 
-    move: (delta) => {
+    move: (delta, at) => {
       const { media, selectedId } = get();
       if (media.length === 0) return;
       const index = media.findIndex((m) => m.id === selectedId);
       const next = media[Math.min(Math.max(index + delta, 0), media.length - 1)];
-      if (next && next.id !== selectedId) void get().select(next.id);
+      if (next && next.id !== selectedId) {
+        set({ navigatedAt: at ?? performance.now() });
+        void get().select(next.id);
+      }
     },
+
+    setView: (view) => set({ view, zoom: null }),
+
+    setZoom: (zoom) => set({ zoom }),
 
     previewReady: (mediaId) =>
       set((s) => ({

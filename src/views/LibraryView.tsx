@@ -1,5 +1,6 @@
 import { Library } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Loupe } from "../components/Loupe";
 import { MediaGrid } from "../components/MediaGrid";
 import { useLibrary } from "../store/library";
 import { CatalogPanel, PhotoInfoPanel } from "../components/CatalogPanels";
@@ -12,6 +13,7 @@ export function LibraryView() {
   const { t } = useTranslation();
   const count = useLibrary((s) => s.media.length);
   const error = useLibrary((s) => s.error);
+  const view = useLibrary((s) => s.view);
   return (
     <ScreenLayout
       left={<CatalogPanel scope="library" />}
@@ -20,7 +22,11 @@ export function LibraryView() {
     >
       <ErrorBanner error={error} onDismiss={() => useLibrary.setState({ error: null })} />
       {count > 0 ? (
-        <MediaGrid />
+        view === "loupe" ? (
+          <Loupe />
+        ) : (
+          <MediaGrid />
+        )
       ) : (
         <EmptyState icon={Library} title={t("library.emptyTitle")}>
           {t("library.emptyText")}

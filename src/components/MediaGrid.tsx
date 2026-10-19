@@ -128,6 +128,7 @@ function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean
       data-rejected={media.flag === -1 || undefined}
       title={media.fileName}
       onClick={() => void select(media.id)}
+      onDoubleClick={() => useLibrary.getState().setView("loupe")}
       onContextMenu={(e) => {
         e.preventDefault();
         void select(media.id);

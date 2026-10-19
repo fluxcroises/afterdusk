@@ -255,7 +255,8 @@
   "keys": {
     "ctrl": "Ctrl",
     "shift": "Maj",
-    "alt": "Alt"
+    "alt": "Alt",
+    "enter": "Entrée"
   },
   "window": {
     "minimize": "Réduire",
@@ -265,5 +266,10 @@
   },
   "grid": {
     "albumCover": "Couverture de l'album"
+  },
+  "loupe": {
+    "preparing": "Aperçu en préparation…",
+    "actualPixels": "100 %",
+    "enlargedPreview": "Aperçu agrandi"
   }
 }

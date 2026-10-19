@@ -1,5 +1,6 @@
 import { handleMenuShortcut } from "./menu";
 import { isMac } from "./platform";
+import { useLayout } from "./store/layout";
 import { type ColorName, useLibrary } from "./store/library";
 import { useNavigation } from "./store/navigation";
 import type { WindowLabel } from "./windows";
@@ -60,8 +61,35 @@ export function handleShortcut(e: KeyboardEvent): boolean {
   if (e.ctrlKey || e.metaKey || e.altKey) return false;
 
   const library = useLibrary.getState();
+  const layout = useLayout.getState();
+  if (e.key === "Escape") {
+    if (layout.immersive) layout.setImmersive(false);
+    else if (library.zoom) library.setZoom(null);
+    else if (library.view === "loupe") library.setView("grid");
+    else return false;
+    return true;
+  }
+  if (e.key === "Enter" && library.selectedId !== null) {
+    library.setView("loupe");
+    return true;
+  }
+  if (e.code === "KeyG" || (e.code === "" && e.key.toLowerCase() === "g")) {
+    if (layout.immersive) layout.setImmersive(false);
+    library.setView("grid");
+    return true;
+  }
+  if (e.code === "KeyF" || (e.code === "" && e.key.toLowerCase() === "f")) {
+    if (!layout.immersive && library.selectedId !== null) library.setView("loupe");
+    layout.setImmersive(!layout.immersive);
+    return true;
+  }
+  if (e.key === " " && library.view === "loupe") {
+    library.setZoom(library.zoom ? null : { fx: 0.5, fy: 0.5 });
+    return true;
+  }
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-    library.move(e.key === "ArrowLeft" ? -1 : 1);
+    // L'horodatage de l'événement : la mesure part de la frappe, pas du traitement.
+    library.move(e.key === "ArrowLeft" ? -1 : 1, e.timeStamp);
     return true;
   }
   if (library.selectedId === null) return false;

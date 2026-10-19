@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { useAppEvents } from "./appEvents";
+import { PerfOverlay } from "./components/PerfOverlay";
 import { StatusBar } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
 import { CullStep } from "./steps/CullStep";
@@ -30,12 +31,14 @@ export default function App() {
   const screen = useNavigation((s) => s.screen);
   const Current = SCREENS[screen];
   const dropping = useLayout((s) => s.dropping);
+  const immersive = useLayout((s) => s.immersive);
 
   return (
     <div className="app" data-dropping={dropping || undefined}>
-      <TopBar />
+      {!immersive && <TopBar />}
       <Current />
-      <StatusBar />
+      {!immersive && <StatusBar />}
+      <PerfOverlay />
     </div>
   );
 }

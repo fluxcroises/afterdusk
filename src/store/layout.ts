@@ -1,3 +1,5 @@
+import { isTauri } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { create } from "zustand";
 
 export type Panel = "left" | "right" | "filmstrip";
@@ -11,6 +13,12 @@ interface LayoutState {
   setDropping: (dropping: boolean) => void;
   togglePanel: (panel: Panel) => void;
   toggleSection: (id: string) => void;
+  /**
+   * Plein écran de la visionneuse (F) : panneaux, barres et pellicule masqués,
+   * fenêtre en plein écran. Échap en sort.
+   */
+  immersive: boolean;
+  setImmersive: (value: boolean) => void;
 }
 
 export const useLayout = create<LayoutState>((set) => ({
@@ -18,6 +26,11 @@ export const useLayout = create<LayoutState>((set) => ({
   collapsed: {},
   dropping: false,
   setDropping: (dropping) => set({ dropping }),
+  immersive: false,
+  setImmersive: (value) => {
+    set({ immersive: value });
+    if (isTauri()) void getCurrentWindow().setFullscreen(value);
+  },
   togglePanel: (panel) => set((s) => ({ visible: { ...s.visible, [panel]: !s.visible[panel] } })),
   toggleSection: (id) => set((s) => ({ collapsed: { ...s.collapsed, [id]: !s.collapsed[id] } })),
 }));

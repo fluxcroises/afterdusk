@@ -16,6 +16,15 @@ export function previewUrl(mediaId: number, size: PreviewSize, version = 0): str
   return root ? `${root}media/${mediaId}/${size}?v=${version}` : null;
 }
 
+/**
+ * JPEG pleine définition (le plus grand aperçu intégré au RAW), pour le zoom
+ * 100 %. L'orientation n'y est pas appliquée : l'interface la fait elle-même.
+ */
+export function fullUrl(mediaId: number): string | null {
+  const root = base();
+  return root ? `${root}media/${mediaId}/full` : null;
+}
+
 /** Miniature d'un fichier de la source analysée, avant import. */
 export function sourceThumbnailUrl(path: string): string | null {
   const root = base();

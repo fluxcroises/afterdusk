@@ -10,6 +10,35 @@ interface GridToolbarProps {
   culling?: boolean;
 }
 
+/** Grille ou visionneuse (G, Entrée) ; la comparaison viendra ensuite. */
+function ViewModes({ disabled }: { disabled: boolean }) {
+  const { t } = useTranslation();
+  const view = useLibrary((s) => s.view);
+  const setView = useLibrary((s) => s.setView);
+  const hasSelection = useLibrary((s) => s.selectedId !== null);
+  return (
+    <div className="toolbar-group">
+      <IconButton
+        icon={LayoutGrid}
+        label={t("toolbar.grid")}
+        shortcut="G"
+        pressed={view === "grid"}
+        disabled={disabled}
+        onClick={() => setView("grid")}
+      />
+      <IconButton
+        icon={Square}
+        label={t("toolbar.loupe")}
+        shortcut={t("keys.enter")}
+        pressed={view === "loupe"}
+        disabled={disabled || !hasSelection}
+        onClick={() => setView("loupe")}
+      />
+      <IconButton icon={Columns2} label={t("toolbar.compare")} shortcut="C" disabled />
+    </div>
+  );
+}
+
 /** Drapeaux, note et couleur de la photo sélectionnée, et avance automatique. */
 function MarkTools({ disabled }: { disabled: boolean }) {
   const { t } = useTranslation();
@@ -93,17 +122,7 @@ export function GridToolbar({ count, culling }: GridToolbarProps) {
 
   return (
     <>
-      <div className="toolbar-group">
-        <IconButton
-          icon={LayoutGrid}
-          label={t("toolbar.grid")}
-          shortcut="G"
-          pressed
-          disabled={empty}
-        />
-        <IconButton icon={Square} label={t("toolbar.loupe")} shortcut="E" disabled={empty} />
-        <IconButton icon={Columns2} label={t("toolbar.compare")} shortcut="C" disabled={empty} />
-      </div>
+      <ViewModes disabled={empty} />
       {culling && <MarkTools disabled={empty} />}
       <span className="toolbar-spacer" />
       <label className="toolbar-field">

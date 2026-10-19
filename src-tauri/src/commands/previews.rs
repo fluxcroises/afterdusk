@@ -17,7 +17,7 @@ use tauri::{AppHandle, Emitter, Manager, UriSchemeContext, Wry};
 
 use super::AppState;
 use crate::db;
-use crate::library::media::{cached_preview, generate_previews, missing_previews};
+use crate::library::media::{cached_preview, full_size_jpeg, generate_previews, missing_previews};
 use crate::metadata::media::{format_of, read_metadata};
 use crate::raw::preview::{self, SIZES};
 
@@ -151,6 +151,15 @@ fn handle(app: &AppHandle, request: &Request<Vec<u8>>) -> Response<Vec<u8>> {
     let uri = request.uri();
     let segments: Vec<&str> = uri.path().split('/').filter(|s| !s.is_empty()).collect();
     match segments.as_slice() {
+        ["media", id, "full"] => {
+            let Ok(id) = id.parse::<i64>() else {
+                return not_found();
+            };
+            match state.connect().ok().map(|conn| full_size_jpeg(&conn, id)) {
+                Some(Ok(Some(bytes))) => respond(StatusCode::OK, "image/jpeg", bytes),
+                _ => not_found(),
+            }
+        }
         ["media", id, size] => {
             let (Ok(id), Ok(size)) = (id.parse::<i64>(), size.parse::<u32>()) else {
                 return not_found();

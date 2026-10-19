@@ -1712,3 +1712,91 @@ button.color-chip[aria-pressed="true"] {
   position: fixed;
   top: auto;
 }
+
+/* ---------- Visionneuse ---------- */
+
+.loupe {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ad-workspace);
+  user-select: none;
+}
+
+.loupe-fit {
+  position: absolute;
+  inset: var(--ad-space-4);
+  width: calc(100% - 2 * var(--ad-space-4));
+  height: calc(100% - 2 * var(--ad-space-4));
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.loupe[data-zoomed] {
+  cursor: grab;
+}
+
+.loupe[data-zoomed]:active {
+  cursor: grabbing;
+}
+
+.loupe-zoomed {
+  position: absolute;
+}
+
+.loupe-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Le JPEG pleine taille n'est pas orienté : la rotation est appliquée ici. */
+.loupe-full {
+  position: absolute;
+  max-width: none;
+  image-orientation: none;
+}
+
+.loupe-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ad-space-2);
+  height: 100%;
+  color: var(--ad-text-muted);
+}
+
+.loupe-empty svg {
+  width: 40px;
+  height: 40px;
+}
+
+.loupe-badge {
+  position: absolute;
+  right: var(--ad-space-3);
+  bottom: var(--ad-space-3);
+  padding: 2px var(--ad-space-2);
+  font: var(--ad-font-meta);
+  color: var(--ad-text);
+  background: rgb(0 0 0 / 0.55);
+  border-radius: var(--ad-radius-sm);
+  pointer-events: none;
+}
+
+.perf-overlay {
+  position: fixed;
+  left: var(--ad-space-3);
+  bottom: 30px;
+  z-index: 50;
+  padding: 2px var(--ad-space-2);
+  font:
+    500 11px/1.4 ui-monospace,
+    Consolas,
+    monospace;
+  color: #9ef0b6;
+  background: rgb(0 0 0 / 0.7);
+  border-radius: var(--ad-radius-sm);
+}
