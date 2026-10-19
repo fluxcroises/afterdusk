@@ -5,7 +5,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 ## V0.1 : Importer et trier
 
 - [ ] Projet Tauri 2 qui se compile et se lance sur Windows et macOS, avec intégration continue GitHub Actions sur les deux systèmes
-- [ ] Première ouverture guidée (bibliothèque, sauvegarde, rangement, identité)
+- [x] Première ouverture guidée (bibliothèque, sauvegarde, rangement, identité)
 - [ ] Une carte SD insérée est détectée en moins de 5 secondes et l'import proposé
 - [ ] Import de 500 RAW avec rangement, renommage, sauvegarde et vérification par somme de contrôle, sans aucune perte, en cas de coupure comprise (reprise propre au redémarrage)
 - [ ] Les photos déjà importées sont reconnues et grisées lors d'un second import
@@ -150,3 +150,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Correction : la phrase « Ajouter des photos » de l'accueil se terminait par « ou » depuis la refonte de l'accueil.
 - Tests : identité dans les XMP, sauvegarde refusée si le dossier manque, modèles validés et aperçu, même disque ; côté interface, assistant (étapes, enchaînement des commandes, copyright qui suit le nom), réglages Bibliothèques et Import.
 - Vérifié dans l'application compilée sous Windows, sur une base vide (celle de l'utilisateur mise de côté puis remise) : les quatre écrans, choix d'un rangement et d'un renommage, création de la bibliothèque et de son dossier, retour à l'accueil habituel. Le dossier `Images/Afterdusk` créé par l'essai, vide, a été retiré. La saisie de l'identité et le choix d'un dossier par le sélecteur natif n'ont pas été pilotés à l'écran (couverts par les tests).
+- Critère « Première ouverture guidée » coché : CI verte sur Windows et macOS (run 39258437611).
