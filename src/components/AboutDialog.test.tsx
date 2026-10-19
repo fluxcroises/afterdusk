@@ -13,8 +13,8 @@ describe("À propos d'Afterdusk", () => {
     render(<AboutDialog />);
     const dialog = screen.getByRole("dialog", { name: "Afterdusk" });
     expect(dialog).toHaveTextContent("Version 0.1.0");
-    expect(dialog).toHaveTextContent("LibRaw — LGPL 2.1");
-    expect(dialog).toHaveTextContent("SQLite — domaine public");
+    expect(dialog).toHaveTextContent("Composants : LibRaw (LGPL 2.1) · Adobe XMP Toolkit (BSD 3)");
+    expect(dialog).toHaveTextContent("SQLite (domaine public)");
     expect(dialog).toHaveTextContent("Cabourg, photo © Lewis Bedar");
     expect(dialog).toHaveTextContent("licence publique générale GNU, version 3");
     fireEvent.click(screen.getByRole("button", { name: "Licence…" }));

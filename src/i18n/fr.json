@@ -465,6 +465,7 @@
     "license": "Licence…",
     "systemInfo": "Informations système…",
     "copied": "Copiées dans le presse-papiers",
-    "publicDomain": "domaine public"
+    "publicDomain": "domaine public",
+    "componentsLead": "Composants :"
   }
 }

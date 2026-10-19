@@ -86,23 +86,20 @@ export function AboutDialog() {
             </pre>
           ) : (
             <section className="about-components">
-              <h3>{t("about.components")}</h3>
-              <ul>
+              {/* Un paragraphe discret, comme les mentions des « À propos » classiques. */}
+              <p>
+                {t("about.componentsLead")}{" "}
                 {COMPONENTS.map((c) => {
-                  const version = c.version && info ? String(info[c.version] ?? "") : "";
-                  return (
-                    <li key={c.name}>
-                      {c.name}
-                      {version && ` ${version}`}
-                      <span className="about-muted">
-                        {" "}
-                        — {c.license === "publicDomain" ? t("about.publicDomain") : c.license}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="about-muted">{t("about.photo")}</p>
+                  // « 0.22.2-Release » : seul le numéro intéresse.
+                  const version =
+                    c.version && info ? String(info[c.version] ?? "").replace(/-Release$/, "") : "";
+                  const license =
+                    c.license === "publicDomain" ? t("about.publicDomain") : c.license;
+                  return `${c.name}${version ? ` ${version}` : ""} (${license})`;
+                }).join(" · ")}
+                .
+              </p>
+              <p>{t("about.photo")}</p>
             </section>
           )}
           <footer className="about-footer">

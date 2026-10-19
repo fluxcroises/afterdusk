@@ -465,6 +465,7 @@
     "license": "License…",
     "systemInfo": "System Info…",
     "copied": "Copied to the clipboard",
-    "publicDomain": "public domain"
+    "publicDomain": "public domain",
+    "componentsLead": "Components:"
   }
 }

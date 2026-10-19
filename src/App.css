@@ -2531,7 +2531,8 @@ input[type="radio"] {
 .about-dialog {
   display: flex;
   width: min(640px, calc(100vw - 48px));
-  height: min(440px, calc(100vh - 48px));
+  /* À la hauteur du contenu ; la bande photo suit. */
+  max-height: calc(100vh - 48px);
   overflow: hidden;
   background: var(--ad-panel);
   border: 1px solid var(--ad-border-strong);
@@ -2607,18 +2608,13 @@ input[type="radio"] {
   min-height: 0;
 }
 
-.about-components h3 {
-  font: var(--ad-font-panel-title);
-}
-
-.about-components ul {
-  padding: 0;
-  list-style: none;
+.about-components {
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
 }
 
 .about-license {
-  flex: 1;
-  min-height: 0;
+  height: 220px;
   margin: 0;
   padding: var(--ad-space-2);
   overflow: auto;
