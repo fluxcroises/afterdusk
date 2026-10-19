@@ -154,10 +154,12 @@ Chaque module indique entre crochets la version qui le livre (voir section 7).
 Toute retouche est non destructive : un historique de réglages appliqué à l'original à l'affichage et à l'export.
 
 - **Profil de base** : rendu neutre fidèle au boîtier par défaut, avec correction d'objectif automatique si l'objectif est reconnu.
-- **Réglages essentiels** (toujours visibles) : exposition, balance des blancs (température, teinte, pipette, préréglages), contraste, hautes lumières, ombres, blancs, noirs, vibrance, saturation.
+- **Réglages essentiels** (toujours visibles) : exposition, luminosité (tons moyens éclaircis ou assombris sans déplacer le blanc ni le noir), balance des blancs (température, teinte, pipette, préréglages), contraste, hautes lumières, ombres, blancs, noirs, vibrance, saturation.
+- **Réglages automatiques, demandés par l'utilisateur (2026-10-19)** : un bouton « Auto » dans la section Lumière règle exposition, contraste, hautes lumières, ombres, blancs et noirs d'après l'histogramme de la photo ; Maj + double-clic sur un curseur règle ce seul curseur (le double-clic simple le remet à zéro) ; « Auto » s'ajoute aux choix de balance des blancs (estimation du gris neutre de la scène). Le résultat n'est qu'un jeu de valeurs ordinaires, modifiables et annulables, inscrit dans l'historique comme une seule étape « Auto ». Calcul local et déterministe (même photo, même résultat), sans réseau ni service en ligne ; il se calibre une fois contraste, hautes lumières et ombres présents dans le pipeline.
 - **Réglages intermédiaires** (sections repliables) : courbe de tonalité (RVB et par canal), couleurs par teinte (TSL sur 8 teintes), netteté, réduction du bruit (luminance et couleur), vignetage, grain.
 - **Géométrie** : recadrage avec ratios prédéfinis (libre, original, 1:1, 4:5, 3:2, 16:9), redressement avec horizon automatique, rotation et miroir.
 - **Presets** : fournis (une dizaine, sobres) et personnels, créés depuis les réglages d'une photo, appliqués à une sélection, avec intensité réglable de 0 à 100 %.
+- **Galerie de filtres, inspirée de l'application Photos de Windows (2026-10-19)** : les presets fournis (simulations de film comprises) présentés en vignettes calculées sur la photo en cours, appliqués d'un clic et dosés par le curseur d'intensité. Un filtre n'est qu'un jeu de réglages ordinaires : il reste modifiable curseur par curseur et s'exporte comme les autres retouches. Objectif : traiter vite et de façon professionnelle, sans recréer la photo.
 - **Simulations de film, demandées par l'utilisateur (2026-10-19)**, à placer et à valider : rendus inspirés des pellicules couleur et noir et blanc (négatifs couleur, inversibles, noir et blanc classiques), appliqués comme un preset avec intensité réglable, éventuellement accompagnés de grain. Mise en œuvre envisagée : tables de correspondance 3D (LUT `.cube` ou Hald CLUT) appliquées sur le GPU, plus une courbe et un grain propres à chaque film. Deux précautions : les noms commerciaux (Kodak Portra, Fujifilm Velvia, Ilford HP5…) sont des marques, donc des noms descriptifs (« Négatif couleur chaud », « Inversible saturé », « Noir et blanc 400 ») sont à préférer ; et toute LUT reprise d'ailleurs doit avoir une licence compatible GPL v3, sinon elle est recréée par nos soins.
 - **Copier-coller et synchronisation** des réglages entre photos, avec choix des réglages à transmettre.
 - **Avant/après** : touche maintenue ou vue scindée.
@@ -454,6 +456,7 @@ Crée docs/avancement.md avec les critères de la V0.1 et coche-les au fur et à
 **Hors périmètre jusqu'à la V1**
 
 - Retouches locales (masques, pinceau, dégradés), suppression de défauts, fusion HDR et panoramas
+- Retouches génératives ou par intelligence artificielle qui inventent du contenu (effacement génératif, remplacement ou flou d'arrière-plan, agrandissement par IA) : Afterdusk traite la photo prise, il ne la recrée pas
 - Montage vidéo (plusieurs clips, transitions, pistes) et étalonnage avancé ; le traitement simple d'un clip est prévu (section 4.9)
 - Synchronisation cloud, comptes utilisateurs, applications mobiles
 - Impression et mise en page
