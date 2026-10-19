@@ -301,7 +301,8 @@
     "noRejected": "Aucune photo rejetée dans cette vue.",
     "mediaNotFound": "Cette photo n'existe plus dans la bibliothèque.",
     "fileMoveFailed": "Un fichier n'a pas pu être déplacé ; rien n'a été modifié.",
-    "developUnsupported": "La retouche est réservée aux fichiers RAW pour l'instant ; les JPEG, HEIF et TIFF suivront."
+    "developUnsupported": "La retouche est réservée aux fichiers RAW pour l'instant ; les JPEG, HEIF et TIFF suivront.",
+    "historyStepMissing": "Cette étape n'existe plus dans l'historique."
   },
   "home": {
     "morning": "Bonjour",
@@ -515,6 +516,24 @@
     },
     "auto": "Auto",
     "autoHint": "Régler la lumière automatiquement d'après la photo",
-    "resetAutoHint": "Double-clic : zéro. Maj + double-clic : automatique."
+    "resetAutoHint": "Double-clic : zéro. Maj + double-clic : automatique.",
+    "history": {
+      "title": "Historique",
+      "original": "Original",
+      "value": "{{name}} {{value}}",
+      "autoValue": "{{name}} (auto) {{value}}",
+      "autoLight": "Lumière automatique",
+      "white": "Balance des blancs : {{value}}",
+      "autoWhite": "Balance des blancs automatique : {{value}}",
+      "custom": "{{temperature}}, teinte {{tint}}",
+      "undo": "Annuler",
+      "redo": "Rétablir"
+    },
+    "compare": {
+      "hold": "Avant (maintenir pour voir l'original)",
+      "split": "Avant / après côte à côte",
+      "before": "Avant",
+      "after": "Après"
+    }
   }
 }

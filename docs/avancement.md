@@ -250,3 +250,13 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Balance : monde gris sur les tons moyens proches du neutre du boîtier, affiné sur les pixels rendus neutres ; une estimation trop teintée pour être une lumière réelle (feuillage) ou sans gris crédible garde la balance du boîtier.
 - Six formats : 50 à 150 ms pour la lumière, 20 ms pour la balance ; médiane de 84 à 110, moins de 2,1 % de blanc brûlé ; balance retrouvée sur la scène d'intérieur du Nikon (2540 K), gardée sur le feuillage du Panasonic. Vérifié à l'écran sous Windows (données de l'utilisateur mises de côté puis remises).
 - Intégration Mac : l'histogramme du processeur graphique virtuel d'Apple était faux (pixels justes) ; il est vérifié et recalculé au processeur si besoin, les avertissements d'écrêtage sont peints après le rendu.
+
+### 2026-10-19 (suite) : V0.2, historique et avant/après
+
+- Panneau Historique dans le Retoucher (à gauche) : chaque traitement en clair (« Contraste +57 », « Lumière automatique », « Balance des blancs : Tungstène »), du plus récent au plus ancien, puis « Original » ; un clic revient à cet état, les étapes annulées restent grisées jusqu'au réglage suivant, qui les remplace.
+- Annuler et rétablir : boutons du panneau, Édition > Annuler / Rétablir, Ctrl+Z et Ctrl+Maj+Z (Cmd sur Mac). Un réglage pas encore enregistré devient une étape avant d'être annulé.
+- Migration 0005 : position courante de l'historique (`edits.history_position`) ; revenir à une étape réécrit les réglages et le XMP (sans réglages pour l'original).
+- Avant/après : bouton à maintenir pour voir l'original, touche « \ » (AltGr+8 en AZERTY) pour basculer, vue scindée (original à gauche, retouche à droite) ; l'original est rendu une fois par photo.
+- Corrigé : les raccourcis des menus dessinés (Windows) reconnaissaient la position de la touche et non la lettre ; en AZERTY, Ctrl+Z ne répondait pas (y compris pour annuler un envoi à la corbeille).
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : Auto puis contraste, Ctrl+Z, clic sur « Original », vue scindée, historique retrouvé après redémarrage, XMP sans réglages à l'original, originaux identiques. Non vérifié à l'écran : la touche « \ » et le bouton maintenu (couverts par les tests du magasin).
+- Intégration Mac : luminance de l'histogramme calculée en entiers, identique sur tous les processeurs graphiques.

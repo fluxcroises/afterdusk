@@ -2771,3 +2771,23 @@ input[type="radio"] {
 .develop-wb-select select {
   height: var(--ad-field-height);
 }
+
+.develop-history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.develop-history .list-row[data-undone] {
+  color: var(--ad-text-muted);
+}
+
+.develop-history-actions .icon-button {
+  width: 22px;
+  height: 22px;
+}
+
+.develop-history-actions .icon-button svg {
+  width: 14px;
+  height: 14px;
+}

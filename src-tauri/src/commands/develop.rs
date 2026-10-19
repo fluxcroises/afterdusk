@@ -19,7 +19,7 @@ use crate::develop::gpu::{GpuImage, GpuRenderer};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
 use crate::develop::settings::{DevelopSettings, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
-use crate::develop::store::{self, StoreError};
+use crate::develop::store::{self, History, StoreError};
 use crate::develop::white;
 
 /// Variable d'environnement : `AFTERDUSK_GPU=0` force le rendu processeur.
@@ -44,7 +44,11 @@ impl From<SourceError> for CommandError {
 
 impl From<StoreError> for CommandError {
     fn from(e: StoreError) -> Self {
-        Self::new("internal", e)
+        let code = match &e {
+            StoreError::NoSuchStep(_) => "historyStepMissing",
+            _ => "internal",
+        };
+        Self::new(code, e)
     }
 }
 
@@ -324,4 +328,26 @@ pub async fn develop_save(
     let saved = blocking(move || Ok(store::save(&mut conn, media_id, settings, &label)?)).await?;
     writer.wake();
     Ok(saved)
+}
+
+/// Historique de la photo et position courante.
+#[tauri::command]
+pub async fn develop_history(state: State<'_, AppState>, media_id: i64) -> CommandResult<History> {
+    let conn = state.connect()?;
+    blocking(move || Ok(store::history_of(&conn, media_id)?)).await
+}
+
+/// Revient à une étape de l'historique (annuler, rétablir, clic dans la
+/// liste ; 0 = l'original) et renvoie ses réglages.
+#[tauri::command]
+pub async fn develop_go_to(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    position: i64,
+) -> CommandResult<DevelopSettings> {
+    let mut conn = state.connect()?;
+    let settings = blocking(move || Ok(store::go_to(&mut conn, media_id, position)?)).await?;
+    writer.wake();
+    Ok(settings)
 }

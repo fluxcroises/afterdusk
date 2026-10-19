@@ -159,6 +159,8 @@ pub fn run() {
             commands::develop::develop_auto_light,
             commands::develop::develop_auto_white,
             commands::develop::develop_save,
+            commands::develop::develop_history,
+            commands::develop::develop_go_to,
         ])
         .run(tauri::generate_context!());
     if let Err(error) = result {

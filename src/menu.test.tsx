@@ -75,6 +75,17 @@ describe("menus dessinés (Windows)", () => {
       matchesAccelerator("CmdOrCtrl+Alt+2", e({ code: "Digit2", ctrlKey: true, altKey: true })),
     ).toBe(true);
     expect(matchesAccelerator("F7", e({ key: "F7" }))).toBe(true);
+    // AZERTY : la lettre Z est sur la touche KeyW ; c'est la lettre qui compte.
+    expect(matchesAccelerator("CmdOrCtrl+Z", e({ key: "z", code: "KeyW", ctrlKey: true }))).toBe(
+      true,
+    );
+    expect(matchesAccelerator("CmdOrCtrl+Z", e({ key: "w", code: "KeyZ", ctrlKey: true }))).toBe(
+      false,
+    );
+    // Clavier non latin : la position de la touche.
+    expect(matchesAccelerator("CmdOrCtrl+Z", e({ key: "я", code: "KeyZ", ctrlKey: true }))).toBe(
+      true,
+    );
     expect(formatAccelerator("CmdOrCtrl+Shift+I", i18n.t)).toBe("Ctrl+Maj+I");
   });
 

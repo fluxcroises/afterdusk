@@ -2,17 +2,34 @@ import { ImageOff, Images, SlidersHorizontal } from "lucide-react";
 import { type MouseEvent, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { CatalogPanel } from "../components/CatalogPanels";
-import { ColorSection, HistogramSection, LightSection } from "../components/DevelopPanels";
+import {
+  ColorSection,
+  CompareControls,
+  HistogramSection,
+  HistorySection,
+  LightSection,
+} from "../components/DevelopPanels";
 import { EmptyState } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { useDevelop } from "../store/develop";
+import { type DevelopFrame, useDevelop } from "../store/develop";
 import { useLibrary } from "../store/library";
+
+/** Saisie de texte en cours (un curseur de réglage n'en est pas une). */
+function isTyping(target: EventTarget | null): boolean {
+  if (target instanceof HTMLInputElement) return target.type !== "range";
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ["TEXTAREA", "SELECT"].includes(target.tagName))
+  );
+}
 
 /** Image rendue par le cœur, dessinée telle quelle (aucun calcul de couleur ici). */
 function DevelopCanvas() {
   const { t } = useTranslation();
   const frame = useDevelop((s) => s.frame);
+  const before = useDevelop((s) => s.beforeFrame);
+  const compare = useDevelop((s) => s.compare);
   const picking = useDevelop((s) => s.picking);
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -21,8 +38,21 @@ function DevelopCanvas() {
     if (!canvas || !context || !frame) return;
     canvas.width = frame.width;
     canvas.height = frame.height;
-    context.putImageData(new ImageData(frame.pixels, frame.width, frame.height), 0, 0);
-  }, [frame]);
+    const image = (f: DevelopFrame) => new ImageData(f.pixels, f.width, f.height);
+    const sameSize = before && before.width === frame.width && before.height === frame.height;
+    if (compare === "before" && sameSize) {
+      context.putImageData(image(before), 0, 0);
+      return;
+    }
+    context.putImageData(image(frame), 0, 0);
+    if (compare === "split" && sameSize) {
+      // Moitié gauche : l'original ; un trait marque la séparation.
+      const half = Math.round(frame.width / 2);
+      context.putImageData(image(before), 0, 0, 0, 0, half, frame.height);
+      context.fillStyle = "rgb(255 255 255 / 0.85)";
+      context.fillRect(half - 1, 0, 2, frame.height);
+    }
+  }, [frame, before, compare]);
 
   // Pipette : le point cliqué, en pixels de l'aperçu rendu.
   const pick = (e: MouseEvent<HTMLCanvasElement>) => {
@@ -63,7 +93,18 @@ function RenderStatus() {
   const decodeMs = useDevelop((s) => s.decodeMs);
   const roundTripMs = useDevelop((s) => s.roundTripMs);
   const picking = useDevelop((s) => s.picking);
+  const compare = useDevelop((s) => s.compare);
   if (picking) return <span className="toolbar-status">{t("develop.pickHint")}</span>;
+  if (compare === "before") {
+    return <span className="toolbar-status">{t("develop.compare.before")}</span>;
+  }
+  if (compare === "split") {
+    return (
+      <span className="toolbar-status">
+        {t("develop.compare.before")} | {t("develop.compare.after")}
+      </span>
+    );
+  }
   if (!frame) return null;
   return (
     <span className="toolbar-status">
@@ -91,13 +132,30 @@ export function DevelopStep() {
   }, [selectedId]);
   // Quitter le Retoucher enregistre le dernier réglage et libère l'image.
   useEffect(() => () => void useDevelop.getState().close(), []);
+  // « \ » : l'original ou la retouche, comme dans Lightroom (AltGr+8 en AZERTY).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "\\" || isTyping(e.target)) return;
+      const { compare, setCompare } = useDevelop.getState();
+      setCompare(compare === "before" ? "off" : "before");
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <ScreenLayout
-      left={<CatalogPanel scope="develop" />}
+      left={
+        <>
+          <HistorySection />
+          <CatalogPanel scope="develop" />
+        </>
+      }
       right={<SettingsPanel />}
       toolbar={
         <>
+          <CompareControls />
           <span className="toolbar-spacer" />
           <RenderStatus />
         </>

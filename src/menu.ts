@@ -15,6 +15,7 @@ import { useAbout } from "./store/about";
 import { purgeSelection, trashRejected } from "./trash";
 import { focusSearch } from "./search";
 import { useLayout } from "./store/layout";
+import { canRedo, canUndo, useDevelop } from "./store/develop";
 import { useLibrary } from "./store/library";
 import { COLOR_LABELS } from "./ui/labels";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
@@ -114,18 +115,33 @@ export function buildMenuItems(t: TFunction): Item[] {
     ],
   };
 
+  const inDevelop = () => useNavigation.getState().screen === "develop";
   const edit: SubmenuOptions = {
     text: t("menu.edit"),
     items: [
       {
         id: "undo",
-        // Seule opération annulable pour l'instant : le dernier envoi dans la corbeille.
+        // Dans le Retoucher : l'historique de la photo ; ailleurs, le dernier
+        // envoi dans la corbeille.
         text: t("menu.undo"),
         accelerator: "CmdOrCtrl+Z",
-        enabled: isMac || useLibrary.getState().undoIds !== null,
-        action: () => void useLibrary.getState().undoTrash(),
+        enabled:
+          isMac ||
+          (inDevelop() ? canUndo(useDevelop.getState()) : useLibrary.getState().undoIds !== null),
+        action: () => {
+          if (inDevelop()) void useDevelop.getState().undo();
+          else void useLibrary.getState().undoTrash();
+        },
       },
-      { id: "redo", text: t("menu.redo"), accelerator: "CmdOrCtrl+Shift+Z", enabled: false },
+      {
+        id: "redo",
+        text: t("menu.redo"),
+        accelerator: "CmdOrCtrl+Shift+Z",
+        enabled: isMac || (inDevelop() && canRedo(useDevelop.getState())),
+        action: () => {
+          if (inDevelop()) void useDevelop.getState().redo();
+        },
+      },
       separator,
       { item: "Cut", text: t("menu.cut") },
       { item: "Copy", text: t("menu.copy") },
@@ -481,6 +497,10 @@ export function matchesAccelerator(accelerator: string, e: KeyboardEvent): boole
   if (/^\d$/.test(key)) return e.code === `Digit${key}`;
   if (key === ",") return e.key === ",";
   if (key === "Delete" || key === "Backspace") return e.key === key;
+  // La lettre tapée, comme les menus natifs (Ctrl+Z en AZERTY est la touche
+  // KeyW) ; la position de la touche pour les claviers non latins.
+  const letter = e.key.length === 1 ? e.key.toUpperCase() : "";
+  if (/^[A-Z]$/.test(letter)) return letter === key.toUpperCase();
   return e.code === `Key${key.toUpperCase()}`;
 }
 

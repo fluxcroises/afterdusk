@@ -301,7 +301,8 @@
     "noRejected": "No rejected photos in this view.",
     "mediaNotFound": "This photo no longer exists in the library.",
     "fileMoveFailed": "A file could not be moved; nothing was changed.",
-    "developUnsupported": "Editing is limited to RAW files for now; JPEG, HEIF and TIFF will follow."
+    "developUnsupported": "Editing is limited to RAW files for now; JPEG, HEIF and TIFF will follow.",
+    "historyStepMissing": "This step is no longer in the history."
   },
   "home": {
     "morning": "Hello",
@@ -515,6 +516,24 @@
     },
     "auto": "Auto",
     "autoHint": "Set the light automatically from the photo",
-    "resetAutoHint": "Double-click: reset. Shift + double-click: automatic."
+    "resetAutoHint": "Double-click: reset. Shift + double-click: automatic.",
+    "history": {
+      "title": "History",
+      "original": "Original",
+      "value": "{{name}} {{value}}",
+      "autoValue": "{{name}} (auto) {{value}}",
+      "autoLight": "Auto light",
+      "white": "White balance: {{value}}",
+      "autoWhite": "Auto white balance: {{value}}",
+      "custom": "{{temperature}}, tint {{tint}}",
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "compare": {
+      "hold": "Before (hold to see the original)",
+      "split": "Before / after side by side",
+      "before": "Before",
+      "after": "After"
+    }
   }
 }

@@ -105,6 +105,23 @@ export function positionFromTemperature(kelvin: number): number {
 /** Délai après le dernier geste avant l'enregistrement (historique et XMP). */
 export const SAVE_DELAY_MS = 600;
 
+/** Une étape de l'historique, miroir de `develop::store::HistoryStep`. */
+export interface HistoryStep {
+  position: number;
+  label: string;
+  settings: DevelopSettings;
+  createdAt: string;
+}
+
+export interface History {
+  steps: HistoryStep[];
+  /** Étape affichée ; 0 : l'original. */
+  current: number;
+}
+
+/** Avant/après : rendu retouché, original seul, ou les deux côte à côte. */
+export type CompareMode = "off" | "before" | "split";
+
 export interface ClippingWarnings {
   highlights: boolean;
   shadows: boolean;
@@ -127,6 +144,10 @@ interface DevelopState {
   picking: boolean;
   /** Calcul automatique en cours. */
   autoBusy: boolean;
+  history: History | null;
+  compare: CompareMode;
+  /** Rendu de l'original (réglages neutres), pour l'avant/après. */
+  beforeFrame: DevelopFrame | null;
   open: (mediaId: number) => Promise<void>;
   setLight: (key: LightKey, value: number) => void;
   setColor: (key: ColorKey, value: number) => void;
@@ -139,6 +160,11 @@ interface DevelopState {
   /** Auto de la section Lumière, ou d'un seul curseur. */
   autoLight: (key?: LightKey) => Promise<void>;
   autoWhite: () => Promise<void>;
+  /** Revient à une étape de l'historique (0 : l'original). */
+  goTo: (position: number) => Promise<void>;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
+  setCompare: (mode: CompareMode) => void;
   /** Enregistre tout de suite un réglage en attente (changement de photo, sortie). */
   flush: () => Promise<void>;
   close: () => Promise<void>;
@@ -206,6 +232,28 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     saveTimer = setTimeout(() => void get().flush(), SAVE_DELAY_MS);
   }
 
+  async function loadHistory(mediaId: number) {
+    try {
+      const history = await invoke<History>("develop_history", { mediaId });
+      if (get().mediaId === mediaId) set({ history });
+    } catch (e) {
+      set({ error: toCommandError(e) });
+    }
+  }
+
+  /** Rendu de l'original, une fois par photo, à la première demande. */
+  async function loadBefore() {
+    const { mediaId, settings, beforeFrame } = get();
+    if (mediaId === null || !settings || beforeFrame) return;
+    const neutral = { version: settings.version, process: settings.process };
+    try {
+      const buffer = await invoke<ArrayBuffer>("develop_render", { settings: neutral });
+      if (get().mediaId === mediaId) set({ beforeFrame: parseFrame(buffer) });
+    } catch (e) {
+      set({ error: toCommandError(e) });
+    }
+  }
+
   function applyWhiteBalance(wb: WhiteBalance, label: string) {
     const { settings } = get();
     if (!settings) return;
@@ -244,12 +292,24 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     clipping: { highlights: false, shadows: false },
     picking: false,
     autoBusy: false,
+    history: null,
+    compare: "off",
+    beforeFrame: null,
 
     open: async (mediaId) => {
       if (get().mediaId === mediaId && get().settings) return;
       await get().flush();
       const token = ++openToken;
-      set({ mediaId, loading: true, error: null, settings: null, frame: null, picking: false });
+      set({
+        mediaId,
+        loading: true,
+        error: null,
+        settings: null,
+        frame: null,
+        picking: false,
+        history: null,
+        beforeFrame: null,
+      });
       try {
         const opened = await invoke<DevelopOpened>("develop_open", { mediaId });
         if (token !== openToken) return;
@@ -261,7 +321,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           adapter: opened.adapter,
           decodeMs: opened.decodeMs,
         });
-        await render();
+        await Promise.all([render(), loadHistory(mediaId)]);
+        if (get().compare !== "off") await loadBefore();
       } catch (e) {
         if (token === openToken) set({ loading: false, error: toCommandError(e) });
       }
@@ -343,9 +404,43 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       if (!label || !settings || mediaId === null) return;
       try {
         await invoke("develop_save", { mediaId, settings, label });
+        await loadHistory(mediaId);
       } catch (e) {
         set({ error: toCommandError(e) });
       }
+    },
+
+    goTo: async (position) => {
+      await get().flush();
+      const { mediaId } = get();
+      if (mediaId === null) return;
+      try {
+        const settings = await invoke<DevelopSettings>("develop_go_to", { mediaId, position });
+        if (get().mediaId !== mediaId) return;
+        set({ settings });
+        void render();
+        await loadHistory(mediaId);
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    undo: async () => {
+      // Un réglage pas encore enregistré devient d'abord une étape, puis est annulé.
+      await get().flush();
+      const { history } = get();
+      if (history && history.current > 0) await get().goTo(history.current - 1);
+    },
+
+    redo: async () => {
+      await get().flush();
+      const { history } = get();
+      if (history && history.current < history.steps.length) await get().goTo(history.current + 1);
+    },
+
+    setCompare: (mode) => {
+      set({ compare: mode });
+      if (mode !== "off") void loadBefore();
     },
 
     close: async () => {
@@ -358,8 +453,20 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         loading: false,
         error: null,
         picking: false,
+        history: null,
+        beforeFrame: null,
+        compare: "off",
       });
       await invoke("develop_close").catch(() => undefined);
     },
   };
 });
+
+/** Annuler possible : une étape avant la position courante, ou un réglage en attente. */
+export function canUndo(s: Pick<DevelopState, "history" | "settings">): boolean {
+  return s.settings !== null && ((s.history?.current ?? 0) > 0 || pendingLabel !== null);
+}
+
+export function canRedo(s: Pick<DevelopState, "history" | "settings">): boolean {
+  return s.settings !== null && !!s.history && s.history.current < s.history.steps.length;
+}

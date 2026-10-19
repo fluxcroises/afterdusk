@@ -1,4 +1,4 @@
-import { Pipette } from "lucide-react";
+import { Eye, Pipette, Redo2, SquareSplitHorizontal, Undo2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,13 +9,17 @@ import {
   type LightKey,
   SLIDER_RANGE,
   TINT_RANGE,
+  canRedo,
+  canUndo,
   type WhiteBalance,
   positionFromTemperature,
   temperatureFromPosition,
   useDevelop,
   whitePoint,
 } from "../store/develop";
+import { isMac } from "../platform";
 import { useLibrary } from "../store/library";
+import { describeStep } from "../ui/history";
 import { formatAperture, formatFocal, formatIso, formatShutter } from "../ui/format";
 import { IconButton } from "./IconButton";
 import { PanelSection } from "./PanelSection";
@@ -310,5 +314,102 @@ export function ColorSection() {
         />
       ))}
     </PanelSection>
+  );
+}
+
+/** Historique : étapes de la plus récente à la plus ancienne, puis l'original. */
+export function HistorySection() {
+  const { t, i18n } = useTranslation();
+  const history = useDevelop((s) => s.history);
+  const presets = useDevelop((s) => s.presets);
+  const undoable = useDevelop(canUndo);
+  const redoable = useDevelop(canRedo);
+  const { goTo, undo, redo } = useDevelop.getState();
+  const current = history?.current ?? 0;
+  const mod = isMac ? "⌘" : "Ctrl+";
+  return (
+    <PanelSection
+      id="develop.history"
+      title={t("develop.history.title")}
+      aside={
+        <span className="panel-section-aside develop-history-actions">
+          <IconButton
+            icon={Undo2}
+            label={t("develop.history.undo")}
+            shortcut={`${mod}Z`}
+            disabled={!undoable}
+            onClick={() => void undo()}
+          />
+          <IconButton
+            icon={Redo2}
+            label={t("develop.history.redo")}
+            shortcut={isMac ? "⇧⌘Z" : "Ctrl+Maj+Z"}
+            disabled={!redoable}
+            onClick={() => void redo()}
+          />
+        </span>
+      }
+    >
+      <ol className="develop-history" reversed>
+        {[...(history?.steps ?? [])].reverse().map((step) => (
+          <li key={step.position}>
+            <button
+              type="button"
+              className="list-row"
+              aria-current={step.position === current || undefined}
+              data-undone={step.position > current || undefined}
+              onClick={() => void goTo(step.position)}
+            >
+              <span className="list-row-label">
+                {describeStep(step, t, i18n.language, presets)}
+              </span>
+            </button>
+          </li>
+        ))}
+        <li>
+          <button
+            type="button"
+            className="list-row"
+            aria-current={current === 0 || undefined}
+            disabled={!history}
+            onClick={() => void goTo(0)}
+          >
+            <span className="list-row-label">{t("develop.history.original")}</span>
+          </button>
+        </li>
+      </ol>
+    </PanelSection>
+  );
+}
+
+/** Avant/après : maintenir pour voir l'original, ou les deux côte à côte. */
+export function CompareControls() {
+  const { t } = useTranslation();
+  const compare = useDevelop((s) => s.compare);
+  const disabled = useDevelop((s) => s.settings === null);
+  const setCompare = useDevelop((s) => s.setCompare);
+  return (
+    <div className="toolbar-group">
+      <button
+        type="button"
+        className="icon-button"
+        aria-label={t("develop.compare.hold")}
+        title={`${t("develop.compare.hold")} (\\)`}
+        aria-pressed={compare === "before"}
+        disabled={disabled}
+        onPointerDown={() => setCompare("before")}
+        onPointerUp={() => setCompare("off")}
+        onPointerLeave={() => compare === "before" && setCompare("off")}
+      >
+        <Eye aria-hidden="true" strokeWidth={1.75} />
+      </button>
+      <IconButton
+        icon={SquareSplitHorizontal}
+        label={t("develop.compare.split")}
+        pressed={compare === "split"}
+        disabled={disabled}
+        onClick={() => setCompare(compare === "split" ? "off" : "split")}
+      />
+    </div>
   );
 }

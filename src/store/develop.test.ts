@@ -38,10 +38,35 @@ const presets = [
 
 const mocked = vi.mocked(invoke);
 
+/** Historique tenu par le « cœur » simulé : étapes et position courante. */
+let steps: { position: number; label: string; settings: object; createdAt: string }[] = [];
+let current = 0;
+
 beforeEach(() => {
   vi.useFakeTimers();
   mocked.mockReset();
-  mocked.mockImplementation(async (cmd: string) => {
+  steps = [];
+  current = 0;
+  mocked.mockImplementation(async (cmd: string, args?: unknown) => {
+    const a = (args ?? {}) as Record<string, unknown>;
+    if (cmd === "develop_save") {
+      steps = steps.filter((st) => st.position <= current);
+      current += 1;
+      steps.push({
+        position: current,
+        label: a.label as string,
+        settings: a.settings as object,
+        createdAt: "",
+      });
+      return a.settings;
+    }
+    if (cmd === "develop_history") return { steps, current };
+    if (cmd === "develop_go_to") {
+      current = a.position as number;
+      return current === 0
+        ? { version: 1, process: 1 }
+        : steps.find((st) => st.position === current)?.settings;
+    }
     if (cmd === "develop_open")
       return {
         mediaId: 7,
@@ -236,6 +261,58 @@ describe("Retoucher", () => {
     release({ version: 1, process: 1, light: { exposure: 2 } });
     await pending;
     expect(useDevelop.getState().settings?.light).toBeUndefined();
+  });
+
+  it("annuler, rétablir et revenir à une étape", async () => {
+    const { canRedo, canUndo } = await import("./develop");
+    await useDevelop.getState().open(7);
+    expect(canUndo(useDevelop.getState())).toBe(false);
+    useDevelop.getState().setLight("exposure", 0.5);
+    // Réglage pas encore enregistré : annulable quand même.
+    expect(canUndo(useDevelop.getState())).toBe(true);
+    useDevelop.getState().setLight("contrast", 20);
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10);
+    expect(useDevelop.getState().history?.current).toBe(2);
+
+    await useDevelop.getState().undo();
+    expect(useDevelop.getState().settings?.light).toEqual({ exposure: 0.5 });
+    expect(canRedo(useDevelop.getState())).toBe(true);
+    await useDevelop.getState().redo();
+    expect(useDevelop.getState().settings?.light).toEqual({ exposure: 0.5, contrast: 20 });
+
+    await useDevelop.getState().goTo(0);
+    expect(useDevelop.getState().settings).toEqual({ version: 1, process: 1 });
+    expect(canUndo(useDevelop.getState())).toBe(false);
+    // Un nouveau réglage remplace les étapes annulées.
+    useDevelop.getState().setColor("saturation", -30);
+    await useDevelop.getState().flush();
+    expect(useDevelop.getState().history?.steps.map((st) => st.label)).toEqual([
+      "color.saturation",
+    ]);
+  });
+
+  it("annuler enregistre d'abord le réglage en cours, puis l'annule", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setLight("whites", 15);
+    await useDevelop.getState().undo();
+    expect(saves()).toHaveLength(1);
+    expect(useDevelop.getState().settings).toEqual({ version: 1, process: 1 });
+    expect(useDevelop.getState().history?.current).toBe(0);
+  });
+
+  it("avant/après : l'original est rendu une fois, sans enregistrement", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setCompare("split");
+    await vi.waitFor(() => expect(useDevelop.getState().beforeFrame).not.toBeNull());
+    useDevelop.getState().setCompare("before");
+    useDevelop.getState().setCompare("off");
+    const neutralRenders = calls("develop_render").filter(
+      ([, a]) =>
+        JSON.stringify((a as { settings: object }).settings) === '{"version":1,"process":1}',
+    );
+    // Le rendu initial (photo neutre) et celui de l'original pour l'avant/après.
+    expect(neutralRenders).toHaveLength(2);
+    expect(saves()).toHaveLength(0);
   });
 
   it("curseur de température régulier en mireds", () => {
