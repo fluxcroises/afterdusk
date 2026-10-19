@@ -6,6 +6,7 @@ import { newLibrary, pickFolder } from "../actions";
 import { api, type RecentImport } from "../api/core";
 import { previewUrl } from "../api/previews";
 import { useAppEvents } from "../appEvents";
+import { DeviceBanner } from "../components/DeviceBanner";
 import { Thumbnail } from "../components/Thumbnail";
 import { WindowControls } from "../components/WindowControls";
 import { drawsOwnMenus } from "../platform";
@@ -336,6 +337,7 @@ export function WelcomeApp() {
     <div className="welcome" data-dropping={dropping || undefined}>
       <Hero highlight={highlight} />
       <main className="welcome-scroll">
+        <DeviceBanner label="welcome" />
         {resumable.map((r) => (
           <div key={r.id} className="banner banner-info welcome-banner" role="status">
             <span>{t("home.interrupted", { source: r.sourceLabel, count: r.remaining })}</span>

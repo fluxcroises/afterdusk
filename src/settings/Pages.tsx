@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { type CommandError, type Identity, api, toCommandError } from "../api/core";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { FieldRow } from "../components/PanelSection";
+import { type InsertBehavior, useDevices } from "../store/devices";
 import { useImport } from "../store/import";
 import { BackupWarning, FolderField, IdentityFields, TemplateChoice } from "./Fields";
 
@@ -55,6 +56,27 @@ export function LibrarySettings() {
   );
 }
 
+/** Ce que fait Afterdusk quand on insère une carte (§4.10). */
+function InsertBehaviorField() {
+  const { t } = useTranslation();
+  const behavior = useDevices((s) => s.behavior);
+  return (
+    <label className="field-row">
+      <span className="field-row-label">{t("settings.onInsert")}</span>
+      <select
+        value={behavior}
+        onChange={(e) => void useDevices.getState().setBehavior(e.target.value as InsertBehavior)}
+      >
+        {(["propose", "open", "nothing"] as const).map((b) => (
+          <option key={b} value={b}>
+            {t(`settings.insert.${b}`)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 /** Réglages > Import : modèles de rangement et de renommage de la bibliothèque. */
 export function ImportSettings() {
   const { t } = useTranslation();
@@ -74,6 +96,7 @@ export function ImportSettings() {
         onChange={(f, r) => setDraft({ folder: f, rename: r })}
       />
       <p className="panel-note">{t("settings.templatesHint")}</p>
+      <InsertBehaviorField />
       <div className="settings-actions">
         <button
           type="button"

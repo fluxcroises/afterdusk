@@ -2298,3 +2298,15 @@ input[type="radio"] {
 .settings-saved {
   color: var(--ad-text-secondary);
 }
+
+/* Carte détectée : bandeau sous la barre de titre, ou en tête de l'accueil. */
+.app > .device-banner {
+  position: static;
+}
+
+.welcome .device-banner {
+  position: static;
+  margin: var(--ad-space-4) var(--ad-space-5) 0;
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-md);
+}

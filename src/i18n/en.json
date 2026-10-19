@@ -206,7 +206,13 @@
     "backupHint": "The backup applies to future imports; photos already imported are not copied again.",
     "templatesHint": "Templates apply to future imports; photos already filed do not move.",
     "save": "Save",
-    "saved": "Saved."
+    "saved": "Saved.",
+    "onInsert": "When a card is inserted",
+    "insert": {
+      "propose": "Offer to import",
+      "open": "Open Import",
+      "nothing": "Do nothing"
+    }
   },
   "menu": {
     "app": "Afterdusk",
@@ -432,5 +438,11 @@
     "back": "Back",
     "next": "Next",
     "finish": "Create the library"
+  },
+  "devices": {
+    "card": "Card ({{volume}})",
+    "cardOf": "{{camera}} card ({{volume}})",
+    "detected": "{{device}} detected.",
+    "import": "Import"
   }
 }

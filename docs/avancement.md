@@ -151,3 +151,16 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Tests : identité dans les XMP, sauvegarde refusée si le dossier manque, modèles validés et aperçu, même disque ; côté interface, assistant (étapes, enchaînement des commandes, copyright qui suit le nom), réglages Bibliothèques et Import.
 - Vérifié dans l'application compilée sous Windows, sur une base vide (celle de l'utilisateur mise de côté puis remise) : les quatre écrans, choix d'un rangement et d'un renommage, création de la bibliothèque et de son dossier, retour à l'accueil habituel. Le dossier `Images/Afterdusk` créé par l'essai, vide, a été retiré. La saisie de l'identité et le choix d'un dossier par le sélecteur natif n'ont pas été pilotés à l'écran (couverts par les tests).
 - Critère « Première ouverture guidée » coché : CI verte sur Windows et macOS (run 39258437611).
+
+### 2026-10-19 (suite) : détection des cartes
+
+- Le cœur relève les volumes chaque seconde, en arrière-plan : tout volume dont la racine contient un dossier `DCIM` est une carte ou un boîtier. Sous Windows, seuls les lecteurs locaux présents sont sondés (amovibles, fixes, virtuels) ; les lecteurs réseau, qui peuvent bloquer, et les lecteurs optiques sont écartés. Sous macOS, `/Volumes` ; sous Linux, `/media` et `/run/media`. La détection ne fait que lire.
+- Marque devinée d'après les dossiers du DCIM (`100_FUJI` → « Carte FUJI (E:) ») ; les suffixes génériques (`100MSDCF` de Sony) donnent « Carte (E:) ».
+- À l'insertion (réglage Import > « À l'insertion d'une carte ») :
+  - proposer l'import (par défaut) : bandeau « Carte FUJI (E:) détectée · Importer » dans la fenêtre affichée, qui clignote dans la barre des tâches si elle n'a pas le focus ;
+  - ouvrir l'import : Importer s'affiche avec la carte analysée, sauf pendant un import en cours (proposé seulement) ;
+  - ne rien faire.
+- Importer liste les cartes présentes dans « Cartes et boîtiers » ; l'historique des imports retient le nom de la carte.
+- Corrections : le chemin d'une racine de lecteur s'affichait « \:X » (affichage de droite à gauche) ; le bandeau restait affiché une fois la carte ouverte dans Importer.
+- Mesure dans l'application compilée sous Windows, avec un lecteur virtuel (`subst X:` vers un dossier contenant `DCIM/100_FUJI`), base de l'utilisateur mise de côté puis remise : bandeau affiché 330, 1 074 et 836 ms après l'apparition du lecteur ; retrait relevé en moins de 0,5 s. « Importer » ouvre la fenêtre principale sur la carte analysée.
+- Critère « carte détectée en moins de 5 secondes » non coché : à vérifier avec une vraie carte SD (sous Windows, un lecteur virtuel n'est pas un lecteur amovible) et sur un Mac. Les deux corrections ci-dessus n'ont pas été revérifiées à l'écran (couvertes par les tests pour le bandeau).

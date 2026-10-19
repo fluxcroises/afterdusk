@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod db;
+pub mod devices;
 pub mod import;
 pub mod library;
 pub mod metadata;
@@ -87,6 +88,7 @@ pub fn run() {
             app.manage(XmpWriter::start(db_path.clone()));
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
+            app.manage(commands::devices::DeviceWatch::start(app.handle().clone()));
             previews::enqueue_missing(app.handle());
             Ok(())
         })
@@ -118,6 +120,10 @@ pub fn run() {
             commands::media::album_set_cover,
             commands::media::welcome_highlights,
             commands::trash::media_trash,
+            commands::devices::devices_list,
+            commands::devices::insert_behavior_get,
+            commands::devices::insert_behavior_set,
+            commands::devices::request_attention,
             commands::trash::media_restore,
             commands::trash::media_trash_format,
             commands::trash::pile_set_top,

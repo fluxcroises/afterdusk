@@ -5,9 +5,18 @@ import { EmptyState } from "../components/EmptyState";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { IconButton } from "../components/IconButton";
 import { ImportGrid } from "../components/ImportGrid";
-import { FieldRow, PanelNote, PanelSection } from "../components/PanelSection";
+import { FieldRow, ListRow, PanelNote, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
+import { deviceLabel, useDevices } from "../store/devices";
 import { useImport } from "../store/import";
+
+/**
+ * Chemin affiché de droite à gauche (pour couper le début, pas la fin) : une
+ * marque gauche-à-droite finale garde « X:\ » dans le bon ordre.
+ */
+function ltr(path: string): string {
+  return path + "‎";
+}
 
 function SourcePanel() {
   const { t } = useTranslation();
@@ -17,6 +26,7 @@ function SourcePanel() {
   const scanSource = useImport((s) => s.scanSource);
   const resumable = useImport((s) => s.resumable);
   const resume = useImport((s) => s.resume);
+  const devices = useDevices((s) => s.devices);
 
   const chooseFolder = async () => {
     const path = await pickFolder(t("import.chooseFolder"));
@@ -26,7 +36,23 @@ function SourcePanel() {
   return (
     <>
       <PanelSection id="import.devices" title={t("import.devices")}>
-        <PanelNote>{t("import.noDevice")}</PanelNote>
+        {devices.length === 0 ? (
+          <PanelNote>{t("import.noDevice")}</PanelNote>
+        ) : (
+          devices.map((d) => (
+            <ListRow
+              key={d.root}
+              label={deviceLabel(d)}
+              hint={d.root}
+              selected={source?.root === d.root}
+              onClick={() => {
+                if (scanning || running) return;
+                useDevices.getState().handled(d.root);
+                void scanSource(d.root);
+              }}
+            />
+          ))
+        )}
       </PanelSection>
       <PanelSection
         id="import.folders"
@@ -44,7 +70,7 @@ function SourcePanel() {
       >
         {source && (
           <p className="path-label" title={source.root}>
-            {source.root}
+            {ltr(source.root)}
           </p>
         )}
         <button
@@ -115,7 +141,7 @@ function DestinationPanel() {
         )}
         {library && (
           <p className="path-label" title={library.rootPath}>
-            {library.rootPath}
+            {ltr(library.rootPath)}
           </p>
         )}
         <button type="button" className="button button-secondary" onClick={() => void newLibrary()}>
@@ -223,6 +249,13 @@ function ImportFooter() {
   const source = useImport((s) => s.source);
   const start = useImport((s) => s.start);
   const cancel = useImport((s) => s.cancel);
+  const device = useDevices((s) => s.devices.find((d) => d.root === source?.root));
+  // Libellé de la source dans l'historique : la carte, ou le nom du dossier.
+  const sourceLabel = device
+    ? deviceLabel(device)
+    : source
+      ? source.root.split(/[\\/]/).pop() || source.root
+      : "";
 
   if (running) {
     const done = progress?.processed ?? 0;
@@ -242,7 +275,7 @@ function ImportFooter() {
       type="button"
       className="button button-primary"
       disabled={selected.size === 0 || libraryId === null}
-      onClick={() => void start(source ? source.root.split(/[\\/]/).pop() || source.root : "")}
+      onClick={() => void start(sourceLabel)}
     >
       {t("import.startCount", { count: selected.size })}
     </button>

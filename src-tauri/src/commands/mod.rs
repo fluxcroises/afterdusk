@@ -1,5 +1,6 @@
 //! Commandes Tauri exposées à l'interface.
 
+pub mod devices;
 pub mod error;
 pub mod import;
 pub mod library;

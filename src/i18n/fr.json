@@ -206,7 +206,13 @@
     "backupHint": "La sauvegarde vaut pour les prochains imports ; les photos déjà importées n'y sont pas recopiées.",
     "templatesHint": "Les modèles valent pour les prochains imports ; les photos déjà rangées ne bougent pas.",
     "save": "Enregistrer",
-    "saved": "Enregistré."
+    "saved": "Enregistré.",
+    "onInsert": "À l'insertion d'une carte",
+    "insert": {
+      "propose": "Proposer l'import",
+      "open": "Ouvrir l'import",
+      "nothing": "Ne rien faire"
+    }
   },
   "menu": {
     "app": "Afterdusk",
@@ -432,5 +438,11 @@
     "back": "Précédent",
     "next": "Suivant",
     "finish": "Créer la bibliothèque"
+  },
+  "devices": {
+    "card": "Carte ({{volume}})",
+    "cardOf": "Carte {{camera}} ({{volume}})",
+    "detected": "{{device}} détectée.",
+    "import": "Importer"
   }
 }

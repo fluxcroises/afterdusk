@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useEffect } from "react";
 import { events } from "./api/core";
+import { type Device, useDevices } from "./store/devices";
 import { useImport } from "./store/import";
 import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
@@ -27,7 +28,10 @@ async function applyMainAction(action: MainAction): Promise<void> {
   await showSelf();
   if (action.albumId !== undefined) await library.showAlbum(action.albumId);
   if (action.mediaId !== undefined) await library.select(action.mediaId);
-  if (action.scanPath) await imp.scanSource(action.scanPath);
+  if (action.scanPath) {
+    useDevices.getState().handled(action.scanPath);
+    await imp.scanSource(action.scanPath);
+  }
   if (action.resumeImportId !== undefined) await imp.resume(action.resumeImportId);
 }
 
@@ -53,8 +57,15 @@ export function useAppEvents(label: WindowLabel): void {
   useEffect(() => {
     if (!isTauri()) return;
     void useImport.getState().loadLibraries();
+    void useDevices.getState().load();
     const imp = useImport.getState();
     const subscriptions = [
+      // Carte insérée ou retirée (relevé du cœur toutes les secondes).
+      listen<Device>(
+        "device-attached",
+        (e) => void useDevices.getState().attached(e.payload, label),
+      ),
+      listen<Device>("device-detached", (e) => useDevices.getState().detached(e.payload)),
       events.onImportProgress(imp.onProgress),
       events.onImportFinished(imp.onFinished),
       listen<{ mediaId: number }>("preview-ready", (e) =>
