@@ -33,7 +33,7 @@ pub enum GpuError {
 const WORKGROUP: u32 = 16;
 
 /// Taille du bloc de paramètres (voir `Params` dans le shader).
-const UNIFORM_SIZE: u64 = 224;
+const UNIFORM_SIZE: u64 = 240;
 
 /// Tables des quatre courbes (RVB, rouge, vert, bleu).
 const CURVE_BYTES: u64 = 4 * curve::LUT_SIZE as u64 * 4;
@@ -57,6 +57,7 @@ struct Params {{
     hsl: array<vec4<f32>, 6>,
     vignette: vec4<f32>,
     grain: vec4<f32>,
+    frame: vec4<u32>,
 }}
 
 @group(0) @binding(0) var<storage, read> src: array<f32>;
@@ -118,8 +119,8 @@ fn smoothstep_(e0: f32, e1: f32, x: f32) -> f32 {{
 }}
 
 fn vignette_factor(x: u32, y: u32) -> f32 {{
-    let u = (f32(x) + 0.5) / f32(params.width) * 2.0 - 1.0;
-    let w = (f32(y) + 0.5) / f32(params.height) * 2.0 - 1.0;
+    let u = (f32(x) + 0.5) / f32(params.frame.z) * 2.0 - 1.0;
+    let w = (f32(y) + 0.5) / f32(params.frame.w) * 2.0 - 1.0;
     let r = sqrt((u * u + w * w) * 0.5);
     let v = params.vignette;
     let m = smoothstep_(v.y - v.z * 0.5, v.y + v.z * 0.5, r);
@@ -302,7 +303,7 @@ fn main(
     workgroupBarrier();
     if (id.x < params.width && id.y < params.height) {{
         let i = id.y * params.width + id.x;
-        let v = render_pixel(vec3<f32>(src[i * 3u], src[i * 3u + 1u], src[i * 3u + 2u]), id.x, id.y);
+        let v = render_pixel(vec3<f32>(src[i * 3u], src[i * 3u + 1u], src[i * 3u + 2u]), params.frame.x + id.x, params.frame.y + id.y);
         let q = vec3<u32>(quantize(v.x), quantize(v.y), quantize(v.z));
         atomicAdd(&local_hist[q.x], 1u);
         atomicAdd(&local_hist[256u + q.y], 1u);
@@ -364,6 +365,8 @@ pub struct GpuImage {
     curves: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     scale: f32,
+    /// Origine dans l'image entière et taille de celle-ci (voir [`WorkingImage::frame`]).
+    frame: (u32, u32, u32, u32),
 }
 
 fn wgpu_err(e: impl std::fmt::Display) -> GpuError {
@@ -371,7 +374,13 @@ fn wgpu_err(e: impl std::fmt::Display) -> GpuError {
 }
 
 /// Bloc de paramètres, dans la disposition de `Params` (alignement uniforme).
-fn uniform_bytes(p: &RenderParams, width: u32, height: u32, scale: f32) -> Vec<u8> {
+fn uniform_bytes(
+    p: &RenderParams,
+    width: u32,
+    height: u32,
+    scale: f32,
+    frame: (u32, u32, u32, u32),
+) -> Vec<u8> {
     let mut out = Vec::with_capacity(UNIFORM_SIZE as usize);
     let mut f = |v: f32| out.extend_from_slice(&v.to_le_bytes());
     for row in p.matrix {
@@ -404,6 +413,9 @@ fn uniform_bytes(p: &RenderParams, width: u32, height: u32, scale: f32) -> Vec<u
         f(v);
     }
     f(scale);
+    for v in [frame.0, frame.1, frame.2, frame.3] {
+        out.extend_from_slice(&v.to_le_bytes());
+    }
     out
 }
 
@@ -567,6 +579,7 @@ impl GpuRenderer {
             curves,
             bind_group,
             scale: image.scale,
+            frame: image.frame(),
         })
     }
 
@@ -577,7 +590,7 @@ impl GpuRenderer {
         self.queue.write_buffer(
             &image.params,
             0,
-            &uniform_bytes(params, image.width, image.height, image.scale),
+            &uniform_bytes(params, image.width, image.height, image.scale, image.frame),
         );
         if params.flags & FLAG_CURVE != 0 {
             let bytes: Vec<u8> = params.curve.iter().flat_map(|v| v.to_le_bytes()).collect();

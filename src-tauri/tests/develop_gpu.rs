@@ -162,11 +162,32 @@ fn degrade_synthetique_identique() {
         rgb,
         as_shot_white: D65_WHITE,
         scale: 1.0,
+        crop: None,
     };
     let uploaded = gpu.upload(&image).unwrap();
     for (name, settings, clipping) in cases() {
         let n = compare(name, &gpu, &uploaded, &image, &settings, clipping);
         println!("{name} : {n} valeurs différentes d'un niveau");
+    }
+}
+
+#[test]
+fn region_au_zoom_identique_au_processeur() {
+    let Some(gpu) = renderer() else { return };
+    let mut raw = RawFile::open(&common::sample("fujifilm_x-t3.RAF")).unwrap();
+    let full = raw.develop(false).unwrap();
+    let part = WorkingImage::crop_from_raw(&full, 3000, 1500, 900, 600);
+    let uploaded = gpu.upload(&part).unwrap();
+    for (case, settings, clipping) in cases() {
+        let n = compare(
+            &format!("région {case}"),
+            &gpu,
+            &uploaded,
+            &part,
+            &settings,
+            clipping,
+        );
+        println!("région {case} : {n} valeurs différentes d'un niveau");
     }
 }
 

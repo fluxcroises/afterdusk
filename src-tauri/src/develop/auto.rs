@@ -67,6 +67,7 @@ fn sample(image: &WorkingImage) -> WorkingImage {
         rgb,
         as_shot_white: image.as_shot_white,
         scale: image.scale / stride as f32,
+        crop: None,
     }
 }
 
@@ -329,6 +330,7 @@ mod tests {
             rgb,
             as_shot_white: D65_WHITE,
             scale: 1.0,
+            crop: None,
         }
     }
 

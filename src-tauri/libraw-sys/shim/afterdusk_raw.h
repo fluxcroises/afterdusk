@@ -89,6 +89,12 @@ int ad_raw_thumbnail(ad_raw* raw, int index, const uint8_t** data, size_t* size,
 int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* width,
                    uint16_t* height);
 
+/* Comme ad_raw_develop ; fast_xtrans : dématriçage X-Trans en une passe au
+ * lieu de trois (environ trois fois plus rapide), pour l'aperçu au zoom. Les
+ * capteurs de Bayer gardent AHD. */
+int ad_raw_develop_ex(ad_raw* raw, int half_size, int fast_xtrans, const uint16_t** data,
+                      uint16_t* width, uint16_t* height);
+
 /* Couleur du boîtier, relevée par ad_raw_develop avant que LibRaw n'applique
  * la balance des blancs : multiplicateurs de la prise de vue (cam_mul, nuls
  * ou négatifs s'ils sont absents), multiplicateurs de la lumière du jour

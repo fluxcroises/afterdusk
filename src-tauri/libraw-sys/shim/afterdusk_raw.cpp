@@ -301,6 +301,11 @@ int ad_raw_thumbnail(ad_raw* raw, int index, const uint8_t** data, size_t* size,
 
 int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* width,
                    uint16_t* height) {
+  return ad_raw_develop_ex(raw, half_size, 0, data, width, height);
+}
+
+int ad_raw_develop_ex(ad_raw* raw, int half_size, int fast_xtrans, const uint16_t** data,
+                      uint16_t* width, uint16_t* height) {
   if (!raw) return LIBRAW_UNSPECIFIED_ERROR;
   if (raw->image) {
     LibRaw::dcraw_clear_mem(raw->image);
@@ -315,7 +320,8 @@ int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* 
   p.use_camera_matrix = 1;
   p.output_bps = 16;
   p.half_size = half_size ? 1 : 0;
-  p.user_qual = 3; /* AHD ; le X-Trans garde son propre dématriçage */
+  /* AHD ; le X-Trans garde son propre dématriçage (trois passes au-delà de 2). */
+  p.user_qual = (fast_xtrans && raw->processor.imgdata.idata.filters == 9) ? 2 : 3;
   p.highlight = 0; /* hautes lumières écrêtées : la reconstruction viendra avec les réglages */
 
   int ret = raw->processor.unpack();

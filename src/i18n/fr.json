@@ -599,6 +599,12 @@
       "grain_amount": "Quantité",
       "grain_size": "Taille",
       "grain_roughness": "Irrégularité"
+    },
+    "zoom": {
+      "hint": "Cliquez pour zoomer à 100 % (Z).",
+      "exitHint": "Glissez pour vous déplacer, cliquez pour revenir à l'image entière (Z).",
+      "loading": "Développement de l'original en pleine définition…",
+      "status": "100 % · rendu {{render}} ms ({{engine}})"
     }
   }
 }

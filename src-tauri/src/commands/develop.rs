@@ -4,7 +4,7 @@
 //! mémoire (et sur le processeur graphique s'il y en a un) tant que la photo
 //! est ouverte, si bien qu'un réglage ne coûte qu'un rendu.
 
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Instant;
 
 use serde::Serialize;
@@ -21,6 +21,7 @@ use crate::develop::settings::{DevelopSettings, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
 use crate::develop::store::{self, History, ORIGINAL, Snapshot, StoreError, Version};
 use crate::develop::white;
+use crate::raw::DevelopedRaw;
 
 /// Variable d'environnement : `AFTERDUSK_GPU=0` force le rendu processeur.
 const GPU_ENV: &str = "AFTERDUSK_GPU";
@@ -57,8 +58,11 @@ impl From<StoreError> for CommandError {
 }
 
 struct Session {
+    media_id: i64,
     image: WorkingImage,
     gpu: Option<GpuImage>,
+    /// Original en pleine définition, décodé au premier zoom 100 %.
+    full: Option<Arc<DevelopedRaw>>,
 }
 
 /// Moteur de rendu : processeur graphique (choisi au premier usage) et photo ouverte.
@@ -174,10 +178,43 @@ pub async fn develop_open(
             .session
             .lock()
             .map_err(|e| CommandError::new("internal", e))?;
-        *session = Some(Session { image, gpu });
+        *session = Some(Session {
+            media_id,
+            image,
+            gpu,
+            full: None,
+        });
         Ok(opened)
     })
     .await
+}
+
+/// Rendu au GPU si possible, au processeur sinon, puis mis en forme pour
+/// l'interface : en-tête, histogramme, pixels.
+fn render_frame(
+    engine: &DevelopEngine,
+    image: &WorkingImage,
+    uploaded: Option<&GpuImage>,
+    params: &RenderParams,
+) -> Vec<u8> {
+    let started = Instant::now();
+    let gpu = engine.gpu().zip(uploaded).and_then(|(r, img)| {
+        r.render(img, params)
+            .inspect_err(|e| eprintln!("rendu au processeur : {e}"))
+            .ok()
+    });
+    let on_gpu = gpu.is_some();
+    let rendered = gpu.unwrap_or_else(|| render(image, params));
+    let micros = u32::try_from(started.elapsed().as_micros()).unwrap_or(u32::MAX);
+    let mut out = Vec::with_capacity(HEADER + rendered.histogram.len() * 4 + rendered.rgba.len());
+    for v in [image.width, image.height, micros, u32::from(on_gpu)] {
+        out.extend_from_slice(&v.to_le_bytes());
+    }
+    for v in &rendered.histogram {
+        out.extend_from_slice(&v.to_le_bytes());
+    }
+    out.extend_from_slice(&rendered.rgba);
+    out
 }
 
 /// Rend la photo ouverte avec ces réglages : en-tête, histogramme, pixels.
@@ -201,30 +238,112 @@ pub async fn develop_render(
             session.image.as_shot_white,
             clipping.unwrap_or_default(),
         );
+        Ok(render_frame(
+            &engine,
+            &session.image,
+            session.gpu.as_ref(),
+            &params,
+        ))
+    })
+    .await?;
+    Ok(Response::new(bytes))
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ZoomOpened {
+    /// Dimensions de l'original en pleine définition.
+    pub width: u32,
+    pub height: u32,
+    pub decode_ms: u64,
+}
+
+/// Prépare le zoom 100 % : décode l'original en pleine définition (une fois
+/// par photo ouverte ; de 1 à 3 s selon le capteur).
+#[tauri::command]
+pub async fn develop_zoom_open(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> CommandResult<ZoomOpened> {
+    let conn = state.connect()?;
+    blocking(move || {
+        let engine = app.state::<DevelopEngine>();
+        let (media_id, ready) = {
+            let session = engine
+                .session
+                .lock()
+                .map_err(|e| CommandError::new("internal", e))?;
+            let session = session
+                .as_ref()
+                .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
+            (session.media_id, session.full.clone())
+        };
+        if let Some(full) = ready {
+            return Ok(ZoomOpened {
+                width: full.width,
+                height: full.height,
+                decode_ms: 0,
+            });
+        }
+        // Décodage hors du verrou : le rendu de l'aperçu continue pendant ce temps.
         let started = Instant::now();
-        let gpu = engine.gpu().zip(session.gpu.as_ref()).and_then(|(r, img)| {
-            r.render(img, &params)
-                .inspect_err(|e| eprintln!("rendu au processeur : {e}"))
-                .ok()
-        });
-        let on_gpu = gpu.is_some();
-        let rendered = gpu.unwrap_or_else(|| render(&session.image, &params));
-        let micros = u32::try_from(started.elapsed().as_micros()).unwrap_or(u32::MAX);
-        let mut out =
-            Vec::with_capacity(HEADER + rendered.histogram.len() * 4 + rendered.rgba.len());
-        for v in [
-            session.image.width,
-            session.image.height,
-            micros,
-            u32::from(on_gpu),
-        ] {
-            out.extend_from_slice(&v.to_le_bytes());
+        let full = Arc::new(source::full_resolution(&conn, media_id)?);
+        let decode_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+        let mut session = engine
+            .session
+            .lock()
+            .map_err(|e| CommandError::new("internal", e))?;
+        // La photo a pu changer pendant le décodage : le résultat ne sert plus.
+        match session.as_mut() {
+            Some(s) if s.media_id == media_id => s.full = Some(Arc::clone(&full)),
+            _ => {
+                return Err(CommandError::new(
+                    "internal",
+                    "photo changée pendant le décodage",
+                ));
+            }
         }
-        for v in &rendered.histogram {
-            out.extend_from_slice(&v.to_le_bytes());
-        }
-        out.extend_from_slice(&rendered.rgba);
-        Ok(out)
+        Ok(ZoomOpened {
+            width: full.width,
+            height: full.height,
+            decode_ms,
+        })
+    })
+    .await
+}
+
+/// Rend une région de l'original en pleine définition (zoom 100 %), dans le
+/// même format que [`develop_render`].
+#[tauri::command]
+pub async fn develop_zoom_render(
+    app: AppHandle,
+    settings: DevelopSettings,
+    clipping: Option<Clipping>,
+    left: u32,
+    top: u32,
+    width: u32,
+    height: u32,
+) -> CommandResult<Response> {
+    let bytes = blocking(move || {
+        let engine = app.state::<DevelopEngine>();
+        let full = {
+            let session = engine
+                .session
+                .lock()
+                .map_err(|e| CommandError::new("internal", e))?;
+            session
+                .as_ref()
+                .and_then(|s| s.full.clone())
+                .ok_or_else(|| CommandError::new("internal", "zoom non préparé"))?
+        };
+        let region = WorkingImage::crop_from_raw(&full, left, top, width, height);
+        let params = RenderParams::from_settings(
+            &settings.sanitized(),
+            region.as_shot_white,
+            clipping.unwrap_or_default(),
+        );
+        let uploaded = engine.gpu().and_then(|r| r.upload(&region).ok());
+        Ok(render_frame(&engine, &region, uploaded.as_ref(), &params))
     })
     .await?;
     Ok(Response::new(bytes))

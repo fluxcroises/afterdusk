@@ -97,7 +97,8 @@ beforeEach(() => {
         adapter: "Carte de test",
         decodeMs: 210,
       };
-    if (cmd === "develop_render") return frame(true);
+    if (cmd === "develop_render" || cmd === "develop_zoom_render") return frame(true);
+    if (cmd === "develop_zoom_open") return { width: 6000, height: 4000, decodeMs: 900 };
     if (cmd === "develop_pick_white") return { mode: "custom", temperature: 3900, tint: 6 };
     if (cmd === "develop_auto_light")
       return {
@@ -408,6 +409,67 @@ describe("Retoucher", () => {
       "effects.vignette.midpoint",
       "effects.grain.size",
     ]);
+  });
+
+  it("zoom 100 % : centré sur le point visé, borné à l'image, suit les réglages", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setViewport(1000, 800);
+    await useDevelop.getState().zoomAt(0.5, 0.25);
+    expect(calls("develop_zoom_open")).toHaveLength(1);
+    expect(useDevelop.getState().zoom).toEqual({ left: 2500, top: 600 });
+    expect(calls("develop_zoom_render")[0]?.[1]).toMatchObject({
+      left: 2500,
+      top: 600,
+      width: 1000,
+      height: 800,
+    });
+    // Coin : la région reste dans l'image.
+    await useDevelop.getState().zoomAt(1, 1);
+    expect(useDevelop.getState().zoom).toEqual({ left: 5000, top: 3200 });
+    // Le décodage pleine définition n'a lieu qu'une fois.
+    expect(calls("develop_zoom_open")).toHaveLength(1);
+    // Glisser vers la droite montre la partie gauche.
+    useDevelop.getState().panZoom(300, 0);
+    expect(useDevelop.getState().zoom).toEqual({ left: 4700, top: 3200 });
+    useDevelop.getState().panZoom(-10000, -10000);
+    expect(useDevelop.getState().zoom).toEqual({ left: 5000, top: 3200 });
+    // Un réglage rend l'aperçu (histogramme) et la région.
+    const before = calls("develop_zoom_render").length;
+    useDevelop.getState().setLight("exposure", 0.5);
+    await vi.waitFor(() => expect(calls("develop_zoom_render").length).toBeGreaterThan(before));
+    useDevelop.getState().exitZoom();
+    expect(useDevelop.getState().zoom).toBeNull();
+  });
+
+  it("le zoom se prépare en arrière-plan après un moment sur la photo", async () => {
+    const { ZOOM_PREPARE_DELAY_MS } = await import("./develop");
+    await useDevelop.getState().open(7);
+    expect(calls("develop_zoom_open")).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(ZOOM_PREPARE_DELAY_MS + 10);
+    expect(calls("develop_zoom_open")).toHaveLength(1);
+    expect(useDevelop.getState().fullSize).toEqual({ width: 6000, height: 4000 });
+    // Le zoom ne décode pas une seconde fois.
+    useDevelop.getState().setViewport(1000, 800);
+    await useDevelop.getState().zoomAt(0.5, 0.5);
+    expect(calls("develop_zoom_open")).toHaveLength(1);
+  });
+
+  it("passer vite d'une photo à l'autre ne prépare rien", async () => {
+    const { ZOOM_PREPARE_DELAY_MS } = await import("./develop");
+    await useDevelop.getState().open(7);
+    await vi.advanceTimersByTimeAsync(ZOOM_PREPARE_DELAY_MS / 2);
+    await useDevelop.getState().open(8);
+    await vi.advanceTimersByTimeAsync(ZOOM_PREPARE_DELAY_MS / 2 + 10);
+    expect(calls("develop_zoom_open")).toHaveLength(0);
+  });
+
+  it("changer de photo quitte le zoom", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setViewport(1000, 800);
+    await useDevelop.getState().zoomAt(0.5, 0.5);
+    await useDevelop.getState().open(8);
+    expect(useDevelop.getState().zoom).toBeNull();
+    expect(useDevelop.getState().fullSize).toBeNull();
   });
 
   it("curseur de température régulier en mireds", () => {

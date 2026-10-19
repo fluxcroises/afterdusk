@@ -214,6 +214,12 @@ export function freeName(base: (n: number) => string, taken: string[]): string {
 /** Avant/après : rendu retouché, original seul, ou les deux côte à côte. */
 export type CompareMode = "off" | "before" | "split";
 
+/** Zoom 100 % : coin haut gauche de la région affichée, en pixels de l'original. */
+export interface ZoomView {
+  left: number;
+  top: number;
+}
+
 export interface ClippingWarnings {
   highlights: boolean;
   shadows: boolean;
@@ -240,6 +246,14 @@ interface DevelopState {
   compare: CompareMode;
   /** Rendu de l'original (réglages neutres), pour l'avant/après. */
   beforeFrame: DevelopFrame | null;
+  /** Zoom 100 % en cours, ou rien (photo ajustée à l'écran). */
+  zoom: ZoomView | null;
+  /** Dimensions de l'original en pleine définition, une fois décodé. */
+  fullSize: { width: number; height: number } | null;
+  zoomLoading: boolean;
+  zoomFrame: DevelopFrame | null;
+  /** Taille de la zone d'affichage, en pixels de l'écran (densité comprise). */
+  viewport: { width: number; height: number };
   /** Version affichée : l'originale ("") ou une copie virtuelle. */
   version: string;
   versions: Version[];
@@ -265,6 +279,12 @@ interface DevelopState {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   setCompare: (mode: CompareMode) => void;
+  /** Zoom 100 % centré sur un point de la photo (fractions de 0 à 1). */
+  zoomAt: (fx: number, fy: number) => Promise<void>;
+  /** Déplace la région zoomée, en pixels de l'écran. */
+  panZoom: (dx: number, dy: number) => void;
+  exitZoom: () => void;
+  setViewport: (width: number, height: number) => void;
   selectVersion: (name: string) => Promise<void>;
   /** Copie virtuelle des réglages affichés, aussitôt affichée. */
   createVersion: (name: string) => Promise<void>;
@@ -301,12 +321,86 @@ function withValue<T extends object>(section: T | undefined, key: string, value:
 let openToken = 0;
 let rendering = false;
 let renderAgain = false;
+let zoomRendering = false;
+let zoomAgain = false;
+/** Décodage pleine définition en cours, pour une photo donnée : partagé
+ * entre la préparation en arrière-plan et le premier zoom. */
+let fullDecode: { mediaId: number; promise: Promise<boolean> } | null = null;
+let prepareTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Délai sur une même photo avant de préparer le zoom en arrière-plan. */
+export const ZOOM_PREPARE_DELAY_MS = 1000;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingLabel: string | null = null;
 
 export const useDevelop = create<DevelopState>()((set, get) => {
   /** Un seul rendu à la fois ; les gestes reçus entre-temps n'en déclenchent qu'un. */
+  /** Décode l'original en pleine définition (une fois par photo). */
+  function ensureFull(mediaId: number): Promise<boolean> {
+    if (get().fullSize) return Promise.resolve(true);
+    if (fullDecode?.mediaId === mediaId) return fullDecode.promise;
+    const promise = invoke<{ width: number; height: number }>("develop_zoom_open")
+      .then((opened) => {
+        if (get().mediaId !== mediaId) return false;
+        set({ fullSize: { width: opened.width, height: opened.height } });
+        return true;
+      })
+      .catch((e: unknown) => {
+        if (get().mediaId === mediaId) set({ error: toCommandError(e) });
+        return false;
+      })
+      .finally(() => {
+        if (fullDecode?.mediaId === mediaId) fullDecode = null;
+      });
+    fullDecode = { mediaId, promise };
+    return promise;
+  }
+
+  /** Région zoomée bornée à l'image. */
+  function clampZoom(view: ZoomView): ZoomView {
+    const { fullSize, viewport } = get();
+    if (!fullSize) return view;
+    const maxLeft = Math.max(0, fullSize.width - viewport.width);
+    const maxTop = Math.max(0, fullSize.height - viewport.height);
+    return {
+      left: Math.round(Math.min(maxLeft, Math.max(0, view.left))),
+      top: Math.round(Math.min(maxTop, Math.max(0, view.top))),
+    };
+  }
+
+  /** Rendu de la région zoomée ; un seul à la fois, comme l'aperçu. */
+  async function renderZoom() {
+    if (zoomRendering) {
+      zoomAgain = true;
+      return;
+    }
+    zoomRendering = true;
+    try {
+      do {
+        zoomAgain = false;
+        const { settings, mediaId, clipping, zoom, viewport } = get();
+        if (!settings || mediaId === null || !zoom) return;
+        const buffer = await invoke<ArrayBuffer>("develop_zoom_render", {
+          settings,
+          clipping,
+          left: zoom.left,
+          top: zoom.top,
+          width: Math.max(1, Math.round(viewport.width)),
+          height: Math.max(1, Math.round(viewport.height)),
+        });
+        if (get().mediaId !== mediaId || !get().zoom) return;
+        set({ zoomFrame: parseFrame(buffer) });
+      } while (zoomAgain);
+    } catch (e) {
+      set({ error: toCommandError(e) });
+    } finally {
+      zoomRendering = false;
+    }
+  }
+
   async function render() {
+    // L'aperçu donne toujours l'histogramme ; la région zoomée suit.
+    if (get().zoom) void renderZoom();
     if (rendering) {
       renderAgain = true;
       return;
@@ -438,6 +532,11 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     version: ORIGINAL,
     versions: [],
     snapshots: [],
+    zoom: null,
+    fullSize: null,
+    zoomLoading: false,
+    zoomFrame: null,
+    viewport: { width: 1, height: 1 },
 
     open: async (mediaId) => {
       if (get().mediaId === mediaId && get().settings) return;
@@ -455,6 +554,10 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         version: ORIGINAL,
         versions: [],
         snapshots: [],
+        zoom: null,
+        fullSize: null,
+        zoomLoading: false,
+        zoomFrame: null,
       });
       try {
         const opened = await invoke<DevelopOpened>("develop_open", { mediaId });
@@ -468,6 +571,11 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           decodeMs: opened.decodeMs,
         });
         await Promise.all([render(), loadState(mediaId)]);
+        // Après un moment sur la même photo, le zoom se prépare sans bloquer.
+        if (prepareTimer) clearTimeout(prepareTimer);
+        prepareTimer = setTimeout(() => {
+          if (get().mediaId === mediaId) void ensureFull(mediaId);
+        }, ZOOM_PREPARE_DELAY_MS);
         if (get().compare !== "off") await loadBefore();
       } catch (e) {
         if (token === openToken) set({ loading: false, error: toCommandError(e) });
@@ -629,6 +737,47 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       if (mode !== "off") void loadBefore();
     },
 
+    zoomAt: async (fx, fy) => {
+      const { mediaId } = get();
+      if (mediaId === null || get().zoomLoading) return;
+      if (!get().fullSize) {
+        set({ zoomLoading: true });
+        const ready = await ensureFull(mediaId);
+        if (get().mediaId === mediaId) set({ zoomLoading: false });
+        if (!ready) return;
+      }
+      const { fullSize, viewport } = get();
+      if (!fullSize) return;
+      set({
+        zoom: clampZoom({
+          left: fx * fullSize.width - viewport.width / 2,
+          top: fy * fullSize.height - viewport.height / 2,
+        }),
+      });
+      await renderZoom();
+    },
+
+    panZoom: (dx, dy) => {
+      const { zoom } = get();
+      if (!zoom) return;
+      set({ zoom: clampZoom({ left: zoom.left - dx, top: zoom.top - dy }) });
+      void renderZoom();
+    },
+
+    exitZoom: () => set({ zoom: null, zoomFrame: null }),
+
+    setViewport: (width, height) => {
+      const v = get().viewport;
+      if (Math.round(v.width) === Math.round(width) && Math.round(v.height) === Math.round(height))
+        return;
+      set({ viewport: { width, height } });
+      const { zoom } = get();
+      if (zoom) {
+        set({ zoom: clampZoom(zoom) });
+        void renderZoom();
+      }
+    },
+
     selectVersion: async (name) => {
       const { mediaId } = get();
       if (mediaId === null || name === get().version) return;
@@ -713,6 +862,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
 
     close: async () => {
       await get().flush();
+      if (prepareTimer) clearTimeout(prepareTimer);
       openToken++;
       set({
         mediaId: null,
@@ -727,6 +877,9 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         version: ORIGINAL,
         versions: [],
         snapshots: [],
+        zoom: null,
+        fullSize: null,
+        zoomFrame: null,
       });
       await invoke("develop_close").catch(() => undefined);
     },

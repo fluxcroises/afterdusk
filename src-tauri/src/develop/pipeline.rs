@@ -31,6 +31,19 @@ pub struct WorkingImage {
     /// définition (1 : pleine définition) : le grain, défini en pixels de
     /// l'original, garde ainsi la même taille apparente.
     pub scale: f32,
+    /// Région d'une image plus grande (zoom 100 %) : sa place dans l'image
+    /// entière, pour que vignetage et grain y soient les mêmes. `None` :
+    /// l'image entière.
+    pub crop: Option<Crop>,
+}
+
+/// Place d'une région dans l'image entière, en pixels de la région.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Crop {
+    pub left: u32,
+    pub top: u32,
+    pub full_width: u32,
+    pub full_height: u32,
 }
 
 /// XYZ (D65) vers Rec. 2020 linéaire.
@@ -253,7 +266,45 @@ impl WorkingImage {
             rgb,
             as_shot_white: raw.as_shot_white,
             scale: ow.max(oh) as f32 / raw.full_long_side.max(1) as f32,
+            crop: None,
         }
+    }
+
+    /// Région de l'original développé en pleine définition, sans réduction :
+    /// un pixel de la région est un pixel de l'original. Bornée à l'image.
+    pub fn crop_from_raw(raw: &DevelopedRaw, left: u32, top: u32, width: u32, height: u32) -> Self {
+        let left = left.min(raw.width.saturating_sub(1));
+        let top = top.min(raw.height.saturating_sub(1));
+        let w = width.clamp(1, raw.width - left);
+        let h = height.clamp(1, raw.height - top);
+        let mut rgb = Vec::with_capacity((w * h * 3) as usize);
+        for y in top..top + h {
+            let row = (y * raw.width + left) as usize * 3;
+            for px in raw.xyz[row..row + w as usize * 3].as_chunks::<3>().0 {
+                let xyz = px.map(|v| f32::from(v) / 65535.0);
+                rgb.extend_from_slice(&mul(&XYZ_TO_REC2020, xyz));
+            }
+        }
+        Self {
+            width: w,
+            height: h,
+            rgb,
+            as_shot_white: raw.as_shot_white,
+            scale: raw.width.max(raw.height) as f32 / raw.full_long_side.max(1) as f32,
+            crop: Some(Crop {
+                left,
+                top,
+                full_width: raw.width,
+                full_height: raw.height,
+            }),
+        }
+    }
+
+    /// Origine de l'image dans l'image entière, et taille de celle-ci.
+    pub fn frame(&self) -> (u32, u32, u32, u32) {
+        self.crop.map_or((0, 0, self.width, self.height), |c| {
+            (c.left, c.top, c.full_width, c.full_height)
+        })
     }
 
     /// Couleur moyenne (XYZ) d'un carré de 5 × 5 pixels autour de (x, y),
@@ -669,6 +720,7 @@ pub fn histogram_of(rgba: &[u8]) -> Vec<u32> {
 
 /// Rendu complet, réparti sur les cœurs du processeur.
 pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
+    let (ox, oy, fw, fh) = image.frame();
     let pixels = (image.width * image.height) as usize;
     let mut out = vec![0u8; pixels * 4];
     let chunk = pixels.div_ceil(workers()).max(1);
@@ -683,10 +735,10 @@ pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
                     for (i, px) in slice.as_chunks_mut::<4>().0.iter_mut().enumerate() {
                         let index = n * chunk + i;
                         let at = At {
-                            x: (index % image.width as usize) as u32,
-                            y: (index / image.width as usize) as u32,
-                            width: image.width,
-                            height: image.height,
+                            x: ox + (index % image.width as usize) as u32,
+                            y: oy + (index / image.width as usize) as u32,
+                            width: fw,
+                            height: fh,
                             scale: image.scale,
                         };
                         let v = render_pixel_at(
@@ -1010,6 +1062,46 @@ mod tests {
     }
 
     #[test]
+    fn region_identique_a_l_image_entiere() {
+        // Une image de 40 × 30 développée « en pleine définition ».
+        let (w, h) = (40u32, 30u32);
+        let xyz: Vec<u16> = (0..w * h)
+            .flat_map(|i| {
+                let v = ((i * 37) % 60000) as u16;
+                [v, v / 2, v / 3]
+            })
+            .collect();
+        let raw = DevelopedRaw {
+            width: w,
+            height: h,
+            xyz,
+            as_shot_white: D65_WHITE,
+            full_long_side: w,
+        };
+        let whole = WorkingImage::from_raw(&raw, 40);
+        let part = WorkingImage::crop_from_raw(&raw, 10, 5, 12, 8);
+        assert_eq!((part.width, part.height, part.scale), (12, 8, 1.0));
+        let mut s = DevelopSettings::default();
+        s.effects.vignette.amount = -80.0;
+        s.effects.grain.amount = 100.0;
+        let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
+        let a = render(&whole, &p).rgba;
+        let b = render(&part, &p).rgba;
+        // Chaque pixel de la région est celui de l'image entière (vignetage et
+        // grain compris).
+        for y in 0..8 {
+            for x in 0..12 {
+                let i = ((y * 12 + x) * 4) as usize;
+                let j = (((y + 5) * 40 + x + 10) * 4) as usize;
+                assert_eq!(b[i..i + 3], a[j..j + 3], "({x}, {y})");
+            }
+        }
+        // Région débordante : ramenée à l'image.
+        let edge = WorkingImage::crop_from_raw(&raw, 35, 28, 20, 20);
+        assert_eq!((edge.width, edge.height), (5, 2));
+    }
+
+    #[test]
     fn histogramme_recalcule_identique() {
         let image = WorkingImage {
             width: 64,
@@ -1017,6 +1109,7 @@ mod tests {
             rgb: (0..64 * 8 * 3).map(|i| (i % 97) as f32 / 40.0).collect(),
             as_shot_white: D65_WHITE,
             scale: 1.0,
+            crop: None,
         };
         let r = render(&image, &neutral());
         assert_eq!(histogram_of(&r.rgba), r.histogram);
@@ -1035,6 +1128,7 @@ mod tests {
             rgb: vec![10.0, 10.0, 10.0, 0.0, 0.0, 0.0],
             as_shot_white: D65_WHITE,
             scale: 1.0,
+            crop: None,
         };
         let mut p = neutral();
         p.flags |= FLAG_CLIP_HIGHLIGHTS | FLAG_CLIP_SHADOWS;

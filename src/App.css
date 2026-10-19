@@ -2957,3 +2957,23 @@ input[type="radio"] {
   border-radius: 50%;
   background: var(--hue);
 }
+
+.develop-canvas {
+  cursor: zoom-in;
+  touch-action: none;
+}
+
+/* Zoom 100 % : un pixel de l'original par pixel de l'écran, pas de réduction. */
+.develop-canvas[data-zoom] {
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+}
+
+.develop-canvas[data-zoom][data-dragging] {
+  cursor: grabbing;
+}
+
+.develop-canvas[data-zoom][data-picking] {
+  cursor: crosshair;
+}

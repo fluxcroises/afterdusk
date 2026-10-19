@@ -108,6 +108,14 @@ unsafe extern "C" {
         width: *mut u16,
         height: *mut u16,
     ) -> c_int;
+    pub fn ad_raw_develop_ex(
+        raw: *mut ad_raw,
+        half_size: c_int,
+        fast_xtrans: c_int,
+        data: *mut *const u16,
+        width: *mut u16,
+        height: *mut u16,
+    ) -> c_int;
     pub fn ad_raw_get_color(raw: *const ad_raw) -> *const ad_raw_color;
     pub fn ad_raw_strerror(error: c_int) -> *const c_char;
     pub fn ad_raw_version() -> *const c_char;

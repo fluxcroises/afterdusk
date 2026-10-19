@@ -599,6 +599,12 @@
       "grain_amount": "Amount",
       "grain_size": "Size",
       "grain_roughness": "Roughness"
+    },
+    "zoom": {
+      "hint": "Click to zoom to 100% (Z).",
+      "exitHint": "Drag to move around, click to fit the whole image (Z).",
+      "loading": "Developing the original at full resolution…",
+      "status": "100% · rendered in {{render}} ms ({{engine}})"
     }
   }
 }

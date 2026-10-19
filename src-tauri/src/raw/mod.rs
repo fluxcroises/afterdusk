@@ -290,14 +290,25 @@ impl RawFile {
     /// Développe l'image sans retouche (voir `ad_raw_develop`) ; `half_size` :
     /// moitié de la définition, pour l'aperçu de retouche. Lecture seule.
     pub fn develop(&mut self, half_size: bool) -> Result<DevelopedRaw, RawError> {
+        self.develop_with(half_size, false)
+    }
+
+    /// Comme [`Self::develop`] ; `fast_xtrans` : dématriçage X-Trans en une
+    /// passe (environ trois fois plus rapide), pour le zoom de l'aperçu.
+    pub fn develop_with(
+        &mut self,
+        half_size: bool,
+        fast_xtrans: bool,
+    ) -> Result<DevelopedRaw, RawError> {
         let mut data: *const u16 = std::ptr::null();
         let (mut width, mut height) = (0u16, 0u16);
         // SAFETY : pointeurs de sortie valides ; LibRaw garantit
         // largeur × hauteur × 3 valeurs lisibles jusqu'au prochain appel.
         let code = unsafe {
-            sys::ad_raw_develop(
+            sys::ad_raw_develop_ex(
                 self.handle.as_ptr(),
                 i32::from(half_size),
+                i32::from(fast_xtrans),
                 &mut data,
                 &mut width,
                 &mut height,

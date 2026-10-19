@@ -9,7 +9,7 @@ use super::pipeline::WorkingImage;
 use crate::library::paths::{self, PathError};
 use crate::library::{LibraryError, get_library};
 use crate::metadata::media::{MediaFormat, format_of};
-use crate::raw::{RawError, RawFile};
+use crate::raw::{DevelopedRaw, RawError, RawFile};
 
 /// Côté long de l'image de travail affichée à l'écran (décision 0005).
 pub const PREVIEW_SIDE: u32 = 2048;
@@ -32,14 +32,8 @@ pub enum SourceError {
     Raw(#[from] RawError),
 }
 
-/// Décode l'original d'une photo et le ramène à `max_side` pixels de côté
-/// long : en demi-définition (quatre fois plus rapide) quand elle suffit, en
-/// pleine définition pour les capteurs trop petits.
-pub fn working_image(
-    conn: &Connection,
-    media_id: i64,
-    max_side: u32,
-) -> Result<WorkingImage, SourceError> {
+/// Original RAW d'une photo de la bibliothèque, ouvert en lecture seule.
+fn open_raw(conn: &Connection, media_id: i64) -> Result<RawFile, SourceError> {
     let (library_id, path): (i64, String) = conn
         .query_row(
             "SELECT library_id, path FROM media WHERE id = ?1",
@@ -56,9 +50,27 @@ pub fn working_image(
     if format_of(&abs) != Some(MediaFormat::Raw) {
         return Err(SourceError::Unsupported(path));
     }
-    let mut raw = RawFile::open(&abs)?;
+    Ok(RawFile::open(&abs)?)
+}
+
+/// Décode l'original d'une photo et le ramène à `max_side` pixels de côté
+/// long : en demi-définition (quatre fois plus rapide) quand elle suffit, en
+/// pleine définition pour les capteurs trop petits.
+pub fn working_image(
+    conn: &Connection,
+    media_id: i64,
+    max_side: u32,
+) -> Result<WorkingImage, SourceError> {
+    let mut raw = open_raw(conn, media_id)?;
     let info = raw.info();
     let half = u32::from(info.width.max(info.height)) / 2 >= max_side;
     let developed = raw.develop(half)?;
     Ok(WorkingImage::from_raw(&developed, max_side))
+}
+
+/// Original développé en pleine définition, pour le zoom 100 %. Le X-Trans
+/// y est dématricé en une passe (5 s au lieu de 11 s pour 26 Mpx) ; l'export
+/// gardera les trois passes.
+pub fn full_resolution(conn: &Connection, media_id: i64) -> Result<DevelopedRaw, SourceError> {
+    Ok(open_raw(conn, media_id)?.develop_with(false, true)?)
 }
