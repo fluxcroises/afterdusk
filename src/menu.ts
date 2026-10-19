@@ -11,6 +11,7 @@ import { importFromFolder } from "./actions";
 import i18n from "./i18n";
 import { drawsOwnMenus, isMac } from "./platform";
 import { showWelcome, toggleSecondary } from "./windows";
+import { purgeSelection, trashRejected } from "./trash";
 import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
 import { COLOR_LABELS } from "./ui/labels";
@@ -101,7 +102,14 @@ export function buildMenuItems(t: TFunction): Item[] {
   const edit: SubmenuOptions = {
     text: t("menu.edit"),
     items: [
-      { id: "undo", text: t("menu.undo"), accelerator: "CmdOrCtrl+Z", enabled: false },
+      {
+        id: "undo",
+        // Seule opération annulable pour l'instant : le dernier envoi dans la corbeille.
+        text: t("menu.undo"),
+        accelerator: "CmdOrCtrl+Z",
+        enabled: isMac || useLibrary.getState().undoIds !== null,
+        action: () => void useLibrary.getState().undoTrash(),
+      },
       { id: "redo", text: t("menu.redo"), accelerator: "CmdOrCtrl+Shift+Z", enabled: false },
       separator,
       { item: "Cut", text: t("menu.cut") },
@@ -117,14 +125,28 @@ export function buildMenuItems(t: TFunction): Item[] {
   // Le tri porte sur la photo sélectionnée, dans Trier ou Bibliothèque. Le menu
   // natif de macOS est construit une fois : ses entrées restent actives et la
   // condition est vérifiée au moment de l'action.
-  const canMarkNow = () => {
+  const onPhotos = () => {
     const screen = useNavigation.getState().screen;
-    return useLibrary.getState().selectedId !== null && (screen === "cull" || screen === "library");
+    return screen === "cull" || screen === "library";
+  };
+  const canMarkNow = () => {
+    const { selectedId, trash } = useLibrary.getState();
+    return onPhotos() && selectedId !== null && !trash;
   };
   const canMark = isMac || canMarkNow();
   const whenMarkable = (run: () => void) => () => {
     if (canMarkNow()) run();
   };
+  // Dans la vue Corbeille : restaurer ou supprimer définitivement.
+  const inTrashNow = () => {
+    const { selectedId, trash } = useLibrary.getState();
+    return onPhotos() && selectedId !== null && trash;
+  };
+  const inTrash = isMac || inTrashNow();
+  const whenInTrash = (run: () => void) => () => {
+    if (inTrashNow()) run();
+  };
+  const canTrashRejectedNow = () => onPhotos() && !useLibrary.getState().trash;
   const photo: SubmenuOptions = {
     text: t("menu.photo"),
     items: [
@@ -172,7 +194,36 @@ export function buildMenuItems(t: TFunction): Item[] {
         }),
       },
       separator,
-      { id: "trash", text: t("menu.moveToTrash"), enabled: false },
+      {
+        id: "trash",
+        text: t("menu.moveToTrash"),
+        // Suppr comme Lightroom ; ⌘⌫ comme le Finder.
+        accelerator: isMac ? "CmdOrCtrl+Backspace" : "Delete",
+        enabled: canMark,
+        action: whenMarkable(() => void useLibrary.getState().moveToTrash()),
+      },
+      {
+        id: "trash-rejected",
+        text: t("menu.moveRejectedToTrash"),
+        accelerator: isMac ? "CmdOrCtrl+Alt+Backspace" : "CmdOrCtrl+Backspace",
+        enabled: isMac || canTrashRejectedNow(),
+        action: () => {
+          if (canTrashRejectedNow()) void trashRejected();
+        },
+      },
+      separator,
+      {
+        id: "restore",
+        text: t("menu.restore"),
+        enabled: inTrash,
+        action: whenInTrash(() => void useLibrary.getState().restore()),
+      },
+      {
+        id: "purge",
+        text: t("menu.purge"),
+        enabled: inTrash,
+        action: whenInTrash(() => void purgeSelection()),
+      },
     ],
   };
 
@@ -357,6 +408,10 @@ export function formatAccelerator(accelerator: string, t: TFunction): string {
           return t("keys.shift");
         case "Alt":
           return t("keys.alt");
+        case "Delete":
+          return t("keys.delete");
+        case "Backspace":
+          return isMac ? "⌫" : t("keys.backspace");
         default:
           return part;
       }
@@ -375,6 +430,7 @@ export function matchesAccelerator(accelerator: string, e: KeyboardEvent): boole
   if (/^F\d+$/.test(key)) return e.key === key;
   if (/^\d$/.test(key)) return e.code === `Digit${key}`;
   if (key === ",") return e.key === ",";
+  if (key === "Delete" || key === "Backspace") return e.key === key;
   return e.code === `Key${key.toUpperCase()}`;
 }
 

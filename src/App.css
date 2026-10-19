@@ -689,6 +689,22 @@ button.color-chip:disabled {
   gap: var(--ad-space-2);
 }
 
+.settings-form .panel-note {
+  max-width: 52ch;
+}
+
+.settings-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+  color: var(--ad-text-secondary);
+}
+
+.settings-inline input {
+  flex: none;
+  width: 6ch;
+}
+
 /* ---------- Barre d'état ---------- */
 
 .status-bar {
@@ -739,7 +755,8 @@ button.color-chip:disabled {
 
 /* ---------- Champs de formulaire ---------- */
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   flex: 1;
   min-width: 0;
   height: var(--ad-field-height);
@@ -751,7 +768,8 @@ input[type="text"] {
   border-radius: var(--ad-radius-sm);
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="number"]:focus {
   border-color: var(--ad-accent);
 }
 
@@ -1660,6 +1678,12 @@ html[data-platform="mac"] .welcome-hero-top {
   align-items: center;
   gap: var(--ad-space-1);
   height: 14px;
+}
+
+/* Corbeille : jours avant la suppression définitive, à la place des marques. */
+.media-cell-days {
+  font: var(--ad-font-meta);
+  color: var(--ad-text-muted);
 }
 
 .media-cell-stars {

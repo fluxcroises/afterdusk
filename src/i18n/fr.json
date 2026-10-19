@@ -164,7 +164,11 @@
     },
     "theme": "Thème",
     "themeDark": "Sombre",
-    "notYet": "Ces réglages arrivent avec la première ouverture guidée."
+    "notYet": "Ces réglages arrivent avec la première ouverture guidée.",
+    "trashRetention": "Supprimer définitivement après",
+    "days_one": "jour",
+    "days_other": "jours",
+    "trashNote": "Les photos envoyées dans la corbeille restent dans le dossier de la bibliothèque et se restaurent à l'identique. Passé ce délai, elles sont supprimées au démarrage d'Afterdusk. La sauvegarde n'est jamais touchée."
   },
   "menu": {
     "app": "Afterdusk",
@@ -208,7 +212,10 @@
     "noRating": "Aucune note",
     "noFlag": "Sans drapeau",
     "setAlbumCover": "Définir comme couverture de l'album",
-    "secondary": "Second écran"
+    "secondary": "Second écran",
+    "moveRejectedToTrash": "Envoyer les rejetées dans la corbeille…",
+    "restore": "Restaurer",
+    "purge": "Supprimer définitivement…"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -234,7 +241,11 @@
     "databaseTooNew": "La base a été créée par une version plus récente d'Afterdusk.",
     "importRunning": "Un import est déjà en cours.",
     "invalidMark": "Valeur de note, de drapeau ou de couleur non valide.",
-    "notInAlbum": "Cette photo n'appartient pas à l'album."
+    "notInAlbum": "Cette photo n'appartient pas à l'album.",
+    "trashPartial": "Certains fichiers n'ont pas pu être déplacés ; ils sont restés à leur place.",
+    "noRejected": "Aucune photo rejetée dans cette vue.",
+    "mediaNotFound": "Cette photo n'existe plus dans la bibliothèque.",
+    "fileMoveFailed": "Un fichier n'a pas pu être déplacé ; rien n'a été modifié."
   },
   "home": {
     "morning": "Bonjour",
@@ -258,7 +269,9 @@
     "shift": "Maj",
     "alt": "Alt",
     "enter": "Entrée",
-    "escape": "Échap"
+    "escape": "Échap",
+    "delete": "Suppr",
+    "backspace": "Retour arrière"
   },
   "window": {
     "minimize": "Réduire",
@@ -278,5 +291,34 @@
     "title": "Second écran",
     "close": "Fermer le second écran",
     "empty": "Sélectionnez une photo dans la fenêtre principale."
+  },
+  "trash": {
+    "confirmTitle": "Corbeille",
+    "cancel": "Annuler",
+    "moveRejected": "Envoyer dans la corbeille",
+    "confirmRejected_one": "Envoyer la photo rejetée dans la corbeille ?",
+    "confirmRejected_other": "Envoyer les {{count}} photos rejetées dans la corbeille ?",
+    "empty": "Vider la corbeille",
+    "emptyEllipsis": "Vider la corbeille…",
+    "confirmEmpty_one": "Supprimer définitivement la photo de la corbeille ? Cette action est irréversible.",
+    "confirmEmpty_other": "Supprimer définitivement les {{count}} photos de la corbeille ? Cette action est irréversible.",
+    "purge": "Supprimer définitivement",
+    "confirmPurge_one": "Supprimer définitivement cette photo ? Cette action est irréversible.",
+    "confirmPurge_other": "Supprimer définitivement ces {{count}} photos ? Cette action est irréversible.",
+    "undo": "Annuler",
+    "notice": {
+      "trashed_one": "Photo envoyée dans la corbeille.",
+      "trashed_other": "{{count}} photos envoyées dans la corbeille.",
+      "restored_one": "Photo restaurée.",
+      "restored_other": "{{count}} photos restaurées.",
+      "purged_one": "Photo supprimée définitivement.",
+      "purged_other": "{{count}} photos supprimées définitivement."
+    },
+    "retentionNote_one": "Les photos sont supprimées définitivement après {{count}} jour.",
+    "retentionNote_other": "Les photos sont supprimées définitivement après {{count}} jours.",
+    "daysLeft_one": "{{count}} jour restant",
+    "daysLeft_other": "{{count}} jours restants",
+    "emptyTitle": "La corbeille est vide",
+    "emptyText": "Les photos supprimées arrivent ici et peuvent être restaurées."
   }
 }

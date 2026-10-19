@@ -49,7 +49,10 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
   const albums = useLibrary((s) => s.albums);
   const albumId = useLibrary((s) => s.albumId);
   const total = useLibrary((s) => s.total);
+  const trash = useLibrary((s) => s.trash);
+  const trashCount = useLibrary((s) => s.trashCount);
   const showAlbum = useLibrary((s) => s.showAlbum);
+  const showTrash = useLibrary((s) => s.showTrash);
   const dateFormat = new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" });
 
   return (
@@ -59,10 +62,15 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
         <ListRow
           label={t("catalog.allPhotos")}
           count={total}
-          selected={albumId === null}
+          selected={!trash && albumId === null}
           onClick={() => void showAlbum(null)}
         />
-        <ListRow label={t("catalog.trash")} count={0} />
+        <ListRow
+          label={t("catalog.trash")}
+          count={trashCount}
+          selected={trash}
+          onClick={() => void showTrash()}
+        />
       </PanelSection>
       <PanelSection id={`${scope}.albums`} title={t("catalog.albums")}>
         {albums.length === 0 ? (
@@ -76,7 +84,7 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
                 a.startDate ? dateFormat.format(new Date(`${a.startDate}T12:00:00`)) : undefined
               }
               count={a.count}
-              selected={albumId === a.id}
+              selected={!trash && albumId === a.id}
               onClick={() => void showAlbum(a.id)}
             />
           ))

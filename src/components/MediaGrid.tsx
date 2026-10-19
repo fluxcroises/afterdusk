@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
-import { type MediaSummary, type SelectMode, useLibrary } from "../store/library";
+import { type MediaSummary, type SelectMode, daysLeft, useLibrary } from "../store/library";
+import { purgeSelection } from "../trash";
 import { Thumbnail } from "./Thumbnail";
 
 /** Menu contextuel d'une miniature (clic droit). */
@@ -18,7 +19,22 @@ function MediaContextMenu({
 }) {
   const { t } = useTranslation();
   const setAsCover = useLibrary((s) => s.setAsCover);
+  const trash = useLibrary((s) => s.trash);
   const ref = useRef<HTMLDivElement>(null);
+  const item = (label: string, run: () => void) => (
+    <button
+      key={label}
+      type="button"
+      className="menu-row"
+      role="menuitem"
+      onClick={() => {
+        onClose();
+        run();
+      }}
+    >
+      <span className="menu-label">{label}</span>
+    </button>
+  );
 
   useEffect(() => {
     ref.current?.querySelector("button")?.focus();
@@ -44,17 +60,18 @@ function MediaContextMenu({
       style={{ left: at.x, top: at.y }}
       onClick={(e) => e.stopPropagation()}
     >
-      <button
-        type="button"
-        className="menu-row"
-        role="menuitem"
-        onClick={() => {
-          onClose();
-          void setAsCover(media.id);
-        }}
-      >
-        <span className="menu-label">{t("menu.setAlbumCover")}</span>
-      </button>
+      {trash ? (
+        <>
+          {item(t("menu.restore"), () => void useLibrary.getState().restore())}
+          {item(t("menu.purge"), () => void purgeSelection())}
+        </>
+      ) : (
+        <>
+          {item(t("menu.setAlbumCover"), () => void setAsCover(media.id))}
+          <div className="menu-separator" role="separator" />
+          {item(t("menu.moveToTrash"), () => void useLibrary.getState().moveToTrash())}
+        </>
+      )}
     </div>,
     document.body,
   );
@@ -127,6 +144,9 @@ function MediaCell({
     // Seulement une couverture choisie : la couverture par défaut n'a pas de badge.
     s.albums.some((a) => a.id === media.albumId && a.coverChosen && a.coverMediaId === media.id),
   );
+  const trashed = useLibrary((s) => s.trash);
+  const retentionDays = useLibrary((s) => s.retentionDays);
+  const { t } = useTranslation();
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLButtonElement>(null);
 
@@ -158,7 +178,13 @@ function MediaCell({
         />
       </span>
       <span className="media-cell-name">{media.fileName}</span>
-      <MarkBadges media={media} isCover={isCover} />
+      {trashed ? (
+        <span className="media-cell-marks media-cell-days">
+          {t("trash.daysLeft", { count: daysLeft(media.trashedAt, retentionDays) })}
+        </span>
+      ) : (
+        <MarkBadges media={media} isCover={isCover} />
+      )}
       {menu && <MediaContextMenu media={media} at={menu} onClose={() => setMenu(null)} />}
     </button>
   );

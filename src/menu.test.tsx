@@ -43,8 +43,10 @@ describe("barre de menus", () => {
   });
 
   it("n'utilise pas de raccourci à une seule touche, qui bloquerait la saisie", () => {
+    // Suppr seule n'existe que sous Windows, où les menus sont dessinés : leurs
+    // raccourcis sont ignorés pendant la saisie (desktop.ts).
     walk(buildMenuItems(i18n.t) as Node[], (n) => {
-      if (n.accelerator && !/^F\d+$/.test(n.accelerator)) {
+      if (n.accelerator && !/^(F\d+|Delete)$/.test(n.accelerator)) {
         expect(n.accelerator).toContain("+");
       }
     });
@@ -52,6 +54,16 @@ describe("barre de menus", () => {
 });
 
 describe("menus dessinés (Windows)", () => {
+  it("reconnaît Suppr et Ctrl+Retour arrière", () => {
+    const e = (init: KeyboardEventInit) => new KeyboardEvent("keydown", init);
+    expect(matchesAccelerator("Delete", e({ key: "Delete" }))).toBe(true);
+    expect(matchesAccelerator("Delete", e({ key: "Backspace" }))).toBe(false);
+    expect(matchesAccelerator("CmdOrCtrl+Backspace", e({ key: "Backspace", ctrlKey: true }))).toBe(
+      true,
+    );
+    expect(matchesAccelerator("CmdOrCtrl+Backspace", e({ key: "Backspace" }))).toBe(false);
+  });
+
   it("reconnaît les raccourcis et les affiche avec les noms de touches traduits", async () => {
     await i18n.changeLanguage("fr");
     const e = (init: KeyboardEventInit) => new KeyboardEvent("keydown", init);

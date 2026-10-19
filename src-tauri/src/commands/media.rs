@@ -9,9 +9,11 @@ pub async fn media_list(
     state: State<'_, AppState>,
     library_id: i64,
     album_id: Option<i64>,
+    trashed: Option<bool>,
 ) -> CommandResult<Vec<MediaSummary>> {
     let conn = state.connect()?;
-    blocking(move || Ok(media::list_media(&conn, library_id, album_id)?)).await
+    let trashed = trashed.unwrap_or(false);
+    blocking(move || Ok(media::list_media(&conn, library_id, album_id, trashed)?)).await
 }
 
 #[tauri::command]

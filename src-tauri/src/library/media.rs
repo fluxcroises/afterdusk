@@ -26,24 +26,30 @@ pub struct MediaSummary {
     pub orientation: i64,
     /// Les trois paliers d'aperçu sont-ils en cache ?
     pub has_preview: bool,
+    /// Date de mise à la corbeille (vue Corbeille seulement).
+    pub trashed_at: Option<String>,
 }
 
-/// Médias d'une bibliothèque (ou d'un album), par date de prise de vue.
+/// Médias d'une bibliothèque (ou d'un album), par date de prise de vue ; ou,
+/// avec `trashed`, ceux de sa corbeille, les plus récemment jetés d'abord.
 pub fn list_media(
     conn: &Connection,
     library_id: i64,
     album_id: Option<i64>,
+    trashed: bool,
 ) -> Result<Vec<MediaSummary>, LibraryError> {
     let mut stmt = conn.prepare(
         "SELECT m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
                 m.width, m.height, m.orientation,
-                (SELECT count(*) FROM previews p WHERE p.media_id = m.id) = 3
+                (SELECT count(*) FROM previews p WHERE p.media_id = m.id) = 3,
+                m.trashed_at
          FROM media m
-         WHERE m.library_id = ?1 AND m.state = 'normal' AND (?2 IS NULL OR m.album_id = ?2)
-         ORDER BY m.captured_at, m.path",
+         WHERE m.library_id = ?1 AND (?2 IS NULL OR m.album_id = ?2)
+           AND m.state = CASE WHEN ?3 THEN 'trashed' ELSE 'normal' END
+         ORDER BY CASE WHEN ?3 THEN m.trashed_at END DESC, m.captured_at, m.path",
     )?;
     let rows = stmt
-        .query_map(params![library_id, album_id], |r| {
+        .query_map(params![library_id, album_id, trashed], |r| {
             let path: String = r.get(2)?;
             Ok(MediaSummary {
                 id: r.get(0)?,
@@ -57,6 +63,7 @@ pub fn list_media(
                 height: r.get(8)?,
                 orientation: r.get(9)?,
                 has_preview: r.get(10)?,
+                trashed_at: r.get(11)?,
             })
         })?
         .collect::<Result<_, _>>()?;
@@ -82,10 +89,12 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
     let mut stmt = conn.prepare(
         "SELECT a.id, a.name, a.folder, a.start_date, a.end_date,
                 (SELECT count(*) FROM media m WHERE m.album_id = a.id AND m.state = 'normal'),
-                coalesce(a.cover_media_id,
+                coalesce((SELECT m.id FROM media m
+                           WHERE m.id = a.cover_media_id AND m.state = 'normal'),
                          (SELECT m.id FROM media m WHERE m.album_id = a.id AND m.state = 'normal'
                           ORDER BY m.captured_at, m.path LIMIT 1)),
-                a.cover_media_id IS NOT NULL
+                EXISTS (SELECT 1 FROM media m
+                         WHERE m.id = a.cover_media_id AND m.state = 'normal')
          FROM albums a WHERE a.library_id = ?1
          ORDER BY a.start_date DESC, a.name",
     )?;

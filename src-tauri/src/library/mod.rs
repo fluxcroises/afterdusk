@@ -4,6 +4,7 @@ pub mod marks;
 pub mod media;
 pub mod paths;
 pub mod template;
+pub mod trash;
 
 use std::path::{Path, PathBuf};
 

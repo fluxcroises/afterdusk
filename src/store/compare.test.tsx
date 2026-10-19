@@ -25,6 +25,7 @@ const photo = (id: number) => ({
   height: 4000,
   orientation: 1,
   hasPreview: false,
+  trashedAt: null,
 });
 
 const press = (key: string, code = "") =>

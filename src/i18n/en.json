@@ -164,7 +164,11 @@
     },
     "theme": "Theme",
     "themeDark": "Dark",
-    "notYet": "These settings come with the first-run setup."
+    "notYet": "These settings come with the first-run setup.",
+    "trashRetention": "Delete permanently after",
+    "days_one": "day",
+    "days_other": "days",
+    "trashNote": "Photos moved to the trash stay in the library folder and are restored exactly as they were. After this period, they are deleted when Afterdusk starts. The backup is never touched."
   },
   "menu": {
     "app": "Afterdusk",
@@ -208,7 +212,10 @@
     "noRating": "No rating",
     "noFlag": "Unflagged",
     "setAlbumCover": "Set as Album Cover",
-    "secondary": "Secondary Display"
+    "secondary": "Secondary Display",
+    "moveRejectedToTrash": "Move Rejected Photos to Trash…",
+    "restore": "Restore",
+    "purge": "Delete Permanently…"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -234,7 +241,11 @@
     "databaseTooNew": "The database was created by a newer version of Afterdusk.",
     "importRunning": "An import is already running.",
     "invalidMark": "Invalid rating, flag or color value.",
-    "notInAlbum": "This photo is not in the album."
+    "notInAlbum": "This photo is not in the album.",
+    "trashPartial": "Some files could not be moved; they stayed where they were.",
+    "noRejected": "No rejected photos in this view.",
+    "mediaNotFound": "This photo no longer exists in the library.",
+    "fileMoveFailed": "A file could not be moved; nothing was changed."
   },
   "home": {
     "morning": "Hello",
@@ -258,7 +269,9 @@
     "shift": "Shift",
     "alt": "Alt",
     "enter": "Enter",
-    "escape": "Esc"
+    "escape": "Esc",
+    "delete": "Del",
+    "backspace": "Backspace"
   },
   "window": {
     "minimize": "Minimize",
@@ -278,5 +291,34 @@
     "title": "Secondary display",
     "close": "Close secondary display",
     "empty": "Select a photo in the main window."
+  },
+  "trash": {
+    "confirmTitle": "Trash",
+    "cancel": "Cancel",
+    "moveRejected": "Move to Trash",
+    "confirmRejected_one": "Move the rejected photo to the trash?",
+    "confirmRejected_other": "Move the {{count}} rejected photos to the trash?",
+    "empty": "Empty Trash",
+    "emptyEllipsis": "Empty Trash…",
+    "confirmEmpty_one": "Permanently delete the photo in the trash? This cannot be undone.",
+    "confirmEmpty_other": "Permanently delete the {{count}} photos in the trash? This cannot be undone.",
+    "purge": "Delete Permanently",
+    "confirmPurge_one": "Permanently delete this photo? This cannot be undone.",
+    "confirmPurge_other": "Permanently delete these {{count}} photos? This cannot be undone.",
+    "undo": "Undo",
+    "notice": {
+      "trashed_one": "Photo moved to the trash.",
+      "trashed_other": "{{count}} photos moved to the trash.",
+      "restored_one": "Photo restored.",
+      "restored_other": "{{count}} photos restored.",
+      "purged_one": "Photo permanently deleted.",
+      "purged_other": "{{count}} photos permanently deleted."
+    },
+    "retentionNote_one": "Photos are permanently deleted after {{count}} day.",
+    "retentionNote_other": "Photos are permanently deleted after {{count}} days.",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "emptyTitle": "The trash is empty",
+    "emptyText": "Deleted photos land here and can be restored."
   }
 }

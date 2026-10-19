@@ -101,3 +101,14 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur (é
 - La fenêtre principale n'envoie que la photo active, la comparaison et les voisines (préchargement), au plus une fois par image d'animation.
 - Correction : la commande de création de fenêtre est asynchrone (une commande synchrone bloquait les échanges avec le cœur sous Windows) ; le badge de couverture ne marque plus que les couvertures choisies.
 - Vérifié sous Windows avec deux écrans de 1920 × 1080 : ouverture en plein écran sur le second moniteur, suivi de la navigation. Non vérifié sur Mac.
+
+### 2026-10-19 (suite) : corbeille interne
+
+- Photo > Envoyer dans la corbeille (Suppr, ⌘⌫ sur Mac, ou clic droit) : la sélection de la grille, ou la photo affichée. Le fichier et son XMP sont déplacés dans `.afterdusk-corbeille/<id>/` à la racine de la bibliothèque (même disque, donc un simple renommage, jamais de copie ni d'écrasement). Les notes en attente sont écrites dans le XMP avant le déplacement.
+- Annonce « Photo envoyée dans la corbeille » avec Annuler ; Ctrl+Z (⌘Z) restaure le dernier envoi, même après la disparition de l'annonce.
+- Photo > Envoyer les rejetées dans la corbeille… (Ctrl+Retour arrière, ⌘⌥⌫ sur Mac) : les rejetées de la vue affichée, après confirmation.
+- Catalogue > Corbeille : nombre de photos, jours restants sur chaque miniature, Restaurer (à l'emplacement d'origine ; suffixe -2 si un fichier y est arrivé entre-temps), Supprimer définitivement… et Vider la corbeille…, toujours avec confirmation. Pas de tri dans la corbeille.
+- Vidage automatique au démarrage, en arrière-plan, des photos jetées depuis plus longtemps que le délai (30 jours par défaut, réglable de 1 à 365 dans Réglages > Corbeille et cache). Une bibliothèque débranchée est ignorée ; la suppression ne touche que des fichiers situés dans la corbeille (garde-fou), jamais la sauvegarde.
+- Migration 0002 : l'index de recherche est recréé avec `contentless_delete` (une table FTS5 sans contenu refusait la suppression d'une fiche) et rempli à nouveau depuis la base.
+- Tests : déplacement et restauration à l'identique (empreinte, XMP), restauration sans écraser, vidage limité à la corbeille avec la sauvegarde intacte, purge après le délai, bibliothèque débranchée ; côté interface, envoi, annulation, rejetées, corbeille sans tri, jours restants.
+- Vérifié dans l'application compilée sous Windows, sur une bibliothèque de contrôle (les six RAW de test-assets, base de l'utilisateur mise de côté puis remise) : Suppr, rejetées avec confirmation, vue Corbeille, Restaurer, Vider.

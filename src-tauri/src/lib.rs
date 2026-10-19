@@ -37,6 +37,27 @@ fn on_close_requested(window: &tauri::Window, api: &tauri::CloseRequestApi) {
     }
 }
 
+/// Vidage automatique de la corbeille, en arrière-plan pour ne pas retarder
+/// l'ouverture : photos jetées depuis plus longtemps que le délai réglé.
+fn purge_expired_trash(db_path: std::path::PathBuf, cache_root: std::path::PathBuf) {
+    std::thread::spawn(move || {
+        let result = db::connect(&db_path)
+            .map_err(|e| e.to_string())
+            .and_then(|mut conn| {
+                let days = library::trash::retention_days(&conn).map_err(|e| e.to_string())?;
+                library::trash::purge_expired(&mut conn, &cache_root, days)
+                    .map_err(|e| e.to_string())
+            });
+        match result {
+            Ok(r) if r.done + r.failed > 0 => {
+                eprintln!("corbeille : {} supprimées, {} en échec", r.done, r.failed)
+            }
+            Ok(_) => {}
+            Err(err) => eprintln!("vidage de la corbeille : {err}"),
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let result = tauri::Builder::default()
@@ -62,6 +83,7 @@ pub fn run() {
                 cache_root.clone(),
                 workers,
             );
+            purge_expired_trash(db_path.clone(), cache_root.clone());
             app.manage(XmpWriter::start(db_path.clone()));
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
@@ -88,6 +110,12 @@ pub fn run() {
             commands::media::media_details,
             commands::media::album_set_cover,
             commands::media::welcome_highlights,
+            commands::trash::media_trash,
+            commands::trash::media_restore,
+            commands::trash::trash_empty,
+            commands::trash::trash_summary,
+            commands::trash::trash_retention_get,
+            commands::trash::trash_retention_set,
             commands::windows::secondary_toggle,
             commands::marks::media_set_rating,
             commands::marks::media_set_flag,

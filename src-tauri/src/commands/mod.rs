@@ -6,6 +6,7 @@ pub mod library;
 pub mod marks;
 pub mod media;
 pub mod previews;
+pub mod trash;
 pub mod windows;
 
 use std::path::PathBuf;

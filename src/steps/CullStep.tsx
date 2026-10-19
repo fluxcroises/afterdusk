@@ -1,4 +1,4 @@
-import { Images } from "lucide-react";
+import { Images, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Compare } from "../components/Compare";
 import { Loupe } from "../components/Loupe";
@@ -6,6 +6,7 @@ import { MediaGrid } from "../components/MediaGrid";
 import { useLibrary } from "../store/library";
 import { CatalogPanel, PhotoInfoPanel } from "../components/CatalogPanels";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { TrashBar, TrashNotice } from "../components/TrashBanners";
 import { EmptyState, Kbd } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
 import { GridToolbar } from "../components/GridToolbar";
@@ -16,6 +17,7 @@ export function CullStep() {
   const count = useLibrary((s) => s.media.length);
   const error = useLibrary((s) => s.error);
   const view = useLibrary((s) => s.view);
+  const trash = useLibrary((s) => s.trash);
   return (
     <ScreenLayout
       left={<CatalogPanel scope="cull" navigator />}
@@ -24,7 +26,13 @@ export function CullStep() {
       filmstrip={<Filmstrip />}
     >
       <ErrorBanner error={error} onDismiss={() => useLibrary.setState({ error: null })} />
-      {count > 0 ? (
+      <TrashNotice />
+      <TrashBar />
+      {trash && count === 0 ? (
+        <EmptyState icon={Trash2} title={t("trash.emptyTitle")}>
+          {t("trash.emptyText")}
+        </EmptyState>
+      ) : count > 0 ? (
         view === "loupe" ? (
           <Loupe />
         ) : view === "compare" ? (

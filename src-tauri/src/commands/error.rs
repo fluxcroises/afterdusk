@@ -6,6 +6,7 @@ use serde::Serialize;
 use crate::db::DbError;
 use crate::import::ImportError;
 use crate::library::LibraryError;
+use crate::library::trash::TrashError;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,14 +41,30 @@ impl From<ImportError> for CommandError {
     }
 }
 
+fn library_code(e: &LibraryError) -> &'static str {
+    match e {
+        LibraryError::MissingRoot(_) => "missingFolder",
+        LibraryError::Template(_) => "invalidTemplate",
+        LibraryError::NotFound(_) => "libraryNotFound",
+        LibraryError::NotInAlbum { .. } => "notInAlbum",
+        LibraryError::Sqlite(_) => "internal",
+    }
+}
+
 impl From<LibraryError> for CommandError {
     fn from(e: LibraryError) -> Self {
+        Self::new(library_code(&e), e)
+    }
+}
+
+impl From<TrashError> for CommandError {
+    fn from(e: TrashError) -> Self {
         let code = match &e {
-            LibraryError::MissingRoot(_) => "missingFolder",
-            LibraryError::Template(_) => "invalidTemplate",
-            LibraryError::NotFound(_) => "libraryNotFound",
-            LibraryError::NotInAlbum { .. } => "notInAlbum",
-            LibraryError::Sqlite(_) => "internal",
+            TrashError::Library(inner) => library_code(inner),
+            TrashError::Offline(_) => "libraryOffline",
+            TrashError::NotFound(_) => "mediaNotFound",
+            TrashError::Io { .. } => "fileMoveFailed",
+            TrashError::Sqlite(_) | TrashError::Path(_) | TrashError::OutsideTrash(_) => "internal",
         };
         Self::new(code, e)
     }

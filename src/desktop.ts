@@ -1,4 +1,5 @@
 import { handleMenuShortcut } from "./menu";
+import { purgeSelection } from "./trash";
 import { isMac } from "./platform";
 import { useLayout } from "./store/layout";
 import { type ColorName, useLibrary } from "./store/library";
@@ -98,6 +99,14 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     return true;
   }
   if (library.selectedId === null) return false;
+  if (library.trash) {
+    // Dans la corbeille, pas de tri : Suppr supprime définitivement, sur confirmation.
+    if (e.key === "Delete" || (isMac && e.key === "Backspace")) {
+      void purgeSelection();
+      return true;
+    }
+    return false;
+  }
 
   const d = digit(e);
   if (d !== null && Number(d) <= 5) {

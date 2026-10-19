@@ -14,6 +14,37 @@ export interface MediaSummary {
   height: number | null;
   orientation: number;
   hasPreview: boolean;
+  /** Date de mise à la corbeille (vue Corbeille seulement). */
+  trashedAt: string | null;
+}
+
+export interface TrashReport {
+  done: number;
+  failed: number;
+}
+
+export interface TrashSummary {
+  count: number;
+  retentionDays: number;
+}
+
+/** Dernière opération sur la corbeille, annonçable et, pour un envoi, annulable. */
+export interface TrashNotice {
+  kind: "trashed" | "restored" | "purged";
+  count: number;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Jours avant la suppression définitive d'une photo de la corbeille. */
+export function daysLeft(
+  trashedAt: string | null,
+  retentionDays: number,
+  now = Date.now(),
+): number {
+  if (!trashedAt) return retentionDays;
+  const elapsed = (now - new Date(trashedAt).getTime()) / DAY_MS;
+  return Math.max(0, Math.ceil(retentionDays - elapsed));
 }
 
 export interface AlbumSummary {
@@ -62,8 +93,14 @@ function readAutoAdvance(): boolean {
 }
 
 export const libraryApi = {
-  mediaList: (libraryId: number, albumId: number | null) =>
-    invoke<MediaSummary[]>("media_list", { libraryId, albumId }),
+  mediaList: (libraryId: number, albumId: number | null, trashed = false) =>
+    invoke<MediaSummary[]>("media_list", { libraryId, albumId, trashed }),
+  trash: (ids: number[]) => invoke<TrashReport>("media_trash", { ids }),
+  restore: (ids: number[]) => invoke<TrashReport>("media_restore", { ids }),
+  emptyTrash: (libraryId: number, ids: number[] | null) =>
+    invoke<TrashReport>("trash_empty", { libraryId, ids }),
+  trashSummary: (libraryId: number) => invoke<TrashSummary>("trash_summary", { libraryId }),
+  setRetention: (days: number) => invoke<number>("trash_retention_set", { days }),
   albumsList: (libraryId: number) => invoke<AlbumSummary[]>("albums_list", { libraryId }),
   mediaDetails: (mediaId: number) => invoke<MediaDetails | null>("media_details", { mediaId }),
   setRating: (ids: number[], rating: number) => invoke<number>("media_set_rating", { ids, rating }),
@@ -108,6 +145,13 @@ interface LibraryState {
   albums: AlbumSummary[];
   /** Album affiché ; `null` pour toutes les photos. */
   albumId: number | null;
+  /** Vue Corbeille : les photos jetées, à restaurer ou à supprimer. */
+  trash: boolean;
+  trashCount: number;
+  retentionDays: number;
+  notice: TrashNotice | null;
+  /** Dernier envoi dans la corbeille, que Ctrl+Z restaure (l'annonce, elle, s'efface). */
+  undoIds: number[] | null;
   media: MediaSummary[];
   /** Nombre total de photos de la bibliothèque. */
   total: number;
@@ -145,6 +189,19 @@ interface LibraryState {
   setZoom: (zoom: { fx: number; fy: number } | null) => void;
   /** La photo devient la couverture de son album. */
   setAsCover: (mediaId: number) => Promise<void>;
+  showTrash: () => Promise<void>;
+  /** Photos visées par une commande : la sélection dans la grille, sinon la photo active. */
+  targetIds: () => number[];
+  /** Envoie des photos dans la corbeille (la sélection par défaut). */
+  moveToTrash: (ids?: number[]) => Promise<void>;
+  /** Les photos rejetées de la vue affichée. */
+  rejectedIds: () => number[];
+  restore: (ids?: number[]) => Promise<void>;
+  /** Supprime définitivement des photos de la corbeille, ou toute la corbeille. */
+  emptyTrash: (ids?: number[]) => Promise<void>;
+  /** Annule le dernier envoi dans la corbeille. */
+  undoTrash: () => Promise<void>;
+  setRetentionDays: (days: number) => Promise<void>;
 }
 
 export const useLibrary = create<LibraryState>((set, get) => {
@@ -157,8 +214,8 @@ export const useLibrary = create<LibraryState>((set, get) => {
     send: (ids: number[]) => Promise<number>,
     advance: boolean,
   ): Promise<void> {
-    const { selectedId, selectedIds, view, media } = get();
-    if (selectedId === null) return;
+    const { selectedId, selectedIds, view, media, trash } = get();
+    if (selectedId === null || trash) return;
     // Dans la grille, toute la sélection ; ailleurs, la photo active.
     const ids = view === "grid" && selectedIds.length > 1 ? selectedIds : [selectedId];
     const targets = new Set(ids);
@@ -181,10 +238,51 @@ export const useLibrary = create<LibraryState>((set, get) => {
     }
   }
 
+  /**
+   * Recharge albums, photos et corbeille après une opération sur des fichiers.
+   * La photo active est gardée si elle est toujours là, sinon sa voisine.
+   */
+  async function refresh(): Promise<void> {
+    const { libraryId, albumId, trash, media, selectedId } = get();
+    if (libraryId === null) return;
+    const index = Math.max(
+      0,
+      media.findIndex((m) => m.id === selectedId),
+    );
+    const [albums, list, summary] = await Promise.all([
+      libraryApi.albumsList(libraryId),
+      libraryApi.mediaList(libraryId, trash ? null : albumId, trash),
+      libraryApi.trashSummary(libraryId),
+    ]);
+    const total = albums.reduce((n, a) => n + a.count, 0);
+    set({
+      albums,
+      media: list,
+      total,
+      trashCount: summary.count,
+      retentionDays: summary.retentionDays,
+    });
+    const keep = list.find((m) => m.id === selectedId) ?? list[Math.min(index, list.length - 1)];
+    if (keep) await get().select(keep.id);
+    else set({ selectedId: null, selectedIds: [], details: null, view: "grid" });
+  }
+
+  /** Signale un échec partiel : certains fichiers n'ont pas pu être déplacés. */
+  function reportFailures(report: TrashReport): void {
+    if (report.failed > 0) {
+      set({ error: { code: "trashPartial", detail: `${report.failed}` } });
+    }
+  }
+
   return {
     libraryId: null,
     albums: [],
     albumId: null,
+    trash: false,
+    trashCount: 0,
+    retentionDays: 30,
+    notice: null,
+    undoIds: null,
     media: [],
     total: 0,
     selectedId: null,
@@ -203,16 +301,29 @@ export const useLibrary = create<LibraryState>((set, get) => {
         return;
       }
       try {
-        const albumId = get().libraryId === libraryId ? get().albumId : null;
-        const [albums, media] = await Promise.all([
+        const same = get().libraryId === libraryId;
+        const albumId = same ? get().albumId : null;
+        const trash = same && get().trash;
+        const [albums, media, summary] = await Promise.all([
           libraryApi.albumsList(libraryId),
-          libraryApi.mediaList(libraryId, albumId),
+          libraryApi.mediaList(libraryId, trash ? null : albumId, trash),
+          libraryApi.trashSummary(libraryId),
         ]);
         const total = albums.reduce((n, a) => n + a.count, 0);
         const selectedId = media.some((m) => m.id === get().selectedId)
           ? get().selectedId
           : (media[0]?.id ?? null);
-        set({ libraryId, albums, albumId, media, total, error: null });
+        set({
+          libraryId,
+          albums,
+          albumId,
+          trash,
+          media,
+          total,
+          trashCount: summary.count,
+          retentionDays: summary.retentionDays,
+          error: null,
+        });
         if (selectedId !== null) await get().select(selectedId);
         else set({ selectedId: null, details: null });
       } catch (e) {
@@ -225,7 +336,7 @@ export const useLibrary = create<LibraryState>((set, get) => {
       if (libraryId === null) return;
       try {
         const media = await libraryApi.mediaList(libraryId, albumId);
-        set({ albumId, media });
+        set({ albumId, media, trash: false });
         const first = media[0];
         if (first) await get().select(first.id);
         else set({ selectedId: null, details: null });
@@ -315,6 +426,82 @@ export const useLibrary = create<LibraryState>((set, get) => {
             a.id === albumId ? { ...a, coverMediaId: mediaId, coverChosen: true } : a,
           ),
         }));
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    showTrash: async () => {
+      const { libraryId } = get();
+      if (libraryId === null) return;
+      try {
+        const media = await libraryApi.mediaList(libraryId, null, true);
+        set({ trash: true, media, view: "grid", zoom: null });
+        const first = media[0];
+        if (first) await get().select(first.id);
+        else set({ selectedId: null, selectedIds: [], details: null });
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    targetIds: () => {
+      const { selectedId, selectedIds, view } = get();
+      if (selectedId === null) return [];
+      return view === "grid" && selectedIds.length > 1 ? selectedIds : [selectedId];
+    },
+
+    rejectedIds: () =>
+      get()
+        .media.filter((m) => m.flag === -1)
+        .map((m) => m.id),
+
+    moveToTrash: async (ids = get().targetIds()) => {
+      if (ids.length === 0 || get().trash) return;
+      try {
+        const report = await libraryApi.trash(ids);
+        reportFailures(report);
+        set({ notice: { kind: "trashed", count: report.done }, undoIds: ids });
+        await refresh();
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    restore: async (ids = get().targetIds()) => {
+      if (ids.length === 0) return;
+      try {
+        const report = await libraryApi.restore(ids);
+        reportFailures(report);
+        set({ notice: { kind: "restored", count: report.done }, undoIds: null });
+        await refresh();
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    emptyTrash: async (ids) => {
+      const { libraryId } = get();
+      if (libraryId === null) return;
+      try {
+        const report = await libraryApi.emptyTrash(libraryId, ids ?? null);
+        reportFailures(report);
+        set({ notice: { kind: "purged", count: report.done }, undoIds: null });
+        await refresh();
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    undoTrash: async () => {
+      const ids = get().undoIds;
+      if (ids) await get().restore(ids);
+    },
+
+    setRetentionDays: async (days) => {
+      try {
+        const retentionDays = await libraryApi.setRetention(days);
+        set({ retentionDays });
       } catch (e) {
         set({ error: toCommandError(e) });
       }
