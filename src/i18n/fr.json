@@ -500,6 +500,7 @@
     "pickHint": "Cliquez sur un gris ou un blanc de la photo pour neutraliser la dominante.",
     "wb": {
       "asShot": "Telle que prise",
+      "auto": "Automatique",
       "daylight": "Lumière du jour",
       "cloudy": "Nuageux",
       "shade": "Ombre",
@@ -511,6 +512,9 @@
     "clip": {
       "shadows": "Montrer les ombres bouchées",
       "highlights": "Montrer les hautes lumières brûlées"
-    }
+    },
+    "auto": "Auto",
+    "autoHint": "Régler la lumière automatiquement d'après la photo",
+    "resetAutoHint": "Double-clic : zéro. Maj + double-clic : automatique."
   }
 }

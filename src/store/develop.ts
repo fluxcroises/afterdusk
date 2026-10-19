@@ -125,6 +125,8 @@ interface DevelopState {
   clipping: ClippingWarnings;
   /** Pipette active : le prochain clic sur la photo règle la balance. */
   picking: boolean;
+  /** Calcul automatique en cours. */
+  autoBusy: boolean;
   open: (mediaId: number) => Promise<void>;
   setLight: (key: LightKey, value: number) => void;
   setColor: (key: ColorKey, value: number) => void;
@@ -134,6 +136,9 @@ interface DevelopState {
   setPicking: (picking: boolean) => void;
   pickWhite: (x: number, y: number) => Promise<void>;
   toggleClipping: (which: keyof ClippingWarnings) => void;
+  /** Auto de la section Lumière, ou d'un seul curseur. */
+  autoLight: (key?: LightKey) => Promise<void>;
+  autoWhite: () => Promise<void>;
   /** Enregistre tout de suite un réglage en attente (changement de photo, sortie). */
   flush: () => Promise<void>;
   close: () => Promise<void>;
@@ -201,6 +206,30 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     saveTimer = setTimeout(() => void get().flush(), SAVE_DELAY_MS);
   }
 
+  function applyWhiteBalance(wb: WhiteBalance, label: string) {
+    const { settings } = get();
+    if (!settings) return;
+    const color = { ...settings.color };
+    if (wb.mode === "asShot") delete color.whiteBalance;
+    else color.whiteBalance = wb;
+    change({ ...settings, color }, label);
+  }
+
+  /** Calcul automatique dans le cœur, ignoré si la photo a changé entre-temps. */
+  async function computeAuto<T>(command: string, args: Record<string, unknown>) {
+    const { mediaId } = get();
+    set({ autoBusy: true });
+    try {
+      const result = await invoke<T>(command, args);
+      return get().mediaId === mediaId ? result : null;
+    } catch (e) {
+      set({ error: toCommandError(e) });
+      return null;
+    } finally {
+      set({ autoBusy: false });
+    }
+  }
+
   return {
     mediaId: null,
     loading: false,
@@ -214,6 +243,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     roundTripMs: null,
     clipping: { highlights: false, shadows: false },
     picking: false,
+    autoBusy: false,
 
     open: async (mediaId) => {
       if (get().mediaId === mediaId && get().settings) return;
@@ -251,14 +281,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       change({ ...settings, color: withValue(settings.color, key, v) }, `color.${key}`);
     },
 
-    setWhiteBalance: (wb) => {
-      const { settings } = get();
-      if (!settings) return;
-      const color = { ...settings.color };
-      if (wb.mode === "asShot") delete color.whiteBalance;
-      else color.whiteBalance = wb;
-      change({ ...settings, color }, "color.whiteBalance");
-    },
+    setWhiteBalance: (wb) => applyWhiteBalance(wb, "color.whiteBalance"),
 
     setTemperature: (kelvin) => {
       const { settings, asShot, presets } = get();
@@ -287,6 +310,22 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       } catch (e) {
         set({ error: toCommandError(e) });
       }
+    },
+
+    autoLight: async (key) => {
+      const { settings } = get();
+      if (!settings) return;
+      const result = await computeAuto<DevelopSettings>("develop_auto_light", {
+        settings,
+        key: key ?? null,
+      });
+      if (result) change(result, key ? `light.${key}.auto` : "light.auto");
+    },
+
+    autoWhite: async () => {
+      if (!get().settings) return;
+      const wb = await computeAuto<WhiteBalance>("develop_auto_white", {});
+      if (wb) applyWhiteBalance(wb, "color.whiteBalance.auto");
     },
 
     toggleClipping: (which) => {

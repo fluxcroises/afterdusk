@@ -32,6 +32,8 @@ interface SliderProps {
   onChange: (value: number) => void;
   /** Double-clic : retour à la valeur neutre. */
   onReset: () => void;
+  /** Maj + double-clic : valeur automatique, pour les curseurs qui en ont une. */
+  onAuto?: () => void;
 }
 
 export function Slider({
@@ -44,6 +46,7 @@ export function Slider({
   disabled,
   onChange,
   onReset,
+  onAuto,
 }: SliderProps) {
   const { t } = useTranslation();
   return (
@@ -59,9 +62,9 @@ export function Slider({
         step={step}
         value={value}
         disabled={disabled}
-        title={t("develop.resetHint")}
+        title={t(onAuto ? "develop.resetAutoHint" : "develop.resetHint")}
         onChange={(e) => onChange(Number(e.currentTarget.value))}
-        onDoubleClick={onReset}
+        onDoubleClick={(e) => (e.shiftKey && onAuto ? onAuto() : onReset())}
       />
     </label>
   );
@@ -174,11 +177,29 @@ export function LightSection() {
   const { t } = useTranslation();
   const settings = useDevelop((s) => s.settings);
   const setLight = useDevelop((s) => s.setLight);
+  const autoLight = useDevelop((s) => s.autoLight);
+  const busy = useDevelop((s) => s.autoBusy);
   const ev = useNumberFormat(2);
   const plain = useNumberFormat(0);
   const value = (key: LightKey) => settings?.light?.[key] ?? 0;
   return (
-    <PanelSection id="develop.light" title={t("develop.light")}>
+    <PanelSection
+      id="develop.light"
+      title={t("develop.light")}
+      aside={
+        <span className="panel-section-aside">
+          <button
+            type="button"
+            className="button button-small develop-auto"
+            disabled={!settings || busy}
+            title={t("develop.autoHint")}
+            onClick={() => void autoLight()}
+          >
+            {t("develop.auto")}
+          </button>
+        </span>
+      }
+    >
       {LIGHT_KEYS.map((key) => (
         <Slider
           key={key}
@@ -193,6 +214,8 @@ export function LightSection() {
           disabled={!settings}
           onChange={(v) => setLight(key, v)}
           onReset={() => setLight(key, 0)}
+          // La luminosité n'a pas d'auto : c'est un choix d'interprétation.
+          onAuto={key === "brightness" ? undefined : () => void autoLight(key)}
         />
       ))}
     </PanelSection>
@@ -218,7 +241,8 @@ export function ColorSection() {
   const disabled = !settings || !point;
 
   const choose = (choice: string) => {
-    if (choice === "asShot") setWhiteBalance({ mode: "asShot" });
+    if (choice === "auto") void useDevelop.getState().autoWhite();
+    else if (choice === "asShot") setWhiteBalance({ mode: "asShot" });
     else if (choice === "custom" && point) setWhiteBalance({ mode: "custom", ...point });
     else setWhiteBalance({ mode: "preset", preset: choice });
   };
@@ -234,6 +258,7 @@ export function ColorSection() {
             onChange={(e) => choose(e.currentTarget.value)}
           >
             <option value="asShot">{t("develop.wb.asShot")}</option>
+            <option value="auto">{t("develop.wb.auto")}</option>
             {presets.map((p) => (
               <option key={p.name} value={p.name}>
                 {t(`develop.wb.${p.name}`)}
@@ -260,6 +285,7 @@ export function ColorSection() {
         disabled={disabled}
         onChange={(v) => setTemperature(temperatureFromPosition(v / 1000))}
         onReset={() => setWhiteBalance({ mode: "asShot" })}
+        onAuto={() => void useDevelop.getState().autoWhite()}
       />
       <Slider
         label={t("develop.tint")}
@@ -269,6 +295,7 @@ export function ColorSection() {
         disabled={disabled}
         onChange={setTint}
         onReset={() => setWhiteBalance({ mode: "asShot" })}
+        onAuto={() => void useDevelop.getState().autoWhite()}
       />
       {COLOR_KEYS.map((key) => (
         <Slider

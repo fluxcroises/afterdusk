@@ -55,6 +55,13 @@ beforeEach(() => {
       };
     if (cmd === "develop_render") return frame(true);
     if (cmd === "develop_pick_white") return { mode: "custom", temperature: 3900, tint: 6 };
+    if (cmd === "develop_auto_light")
+      return {
+        version: 1,
+        process: 1,
+        light: { exposure: 0.45, shadows: 22, blacks: -12 },
+      };
+    if (cmd === "develop_auto_white") return { mode: "custom", temperature: 5100, tint: 3 };
     return null;
   });
 });
@@ -177,6 +184,58 @@ describe("Retoucher", () => {
     });
     await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10);
     expect(saves()).toHaveLength(0);
+  });
+
+  it("Auto règle la lumière en une seule étape d'historique", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setLight("brightness", 15);
+    await useDevelop.getState().autoLight();
+    expect(calls("develop_auto_light")[0]?.[1]).toEqual({
+      settings: { version: 1, process: 1, light: { brightness: 15 } },
+      key: null,
+    });
+    expect(useDevelop.getState().settings?.light).toEqual({
+      exposure: 0.45,
+      shadows: 22,
+      blacks: -12,
+    });
+    expect(useDevelop.getState().autoBusy).toBe(false);
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10);
+    expect(saves().map((a) => (a as { label: string }).label)).toEqual([
+      "light.brightness",
+      "light.auto",
+    ]);
+  });
+
+  it("Maj + double-clic : l'auto d'un seul curseur", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().autoLight("shadows");
+    expect(calls("develop_auto_light")[0]?.[1]).toMatchObject({ key: "shadows" });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10);
+    expect(saves()[0]).toMatchObject({ label: "light.shadows.auto" });
+  });
+
+  it("balance des blancs automatique", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().autoWhite();
+    expect(useDevelop.getState().settings?.color?.whiteBalance).toEqual({
+      mode: "custom",
+      temperature: 5100,
+      tint: 3,
+    });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10);
+    expect(saves()[0]).toMatchObject({ label: "color.whiteBalance.auto" });
+  });
+
+  it("un auto arrivé après un changement de photo est ignoré", async () => {
+    await useDevelop.getState().open(7);
+    let release: (v: unknown) => void = () => undefined;
+    mocked.mockImplementationOnce(() => new Promise((r) => (release = r)));
+    const pending = useDevelop.getState().autoLight();
+    useDevelop.setState({ mediaId: 8 });
+    release({ version: 1, process: 1, light: { exposure: 2 } });
+    await pending;
+    expect(useDevelop.getState().settings?.light).toBeUndefined();
   });
 
   it("curseur de température régulier en mireds", () => {

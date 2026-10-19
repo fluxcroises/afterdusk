@@ -500,6 +500,7 @@
     "pickHint": "Click a grey or white area of the photo to remove the color cast.",
     "wb": {
       "asShot": "As shot",
+      "auto": "Auto",
       "daylight": "Daylight",
       "cloudy": "Cloudy",
       "shade": "Shade",
@@ -511,6 +512,9 @@
     "clip": {
       "shadows": "Show clipped shadows",
       "highlights": "Show clipped highlights"
-    }
+    },
+    "auto": "Auto",
+    "autoHint": "Set the light automatically from the photo",
+    "resetAutoHint": "Double-click: reset. Shift + double-click: automatic."
   }
 }

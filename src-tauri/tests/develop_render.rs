@@ -76,3 +76,59 @@ fn rendu_neutre_proche_du_jpeg_du_boitier() {
     }
     println!("{}", report.join("\n"));
 }
+
+#[test]
+fn auto_sur_les_six_formats() {
+    use afterdusk_lib::develop::auto::{auto_light, auto_white};
+    use afterdusk_lib::develop::pipeline::{Clipping, RenderParams, render};
+    use afterdusk_lib::develop::settings::WhiteBalance;
+
+    for name in common::RAW_SAMPLES {
+        let mut raw = RawFile::open(&common::sample(name)).unwrap();
+        let image = WorkingImage::from_raw(&raw.develop(true).unwrap(), 2048);
+        let t = Instant::now();
+        let mut s = DevelopSettings::default();
+        s.light = auto_light(&image, &s);
+        let light_ms = t.elapsed().as_millis();
+        let t = Instant::now();
+        let wb = auto_white(&image);
+        let white_ms = t.elapsed().as_millis();
+
+        // Rendu final : médiane près du gris moyen, presque rien de brûlé.
+        let p = RenderParams::from_settings(&s, image.as_shot_white, Clipping::default());
+        let h = render(&image, &p).histogram;
+        let luma = &h[768..1024];
+        let total: u32 = luma.iter().sum();
+        let mut acc = 0;
+        let median = luma
+            .iter()
+            .position(|n| {
+                acc += n;
+                acc * 2 >= total
+            })
+            .unwrap_or(255);
+        let burnt = f64::from(luma[250..].iter().sum::<u32>()) / f64::from(total);
+        let (temperature, tint) = match wb {
+            WhiteBalance::Custom { temperature, tint } => (temperature, tint),
+            _ => (0.0, 0.0),
+        };
+        println!(
+            "{name:22} {light_ms:>3} ms : expo {:+.2}, HL {}, omb {}, bl {}, n {}, contr {} → médiane {median}, brûlé {:.2} % ; balance {white_ms} ms : {temperature} K / {tint:+}",
+            s.light.exposure,
+            s.light.highlights,
+            s.light.shadows,
+            s.light.whites,
+            s.light.blacks,
+            s.light.contrast,
+            burnt * 100.0
+        );
+        // Le feuillage du Panasonic, très contrasté (ciel entre les feuilles),
+        // reste plus sombre : les hautes lumières passent avant la médiane.
+        assert!((75..=130).contains(&median), "{name} : médiane {median}");
+        assert!(burnt < 0.03, "{name} : {burnt}");
+        assert!(
+            (2500.0..12_000.0).contains(&temperature) && tint.abs() <= 35.0,
+            "{name} : {wb:?}"
+        );
+    }
+}

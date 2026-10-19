@@ -14,6 +14,7 @@ use tauri::{AppHandle, Manager, State};
 use super::error::{CommandError, CommandResult};
 use super::marks::XmpWriter;
 use super::{AppState, blocking};
+use crate::develop::auto;
 use crate::develop::gpu::{GpuImage, GpuRenderer};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
 use crate::develop::settings::{DevelopSettings, WhiteBalance};
@@ -219,6 +220,65 @@ pub async fn develop_render(
     })
     .await?;
     Ok(Response::new(bytes))
+}
+
+/// Réglages automatiques de la section Lumière, depuis les réglages actuels ;
+/// `key` : un seul curseur (Maj + double-clic), les autres restent tels quels.
+#[tauri::command]
+pub async fn develop_auto_light(
+    app: AppHandle,
+    settings: DevelopSettings,
+    key: Option<String>,
+) -> CommandResult<DevelopSettings> {
+    blocking(move || {
+        let engine = app.state::<DevelopEngine>();
+        let session = engine
+            .session
+            .lock()
+            .map_err(|e| CommandError::new("internal", e))?;
+        let image = &session
+            .as_ref()
+            .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
+            .image;
+        let mut out = settings.sanitized();
+        let light = auto::auto_light(image, &out);
+        let l = &mut out.light;
+        match key.as_deref() {
+            None => *l = light,
+            Some("exposure") => l.exposure = light.exposure,
+            Some("contrast") => l.contrast = light.contrast,
+            Some("highlights") => l.highlights = light.highlights,
+            Some("shadows") => l.shadows = light.shadows,
+            Some("whites") => l.whites = light.whites,
+            Some("blacks") => l.blacks = light.blacks,
+            Some(other) => {
+                return Err(CommandError::new(
+                    "internal",
+                    format!("pas d'auto pour {other}"),
+                ));
+            }
+        }
+        Ok(out)
+    })
+    .await
+}
+
+/// Balance des blancs automatique de la photo ouverte.
+#[tauri::command]
+pub async fn develop_auto_white(app: AppHandle) -> CommandResult<WhiteBalance> {
+    blocking(move || {
+        let engine = app.state::<DevelopEngine>();
+        let session = engine
+            .session
+            .lock()
+            .map_err(|e| CommandError::new("internal", e))?;
+        let image = &session
+            .as_ref()
+            .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
+            .image;
+        Ok(auto::auto_white(image))
+    })
+    .await
 }
 
 /// Pipette : balance des blancs qui rend neutre le point (x, y) de l'image
