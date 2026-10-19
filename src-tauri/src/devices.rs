@@ -105,10 +105,14 @@ fn camera_hint(dcim: &Path) -> Option<String> {
             return None;
         }
         let hint = rest.trim_matches(|c: char| c == '_' || c == '-' || c.is_whitespace());
-        // MSDCF (Sony) et autres suffixes génériques n'apprennent rien.
-        let generic = ["MSDCF", "MEDIA", "DCIM", "PHOTO", "IMAGE"];
-        (!hint.is_empty() && !generic.contains(&hint.to_uppercase().as_str()))
-            .then(|| hint.to_uppercase())
+        let hint = hint.to_uppercase();
+        // MSDCF (« Memory Stick DCF ») n'est écrit que par les boîtiers Sony.
+        if hint == "MSDCF" {
+            return Some("SONY".to_owned());
+        }
+        // Suffixes génériques : ils n'apprennent rien.
+        let generic = ["MEDIA", "DCIM", "PHOTO", "IMAGE"];
+        (!hint.is_empty() && !generic.contains(&hint.as_str())).then_some(hint)
     })
 }
 
@@ -209,7 +213,7 @@ mod tests {
         let fuji = found.iter().find(|d| d.root == card).unwrap();
         assert_eq!(fuji.camera.as_deref(), Some("FUJI"));
         let sony = found.iter().find(|d| d.root == sony).unwrap();
-        assert_eq!(sony.camera, None);
+        assert_eq!(sony.camera.as_deref(), Some("SONY"));
     }
 
     #[test]

@@ -163,7 +163,8 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Importer liste les cartes présentes dans « Cartes et boîtiers » ; l'historique des imports retient le nom de la carte.
 - Corrections : le chemin d'une racine de lecteur s'affichait « \:X » (affichage de droite à gauche) ; le bandeau restait affiché une fois la carte ouverte dans Importer.
 - Mesure dans l'application compilée sous Windows, avec un lecteur virtuel (`subst X:` vers un dossier contenant `DCIM/100_FUJI`), base de l'utilisateur mise de côté puis remise : bandeau affiché 330, 1 074 et 836 ms après l'apparition du lecteur ; retrait relevé en moins de 0,5 s. « Importer » ouvre la fenêtre principale sur la carte analysée.
-- Critère « carte détectée en moins de 5 secondes » non coché : à vérifier avec une vraie carte SD (sous Windows, un lecteur virtuel n'est pas un lecteur amovible) et sur un Mac. Les deux corrections ci-dessus n'ont pas été revérifiées à l'écran (couvertes par les tests pour le bandeau).
+- Mesure avec une vraie carte SD (Sony, exFAT, lecteur amovible `I:`), sur la bibliothèque de l'utilisateur : bandeau affiché 372 ms après le montage de la carte par Windows. La carte n'est que lue. Son dossier `DCIM/100MSDCF`, propre aux boîtiers Sony, était tenu pour générique (« Carte (I:) ») : il donne désormais « Carte SONY (I:) ».
+- Critère « carte détectée en moins de 5 secondes » non coché : tenu sous Windows, reste à vérifier sur un Mac. Les deux corrections ci-dessus n'ont pas été revérifiées à l'écran (couvertes par les tests pour le bandeau).
 
 ### 2026-10-19 (suite) : illustration de la première ouverture
 
