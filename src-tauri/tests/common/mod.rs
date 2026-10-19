@@ -2,6 +2,17 @@ use std::path::PathBuf;
 
 use sha2::{Digest, Sha256};
 
+/// Les six formats RAW de test-assets/ (Fujifilm, Canon, Nikon, Sony, Panasonic, Ricoh).
+#[allow(dead_code)]
+pub const RAW_SAMPLES: [&str; 6] = [
+    "fujifilm_x-t3.RAF",
+    "canon_eos_r6.CR3",
+    "nikon_z6.NEF",
+    "sony_ilce-7m3.ARW",
+    "panasonic_dc-g9.RW2",
+    "ricoh_gr-iii.DNG",
+];
+
 pub fn test_assets() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")

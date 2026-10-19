@@ -10,15 +10,6 @@ use afterdusk_lib::develop::settings::DevelopSettings;
 use afterdusk_lib::raw::RawFile;
 use afterdusk_lib::raw::preview::{decode_jpeg_scaled, orient};
 
-const SAMPLES: [&str; 6] = [
-    "fujifilm_x-t3.RAF",
-    "canon_eos_r6.CR3",
-    "nikon_z6.NEF",
-    "sony_ilce-7m3.ARW",
-    "panasonic_dc-g9.RW2",
-    "ricoh_gr-iii.DNG",
-];
-
 /// Luminance moyenne (codée sRGB, 0 à 1) d'une image RGBA ou RGB.
 fn mean_luma(pixels: &[u8], stride: usize) -> f64 {
     let n = pixels.len() / stride;
@@ -32,7 +23,7 @@ fn mean_luma(pixels: &[u8], stride: usize) -> f64 {
 #[test]
 fn rendu_neutre_proche_du_jpeg_du_boitier() {
     let mut report = Vec::new();
-    for name in SAMPLES {
+    for name in common::RAW_SAMPLES {
         let path = common::sample(name);
         let before = common::sha256(&path);
         let mut raw = RawFile::open(&path).unwrap();
