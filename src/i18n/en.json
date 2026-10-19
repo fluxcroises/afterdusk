@@ -605,6 +605,19 @@
       "exitHint": "Drag to move around, click to fit the whole image (Z).",
       "loading": "Developing the original at full resolution…",
       "status": "100% · rendered in {{render}} ms ({{engine}})"
+    },
+    "detail": {
+      "title": "Detail",
+      "hint": "Judge sharpening and noise at 100% zoom: click the photo.",
+      "sharpening": "Sharpening",
+      "noise": "Noise reduction",
+      "sharpening_amount": "Amount",
+      "sharpening_radius": "Radius",
+      "sharpening_detail": "Detail",
+      "sharpening_masking": "Masking",
+      "noise_luminance": "Luminance",
+      "noise_luminanceDetail": "Luminance detail",
+      "noise_color": "Color"
     }
   }
 }

@@ -399,6 +399,10 @@ describe("Retoucher", () => {
     st.setEffect("vignette", "midpoint", 70);
     st.setEffect("vignette", "midpoint", 50);
     expect(useDevelop.getState().settings?.effects).toEqual({ vignette: { amount: -30 } });
+    st.setDetail("sharpening", "radius", 1.43);
+    st.setDetail("sharpening", "amount", 40);
+    st.setDetail("sharpening", "radius", 1);
+    expect(useDevelop.getState().settings?.detail).toEqual({ sharpening: { amount: 40 } });
     st.setEffect("grain", "size", 25);
     expect(useDevelop.getState().settings?.effects?.grain).toBeUndefined();
     await useDevelop.getState().flush();
@@ -407,6 +411,9 @@ describe("Retoucher", () => {
       "hsl.saturation.blue",
       "effects.vignette.amount",
       "effects.vignette.midpoint",
+      "detail.sharpening.radius",
+      "detail.sharpening.amount",
+      "detail.sharpening.radius",
       "effects.grain.size",
     ]);
   });

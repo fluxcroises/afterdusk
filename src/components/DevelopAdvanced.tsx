@@ -3,6 +3,8 @@ import { type PointerEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CURVE_CHANNELS,
+  DETAIL_DEFAULTS,
+  type DetailGroup,
   type CurveChannel,
   type CurvePoint,
   EFFECT_DEFAULTS,
@@ -292,6 +294,61 @@ function EffectSliders<G extends EffectGroup>({ group }: { group: G }) {
         );
       })}
     </>
+  );
+}
+
+const DETAIL_RANGES: Record<string, { min: number; max: number; step: number }> = {
+  amount: { min: 0, max: 150, step: 1 },
+  radius: { min: 0.5, max: 3, step: 0.1 },
+};
+
+function DetailSliders({ group }: { group: DetailGroup }) {
+  const { t, i18n } = useTranslation();
+  const section = useDevelop((s) => s.settings?.detail?.[group]) as
+    Partial<Record<string, number>> | undefined;
+  const disabled = useDevelop((s) => s.settings === null);
+  const setDetail = useDevelop((s) => s.setDetail);
+  const defaults = DETAIL_DEFAULTS[group] as Record<string, number>;
+  const plain = new Intl.NumberFormat(i18n.language);
+  const decimal = new Intl.NumberFormat(i18n.language, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return (
+    <>
+      <h3 className="develop-subheading">{t(`develop.detail.${group}`)}</h3>
+      {Object.keys(defaults).map((key) => {
+        const value = section?.[key] ?? defaults[key] ?? 0;
+        const range = (group === "sharpening" && DETAIL_RANGES[key]) || {
+          min: 0,
+          max: 100,
+          step: 1,
+        };
+        return (
+          <Slider
+            key={key}
+            label={t(`develop.detail.${group}_${key}`)}
+            display={key === "radius" ? decimal.format(value) : plain.format(value)}
+            value={value}
+            {...range}
+            disabled={disabled}
+            onChange={(v) => setDetail(group, key, v)}
+            onReset={() => setDetail(group, key, defaults[key] ?? 0)}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+export function DetailSection() {
+  const { t } = useTranslation();
+  return (
+    <PanelSection id="develop.detail" title={t("develop.detail.title")}>
+      <p className="panel-note">{t("develop.detail.hint")}</p>
+      <DetailSliders group="sharpening" />
+      <DetailSliders group="noise" />
+    </PanelSection>
   );
 }
 

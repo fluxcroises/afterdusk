@@ -605,6 +605,19 @@
       "exitHint": "Glissez pour vous déplacer, cliquez pour revenir à l'image entière (Z).",
       "loading": "Développement de l'original en pleine définition…",
       "status": "100 % · rendu {{render}} ms ({{engine}})"
+    },
+    "detail": {
+      "title": "Détail",
+      "hint": "La netteté et le bruit se jugent au zoom 100 % : cliquez sur la photo.",
+      "sharpening": "Netteté",
+      "noise": "Réduction du bruit",
+      "sharpening_amount": "Quantité",
+      "sharpening_radius": "Rayon",
+      "sharpening_detail": "Détail",
+      "sharpening_masking": "Masquage",
+      "noise_luminance": "Luminance",
+      "noise_luminanceDetail": "Détail de luminance",
+      "noise_color": "Couleur"
     }
   }
 }

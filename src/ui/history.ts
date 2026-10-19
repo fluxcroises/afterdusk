@@ -1,6 +1,8 @@
 import type { TFunction } from "i18next";
 import {
   type DevelopSettings,
+  DETAIL_DEFAULTS,
+  type DetailGroup,
   EFFECT_DEFAULTS,
   type EffectGroup,
   type HistoryStep,
@@ -76,6 +78,16 @@ export function describeStep(
       kind: t(`develop.hsl.${key}`),
       hue: t(`develop.hues.${hue}`),
       value: signed(s.hsl?.[key as HslKind]?.[hue] ?? 0, 0, language),
+    });
+  }
+  if (section === "detail" && key && auto) {
+    const group = key as DetailGroup;
+    const fallback = (DETAIL_DEFAULTS[group] as Record<string, number>)[auto] ?? 0;
+    const v = (s.detail?.[group] as Record<string, number> | undefined)?.[auto] ?? fallback;
+    return t("develop.history.effect", {
+      group: t(`develop.detail.${group}`),
+      name: t(`develop.detail.${group}_${auto}`).toLowerCase(),
+      value: new Intl.NumberFormat(language).format(v),
     });
   }
   if (section === "effects" && key && auto) {

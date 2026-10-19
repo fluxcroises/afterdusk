@@ -46,6 +46,13 @@ export const EFFECT_DEFAULTS = {
   grain: { amount: 0, size: 25, roughness: 50 },
 } as const;
 export type EffectGroup = keyof typeof EFFECT_DEFAULTS;
+
+/** Netteté et réduction du bruit, valeurs par défaut (absentes du JSON creux). */
+export const DETAIL_DEFAULTS = {
+  sharpening: { amount: 0, radius: 1, detail: 25, masking: 0 },
+  noise: { luminance: 0, luminanceDetail: 50, color: 0 },
+} as const;
+export type DetailGroup = keyof typeof DETAIL_DEFAULTS;
 export type EffectKey<G extends EffectGroup> = keyof (typeof EFFECT_DEFAULTS)[G];
 
 /** Réglages de retouche, miroir de `develop::settings::DevelopSettings` (JSON creux). */
@@ -59,6 +66,10 @@ export interface DevelopSettings {
   effects?: {
     vignette?: Partial<Record<EffectKey<"vignette">, number>>;
     grain?: Partial<Record<EffectKey<"grain">, number>>;
+  };
+  detail?: {
+    sharpening?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["sharpening"], number>>;
+    noise?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["noise"], number>>;
   };
 }
 
@@ -271,6 +282,8 @@ interface DevelopState {
   setCurve: (channel: CurveChannel, points: CurvePoint[]) => void;
   setHsl: (kind: HslKind, hue: Hue, value: number) => void;
   setEffect: <G extends EffectGroup>(group: G, key: EffectKey<G>, value: number) => void;
+  /** Netteté ou réduction du bruit ; le rayon garde une décimale. */
+  setDetail: (group: DetailGroup, key: string, value: number) => void;
   /** Auto de la section Lumière, ou d'un seul curseur. */
   autoLight: (key?: LightKey) => Promise<void>;
   autoWhite: () => Promise<void>;
@@ -616,6 +629,21 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       const set = prune(withValue(settings.hsl?.[kind], hue, Math.round(value)));
       const hsl = put(settings.hsl ?? {}, kind, set);
       change(put(settings, "hsl", prune(hsl)), `hsl.${kind}.${hue}`);
+    },
+
+    setDetail: (group, key, value) => {
+      const { settings } = get();
+      if (!settings) return;
+      const v = key === "radius" ? Math.round(value * 10) / 10 : Math.round(value);
+      const fallback = (DETAIL_DEFAULTS[group] as Record<string, number>)[key];
+      const current: Record<string, number> = { ...settings.detail?.[group] };
+      const section = put(current, key, v === fallback ? undefined : v);
+      const detail = put(
+        (settings.detail ?? {}) as Record<string, unknown>,
+        group,
+        prune(section),
+      ) as DevelopSettings["detail"] & object;
+      change(put(settings, "detail", prune(detail)), `detail.${group}.${key}`);
     },
 
     setEffect: (group, key, value) => {

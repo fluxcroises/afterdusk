@@ -21,11 +21,11 @@ use super::settings::Detail;
 /// Constantes figées du processus 1.
 pub mod process1 {
     /// Rayon du filtre guidé, en pixels de l'original.
-    pub const NOISE_LUMA_RADIUS: f32 = 3.0;
+    pub const NOISE_LUMA_RADIUS: f32 = 2.0;
     /// Écart type du bruit lissé à 100, en luminance perçue (0 à 1).
-    pub const NOISE_LUMA_EPS: f32 = 0.06;
+    pub const NOISE_LUMA_EPS: f32 = 0.035;
     /// Rayon de la moyenne des couleurs, en pixels de l'original.
-    pub const NOISE_COLOR_RADIUS: f32 = 8.0;
+    pub const NOISE_COLOR_RADIUS: f32 = 4.0;
     /// Netteté : seuil des halos, de détail 0 à détail 100.
     pub const SHARPEN_LIMIT_MIN: f32 = 0.02;
     pub const SHARPEN_LIMIT_RANGE: f32 = 0.3;
@@ -450,9 +450,9 @@ mod tests {
         };
         let full = Radii::at(&p, 1.0);
         let preview = Radii::at(&p, 0.33);
-        assert_eq!((full.luminance, full.color), (3, 8));
-        assert_eq!((preview.luminance, preview.color), (1, 3));
+        assert_eq!((full.luminance, full.color), (2, 4));
+        assert_eq!((preview.luminance, preview.color), (1, 1));
         assert!((preview.sigma - 0.66).abs() < 1e-6);
-        assert_eq!(full.margin(), 2 * 3 + 8 + 6 + 1);
+        assert_eq!(full.margin(), 2 * 2 + 4 + 6 + 1);
     }
 }

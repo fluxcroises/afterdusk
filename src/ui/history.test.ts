@@ -85,6 +85,16 @@ describe("libellés de l'historique", () => {
         "fr",
       ),
     ).toBe("Vignetage : intensité -30");
+    expect(
+      describeStep(
+        step("detail.sharpening.radius", { detail: { sharpening: { radius: 1.4 } } }),
+        t,
+        "fr",
+      ),
+    ).toBe("Netteté : rayon 1,4");
+    expect(describeStep(step("detail.noise.luminance", {}), t, "fr")).toBe(
+      "Réduction du bruit : luminance 0",
+    );
     // Valeur par défaut absente du JSON : on affiche le défaut.
     expect(describeStep(step("effects.grain.size", {}), t, "fr")).toBe("Grain : taille 25");
   });
