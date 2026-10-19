@@ -1,0 +1,61 @@
+name: Build macOS
+
+# Application de test pour macOS, à la demande (Actions > Build macOS > Run
+# workflow) : universelle (Apple Silicon et Intel), signée ad hoc faute de
+# certificat de développeur Apple. L'archive est téléchargeable depuis la page
+# du run, pendant 14 jours.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: macOS universel
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: universal
+
+      - name: Dépendances de l'interface
+        run: npm ci
+
+      - name: Application — compilation universelle
+        # Signature ad hoc (« - ») : macOS l'exige sur Apple Silicon ; sans
+        # certificat, la première ouverture passe par Réglages > Confidentialité.
+        run: >
+          npm run tauri build --
+          --target universal-apple-darwin
+          --bundles app
+          --config '{"bundle":{"macOS":{"signingIdentity":"-"}}}'
+
+      - name: Archive de l'application
+        id: archive
+        run: |
+          app="src-tauri/target/universal-apple-darwin/release/bundle/macos/Afterdusk.app"
+          lipo -info "$app/Contents/MacOS/afterdusk"
+          codesign --verify --deep --verbose=2 "$app"
+          name="Afterdusk-macos-universel-${GITHUB_SHA::7}.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.archive.outputs.name }}
+          path: ${{ steps.archive.outputs.name }}
+          retention-days: 14
