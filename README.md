@@ -22,3 +22,5 @@ Documents : [cahier des charges](docs/cahier-des-charges.md), [charte graphique]
 ## Licence
 
 GPL v3 ou ultérieure ([LICENSE](LICENSE)). LibRaw est utilisé sous LGPL 2.1, le XMP Toolkit d'Adobe sous BSD 3.
+
+La photo de l'écran d'accueil (`src/assets/accueil-cabourg.jpg`, Cabourg) est © Lewis Bedar, tous droits réservés : elle n'est pas couverte par la licence GPL du code.

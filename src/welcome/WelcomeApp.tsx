@@ -21,6 +21,7 @@ import { useLayout } from "../store/layout";
 import { type AlbumSummary, useLibrary } from "../store/library";
 import { greetingKey } from "../ui/greeting";
 import { openMain, setWelcomeOnStartup, welcomeOnStartup } from "../windows";
+import defaultPhoto from "../assets/accueil-cabourg.jpg";
 import "../App.css";
 
 interface Highlight {
@@ -169,32 +170,31 @@ function Hero({ highlight }: { highlight: Highlight | null }) {
   const { t, i18n } = useTranslation();
   const hasLibrary = useImport((s) => s.libraryId !== null);
   const date = formatDate(highlight?.capturedAt ?? null, i18n.language);
-  const caption = highlight ? [highlight.albumName, date].filter(Boolean).join(", ") : null;
+  // Tant que la bibliothèque n'a pas de photo à mettre en avant : Cabourg, par l'auteur.
+  const caption = highlight
+    ? [highlight.albumName, date].filter(Boolean).join(", ")
+    : t("home.defaultPhotoCredit");
 
   return (
     <header className="welcome-hero" data-tauri-drag-region>
-      {highlight ? (
-        <img
-          className="welcome-hero-photo"
-          src={previewUrl(highlight.mediaId, 2048) ?? undefined}
-          alt=""
-          decoding="async"
-          data-tauri-drag-region
-        />
-      ) : (
-        <span className="welcome-hero-mark" data-tauri-drag-region />
-      )}
+      <img
+        key={highlight?.mediaId ?? "default"}
+        className="welcome-hero-photo"
+        data-default={highlight ? undefined : true}
+        src={highlight ? (previewUrl(highlight.mediaId, 2048) ?? defaultPhoto) : defaultPhoto}
+        alt=""
+        decoding="async"
+        data-tauri-drag-region
+      />
       <div className="welcome-hero-top" data-tauri-drag-region>
         <span className="welcome-brand" data-tauri-drag-region>
           <span className="logo" aria-hidden="true" />
           <span className="brand-name">{t("app.name")}</span>
         </span>
         <span className="toolbar-spacer" data-tauri-drag-region />
-        {caption && (
-          <span className="welcome-hero-caption" data-tauri-drag-region>
-            {caption}
-          </span>
-        )}
+        <span className="welcome-hero-caption" data-tauri-drag-region>
+          {caption}
+        </span>
         {drawsOwnMenus && <WindowControls />}
       </div>
       <div className="welcome-hero-bottom" data-tauri-drag-region>

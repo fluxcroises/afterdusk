@@ -203,7 +203,7 @@
     "help": "Aide",
     "shortcuts": "Raccourcis clavier",
     "welcome": "Accueil",
-    "aboutText": "Afterdusk {{version}}\nLibRaw {{libraw}}\n\nLogiciel libre sous licence GPL v3.",
+    "aboutText": "Afterdusk {{version}}\nLibRaw {{libraw}}\n\nLogiciel libre sous licence GPL v3.\nPhoto d'accueil : Cabourg, © Lewis Bedar.",
     "menuBar": "Barre de menus",
     "noRating": "Aucune note",
     "noFlag": "Sans drapeau",
@@ -249,7 +249,8 @@
     "folder": "Dossier…",
     "cullThem": "Les trier",
     "allAlbums": "Tous les albums ({{count}})",
-    "fewerAlbums": "Réduire"
+    "fewerAlbums": "Réduire",
+    "defaultPhotoCredit": "Cabourg · photo © Lewis Bedar"
   },
   "keys": {
     "ctrl": "Ctrl",

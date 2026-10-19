@@ -26,3 +26,6 @@ dist-ssr
 # Échantillons RAW : téléchargés par scripts/fetch-test-assets.mjs
 test-assets/*
 !test-assets/manifest.json
+
+# Original de la photo d accueil (pleine définition, métadonnées GPS) : non versionné
+src/assets/accueil.JPG

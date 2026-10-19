@@ -1340,13 +1340,9 @@ input[type="checkbox"] {
     linear-gradient(to top, rgb(0 0 0 / 0.7), transparent 55%);
 }
 
-/* Sans photo : le symbole en filigrane. */
-.welcome-hero-mark {
-  position: absolute;
-  inset: 0;
-  background: var(--ad-hover);
-  opacity: 0.22;
-  mask: url("./assets/logo.svg") center / 180px no-repeat;
+/* Photo par défaut (Cabourg) : garder l'horizon et le couple dans le cadre. */
+.welcome-hero-photo[data-default] {
+  object-position: 50% 30%;
 }
 
 .welcome-hero-top,
