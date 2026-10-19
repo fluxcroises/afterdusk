@@ -1828,6 +1828,10 @@ button.color-chip[aria-pressed="true"] {
   background: var(--ad-border-strong);
 }
 
+.compare[data-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .compare[data-count="3"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -1885,4 +1889,48 @@ button.color-chip[aria-pressed="true"] {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* ---------- Second écran ---------- */
+
+.secondary {
+  position: relative;
+  height: 100vh;
+  background: var(--ad-workspace);
+}
+
+/* Bandeau discret, visible au survol seulement : la photo d'abord. */
+.secondary-bar {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+  height: 44px;
+  padding: 0 var(--ad-space-3) 0 var(--ad-space-5);
+  background: rgb(0 0 0 / 0.6);
+  opacity: 0;
+  transition: opacity var(--ad-transition);
+}
+
+.secondary-bar:hover,
+.secondary-bar:focus-within {
+  opacity: 1;
+}
+
+.secondary-bar .icon-button {
+  color: var(--ad-text);
+}
+
+.secondary .compare {
+  height: 100%;
+}
+
+.secondary-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0;
+  color: var(--ad-text-muted);
 }

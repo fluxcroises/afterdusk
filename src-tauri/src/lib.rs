@@ -31,6 +31,8 @@ fn on_close_requested(window: &tauri::Window, api: &tauri::CloseRequestApi) {
             api.prevent_close();
             let _ = window.hide();
         }
+        // Le second écran se ferme sans fermer l'application.
+        commands::windows::SECONDARY_WINDOW => {}
         _ => app.exit(0),
     }
 }
@@ -86,6 +88,7 @@ pub fn run() {
             commands::media::media_details,
             commands::media::album_set_cover,
             commands::media::welcome_highlights,
+            commands::windows::secondary_toggle,
             commands::marks::media_set_rating,
             commands::marks::media_set_flag,
             commands::marks::media_set_color,

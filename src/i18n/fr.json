@@ -207,7 +207,8 @@
     "menuBar": "Barre de menus",
     "noRating": "Aucune note",
     "noFlag": "Sans drapeau",
-    "setAlbumCover": "Définir comme couverture de l'album"
+    "setAlbumCover": "Définir comme couverture de l'album",
+    "secondary": "Second écran"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -256,7 +257,8 @@
     "ctrl": "Ctrl",
     "shift": "Maj",
     "alt": "Alt",
-    "enter": "Entrée"
+    "enter": "Entrée",
+    "escape": "Échap"
   },
   "window": {
     "minimize": "Réduire",
@@ -271,5 +273,10 @@
     "preparing": "Aperçu en préparation…",
     "actualPixels": "100 %",
     "enlargedPreview": "Aperçu agrandi"
+  },
+  "secondary": {
+    "title": "Second écran",
+    "close": "Fermer le second écran",
+    "empty": "Sélectionnez une photo dans la fenêtre principale."
   }
 }

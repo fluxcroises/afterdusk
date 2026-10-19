@@ -7,13 +7,14 @@ import "./i18n";
 import { installMenu } from "./menu";
 import { applyPlatform } from "./platform";
 import { hideSplash, removeSplash } from "./splash";
+import { SecondaryApp } from "./secondary/SecondaryApp";
 import { WelcomeApp } from "./welcome/WelcomeApp";
 import { currentWindow, showSelf, welcomeOnStartup } from "./windows";
 
 const label = currentWindow();
 // La fenêtre qui ouvre l'application s'affiche aussitôt, avec l'écran de démarrage ;
 // l'autre reste masquée jusqu'à ce qu'on la demande.
-const opensFirst = (label === "welcome") === welcomeOnStartup();
+const opensFirst = label !== "secondary" && (label === "welcome") === welcomeOnStartup();
 
 applyPlatform();
 installDesktopBehavior(label);
@@ -21,7 +22,9 @@ if (label === "main") installMenu();
 if (opensFirst) void showSelf();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>{label === "welcome" ? <WelcomeApp /> : <App />}</React.StrictMode>,
+  <React.StrictMode>
+    {label === "welcome" ? <WelcomeApp /> : label === "secondary" ? <SecondaryApp /> : <App />}
+  </React.StrictMode>,
 );
 
 if (opensFirst || !isTauri()) hideSplash();

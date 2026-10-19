@@ -24,6 +24,7 @@ export interface AlbumSummary {
   endDate: string | null;
   count: number;
   coverMediaId: number | null;
+  coverChosen: boolean;
 }
 
 export interface MediaDetails {
@@ -310,7 +311,9 @@ export const useLibrary = create<LibraryState>((set, get) => {
       try {
         await libraryApi.setCover(albumId, mediaId);
         set((s) => ({
-          albums: s.albums.map((a) => (a.id === albumId ? { ...a, coverMediaId: mediaId } : a)),
+          albums: s.albums.map((a) =>
+            a.id === albumId ? { ...a, coverMediaId: mediaId, coverChosen: true } : a,
+          ),
         }));
       } catch (e) {
         set({ error: toCommandError(e) });

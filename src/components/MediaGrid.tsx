@@ -124,7 +124,8 @@ function MediaCell({
   const version = useLibrary((s) => s.versions[media.id] ?? 0);
   const select = useLibrary((s) => s.select);
   const isCover = useLibrary((s) =>
-    s.albums.some((a) => a.id === media.albumId && a.coverMediaId === media.id),
+    // Seulement une couverture choisie : la couverture par défaut n'a pas de badge.
+    s.albums.some((a) => a.id === media.albumId && a.coverChosen && a.coverMediaId === media.id),
   );
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLButtonElement>(null);

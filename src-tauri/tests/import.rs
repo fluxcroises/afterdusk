@@ -504,7 +504,11 @@ fn apercus_et_fiche_apres_import() {
 
     let albums = media::list_albums(&s.conn, s.library_id).unwrap();
     assert_eq!(albums.iter().map(|a| a.count).sum::<i64>(), 4);
-    assert!(albums.iter().all(|a| a.cover_media_id.is_some()));
+    assert!(
+        albums
+            .iter()
+            .all(|a| a.cover_media_id.is_some() && !a.cover_chosen)
+    );
 
     // Couverture choisie : seulement une photo de l'album.
     let (album_a, album_b) = (albums[0].id, albums[1].id);

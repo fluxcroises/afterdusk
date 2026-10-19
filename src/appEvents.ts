@@ -6,6 +6,7 @@ import { events } from "./api/core";
 import { useImport } from "./store/import";
 import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
+import { startSecondarySync } from "./secondary/sync";
 import { useNavigation } from "./store/navigation";
 import {
   EVENT_OPEN_MAIN,
@@ -73,7 +74,10 @@ export function useAppEvents(label: WindowLabel): void {
         ? listen<MainAction>(EVENT_OPEN_MAIN, (e) => void applyMainAction(e.payload))
         : listen(EVENT_WELCOME_REFRESH, () => void useImport.getState().loadLibraries()),
     ];
+    // La fenêtre principale alimente le second écran.
+    const stopSync = label === "main" ? startSecondarySync() : undefined;
     return () => {
+      stopSync?.();
       for (const s of subscriptions) void s.then((unlisten) => unlisten());
     };
   }, [label]);

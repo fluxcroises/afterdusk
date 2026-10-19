@@ -63,6 +63,7 @@ describe("fenêtre d'accueil", () => {
           endDate: "2026-10-18",
           count: 98,
           coverMediaId: null,
+          coverChosen: false,
         },
       ],
     });

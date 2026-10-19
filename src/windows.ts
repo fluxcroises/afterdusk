@@ -1,11 +1,11 @@
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { emitTo } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import type { Screen } from "./store/navigation";
 
-/** Fenêtres déclarées dans `tauri.conf.json`. */
-export type WindowLabel = "main" | "welcome";
+/** Fenêtres : principale et accueil (`tauri.conf.json`), second écran (créé à la demande). */
+export type WindowLabel = "main" | "welcome" | "secondary";
 
 export const EVENT_OPEN_MAIN = "open-main";
 export const EVENT_WELCOME_REFRESH = "welcome-refresh";
@@ -21,10 +21,10 @@ export interface MainAction {
 
 /** Fenêtre courante ; dans un navigateur (développement), `?window=welcome`. */
 export function currentWindow(): WindowLabel {
-  if (isTauri()) return getCurrentWindow().label === "welcome" ? "welcome" : "main";
-  return new URLSearchParams(window.location.search).get("window") === "welcome"
-    ? "welcome"
-    : "main";
+  const label = isTauri()
+    ? getCurrentWindow().label
+    : new URLSearchParams(window.location.search).get("window");
+  return label === "welcome" || label === "secondary" ? label : "main";
 }
 
 const STARTUP_KEY = "afterdusk.welcomeOnStartup";
@@ -70,4 +70,10 @@ export async function showWelcome(): Promise<void> {
   await welcome.show();
   await welcome.unminimize();
   await welcome.setFocus();
+}
+
+/** Ouvre le second écran sur un autre moniteur, ou le ferme. */
+export async function toggleSecondary(): Promise<void> {
+  if (!isTauri()) return;
+  await invoke<boolean>("secondary_toggle");
 }

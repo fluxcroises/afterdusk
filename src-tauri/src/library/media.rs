@@ -74,6 +74,8 @@ pub struct AlbumSummary {
     pub count: i64,
     /// Couverture choisie, sinon la première photo de l'album.
     pub cover_media_id: Option<i64>,
+    /// La couverture a-t-elle été choisie par l'utilisateur ?
+    pub cover_chosen: bool,
 }
 
 pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummary>, LibraryError> {
@@ -82,7 +84,8 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
                 (SELECT count(*) FROM media m WHERE m.album_id = a.id AND m.state = 'normal'),
                 coalesce(a.cover_media_id,
                          (SELECT m.id FROM media m WHERE m.album_id = a.id AND m.state = 'normal'
-                          ORDER BY m.captured_at, m.path LIMIT 1))
+                          ORDER BY m.captured_at, m.path LIMIT 1)),
+                a.cover_media_id IS NOT NULL
          FROM albums a WHERE a.library_id = ?1
          ORDER BY a.start_date DESC, a.name",
     )?;
@@ -96,6 +99,7 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
                 end_date: r.get(4)?,
                 count: r.get(5)?,
                 cover_media_id: r.get(6)?,
+                cover_chosen: r.get(7)?,
             })
         })?
         .collect::<Result<_, _>>()?;

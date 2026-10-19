@@ -10,7 +10,7 @@ import type { TFunction } from "i18next";
 import { importFromFolder } from "./actions";
 import i18n from "./i18n";
 import { drawsOwnMenus, isMac } from "./platform";
-import { showWelcome } from "./windows";
+import { showWelcome, toggleSecondary } from "./windows";
 import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
 import { COLOR_LABELS } from "./ui/labels";
@@ -234,6 +234,12 @@ export function buildMenuItems(t: TFunction): Item[] {
         text: t("menu.welcome"),
         accelerator: "CmdOrCtrl+Alt+0",
         action: () => void showWelcome(),
+      },
+      {
+        id: "secondary",
+        text: t("menu.secondary"),
+        accelerator: "CmdOrCtrl+F11",
+        action: () => void toggleSecondary(),
       },
       separator,
       { item: "Minimize", text: t("menu.minimize") },

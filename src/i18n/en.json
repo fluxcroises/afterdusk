@@ -207,7 +207,8 @@
     "menuBar": "Menu bar",
     "noRating": "No rating",
     "noFlag": "Unflagged",
-    "setAlbumCover": "Set as Album Cover"
+    "setAlbumCover": "Set as Album Cover",
+    "secondary": "Secondary Display"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -256,7 +257,8 @@
     "ctrl": "Ctrl",
     "shift": "Shift",
     "alt": "Alt",
-    "enter": "Enter"
+    "enter": "Enter",
+    "escape": "Esc"
   },
   "window": {
     "minimize": "Minimize",
@@ -271,5 +273,10 @@
     "preparing": "Preparing preview…",
     "actualPixels": "100%",
     "enlargedPreview": "Enlarged preview"
+  },
+  "secondary": {
+    "title": "Secondary display",
+    "close": "Close secondary display",
+    "empty": "Select a photo in the main window."
   }
 }

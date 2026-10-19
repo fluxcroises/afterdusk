@@ -12,7 +12,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [ ] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
 - [ ] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
 - [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
-- [ ] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
+- [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
 - [ ] Corbeille interne avec restauration et vidage après 30 jours
 - [ ] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
 - [ ] Bibliothèque sur disque externe débranché consultable via le cache
@@ -90,3 +90,14 @@ Tests en place à cette date : 14 tests Rust et 10 tests Vitest.
 - Zoom : quand le JPEG intégré est nettement plus petit que le capteur (ARW 1616 px, RW2 1920 px, RAF 4416 px pour 6240), il est agrandi aux dimensions du capteur et signalé « Aperçu agrandi », pour garder la même échelle entre boîtiers ; « 100 % » seulement quand il couvre le capteur.
 - Composant `PhotoPane` partagé par la visionneuse et la comparaison (et bientôt le second écran).
 - Vérifié dans l'application compilée sous Windows : 4 photos sélectionnées par clic puis Maj+clic, comparaison, zoom synchronisé à 100 %.
+- Critère « Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé » coché : CI verte sur Windows et macOS (run 39240754465).
+
+### 2026-10-19 (suite) : second écran
+
+Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur (équivalent de l'affichage secondaire de Lightroom).
+
+- Fenêtre > Second écran (Ctrl+F11, ⌘+F11 sur Mac) : une fenêtre sans barres, en plein écran sur le plus grand des autres moniteurs ; avec un seul écran, une fenêtre normale. Le même raccourci, Échap ou le bouton du bandeau la ferment, sans fermer l'application.
+- Elle suit la fenêtre principale (photo active, sélection, marques, aperçus) : visionneuse ou comparaison au choix dans un bandeau qui n'apparaît qu'au survol ; le choix est mémorisé. Zoom propre au second écran. Le clavier reste à la fenêtre principale.
+- La fenêtre principale n'envoie que la photo active, la comparaison et les voisines (préchargement), au plus une fois par image d'animation.
+- Correction : la commande de création de fenêtre est asynchrone (une commande synchrone bloquait les échanges avec le cœur sous Windows) ; le badge de couverture ne marque plus que les couvertures choisies.
+- Vérifié sous Windows avec deux écrans de 1920 × 1080 : ouverture en plein écran sur le second moniteur, suivi de la navigation. Non vérifié sur Mac.

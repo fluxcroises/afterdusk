@@ -1,8 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions de la fen\u00eatre principale et de la fen\u00eatre d'accueil",
-  "windows": ["main", "welcome"],
+  "description": "Permissions de la fen\u00eatre principale, de l'accueil et du second \u00e9cran",
+  "windows": ["main", "welcome", "secondary"],
   "permissions": [
     "core:default",
     "core:window:allow-set-fullscreen",
