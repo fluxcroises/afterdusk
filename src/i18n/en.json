@@ -437,7 +437,11 @@
     },
     "back": "Back",
     "next": "Next",
-    "finish": "Create the library"
+    "finish": "Create the library",
+    "summary": "Your library",
+    "toChoose": "To be chosen",
+    "sameDiskShort": "Same disk as the library",
+    "noIdentity": "Not set"
   },
   "devices": {
     "card": "Card ({{volume}})",

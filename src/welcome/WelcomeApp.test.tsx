@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../i18n";
 import { useImport } from "../store/import";
@@ -35,12 +35,17 @@ describe("fenêtre d'accueil", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Bonjour|Bonsoir/);
     expect(screen.getByRole("heading", { name: "Où ranger vos photos ?" })).toBeInTheDocument();
     // Quatre étapes, la première en cours.
-    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
-      "1Bibliothèque",
-      "2Sauvegarde",
-      "3Rangement",
-      "4Identité",
-    ]);
+    expect(
+      within(screen.getByRole("list"))
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["1Bibliothèque", "2Sauvegarde", "3Rangement", "4Identité"]);
+    // Récapitulatif des choix, rempli au fil des étapes.
+    const summary = screen.getByRole("complementary", { name: "Votre bibliothèque" });
+    expect(summary).toHaveTextContent("Photos");
+    expect(summary).toHaveTextContent("À choisir");
+    expect(summary).toHaveTextContent("Pas de sauvegarde pour l'instant");
+    expect(summary).toHaveTextContent("Non renseignée");
     // Sans dossier choisi (pas de dossier Images hors de l'application), pas de suite.
     expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Importer" })).toBeDisabled();
