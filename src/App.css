@@ -2140,7 +2140,7 @@ button.color-chip[aria-pressed="true"] {
 .onboarding {
   display: flex;
   flex-direction: column;
-  gap: var(--ad-space-4);
+  gap: var(--ad-space-3);
   max-width: 760px;
   margin: var(--ad-space-5);
 }
@@ -2194,7 +2194,7 @@ button.color-chip[aria-pressed="true"] {
 
 .onboarding-text {
   max-width: 60ch;
-  margin: 0 0 var(--ad-space-4);
+  margin: 0 0 var(--ad-space-3);
   color: var(--ad-text-secondary);
 }
 
@@ -2317,7 +2317,7 @@ input[type="radio"] {
   grid-template-columns: minmax(0, 1fr) 200px;
   gap: var(--ad-space-5);
   align-items: start;
-  margin: var(--ad-space-5);
+  margin: var(--ad-space-4) var(--ad-space-5) var(--ad-space-3);
 }
 
 .onboarding-layout .onboarding {
@@ -2406,4 +2406,24 @@ input[type="radio"] {
 .album-row-cover .thumbnail img,
 .album-card-cover .thumbnail img {
   object-fit: cover;
+}
+
+/* Rangement : dossiers et noms de fichiers côte à côte. */
+.template-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ad-space-4);
+}
+
+.custom-template-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.custom-template-row .template-input {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+  margin-left: 0;
 }

@@ -185,14 +185,14 @@
     "fileNames": "File names",
     "folderTemplate": "Folder template",
     "folderPresets": {
-      "dateAlbum": "Year / date and album (2026/2026-10-18 Trip to Cabourg)",
-      "yearMonthDay": "Year / month / day (2026/10/18)",
-      "yearAlbum": "Year / album (2026/Trip to Cabourg)",
+      "dateAlbum": "Year / date and album",
+      "yearMonthDay": "Year / month / day",
+      "yearAlbum": "Year / album",
       "custom": "Custom"
     },
     "renamePresets": {
-      "original": "Keep the camera's name (DSCF0042.RAF)",
-      "dateSeq": "Date, time, camera and number (20261018_210459_X-T5_0042.RAF)"
+      "original": "Keep the camera's name",
+      "dateSeq": "Date, time, camera and number"
     },
     "example": "Example",
     "tokensHint": "Tokens: {yyyy} {mm} {dd} {hh} {min} {ss} {album} {camera} {original} {seq:4}.",

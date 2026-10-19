@@ -42,7 +42,8 @@ describe("fenêtre d'accueil", () => {
     ).toEqual(["1Bibliothèque", "2Sauvegarde", "3Rangement", "4Identité"]);
     // Sans dossier choisi (pas de dossier Images hors de l'application), pas de suite.
     expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Importer" })).toBeDisabled();
+    // Sans bibliothèque, les actions de l'en-tête n'ont pas lieu d'être.
+    expect(screen.queryByRole("button", { name: "Importer" })).toBeNull();
   });
 
   it("ne reprend pas les onglets d'Affinity : la photo sert d'en-tête", () => {

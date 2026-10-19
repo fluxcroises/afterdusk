@@ -185,14 +185,14 @@
     "fileNames": "Noms de fichiers",
     "folderTemplate": "Modèle de dossier",
     "folderPresets": {
-      "dateAlbum": "Année / date et album (2026/2026-10-18 Sortie à Cabourg)",
-      "yearMonthDay": "Année / mois / jour (2026/10/18)",
-      "yearAlbum": "Année / album (2026/Sortie à Cabourg)",
+      "dateAlbum": "Année / date et album",
+      "yearMonthDay": "Année / mois / jour",
+      "yearAlbum": "Année / album",
       "custom": "Personnalisé"
     },
     "renamePresets": {
-      "original": "Garder le nom du boîtier (DSCF0042.RAF)",
-      "dateSeq": "Date, heure, boîtier et numéro (20261018_210459_X-T5_0042.RAF)"
+      "original": "Garder le nom du boîtier",
+      "dateSeq": "Date, heure, boîtier et numéro"
     },
     "example": "Exemple",
     "tokensHint": "Jetons : {yyyy} {mm} {dd} {hh} {min} {ss} {album} {camera} {original} {seq:4}.",

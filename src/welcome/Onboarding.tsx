@@ -134,7 +134,11 @@ export function Onboarding() {
             />
           )}
           {step === "identity" && (
-            <IdentityFields identity={c.identity} onChange={(identity) => update({ identity })} />
+            <IdentityFields
+              identity={c.identity}
+              hint={false}
+              onChange={(identity) => update({ identity })}
+            />
           )}
         </div>
         <footer className="onboarding-footer">

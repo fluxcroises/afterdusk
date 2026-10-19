@@ -176,3 +176,9 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Sur une carte ou un boîtier (dossier `DCIM` à la racine), seul `DCIM` est analysé (norme DCF). Les vignettes JPEG que les boîtiers Sony écrivent pour leurs vidéos (`PRIVATE/M4ROOT/THMBNL/C0002T01.JPG`) apparaissaient comme des photos ; les dossiers `THMBNL` sont aussi ignorés dans un dossier quelconque.
 - Les photos en hauteur étiraient leur case (et toute la rangée) dans la grille d'import : toutes les miniatures s'inscrivent désormais dans un cadre 3:2, photo entière.
 - Revérifié dans l'application compilée sur la carte de l'utilisateur : « Carte SONY (I:) », photos en hauteur inscrites dans le cadre, paires reconnues, 375 déclenchements proposés au lieu de 439 (64 vignettes de vidéos écartées).
+
+### 2026-10-19 (suite) : assistant sans défilement
+
+- Aucune étape de la première ouverture ne défile, photo d'accueil à pleine hauteur (fenêtre par défaut, 1040 × 700) : « Dossiers » et « Noms de fichiers » côte à côte à l'étape Rangement, libellés raccourcis (l'exemple donne le résultat), modèle personnalisé saisi sur la ligne de « Personnalisé » avec les jetons en infobulle, note de l'identité retirée de l'assistant (elle reste dans les Réglages), marges resserrées. Les boutons de l'en-tête, grisés sans bibliothèque, sont masqués.
+- Correction : choisir « Personnalisé » cochait « Année / album » (le modèle de départ était identique) ; le mode personnalisé est désormais un choix à part, qui part du modèle en cours.
+- Vérifié dans l'application compilée sous Windows (base vide, celle de l'utilisateur mise de côté puis remise) : les quatre étapes, et l'étape 3 en mode personnalisé, sans barre de défilement.

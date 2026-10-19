@@ -1,4 +1,5 @@
 import { FolderOpen, TriangleAlert } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { pickFolder } from "../actions";
 import type { Identity } from "../api/core";
@@ -75,7 +76,12 @@ export function TemplateChoice({
   onChange: (folderTemplate: string, renameTemplate: string | null) => void;
 }) {
   const { t } = useTranslation();
-  const custom = !FOLDER_PRESETS.some((p) => p.template === folderTemplate);
+  // Le mode personnalisé est un choix à part : un modèle saisi peut coïncider
+  // avec un modèle proposé sans que l'on quitte la saisie.
+  const [customMode, setCustomMode] = useState(
+    () => !FOLDER_PRESETS.some((p) => p.template === folderTemplate),
+  );
+  const custom = customMode;
   const { path, error } = useTemplatePreview(
     folderTemplate,
     renameTemplate,
@@ -83,56 +89,68 @@ export function TemplateChoice({
   );
   return (
     <div className="settings-form">
-      <fieldset className="choice-list">
-        <legend className="field-row-label">{t("settings.folders")}</legend>
-        {FOLDER_PRESETS.map((p) => (
-          <label key={p.id} className="check-row">
-            <input
-              type="radio"
-              name="folder-template"
-              checked={folderTemplate === p.template}
-              onChange={() => onChange(p.template, renameTemplate)}
-            />
-            {t(`settings.folderPresets.${p.id}`)}
-          </label>
-        ))}
-        <label className="check-row">
-          <input
-            type="radio"
-            name="folder-template"
-            checked={custom}
-            onChange={() => onChange(custom ? folderTemplate : "{yyyy}/{album}", renameTemplate)}
-          />
-          {t("settings.folderPresets.custom")}
-        </label>
-        {custom && (
-          <input
-            type="text"
-            className="template-input"
-            aria-label={t("settings.folderTemplate")}
-            value={folderTemplate}
-            onChange={(e) => onChange(e.target.value, renameTemplate)}
-          />
-        )}
-      </fieldset>
-      <fieldset className="choice-list">
-        <legend className="field-row-label">{t("settings.fileNames")}</legend>
-        {RENAME_PRESETS.map((p) => (
-          <label key={p.id} className="check-row">
-            <input
-              type="radio"
-              name="rename-template"
-              checked={
-                p.template === null
-                  ? renameTemplate === null
-                  : renameTemplate !== null && renameTemplate === p.template
-              }
-              onChange={() => onChange(folderTemplate, p.template)}
-            />
-            {t(`settings.renamePresets.${p.id}`)}
-          </label>
-        ))}
-      </fieldset>
+      {/* Dossiers et noms côte à côte : l'assistant tient sans défiler. */}
+      <div className="template-columns">
+        <fieldset className="choice-list">
+          <legend className="field-row-label">{t("settings.folders")}</legend>
+          {FOLDER_PRESETS.map((p) => (
+            <label key={p.id} className="check-row">
+              <input
+                type="radio"
+                name="folder-template"
+                checked={!custom && folderTemplate === p.template}
+                onChange={() => {
+                  setCustomMode(false);
+                  onChange(p.template, renameTemplate);
+                }}
+              />
+              {t(`settings.folderPresets.${p.id}`)}
+            </label>
+          ))}
+          {/* Le modèle se saisit sur la même ligne : l'assistant tient sans défiler. */}
+          <div className="custom-template-row">
+            <label className="check-row">
+              <input
+                type="radio"
+                name="folder-template"
+                checked={custom}
+                // On part du modèle en cours, à modifier.
+                onChange={() => setCustomMode(true)}
+              />
+              {t("settings.folderPresets.custom")}
+            </label>
+            {custom && (
+              <input
+                type="text"
+                className="template-input"
+                aria-label={t("settings.folderTemplate")}
+                // Les jetons en infobulle : la liste en clair ferait défiler l'assistant.
+                title={t("settings.tokensHint")}
+                value={folderTemplate}
+                onChange={(e) => onChange(e.target.value, renameTemplate)}
+              />
+            )}
+          </div>
+        </fieldset>
+        <fieldset className="choice-list">
+          <legend className="field-row-label">{t("settings.fileNames")}</legend>
+          {RENAME_PRESETS.map((p) => (
+            <label key={p.id} className="check-row">
+              <input
+                type="radio"
+                name="rename-template"
+                checked={
+                  p.template === null
+                    ? renameTemplate === null
+                    : renameTemplate !== null && renameTemplate === p.template
+                }
+                onChange={() => onChange(folderTemplate, p.template)}
+              />
+              {t(`settings.renamePresets.${p.id}`)}
+            </label>
+          ))}
+        </fieldset>
+      </div>
       <p className="template-preview">
         <span className="field-row-label">{t("settings.example")}</span>
         {error ? (
@@ -141,7 +159,6 @@ export function TemplateChoice({
           <code>{path ?? "—"}</code>
         )}
       </p>
-      <p className="panel-note">{t("settings.tokensHint")}</p>
     </div>
   );
 }
@@ -150,9 +167,12 @@ export function TemplateChoice({
 export function IdentityFields({
   identity,
   onChange,
+  hint = true,
 }: {
   identity: Identity;
   onChange: (identity: Identity) => void;
+  /** Note sur l'usage de l'identité ; l'assistant l'explique déjà. */
+  hint?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -194,7 +214,7 @@ export function IdentityFields({
           onChange={(e) => onChange({ ...identity, website: e.target.value })}
         />
       </label>
-      <p className="panel-note">{t("settings.identityHint")}</p>
+      {hint && <p className="panel-note">{t("settings.identityHint")}</p>}
     </div>
   );
 }

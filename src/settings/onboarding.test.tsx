@@ -12,8 +12,15 @@ vi.mock("@tauri-apps/api/core", async (original) => ({
 const { default: i18n } = await import("../i18n");
 await i18n.changeLanguage("fr");
 const { applyChoices } = await import("./onboarding");
-const { IdentityFields } = await import("./Fields");
+const { IdentityFields, TemplateChoice } = await import("./Fields");
 const { defaultCopyright } = await import("./presets");
+
+function TemplateHarness() {
+  const [folder, setFolder] = useState("{yyyy}/{yyyy}-{mm}-{dd} {album}");
+  return (
+    <TemplateChoice folderTemplate={folder} renameTemplate={null} onChange={(f) => setFolder(f)} />
+  );
+}
 
 function Harness() {
   const [identity, setIdentity] = useState<Identity>({ name: "", copyright: "", website: "" });
@@ -56,5 +63,19 @@ describe("première ouverture", () => {
     fireEvent.change(copyright, { target: { value: "CC BY 4.0" } });
     fireEvent.change(name, { target: { value: "Lewis Bedar" } });
     expect(copyright).toHaveValue("CC BY 4.0");
+  });
+
+  it("« Personnalisé » ouvre la saisie à partir du modèle en cours", () => {
+    render(<TemplateHarness />);
+    fireEvent.click(screen.getByRole("radio", { name: "Personnalisé" }));
+    expect(screen.getByRole("radio", { name: "Personnalisé" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Année \/ date et album/ })).not.toBeChecked();
+    const input = screen.getByRole("textbox", { name: "Modèle de dossier" });
+    expect(input).toHaveValue("{yyyy}/{yyyy}-{mm}-{dd} {album}");
+    // Un modèle saisi qui ressemble à un modèle proposé reste personnalisé.
+    fireEvent.change(input, { target: { value: "{yyyy}/{album}" } });
+    expect(screen.getByRole("radio", { name: "Personnalisé" })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: /Année \/ mois \/ jour/ }));
+    expect(screen.queryByRole("textbox", { name: "Modèle de dossier" })).toBeNull();
   });
 });

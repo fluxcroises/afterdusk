@@ -198,35 +198,37 @@ function Hero({ highlight }: { highlight: Highlight | null }) {
           <LibrarySwitcher />
         </div>
         <span className="toolbar-spacer" data-tauri-drag-region />
-        <div className="welcome-actions">
-          <button
-            type="button"
-            className="button button-ghost"
-            disabled={!hasLibrary}
-            onClick={() => void openMain({ screen: "library", albumId: null })}
-          >
-            <Images aria-hidden="true" strokeWidth={1.75} />
-            {t("modules.library")}
-          </button>
-          <button
-            type="button"
-            className="button button-ghost"
-            disabled={!hasLibrary}
-            onClick={() => void importFolder(t("import.chooseFolder"))}
-          >
-            <FolderOpen aria-hidden="true" strokeWidth={1.75} />
-            {t("home.folder")}
-          </button>
-          <button
-            type="button"
-            className="button button-primary button-inline"
-            disabled={!hasLibrary}
-            onClick={() => void openMain({ screen: "import" })}
-          >
-            <HardDriveDownload aria-hidden="true" strokeWidth={1.75} />
-            {t("modules.import")}
-          </button>
-        </div>
+        {hasLibrary && (
+          <div className="welcome-actions">
+            <button
+              type="button"
+              className="button button-ghost"
+              disabled={!hasLibrary}
+              onClick={() => void openMain({ screen: "library", albumId: null })}
+            >
+              <Images aria-hidden="true" strokeWidth={1.75} />
+              {t("modules.library")}
+            </button>
+            <button
+              type="button"
+              className="button button-ghost"
+              disabled={!hasLibrary}
+              onClick={() => void importFolder(t("import.chooseFolder"))}
+            >
+              <FolderOpen aria-hidden="true" strokeWidth={1.75} />
+              {t("home.folder")}
+            </button>
+            <button
+              type="button"
+              className="button button-primary button-inline"
+              disabled={!hasLibrary}
+              onClick={() => void openMain({ screen: "import" })}
+            >
+              <HardDriveDownload aria-hidden="true" strokeWidth={1.75} />
+              {t("modules.import")}
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
