@@ -165,6 +165,7 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - **Avant/après** : touche maintenue ou vue scindée.
 - **Historique** illimité avec annuler et rétablir, et **instantanés** nommés.
 - **Copies virtuelles** : plusieurs versions d'une même photo sans dupliquer le fichier.
+- **Correcteur de défauts, remonté en V0.2 à la demande de l'utilisateur (2026-10-19)** : poussières du capteur et petites imperfections, au pinceau rond de taille et d'adoucissement réglables. Chaque correction remplace la zone par une zone voisine de la même photo, choisie automatiquement et déplaçable (mode correction, qui fond les bords, ou clonage) : rien n'est inventé. Les corrections sont des réglages comme les autres (position et rayon relatifs à l'image, donc indépendants de la définition), enregistrés dans le JSON et le XMP, copiables d'une photo à l'autre pour les poussières qui restent au même endroit d'une série ; une visualisation des poussières (contraste fortement accentué) aide à les repérer.
 - **Avertissements d'écrêtage** des hautes lumières et des ombres sur l'image et l'histogramme.
 - **Performance cible** : réglage reflété en moins de 100 ms sur un aperçu de 2048 px avec une carte graphique intégrée récente.
 
@@ -341,6 +342,7 @@ Objectif : traiter et exporter les photos retenues sans autre logiciel.
 - [ ] Tous les réglages essentiels et intermédiaires de la section 4.5, avec retour visuel en moins de 100 ms
 - [ ] Corrections d'objectifs automatiques via lensfun
 - [ ] Recadrage, redressement, ratios
+- [ ] Correcteur de défauts (poussières, petites imperfections), corrections copiables entre photos
 - [ ] Presets fournis et personnels, intensité réglable, copier-coller et synchronisation des réglages
 - [ ] Historique, instantanés, copies virtuelles, avant/après
 - [ ] Retouches enregistrées dans le XMP et restaurées après reconstruction de la base
@@ -455,7 +457,7 @@ Crée docs/avancement.md avec les critères de la V0.1 et coche-les au fur et à
 
 **Hors périmètre jusqu'à la V1**
 
-- Retouches locales (masques, pinceau, dégradés), suppression de défauts, fusion HDR et panoramas
+- Retouches locales (masques, pinceau, dégradés), suppression d'objets ou de grandes zones, fusion HDR et panoramas ; le correcteur de poussières et de petites imperfections est prévu en V0.2 (section 4.5)
 - Retouches génératives ou par intelligence artificielle qui inventent du contenu (effacement génératif, remplacement ou flou d'arrière-plan, agrandissement par IA) : Afterdusk traite la photo prise, il ne la recrée pas
 - Montage vidéo (plusieurs clips, transitions, pistes) et étalonnage avancé ; le traitement simple d'un clip est prévu (section 4.9)
 - Synchronisation cloud, comptes utilisateurs, applications mobiles
