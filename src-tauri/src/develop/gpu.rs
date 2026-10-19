@@ -1,6 +1,7 @@
 //! Jumeau GPU du pipeline (décision 0005) : le même calcul que
 //! [`super::pipeline::render`], en WGSL par wgpu (Direct3D 12, Metal,
-//! Vulkan). Les constantes du shader sont tirées du code processeur, qui reste
+//! Vulkan). Le shader rend les pixels et l'histogramme ; les avertissements
+//! d'écrêtage, rares, sont peints ensuite au processeur. Les constantes du shader sont tirées du code processeur, qui reste
 //! la référence ; sans processeur graphique utilisable, l'appelant revient au
 //! rendu processeur.
 
@@ -9,8 +10,8 @@ use std::sync::{Arc, mpsc};
 use wgpu::util::DeviceExt;
 
 use super::pipeline::{
-    CLIP_HIGHLIGHT_RGB, CLIP_SHADOW_RGB, FLAG_CLIP_HIGHLIGHTS, FLAG_CLIP_SHADOWS, FLAG_TONE,
-    HISTOGRAM_BINS, LUMA_REC2020, REC2020_TO_SRGB, RenderParams, Rendered, WorkingImage, process1,
+    FLAG_TONE, HISTOGRAM_BINS, LUMA_REC2020, REC2020_TO_SRGB, RenderParams, Rendered, WorkingImage,
+    histogram_of, paint_clipping, process1,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -36,10 +37,6 @@ const HISTOGRAM_BYTES: u64 = HISTOGRAM_BINS as u64 * 4;
 
 fn vec3(v: [f32; 3]) -> String {
     format!("vec3<f32>({:?}, {:?}, {:?})", v[0], v[1], v[2])
-}
-
-fn rgb_u32(c: [u8; 3]) -> String {
-    format!("vec3<u32>({}u, {}u, {}u)", c[0], c[1], c[2])
 }
 
 /// Le shader du processus 1, constantes comprises.
@@ -69,10 +66,6 @@ const S0 = {s0};
 const S1 = {s1};
 const S2 = {s2};
 const FLAG_TONE: u32 = {flag_tone}u;
-const FLAG_CLIP_HIGHLIGHTS: u32 = {flag_hi}u;
-const FLAG_CLIP_SHADOWS: u32 = {flag_lo}u;
-const CLIP_HIGHLIGHT = {clip_hi};
-const CLIP_SHADOW = {clip_lo};
 
 fn neutral_curve(x: f32) -> f32 {{
     if (x <= SHOULDER) {{
@@ -157,13 +150,7 @@ fn main(
         atomicAdd(&local_hist[512u + q.z], 1u);
         let l = 0.2126 * f32(q.x) + 0.7152 * f32(q.y) + 0.0722 * f32(q.z);
         atomicAdd(&local_hist[768u + min(u32(l + 0.5), 255u)], 1u);
-        var shown = q;
-        if ((params.flags & FLAG_CLIP_HIGHLIGHTS) != 0u && any(q == vec3<u32>(255u))) {{
-            shown = CLIP_HIGHLIGHT;
-        }} else if ((params.flags & FLAG_CLIP_SHADOWS) != 0u && any(q == vec3<u32>(0u))) {{
-            shown = CLIP_SHADOW;
-        }}
-        dst[i] = shown.x | (shown.y << 8u) | (shown.z << 16u) | (255u << 24u);
+        dst[i] = q.x | (q.y << 8u) | (q.z << 16u) | (255u << 24u);
     }}
     workgroupBarrier();
     for (var k = 0u; k < 4u; k++) {{
@@ -183,10 +170,6 @@ fn main(
         s1 = vec3(m[1]),
         s2 = vec3(m[2]),
         flag_tone = FLAG_TONE,
-        flag_hi = FLAG_CLIP_HIGHLIGHTS,
-        flag_lo = FLAG_CLIP_SHADOWS,
-        clip_hi = rgb_u32(CLIP_HIGHLIGHT_RGB),
-        clip_lo = rgb_u32(CLIP_SHADOW_RGB),
         wg = WORKGROUP,
     )
 }
@@ -446,13 +429,13 @@ impl GpuRenderer {
         for _ in 0..2 {
             rx.recv().map_err(wgpu_err)?.map_err(wgpu_err)?;
         }
-        let rgba = image
+        let mut rgba = image
             .readback
             .get_mapped_range(..)
             .map_err(wgpu_err)?
             .to_vec();
         image.readback.unmap();
-        let histogram = image
+        let mut histogram: Vec<u32> = image
             .hist_readback
             .get_mapped_range(..)
             .map_err(wgpu_err)?
@@ -462,6 +445,17 @@ impl GpuRenderer {
             .map(|b| u32::from_le_bytes(*b))
             .collect();
         image.hist_readback.unmap();
+        // Histogramme incohérent (constaté sur le processeur graphique virtuel
+        // des machines d'intégration Mac) : recalculé au processeur.
+        let pixels = u64::from(image.width) * u64::from(image.height);
+        let consistent = histogram
+            .chunks(256)
+            .all(|c| c.iter().map(|v| u64::from(*v)).sum::<u64>() == pixels);
+        if !consistent {
+            histogram = histogram_of(&rgba);
+        }
+        // Avertissements d'écrêtage peints après coup, d'après les pixels rendus.
+        paint_clipping(&mut rgba, params.flags);
         Ok(Rendered { rgba, histogram })
     }
 }

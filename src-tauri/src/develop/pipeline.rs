@@ -367,6 +367,49 @@ pub struct Rendered {
     pub histogram: Vec<u32>,
 }
 
+/// Couleur affichée d'un pixel rendu : un avertissement d'écrêtage si demandé.
+#[inline]
+fn shown(q: [u8; 3], flags: u32) -> [u8; 3] {
+    if flags & FLAG_CLIP_HIGHLIGHTS != 0 && q.contains(&255) {
+        CLIP_HIGHLIGHT_RGB
+    } else if flags & FLAG_CLIP_SHADOWS != 0 && q.contains(&0) {
+        CLIP_SHADOW_RGB
+    } else {
+        q
+    }
+}
+
+/// Peint les avertissements d'écrêtage sur des pixels RGBA déjà rendus.
+pub fn paint_clipping(rgba: &mut [u8], flags: u32) {
+    if flags & (FLAG_CLIP_HIGHLIGHTS | FLAG_CLIP_SHADOWS) == 0 {
+        return;
+    }
+    let chunk = (rgba.len() / 4).div_ceil(workers()).max(1) * 4;
+    thread::scope(|s| {
+        for part in rgba.chunks_mut(chunk) {
+            s.spawn(move || {
+                for px in part.as_chunks_mut::<4>().0 {
+                    let q = [px[0], px[1], px[2]];
+                    px[..3].copy_from_slice(&shown(q, flags));
+                }
+            });
+        }
+    });
+}
+
+/// Histogramme de pixels RGBA rendus (sans avertissements).
+pub fn histogram_of(rgba: &[u8]) -> Vec<u32> {
+    let mut hist = vec![0u32; HISTOGRAM_BINS];
+    for px in rgba.as_chunks::<4>().0 {
+        let q = [px[0], px[1], px[2]];
+        hist[usize::from(q[0])] += 1;
+        hist[256 + usize::from(q[1])] += 1;
+        hist[512 + usize::from(q[2])] += 1;
+        hist[768 + luma_bin(q)] += 1;
+    }
+    hist
+}
+
 /// Rendu complet, réparti sur les cœurs du processeur.
 pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
     let pixels = (image.width * image.height) as usize;
@@ -387,15 +430,7 @@ pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
                         hist[256 + usize::from(q[1])] += 1;
                         hist[512 + usize::from(q[2])] += 1;
                         hist[768 + luma_bin(q)] += 1;
-                        let shown = if params.flags & FLAG_CLIP_HIGHLIGHTS != 0 && q.contains(&255)
-                        {
-                            CLIP_HIGHLIGHT_RGB
-                        } else if params.flags & FLAG_CLIP_SHADOWS != 0 && q.contains(&0) {
-                            CLIP_SHADOW_RGB
-                        } else {
-                            q
-                        };
-                        px[..3].copy_from_slice(&shown);
+                        px[..3].copy_from_slice(&shown(q, params.flags));
                         px[3] = 255;
                     }
                     hist
@@ -605,6 +640,23 @@ mod tests {
         // Jamais agrandie.
         let same = WorkingImage::from_raw(&raw, 4096);
         assert_eq!((same.width, same.height), (w, h));
+    }
+
+    #[test]
+    fn histogramme_recalcule_identique() {
+        let image = WorkingImage {
+            width: 64,
+            height: 8,
+            rgb: (0..64 * 8 * 3).map(|i| (i % 97) as f32 / 40.0).collect(),
+            as_shot_white: D65_WHITE,
+        };
+        let r = render(&image, &neutral());
+        assert_eq!(histogram_of(&r.rgba), r.histogram);
+        let mut painted = r.rgba.clone();
+        paint_clipping(&mut painted, FLAG_CLIP_HIGHLIGHTS | FLAG_CLIP_SHADOWS);
+        let mut p = neutral();
+        p.flags |= FLAG_CLIP_HIGHLIGHTS | FLAG_CLIP_SHADOWS;
+        assert_eq!(painted, render(&image, &p).rgba);
     }
 
     #[test]

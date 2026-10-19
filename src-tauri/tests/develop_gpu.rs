@@ -28,6 +28,49 @@ fn max_diff(a: &[u8], b: &[u8]) -> (u8, usize) {
     (max, over)
 }
 
+/// Avec les avertissements d'écrêtage, un pixel à 254 d'un côté et 255 de
+/// l'autre n'est peint que d'un côté : seuls les pixels qui différaient déjà
+/// sans avertissements peuvent différer.
+fn overlay_agrees(cpu: &[u8], gpu: &[u8], clean_cpu: &[u8], clean_gpu: &[u8]) -> bool {
+    let px = |a: &[u8]| a.as_chunks::<4>().0.to_vec();
+    let (c, g, cc, cg) = (px(cpu), px(gpu), px(clean_cpu), px(clean_gpu));
+    c.iter()
+        .zip(&g)
+        .zip(cc.iter().zip(&cg))
+        .all(|((a, b), (ca, cb))| a == b || ca != cb)
+}
+
+/// Compare un jeu de réglages : sans avertissements à un niveau près, avec
+/// histogrammes ; avec avertissements, aux pixels limites près.
+fn compare(
+    label: &str,
+    gpu: &GpuRenderer,
+    uploaded: &afterdusk_lib::develop::gpu::GpuImage,
+    image: &WorkingImage,
+    settings: &DevelopSettings,
+    clipping: Clipping,
+) -> usize {
+    let clean = RenderParams::from_settings(settings, image.as_shot_white, Clipping::default());
+    let cpu = render(image, &clean);
+    let ours = gpu.render(uploaded, &clean).unwrap();
+    let (max, n) = max_diff(&cpu.rgba, &ours.rgba);
+    assert!(max <= TOLERANCE, "{label} : écart {max}");
+    assert!(
+        histograms_agree(&cpu.histogram, &ours.histogram, n),
+        "{label} : histogrammes"
+    );
+    if clipping != Clipping::default() {
+        let p = RenderParams::from_settings(settings, image.as_shot_white, clipping);
+        let cpu_w = render(image, &p);
+        let ours_w = gpu.render(uploaded, &p).unwrap();
+        assert!(
+            overlay_agrees(&cpu_w.rgba, &ours_w.rgba, &cpu.rgba, &ours.rgba),
+            "{label} : avertissements d'écrêtage"
+        );
+    }
+    n
+}
+
 /// Un pixel qui change d'un niveau déplace un compte d'une case à sa voisine
 /// dans son canal et, au plus, dans la luminance : quatre comptes d'écart.
 fn histograms_agree(a: &[u32], b: &[u32], differing_values: usize) -> bool {
@@ -107,16 +150,8 @@ fn degrade_synthetique_identique() {
     };
     let uploaded = gpu.upload(&image).unwrap();
     for (name, settings, clipping) in cases() {
-        let p = RenderParams::from_settings(&settings, image.as_shot_white, clipping);
-        let cpu = render(&image, &p);
-        let ours = gpu.render(&uploaded, &p).unwrap();
-        let (max, n) = max_diff(&cpu.rgba, &ours.rgba);
-        println!("{name} : écart max {max}, {n} valeurs différentes");
-        assert!(max <= TOLERANCE, "{name} : écart {max}");
-        assert!(
-            histograms_agree(&cpu.histogram, &ours.histogram, n),
-            "{name} : histogrammes"
-        );
+        let n = compare(name, &gpu, &uploaded, &image, &settings, clipping);
+        println!("{name} : {n} valeurs différentes d'un niveau");
     }
 }
 
@@ -130,24 +165,26 @@ fn six_formats_identiques_et_temps() {
         for (case, settings, clipping) in cases() {
             let p = RenderParams::from_settings(&settings, image.as_shot_white, clipping);
             let t = Instant::now();
-            let cpu = render(&image, &p);
+            render(&image, &p);
             let cpu_time = t.elapsed();
             gpu.render(&uploaded, &p).unwrap(); // première passe : préparation
             let t = Instant::now();
-            let ours = gpu.render(&uploaded, &p).unwrap();
+            gpu.render(&uploaded, &p).unwrap();
             let gpu_time = t.elapsed();
-            let (max, n) = max_diff(&cpu.rgba, &ours.rgba);
+            let n = compare(
+                &format!("{name} {case}"),
+                &gpu,
+                &uploaded,
+                &image,
+                &settings,
+                clipping,
+            );
             println!(
-                "{name:22} {case:20} {}×{} processeur {:>3} ms, GPU {:>3} ms, écart max {max} ({n} valeurs)",
+                "{name:22} {case:20} {}×{} processeur {:>3} ms, GPU {:>3} ms, {n} valeurs différentes d'un niveau",
                 image.width,
                 image.height,
                 cpu_time.as_millis(),
                 gpu_time.as_millis()
-            );
-            assert!(max <= TOLERANCE, "{name} {case} : écart {max}");
-            assert!(
-                histograms_agree(&cpu.histogram, &ours.histogram, n),
-                "{name} {case} : histogrammes"
             );
         }
     }
