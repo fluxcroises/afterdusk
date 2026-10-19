@@ -1,7 +1,8 @@
-import { FolderOpen, HardDriveDownload, RefreshCw, TriangleAlert } from "lucide-react";
+import { FolderOpen, HardDriveDownload, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { newLibrary, pickFolder } from "../actions";
 import { EmptyState } from "../components/EmptyState";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { IconButton } from "../components/IconButton";
 import { ImportGrid } from "../components/ImportGrid";
 import { FieldRow, PanelNote, PanelSection } from "../components/PanelSection";
@@ -306,17 +307,7 @@ export function ImportStep() {
       rightFooter={<ImportFooter />}
       toolbar={<StatusLine />}
     >
-      {error && (
-        <div className="banner banner-error" role="alert">
-          <TriangleAlert aria-hidden="true" strokeWidth={1.75} />
-          <span title={error.detail}>
-            {t(`errors.${error.code}`, { defaultValue: t("errors.internal") })}
-          </span>
-          <button type="button" className="button button-small" onClick={dismissError}>
-            {t("import.dismiss")}
-          </button>
-        </div>
-      )}
+      <ErrorBanner error={error} onDismiss={dismissError} />
       {content}
     </ScreenLayout>
   );

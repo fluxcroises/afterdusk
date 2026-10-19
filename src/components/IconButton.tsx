@@ -6,6 +6,8 @@ interface IconButtonProps {
   /** Affiché dans l'infobulle, comme dans les logiciels de bureau. */
   shortcut?: string;
   pressed?: boolean;
+  /** Icône pleine (étoile d'une note posée). */
+  filled?: boolean;
   disabled?: boolean;
   onClick?: () => void;
 }
@@ -15,6 +17,7 @@ export function IconButton({
   label,
   shortcut,
   pressed,
+  filled,
   disabled,
   onClick,
 }: IconButtonProps) {
@@ -28,7 +31,7 @@ export function IconButton({
       disabled={disabled}
       onClick={onClick}
     >
-      <Icon aria-hidden="true" strokeWidth={1.75} />
+      <Icon aria-hidden="true" strokeWidth={1.75} fill={filled ? "currentColor" : "none"} />
     </button>
   );
 }

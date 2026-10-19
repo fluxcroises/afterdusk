@@ -511,7 +511,8 @@ fn process_item(
     // Les métadonnées sont relues sur la copie vérifiée, pas sur la source.
     let format = format_of(&target).ok_or_else(|| ItemError::File("format inconnu".into()))?;
     let file = scan::describe(&target, format).map_err(|e| file_err(&e))?;
-    write_sidecar(&target, format, &item.source, options).map_err(|e| file_err(&e))?;
+    let sidecar =
+        write_sidecar(&target, format, &item.source, options).map_err(|e| file_err(&e))?;
     let media_id = record_media(
         conn,
         lib,
@@ -519,6 +520,7 @@ fn process_item(
         import_id,
         item,
         &file,
+        &sidecar,
         &hash,
         backup_error,
     )?;
@@ -585,7 +587,7 @@ fn write_sidecar(
     format: MediaFormat,
     source: &Path,
     options: &StoredOptions,
-) -> Result<(), xmp::XmpError> {
+) -> Result<SidecarData, xmp::XmpError> {
     let path = xmp::sidecar_path(target, sidecar_naming(format));
     // Un XMP déjà présent (autre logiciel, reprise) garde ses notes et mots-clés.
     let mut data = xmp::read_sidecar(&path)?.unwrap_or_default();
@@ -601,7 +603,8 @@ fn write_sidecar(
             .or(data.original_file_name),
         ..data
     };
-    xmp::write_sidecar(&path, &data)
+    xmp::write_sidecar(&path, &data)?;
+    Ok(data)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -612,6 +615,8 @@ fn record_media(
     import_id: i64,
     item: &mut Item,
     file: &SourceFile,
+    // Le XMP fait foi : une note posée par un autre logiciel est reprise en base.
+    marks: &SidecarData,
     hash: &str,
     backup_error: Option<String>,
 ) -> Result<i64, ItemError> {
@@ -665,9 +670,10 @@ fn record_media(
         "INSERT INTO media (library_id, album_id, kind, path, sidecar_path, original_name,
                             file_size, fingerprint, content_hash, captured_at, utc_offset,
                             width, height, orientation, lat, lon, location_source,
-                            camera_id, lens_id, import_id, imported_at, updated_at)
+                            camera_id, lens_id, import_id, imported_at, updated_at,
+                            rating, flag, color)
          VALUES (?1, ?2, 'photo', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
-                 ?16, ?17, ?18, ?19, ?20, ?20)
+                 ?16, ?17, ?18, ?19, ?20, ?20, ?21, ?22, ?23)
          ON CONFLICT (library_id, path) DO NOTHING",
         params![
             lib.id,
@@ -689,7 +695,10 @@ fn record_media(
             camera_id,
             lens_id,
             import_id,
-            now
+            now,
+            marks.rating,
+            marks.flag.as_db(),
+            marks.label.map(|l| l.as_db())
         ],
     )?;
     let media_id: i64 = tx.query_row(
@@ -715,7 +724,7 @@ fn record_media(
             m.tags_json()
         ],
     )?;
-    for word in &options.keywords {
+    for word in &marks.keywords {
         tx.execute(
             "INSERT INTO keywords (word) VALUES (?1) ON CONFLICT (word) DO NOTHING",
             [word],
@@ -734,7 +743,7 @@ fn record_media(
             album_name,
             file_name,
             original_name,
-            options.keywords.join(" ")
+            marks.keywords.join(" ")
         ],
     )?;
     tx.execute(

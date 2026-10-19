@@ -6,6 +6,7 @@ import {
   type MenuEntry,
   buildMenuItems,
   children,
+  KEY_HINTS,
   formatAccelerator,
   isPredefined,
   isSeparator,
@@ -95,8 +96,11 @@ function MenuList({ items, onDone }: MenuListProps) {
             }}
           >
             <span className="menu-label">{item.text}</span>
-            {item.accelerator && (
+            {item.accelerator ? (
               <span className="menu-accelerator">{formatAccelerator(item.accelerator, t)}</span>
+            ) : (
+              item.id &&
+              KEY_HINTS[item.id] && <span className="menu-accelerator">{KEY_HINTS[item.id]}</span>
             )}
           </button>
         );

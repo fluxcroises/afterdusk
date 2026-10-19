@@ -12,6 +12,8 @@ import i18n from "./i18n";
 import { drawsOwnMenus, isMac } from "./platform";
 import { showWelcome } from "./windows";
 import { useLayout } from "./store/layout";
+import { useLibrary } from "./store/library";
+import { COLOR_LABELS } from "./ui/labels";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
 
 type Item = MenuItemOptions | PredefinedMenuItemOptions | SubmenuOptions;
@@ -19,6 +21,26 @@ type Item = MenuItemOptions | PredefinedMenuItemOptions | SubmenuOptions;
 const separator: PredefinedMenuItemOptions = { item: "Separator" };
 
 export type MenuEntry = Item;
+
+/**
+ * Touches du tri affichées dans les menus dessinés. Elles ne sont pas des
+ * accélérateurs : une touche seule en accélérateur bloquerait la saisie.
+ */
+export const KEY_HINTS: Record<string, string> = {
+  "rating-0": "0",
+  "rating-1": "1",
+  "rating-2": "2",
+  "rating-3": "3",
+  "rating-4": "4",
+  "rating-5": "5",
+  "flag-pick": "P",
+  "flag-reject": "X",
+  "flag-none": "U",
+  "color-red": "6",
+  "color-yellow": "7",
+  "color-green": "8",
+  "color-blue": "9",
+};
 
 /**
  * Arborescence des menus, construite ici pour être traduite par i18next.
@@ -92,12 +114,53 @@ export function buildMenuItems(t: TFunction): Item[] {
     ],
   };
 
+  // Le tri porte sur la photo sélectionnée, dans Trier ou Bibliothèque. Le menu
+  // natif de macOS est construit une fois : ses entrées restent actives et la
+  // condition est vérifiée au moment de l'action.
+  const canMarkNow = () => {
+    const screen = useNavigation.getState().screen;
+    return useLibrary.getState().selectedId !== null && (screen === "cull" || screen === "library");
+  };
+  const canMark = isMac || canMarkNow();
+  const whenMarkable = (run: () => void) => () => {
+    if (canMarkNow()) run();
+  };
   const photo: SubmenuOptions = {
     text: t("menu.photo"),
     items: [
-      { id: "rating", text: t("menu.setRating"), enabled: false },
-      { id: "flag", text: t("menu.setFlag"), enabled: false },
-      { id: "color", text: t("menu.setColor"), enabled: false },
+      {
+        text: t("menu.setRating"),
+        items: [0, 1, 2, 3, 4, 5].map((n) => ({
+          id: "rating-" + n,
+          text: n === 0 ? t("menu.noRating") : t("toolbar.stars", { count: n }),
+          enabled: canMark,
+          action: whenMarkable(() => void useLibrary.getState().setRating(n)),
+        })),
+      },
+      {
+        text: t("menu.setFlag"),
+        items: (
+          [
+            ["flag-pick", "toolbar.pick", 1],
+            ["flag-reject", "toolbar.reject", -1],
+            ["flag-none", "menu.noFlag", 0],
+          ] as const
+        ).map(([id, label, value]) => ({
+          id,
+          text: t(label),
+          enabled: canMark,
+          action: whenMarkable(() => void useLibrary.getState().setFlag(value)),
+        })),
+      },
+      {
+        text: t("menu.setColor"),
+        items: COLOR_LABELS.map((c) => ({
+          id: "color-" + c,
+          text: t("toolbar.colors." + c),
+          enabled: canMark,
+          action: whenMarkable(() => void useLibrary.getState().toggleColor(c)),
+        })),
+      },
       separator,
       { id: "trash", text: t("menu.moveToTrash"), enabled: false },
     ],

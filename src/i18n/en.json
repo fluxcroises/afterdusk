@@ -43,7 +43,8 @@
       "green": "Green",
       "blue": "Blue",
       "purple": "Purple"
-    }
+    },
+    "autoAdvance": "Auto advance after rating"
   },
   "filmstrip": {
     "empty": "No photos",
@@ -203,7 +204,9 @@
     "shortcuts": "Keyboard Shortcuts",
     "welcome": "Welcome Screen",
     "aboutText": "Afterdusk {{version}}\nLibRaw {{libraw}}\n\nFree software under the GPL v3 license.",
-    "menuBar": "Menu bar"
+    "menuBar": "Menu bar",
+    "noRating": "No rating",
+    "noFlag": "Unflagged"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -227,7 +230,8 @@
     "missingFolder": "This folder does not exist or cannot be accessed.",
     "libraryNotFound": "Library not found.",
     "databaseTooNew": "The database was created by a newer version of Afterdusk.",
-    "importRunning": "An import is already running."
+    "importRunning": "An import is already running.",
+    "invalidMark": "Invalid rating, flag or color value."
   },
   "home": {
     "morning": "Hello",

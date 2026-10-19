@@ -43,7 +43,8 @@
       "green": "Vert",
       "blue": "Bleu",
       "purple": "Violet"
-    }
+    },
+    "autoAdvance": "Avance automatique après une note"
   },
   "filmstrip": {
     "empty": "Aucune photo",
@@ -203,7 +204,9 @@
     "shortcuts": "Raccourcis clavier",
     "welcome": "Accueil",
     "aboutText": "Afterdusk {{version}}\nLibRaw {{libraw}}\n\nLogiciel libre sous licence GPL v3.",
-    "menuBar": "Barre de menus"
+    "menuBar": "Barre de menus",
+    "noRating": "Aucune note",
+    "noFlag": "Sans drapeau"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -227,7 +230,8 @@
     "missingFolder": "Ce dossier n'existe pas ou n'est pas accessible.",
     "libraryNotFound": "Bibliothèque introuvable.",
     "databaseTooNew": "La base a été créée par une version plus récente d'Afterdusk.",
-    "importRunning": "Un import est déjà en cours."
+    "importRunning": "Un import est déjà en cours.",
+    "invalidMark": "Valeur de note, de drapeau ou de couleur non valide."
   },
   "home": {
     "morning": "Bonjour",

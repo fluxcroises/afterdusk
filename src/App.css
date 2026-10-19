@@ -1558,3 +1558,56 @@ input[type="checkbox"] {
 html[data-platform="mac"] .welcome-brand {
   padding-left: 84px;
 }
+
+/* ---------- Marques sous les miniatures ---------- */
+
+.media-cell-marks {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+  height: 14px;
+}
+
+.media-cell-stars {
+  display: flex;
+  gap: 1px;
+  color: var(--ad-text-muted);
+}
+
+.media-cell-stars svg {
+  width: 11px;
+  height: 11px;
+  opacity: 0.35;
+}
+
+.media-cell-stars svg[data-on] {
+  color: var(--ad-text);
+  opacity: 1;
+}
+
+.media-cell-flag {
+  width: 12px;
+  height: 12px;
+  color: var(--ad-text);
+}
+
+.media-cell-marks .color-chip {
+  width: 10px;
+  height: 10px;
+  margin: 0;
+}
+
+/* Rejetée : atténuée, comme dans Lightroom. */
+.media-cell[data-rejected] .media-cell-image {
+  opacity: 0.35;
+}
+
+/* Couleur active dans la barre d'outils. */
+button.color-chip[aria-pressed="true"] {
+  outline: 2px solid var(--ad-text);
+  outline-offset: 1px;
+}
+
+.stars .icon-button svg[fill="currentColor"] {
+  color: var(--ad-text);
+}

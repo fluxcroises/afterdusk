@@ -66,7 +66,41 @@ pub enum ColorLabel {
     Purple,
 }
 
+impl Flag {
+    /// Valeur de la colonne `media.flag` : 1 retenue, -1 rejetée, 0 sinon.
+    pub fn as_db(self) -> i64 {
+        match self {
+            Self::None => 0,
+            Self::Picked => 1,
+            Self::Rejected => -1,
+        }
+    }
+
+    pub fn from_db(value: i64) -> Self {
+        match value {
+            1 => Self::Picked,
+            -1 => Self::Rejected,
+            _ => Self::None,
+        }
+    }
+}
+
 impl ColorLabel {
+    /// Valeur de la colonne `media.color`.
+    pub fn as_db(self) -> &'static str {
+        match self {
+            Self::Red => "red",
+            Self::Yellow => "yellow",
+            Self::Green => "green",
+            Self::Blue => "blue",
+            Self::Purple => "purple",
+        }
+    }
+
+    pub fn from_db(value: &str) -> Option<Self> {
+        Self::from_xmp_label(value)
+    }
+
     /// Libellés par défaut de Lightroom, repris par Bridge et darktable.
     fn xmp_label(self) -> &'static str {
         match self {

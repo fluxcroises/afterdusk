@@ -8,6 +8,7 @@ pub mod raw;
 use tauri::Manager;
 
 use commands::AppState;
+use commands::marks::XmpWriter;
 use commands::previews::{self, PreviewQueue};
 
 const DATABASE_FILE: &str = "afterdusk.db";
@@ -59,6 +60,7 @@ pub fn run() {
                 cache_root.clone(),
                 workers,
             );
+            app.manage(XmpWriter::start(db_path.clone()));
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
             previews::enqueue_missing(app.handle());
@@ -82,6 +84,9 @@ pub fn run() {
             commands::media::media_list,
             commands::media::albums_list,
             commands::media::media_details,
+            commands::marks::media_set_rating,
+            commands::marks::media_set_flag,
+            commands::marks::media_set_color,
         ])
         .run(tauri::generate_context!());
     if let Err(error) = result {

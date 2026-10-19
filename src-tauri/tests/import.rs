@@ -489,3 +489,102 @@ fn apercus_et_fiche_apres_import() {
     assert_eq!(details.keywords, ["test"]);
     assert_eq!(details.iso, Some(100.0));
 }
+
+/// Notes, drapeaux et couleurs : en base puis dans le XMP, original intact.
+#[test]
+fn marques_ecrites_dans_le_xmp_sans_toucher_l_original() {
+    use afterdusk_lib::library::marks::{self, Mark};
+    use afterdusk_lib::metadata::xmp::{ColorLabel, Flag};
+
+    let mut s = setup();
+    let files = vec![s.card.join("DCIM").join("100CANON").join("IMG_0001.CR3")];
+    let opts = options(&s, files);
+    let id = import::plan(&mut s.conn, &opts).unwrap();
+    let mut media_id = 0;
+    import::run(&mut s.conn, id, &AtomicBool::new(false), |p| {
+        if let Some(m) = p.media_id {
+            media_id = m;
+        }
+    })
+    .unwrap();
+
+    let (path, sidecar): (String, String) = s
+        .conn
+        .query_row(
+            "SELECT path, sidecar_path FROM media WHERE id = ?1",
+            [media_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    let original = library::paths::to_absolute(&s.root, &path).unwrap();
+    let before = common::sha256(&original);
+    let modified = common::modified(&original);
+
+    marks::apply_mark(&mut s.conn, &[media_id], Mark::Rating(5)).unwrap();
+    marks::apply_mark(&mut s.conn, &[media_id], Mark::Flag(Flag::Rejected)).unwrap();
+    marks::apply_mark(&mut s.conn, &[media_id], Mark::Color(Some(ColorLabel::Red))).unwrap();
+    assert_eq!(marks::flush_pending_xmp(&s.conn, 10).unwrap().written, 1);
+
+    let data = xmp::read_sidecar(&library::paths::to_absolute(&s.root, &sidecar).unwrap())
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (data.rating, data.flag, data.label),
+        (5, Flag::Rejected, Some(ColorLabel::Red))
+    );
+    // Les données écrites à l'import sont conservées.
+    assert_eq!(data.original_file_name.as_deref(), Some("IMG_0001.CR3"));
+    assert_eq!(data.keywords, ["test"]);
+    // Règle absolue : l'original n'est pas modifié.
+    assert_eq!(common::sha256(&original), before);
+    assert_eq!(common::modified(&original), modified);
+}
+
+/// Un XMP laissé par un autre logiciel : sa note est reprise en base à l'import.
+#[test]
+fn note_d_un_xmp_existant_reprise_a_l_import() {
+    use afterdusk_lib::metadata::xmp::{ColorLabel, Flag, SidecarData};
+
+    let mut s = setup();
+    let files = vec![s.card.join("DCIM").join("100CANON").join("IMG_0001.CR3")];
+    // Le fichier de destination prévu : on y dépose d'avance un XMP « Lightroom ».
+    let opts = options(&s, files);
+    let id = import::plan(&mut s.conn, &opts).unwrap();
+    let target: String = s
+        .conn
+        .query_row(
+            "SELECT target_path FROM import_items WHERE import_id = ?1",
+            [id],
+            |r| r.get(0),
+        )
+        .unwrap();
+    let abs = library::paths::to_absolute(&s.root, &target).unwrap();
+    fs::create_dir_all(abs.parent().unwrap()).unwrap();
+    xmp::write_sidecar(
+        &abs.with_extension("xmp"),
+        &SidecarData {
+            rating: 3,
+            flag: Flag::Picked,
+            label: Some(ColorLabel::Blue),
+            keywords: vec!["Bretagne".into()],
+            ..SidecarData::default()
+        },
+    )
+    .unwrap();
+
+    import::run(&mut s.conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+    let (rating, flag, color): (i64, i64, Option<String>) = s
+        .conn
+        .query_row("SELECT rating, flag, color FROM media", [], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+        })
+        .unwrap();
+    assert_eq!((rating, flag, color.as_deref()), (3, 1, Some("blue")));
+    assert_eq!(
+        count(
+            &s.conn,
+            "SELECT count(*) FROM keywords WHERE word IN ('Bretagne', 'test')"
+        ),
+        2
+    );
+}

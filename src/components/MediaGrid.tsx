@@ -1,7 +1,52 @@
+import { Flag, FlagOff, Star } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { type MediaSummary, useLibrary } from "../store/library";
 import { Thumbnail } from "./Thumbnail";
+
+/** Note, drapeau et couleur sous la miniature, comme dans Lightroom. */
+function MarkBadges({ media }: { media: MediaSummary }) {
+  const { t } = useTranslation();
+  return (
+    <span className="media-cell-marks">
+      <span
+        className="media-cell-stars"
+        role="img"
+        aria-label={t("toolbar.stars", { count: media.rating })}
+      >
+        {[1, 2, 3, 4, 5].map((n) => (
+          <Star
+            key={n}
+            aria-hidden="true"
+            strokeWidth={1.5}
+            fill={n <= media.rating ? "currentColor" : "none"}
+            data-on={n <= media.rating || undefined}
+          />
+        ))}
+      </span>
+      <span className="toolbar-spacer" />
+      {media.flag === 1 && (
+        <Flag
+          className="media-cell-flag"
+          role="img"
+          aria-label={t("toolbar.pick")}
+          fill="currentColor"
+        />
+      )}
+      {media.flag === -1 && (
+        <FlagOff className="media-cell-flag" role="img" aria-label={t("toolbar.reject")} />
+      )}
+      {media.color && (
+        <span
+          className={"color-chip color-" + media.color}
+          role="img"
+          aria-label={t("toolbar.colors." + media.color)}
+        />
+      )}
+    </span>
+  );
+}
 
 function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean }) {
   const version = useLibrary((s) => s.versions[media.id] ?? 0);
@@ -18,6 +63,7 @@ function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean
       type="button"
       className="media-cell"
       aria-pressed={selected}
+      data-rejected={media.flag === -1 || undefined}
       title={media.fileName}
       onClick={() => void select(media.id)}
     >
@@ -28,6 +74,7 @@ function MediaCell({ media, selected }: { media: MediaSummary; selected: boolean
         />
       </span>
       <span className="media-cell-name">{media.fileName}</span>
+      <MarkBadges media={media} />
     </button>
   );
 }

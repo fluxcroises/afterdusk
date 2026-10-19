@@ -3,6 +3,7 @@
 pub mod error;
 pub mod import;
 pub mod library;
+pub mod marks;
 pub mod media;
 pub mod previews;
 
