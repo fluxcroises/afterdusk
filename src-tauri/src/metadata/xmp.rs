@@ -139,6 +139,11 @@ pub struct SidecarData {
     /// Réglages de retouche (JSON versionné, décision 0005), `afterdusk:Develop`.
     /// `None` : photo jamais retouchée, la propriété est retirée.
     pub develop: Option<String>,
+    /// Instantanés de la version originale (JSON), `afterdusk:Snapshots`.
+    pub snapshots: Option<String>,
+    /// Copies virtuelles, avec leurs réglages et instantanés (JSON),
+    /// `afterdusk:Versions`.
+    pub versions: Option<String>,
 }
 
 pub fn sidecar_path(original: &Path, naming: SidecarNaming) -> PathBuf {
@@ -234,6 +239,8 @@ pub fn read_sidecar(path: &Path) -> Result<Option<SidecarData>, XmpError> {
             .property(xmp_ns::XMP_MM, "PreservedFileName")
             .map(|v| v.value),
         develop: meta.property(AFTERDUSK_NS, "Develop").map(|v| v.value),
+        snapshots: meta.property(AFTERDUSK_NS, "Snapshots").map(|v| v.value),
+        versions: meta.property(AFTERDUSK_NS, "Versions").map(|v| v.value),
     }))
 }
 
@@ -296,11 +303,17 @@ pub fn write_sidecar(path: &Path, data: &SidecarData) -> Result<(), XmpError> {
             .map_err(toolkit)?;
     }
 
-    match &data.develop {
-        Some(json) => meta.set_property(AFTERDUSK_NS, "Develop", &json.as_str().into()),
-        None => meta.delete_property(AFTERDUSK_NS, "Develop"),
+    for (name, value) in [
+        ("Develop", &data.develop),
+        ("Snapshots", &data.snapshots),
+        ("Versions", &data.versions),
+    ] {
+        match value {
+            Some(json) => meta.set_property(AFTERDUSK_NS, name, &json.as_str().into()),
+            None => meta.delete_property(AFTERDUSK_NS, name),
+        }
+        .map_err(toolkit)?;
     }
-    .map_err(toolkit)?;
 
     let text = meta
         .to_string_with_options(ToStringOptions::default().omit_packet_wrapper())
@@ -363,6 +376,8 @@ mod tests {
             rights: Some("© 2026 Lewis Bedar".into()),
             original_file_name: Some("DSCF0001.RAF".into()),
             develop: Some(r#"{"version":1,"process":1,"light":{"exposure":0.5}}"#.into()),
+            snapshots: Some(r#"[{"name":"N&B","settings":{"version":1,"process":1}}]"#.into()),
+            versions: None,
         };
         write_sidecar(&path, &data).unwrap();
         assert_eq!(read_sidecar(&path).unwrap(), Some(data));

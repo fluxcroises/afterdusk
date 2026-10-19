@@ -66,6 +66,12 @@ describe("libellés de l'historique", () => {
     );
   });
 
+  it("instantané appliqué et copie virtuelle", () => {
+    const t = i18next.getFixedT("fr");
+    expect(describeStep(step("snapshot:Client: v2", {}), t, "fr")).toBe("Instantané : Client: v2");
+    expect(describeStep(step("version.create", {}), t, "fr")).toBe("Copie virtuelle créée");
+  });
+
   it("en anglais", () => {
     const t = i18next.getFixedT("en");
     expect(describeStep(step("light.exposure", { light: { exposure: -1.5 } }), t, "en")).toBe(

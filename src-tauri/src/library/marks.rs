@@ -2,10 +2,11 @@
 //! puis dans le XMP de chaque photo, de façon groupée et en arrière-plan
 //! (cahier des charges, section 5).
 //!
-//! Une photo modifiée est marquée `xmp_pending`. [`flush_pending_xmp`] relit
-//! son XMP, met à jour la note, le drapeau et la couleur sans toucher au reste,
-//! puis la retire de la file seulement si ses valeurs n'ont pas changé pendant
-//! l'écriture : une modification concurrente est réécrite au passage suivant.
+//! Chaque modification d'une photo (marque, retouche) incrémente
+//! `xmp_pending`. [`flush_pending_xmp`] relit son XMP, met à jour la note, le
+//! drapeau, la couleur et les retouches sans toucher au reste, puis la retire
+//! de la file seulement si le compteur n'a pas bougé pendant l'écriture : une
+//! modification concurrente est réécrite au passage suivant.
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -51,7 +52,7 @@ pub fn apply_mark(conn: &mut Connection, ids: &[i64], mark: Mark) -> Result<usiz
         ),
     };
     let sql = format!(
-        "UPDATE media SET {column} = ?2, xmp_pending = 1, updated_at = ?3
+        "UPDATE media SET {column} = ?2, xmp_pending = xmp_pending + 1, updated_at = ?3
          WHERE id = ?1 AND {column} IS NOT ?2"
     );
     // Les marques appartiennent au déclenchement : toute la pile RAW + JPEG.
@@ -84,14 +85,16 @@ struct Pending {
     rating: i64,
     flag: i64,
     color: Option<String>,
+    /// Compteur de modifications lu avec la photo.
+    revision: i64,
 }
 
 /// Écrit dans les XMP jusqu'à `limit` photos en attente.
 pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport, MarkError> {
     let pending: Vec<Pending> = conn
         .prepare(
-            "SELECT id, library_id, sidecar_path, rating, flag, color FROM media
-             WHERE xmp_pending = 1 AND state = 'normal'
+            "SELECT id, library_id, sidecar_path, rating, flag, color, xmp_pending FROM media
+             WHERE xmp_pending > 0 AND state = 'normal'
              ORDER BY updated_at, id LIMIT ?1",
         )?
         .query_map([limit as i64], |r| {
@@ -102,6 +105,7 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
                 rating: r.get(3)?,
                 flag: r.get(4)?,
                 color: r.get(5)?,
+                revision: r.get(6)?,
             })
         })?
         .collect::<Result<_, _>>()?;
@@ -118,7 +122,7 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
             continue;
         }
         // Les retouches partent dans le même XMP que les marques.
-        let develop = crate::develop::store::xmp_json(conn, p.id)?;
+        let develop = crate::develop::store::xmp_data(conn, p.id)?;
         let result = match &p.sidecar {
             Some(sidecar) => write_marks(lib, sidecar, &p, develop),
             // Pas d'annexe connue : rien à écrire.
@@ -128,9 +132,8 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
             Ok(()) => {
                 // Retirée de la file seulement si rien n'a changé pendant l'écriture.
                 conn.execute(
-                    "UPDATE media SET xmp_pending = 0
-                     WHERE id = ?1 AND rating = ?2 AND flag = ?3 AND color IS ?4",
-                    params![p.id, p.rating, p.flag, p.color],
+                    "UPDATE media SET xmp_pending = 0 WHERE id = ?1 AND xmp_pending = ?2",
+                    params![p.id, p.revision],
                 )?;
                 report.written += 1;
             }
@@ -147,7 +150,7 @@ fn write_marks(
     lib: &Library,
     sidecar: &str,
     p: &Pending,
-    develop: Option<String>,
+    develop: crate::develop::store::DevelopXmp,
 ) -> Result<(), String> {
     let path = paths::to_absolute(&lib.root_path, sidecar).map_err(|e| e.to_string())?;
     let mut data = xmp::read_sidecar(&path)
@@ -156,14 +159,16 @@ fn write_marks(
     data.rating = u8::try_from(p.rating.clamp(0, 5)).unwrap_or(0);
     data.flag = Flag::from_db(p.flag);
     data.label = p.color.as_deref().and_then(ColorLabel::from_db);
-    data.develop = develop;
+    data.develop = develop.develop;
+    data.snapshots = develop.snapshots;
+    data.versions = develop.versions;
     xmp::write_sidecar(&path, &data).map_err(|e| e.to_string())
 }
 
 /// Photos encore en attente d'écriture XMP.
 pub fn pending_count(conn: &Connection) -> Result<i64, MarkError> {
     Ok(conn.query_row(
-        "SELECT count(*) FROM media WHERE xmp_pending = 1 AND state = 'normal'",
+        "SELECT count(*) FROM media WHERE xmp_pending > 0 AND state = 'normal'",
         [],
         |r| r.get(0),
     )?)
@@ -259,10 +264,15 @@ mod tests {
         apply_mark(&mut conn, &[id], Mark::Rating(2)).unwrap();
         // Simule une note changée entre la lecture de la file et la fin de l'écriture :
         // la condition de retrait ne correspond plus.
+        let read: i64 = conn
+            .query_row("SELECT xmp_pending FROM media WHERE id = ?1", [id], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        apply_mark(&mut conn, &[id], Mark::Rating(3)).unwrap();
         conn.execute(
-            "UPDATE media SET xmp_pending = 0
-             WHERE id = ?1 AND rating = 3 AND flag = 0 AND color IS NULL",
-            [id],
+            "UPDATE media SET xmp_pending = 0 WHERE id = ?1 AND xmp_pending = ?2",
+            params![id, read],
         )
         .unwrap();
         assert_eq!(pending_count(&conn).unwrap(), 1);

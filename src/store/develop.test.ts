@@ -41,12 +41,18 @@ const mocked = vi.mocked(invoke);
 /** Historique tenu par le « cœur » simulé : étapes et position courante. */
 let steps: { position: number; label: string; settings: object; createdAt: string }[] = [];
 let current = 0;
+let coreSettings: object = { version: 1, process: 1 };
+let snapshots: { name: string; settings: object; createdAt: string }[] = [];
+let versions: { name: string; createdAt: string }[] = [];
 
 beforeEach(() => {
   vi.useFakeTimers();
   mocked.mockReset();
   steps = [];
   current = 0;
+  coreSettings = { version: 1, process: 1 };
+  snapshots = [];
+  versions = [];
   mocked.mockImplementation(async (cmd: string, args?: unknown) => {
     const a = (args ?? {}) as Record<string, unknown>;
     if (cmd === "develop_save") {
@@ -58,14 +64,27 @@ beforeEach(() => {
         settings: a.settings as object,
         createdAt: "",
       });
+      coreSettings = a.settings as object;
       return a.settings;
+    }
+    if (cmd === "develop_state")
+      return { settings: coreSettings, history: { steps, current }, snapshots, versions };
+    if (cmd === "develop_snapshot_create") {
+      snapshots.push({ name: a.name as string, settings: coreSettings, createdAt: "" });
+      return null;
+    }
+    if (cmd === "develop_version_create") {
+      versions.push({ name: a.name as string, createdAt: "" });
+      return null;
     }
     if (cmd === "develop_history") return { steps, current };
     if (cmd === "develop_go_to") {
       current = a.position as number;
-      return current === 0
-        ? { version: 1, process: 1 }
-        : steps.find((st) => st.position === current)?.settings;
+      coreSettings =
+        current === 0
+          ? { version: 1, process: 1 }
+          : (steps.find((st) => st.position === current)?.settings ?? coreSettings);
+      return coreSettings;
     }
     if (cmd === "develop_open")
       return {
@@ -132,6 +151,7 @@ describe("Retoucher", () => {
     expect(saves()).toEqual([
       {
         mediaId: 7,
+        version: "",
         settings: { version: 1, process: 1, light: { exposure: 1.23 } },
         label: "light.exposure",
       },
@@ -155,11 +175,13 @@ describe("Retoucher", () => {
     expect(saves()).toEqual([
       {
         mediaId: 7,
+        version: "",
         settings: { version: 1, process: 1, light: { shadows: 40 } },
         label: "light.shadows",
       },
       {
         mediaId: 7,
+        version: "",
         settings: { version: 1, process: 1, light: { shadows: 40 }, color: { vibrance: 25 } },
         label: "color.vibrance",
       },
@@ -313,6 +335,42 @@ describe("Retoucher", () => {
     // Le rendu initial (photo neutre) et celui de l'original pour l'avant/après.
     expect(neutralRenders).toHaveLength(2);
     expect(saves()).toHaveLength(0);
+  });
+
+  it("instantané : garde les réglages affichés, nom libre suivant", async () => {
+    const { freeName } = await import("./develop");
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setLight("exposure", 0.8);
+    await useDevelop.getState().createSnapshot("Instantané 1");
+    // Le réglage en attente est enregistré avant l'instantané.
+    expect(saves()).toHaveLength(1);
+    expect(calls("develop_snapshot_create")[0]?.[1]).toEqual({
+      mediaId: 7,
+      version: "",
+      name: "Instantané 1",
+    });
+    expect(useDevelop.getState().snapshots.map((x) => x.name)).toEqual(["Instantané 1"]);
+    expect(freeName((n) => `Instantané ${n}`, ["Instantané 1", "Instantané 3"])).toBe(
+      "Instantané 2",
+    );
+  });
+
+  it("copie virtuelle : créée depuis la version affichée, puis affichée", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().createVersion(" Copie 1 ");
+    expect(calls("develop_version_create")[0]?.[1]).toEqual({
+      mediaId: 7,
+      from: "",
+      name: " Copie 1 ",
+    });
+    expect(useDevelop.getState().version).toBe("Copie 1");
+    // Les réglages suivants vont à la copie.
+    useDevelop.getState().setLight("contrast", 10);
+    await useDevelop.getState().flush();
+    expect(saves()[saves().length - 1]).toMatchObject({
+      version: "Copie 1",
+      label: "light.contrast",
+    });
   });
 
   it("curseur de température régulier en mireds", () => {

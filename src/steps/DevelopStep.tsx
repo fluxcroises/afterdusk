@@ -9,6 +9,7 @@ import {
   HistorySection,
   LightSection,
 } from "../components/DevelopPanels";
+import { SnapshotsSection, VersionsSection } from "../components/DevelopVersions";
 import { EmptyState } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
 import { ScreenLayout } from "../components/ScreenLayout";
@@ -148,6 +149,8 @@ export function DevelopStep() {
     <ScreenLayout
       left={
         <>
+          <VersionsSection />
+          <SnapshotsSection />
           <HistorySection />
           <CatalogPanel scope="develop" />
         </>

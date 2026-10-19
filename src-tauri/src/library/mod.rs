@@ -138,7 +138,7 @@ pub fn last_seen(conn: &Connection, id: i64) -> Result<Option<String>, LibraryEr
 /// Photos dont les marques attendent d'être écrites dans leur XMP.
 pub fn pending_xmp(conn: &Connection, id: i64) -> Result<i64, LibraryError> {
     Ok(conn.query_row(
-        "SELECT count(*) FROM media WHERE library_id = ?1 AND xmp_pending = 1 AND state = 'normal'",
+        "SELECT count(*) FROM media WHERE library_id = ?1 AND xmp_pending > 0 AND state = 'normal'",
         [id],
         |r| r.get(0),
     )?)

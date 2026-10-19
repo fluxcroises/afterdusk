@@ -119,6 +119,37 @@ export interface History {
   current: number;
 }
 
+/** Un instantané nommé d'une version, miroir de `develop::store::Snapshot`. */
+export interface Snapshot {
+  name: string;
+  settings: DevelopSettings;
+  createdAt: string;
+}
+
+/** Une copie virtuelle, miroir de `develop::store::Version`. */
+export interface Version {
+  name: string;
+  createdAt: string;
+}
+
+/** Nom de la version originale. */
+export const ORIGINAL = "";
+
+interface VersionState {
+  settings: DevelopSettings;
+  history: History;
+  snapshots: Snapshot[];
+  versions: Version[];
+}
+
+/** Premier nom libre de la forme « base n ». */
+export function freeName(base: (n: number) => string, taken: string[]): string {
+  for (let n = 1; ; n++) {
+    const name = base(n);
+    if (!taken.includes(name)) return name;
+  }
+}
+
 /** Avant/après : rendu retouché, original seul, ou les deux côte à côte. */
 export type CompareMode = "off" | "before" | "split";
 
@@ -148,6 +179,10 @@ interface DevelopState {
   compare: CompareMode;
   /** Rendu de l'original (réglages neutres), pour l'avant/après. */
   beforeFrame: DevelopFrame | null;
+  /** Version affichée : l'originale ("") ou une copie virtuelle. */
+  version: string;
+  versions: Version[];
+  snapshots: Snapshot[];
   open: (mediaId: number) => Promise<void>;
   setLight: (key: LightKey, value: number) => void;
   setColor: (key: ColorKey, value: number) => void;
@@ -165,6 +200,15 @@ interface DevelopState {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   setCompare: (mode: CompareMode) => void;
+  selectVersion: (name: string) => Promise<void>;
+  /** Copie virtuelle des réglages affichés, aussitôt affichée. */
+  createVersion: (name: string) => Promise<void>;
+  renameVersion: (from: string, to: string) => Promise<boolean>;
+  deleteVersion: (name: string) => Promise<void>;
+  createSnapshot: (name: string) => Promise<void>;
+  applySnapshot: (name: string) => Promise<void>;
+  renameSnapshot: (from: string, to: string) => Promise<boolean>;
+  deleteSnapshot: (name: string) => Promise<void>;
   /** Enregistre tout de suite un réglage en attente (changement de photo, sortie). */
   flush: () => Promise<void>;
   close: () => Promise<void>;
@@ -233,11 +277,42 @@ export const useDevelop = create<DevelopState>()((set, get) => {
   }
 
   async function loadHistory(mediaId: number) {
+    const { version } = get();
     try {
-      const history = await invoke<History>("develop_history", { mediaId });
-      if (get().mediaId === mediaId) set({ history });
+      const history = await invoke<History>("develop_history", { mediaId, version });
+      if (get().mediaId === mediaId && get().version === version) set({ history });
     } catch (e) {
       set({ error: toCommandError(e) });
+    }
+  }
+
+  /** Réglages, historique, instantanés et copies de la version affichée. */
+  async function loadState(mediaId: number) {
+    const { version } = get();
+    try {
+      const state = await invoke<VersionState>("develop_state", { mediaId, version });
+      if (get().mediaId !== mediaId || get().version !== version) return;
+      set({
+        settings: state.settings,
+        history: state.history,
+        snapshots: state.snapshots,
+        versions: state.versions,
+      });
+    } catch (e) {
+      set({ error: toCommandError(e) });
+    }
+  }
+
+  /** Opération sur les versions ou les instantanés ; `false` si refusée. */
+  async function run(command: string, args: Record<string, unknown>): Promise<boolean> {
+    const { mediaId } = get();
+    if (mediaId === null) return false;
+    try {
+      await invoke(command, { mediaId, ...args });
+      return true;
+    } catch (e) {
+      set({ error: toCommandError(e) });
+      return false;
     }
   }
 
@@ -295,6 +370,9 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     history: null,
     compare: "off",
     beforeFrame: null,
+    version: ORIGINAL,
+    versions: [],
+    snapshots: [],
 
     open: async (mediaId) => {
       if (get().mediaId === mediaId && get().settings) return;
@@ -309,6 +387,9 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         picking: false,
         history: null,
         beforeFrame: null,
+        version: ORIGINAL,
+        versions: [],
+        snapshots: [],
       });
       try {
         const opened = await invoke<DevelopOpened>("develop_open", { mediaId });
@@ -321,7 +402,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           adapter: opened.adapter,
           decodeMs: opened.decodeMs,
         });
-        await Promise.all([render(), loadHistory(mediaId)]);
+        await Promise.all([render(), loadState(mediaId)]);
         if (get().compare !== "off") await loadBefore();
       } catch (e) {
         if (token === openToken) set({ loading: false, error: toCommandError(e) });
@@ -400,10 +481,10 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       saveTimer = null;
       const label = pendingLabel;
       pendingLabel = null;
-      const { settings, mediaId } = get();
+      const { settings, mediaId, version } = get();
       if (!label || !settings || mediaId === null) return;
       try {
-        await invoke("develop_save", { mediaId, settings, label });
+        await invoke("develop_save", { mediaId, version, settings, label });
         await loadHistory(mediaId);
       } catch (e) {
         set({ error: toCommandError(e) });
@@ -412,10 +493,14 @@ export const useDevelop = create<DevelopState>()((set, get) => {
 
     goTo: async (position) => {
       await get().flush();
-      const { mediaId } = get();
+      const { mediaId, version } = get();
       if (mediaId === null) return;
       try {
-        const settings = await invoke<DevelopSettings>("develop_go_to", { mediaId, position });
+        const settings = await invoke<DevelopSettings>("develop_go_to", {
+          mediaId,
+          version,
+          position,
+        });
         if (get().mediaId !== mediaId) return;
         set({ settings });
         void render();
@@ -443,6 +528,88 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       if (mode !== "off") void loadBefore();
     },
 
+    selectVersion: async (name) => {
+      const { mediaId } = get();
+      if (mediaId === null || name === get().version) return;
+      await get().flush();
+      set({ version: name, history: null, snapshots: [] });
+      await loadState(mediaId);
+      void render();
+    },
+
+    createVersion: async (name) => {
+      await get().flush();
+      if (await run("develop_version_create", { from: get().version, name })) {
+        await get().selectVersion(name.trim());
+      }
+    },
+
+    renameVersion: async (from, to) => {
+      const { mediaId } = get();
+      if (mediaId === null || !(await run("develop_version_rename", { from, to }))) return false;
+      if (get().version === from) set({ version: to.trim() });
+      await loadState(mediaId);
+      return true;
+    },
+
+    deleteVersion: async (name) => {
+      const { mediaId } = get();
+      if (mediaId === null) return;
+      await get().flush();
+      if (!(await run("develop_version_delete", { name }))) return;
+      if (get().version === name) {
+        set({ version: ORIGINAL });
+        await loadState(mediaId);
+        void render();
+      } else {
+        await loadState(mediaId);
+      }
+    },
+
+    createSnapshot: async (name) => {
+      const { mediaId } = get();
+      if (mediaId === null) return;
+      // L'instantané garde ce qui est affiché : le réglage en attente d'abord.
+      await get().flush();
+      if (await run("develop_snapshot_create", { version: get().version, name })) {
+        await loadState(mediaId);
+      }
+    },
+
+    applySnapshot: async (name) => {
+      const { mediaId } = get();
+      if (mediaId === null) return;
+      await get().flush();
+      const { version } = get();
+      try {
+        const settings = await invoke<DevelopSettings>("develop_snapshot_apply", {
+          mediaId,
+          version,
+          name,
+        });
+        if (get().mediaId !== mediaId || get().version !== version) return;
+        set({ settings });
+        void render();
+        await loadHistory(mediaId);
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    renameSnapshot: async (from, to) => {
+      const { mediaId, version } = get();
+      if (mediaId === null) return false;
+      if (!(await run("develop_snapshot_rename", { version, from, to }))) return false;
+      await loadState(mediaId);
+      return true;
+    },
+
+    deleteSnapshot: async (name) => {
+      const { mediaId, version } = get();
+      if (mediaId === null) return;
+      if (await run("develop_snapshot_delete", { version, name })) await loadState(mediaId);
+    },
+
     close: async () => {
       await get().flush();
       openToken++;
@@ -456,6 +623,9 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         history: null,
         beforeFrame: null,
         compare: "off",
+        version: ORIGINAL,
+        versions: [],
+        snapshots: [],
       });
       await invoke("develop_close").catch(() => undefined);
     },

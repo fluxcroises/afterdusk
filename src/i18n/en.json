@@ -302,7 +302,11 @@
     "mediaNotFound": "This photo no longer exists in the library.",
     "fileMoveFailed": "A file could not be moved; nothing was changed.",
     "developUnsupported": "Editing is limited to RAW files for now; JPEG, HEIF and TIFF will follow.",
-    "historyStepMissing": "This step is no longer in the history."
+    "historyStepMissing": "This step is no longer in the history.",
+    "versionMissing": "This version no longer exists.",
+    "snapshotMissing": "This snapshot no longer exists.",
+    "nameTaken": "This name is already taken.",
+    "invalidName": "The name can't be empty (64 characters at most)."
   },
   "home": {
     "morning": "Hello",
@@ -527,13 +531,33 @@
       "autoWhite": "Auto white balance: {{value}}",
       "custom": "{{temperature}}, tint {{tint}}",
       "undo": "Undo",
-      "redo": "Redo"
+      "redo": "Redo",
+      "snapshot": "Snapshot: {{name}}",
+      "versionCreated": "Virtual copy created"
     },
     "compare": {
       "hold": "Before (hold to see the original)",
       "split": "Before / after side by side",
       "before": "Before",
       "after": "After"
+    },
+    "renameHint": "Double-click to rename.",
+    "versions": {
+      "title": "Versions",
+      "original": "Original",
+      "create": "New virtual copy",
+      "defaultName": "Copy {{n}}",
+      "delete": "Delete the copy",
+      "confirmDelete": "Delete the virtual copy \"{{name}}\" with its history and snapshots? The photo file is not touched."
+    },
+    "snapshots": {
+      "title": "Snapshots",
+      "create": "Keep the current settings",
+      "defaultName": "Snapshot {{n}}",
+      "delete": "Delete the snapshot",
+      "empty": "No snapshots. The + button keeps the current settings under a name.",
+      "hint": "Click to apply, double-click to rename.",
+      "confirmDelete": "Delete the snapshot \"{{name}}\"?"
     }
   }
 }

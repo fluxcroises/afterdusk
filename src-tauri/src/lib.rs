@@ -161,6 +161,14 @@ pub fn run() {
             commands::develop::develop_save,
             commands::develop::develop_history,
             commands::develop::develop_go_to,
+            commands::develop::develop_state,
+            commands::develop::develop_version_create,
+            commands::develop::develop_version_rename,
+            commands::develop::develop_version_delete,
+            commands::develop::develop_snapshot_create,
+            commands::develop::develop_snapshot_apply,
+            commands::develop::develop_snapshot_rename,
+            commands::develop::develop_snapshot_delete,
         ])
         .run(tauri::generate_context!());
     if let Err(error) = result {

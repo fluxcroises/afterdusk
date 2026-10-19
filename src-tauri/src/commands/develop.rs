@@ -19,7 +19,7 @@ use crate::develop::gpu::{GpuImage, GpuRenderer};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
 use crate::develop::settings::{DevelopSettings, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
-use crate::develop::store::{self, History, StoreError};
+use crate::develop::store::{self, History, ORIGINAL, Snapshot, StoreError, Version};
 use crate::develop::white;
 
 /// Variable d'environnement : `AFTERDUSK_GPU=0` force le rendu processeur.
@@ -46,6 +46,10 @@ impl From<StoreError> for CommandError {
     fn from(e: StoreError) -> Self {
         let code = match &e {
             StoreError::NoSuchStep(_) => "historyStepMissing",
+            StoreError::NoSuchVersion(_) => "versionMissing",
+            StoreError::NoSuchSnapshot(_) => "snapshotMissing",
+            StoreError::NameTaken(_) => "nameTaken",
+            StoreError::InvalidName => "invalidName",
             _ => "internal",
         };
         Self::new(code, e)
@@ -135,7 +139,7 @@ pub async fn develop_open(
         let started = Instant::now();
         let image = source::working_image(&conn, media_id, PREVIEW_SIDE)?;
         let decode_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
-        let settings = store::load(&conn, media_id)?;
+        let settings = store::load(&conn, media_id, ORIGINAL)?;
         let renderer = engine.gpu();
         let gpu = renderer.and_then(|r| {
             r.upload(&image)
@@ -315,39 +319,201 @@ pub fn develop_close(engine: State<'_, DevelopEngine>) {
     }
 }
 
+/// Version visée par une commande : l'originale par défaut.
+fn version_name(version: Option<String>) -> String {
+    version.unwrap_or_else(|| ORIGINAL.to_owned())
+}
+
+/// Opération qui modifie les retouches : exécutée hors du fil de l'interface,
+/// puis réveil du fil d'écriture des XMP.
+async fn mutate<T, F>(state: &AppState, writer: &XmpWriter, f: F) -> CommandResult<T>
+where
+    T: Send + 'static,
+    F: FnOnce(&mut rusqlite::Connection) -> Result<T, StoreError> + Send + 'static,
+{
+    let mut conn = state.connect()?;
+    let out = blocking(move || Ok(f(&mut conn)?)).await?;
+    writer.wake();
+    Ok(out)
+}
+
 /// Enregistre les réglages (base, historique, XMP au passage suivant du fil d'écriture).
 #[tauri::command]
 pub async fn develop_save(
     state: State<'_, AppState>,
     writer: State<'_, XmpWriter>,
     media_id: i64,
+    version: Option<String>,
     settings: DevelopSettings,
     label: String,
 ) -> CommandResult<DevelopSettings> {
-    let mut conn = state.connect()?;
-    let saved = blocking(move || Ok(store::save(&mut conn, media_id, settings, &label)?)).await?;
-    writer.wake();
-    Ok(saved)
+    let version = version_name(version);
+    mutate(&state, &writer, move |c| {
+        store::save(c, media_id, &version, settings, &label)
+    })
+    .await
 }
 
-/// Historique de la photo et position courante.
+/// Historique d'une version et position courante.
 #[tauri::command]
-pub async fn develop_history(state: State<'_, AppState>, media_id: i64) -> CommandResult<History> {
+pub async fn develop_history(
+    state: State<'_, AppState>,
+    media_id: i64,
+    version: Option<String>,
+) -> CommandResult<History> {
     let conn = state.connect()?;
-    blocking(move || Ok(store::history_of(&conn, media_id)?)).await
+    let version = version_name(version);
+    blocking(move || Ok(store::history_of(&conn, media_id, &version)?)).await
 }
 
 /// Revient à une étape de l'historique (annuler, rétablir, clic dans la
-/// liste ; 0 = l'original) et renvoie ses réglages.
+/// liste ; 0 = la photo d'origine) et renvoie ses réglages.
 #[tauri::command]
 pub async fn develop_go_to(
     state: State<'_, AppState>,
     writer: State<'_, XmpWriter>,
     media_id: i64,
+    version: Option<String>,
     position: i64,
 ) -> CommandResult<DevelopSettings> {
-    let mut conn = state.connect()?;
-    let settings = blocking(move || Ok(store::go_to(&mut conn, media_id, position)?)).await?;
-    writer.wake();
-    Ok(settings)
+    let version = version_name(version);
+    mutate(&state, &writer, move |c| {
+        store::go_to(c, media_id, &version, position)
+    })
+    .await
+}
+
+/// Tout ce que le Retoucher affiche d'une version : réglages, historique,
+/// instantanés, et la liste des copies virtuelles de la photo.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionState {
+    pub settings: DevelopSettings,
+    pub history: History,
+    pub snapshots: Vec<Snapshot>,
+    pub versions: Vec<Version>,
+}
+
+#[tauri::command]
+pub async fn develop_state(
+    state: State<'_, AppState>,
+    media_id: i64,
+    version: Option<String>,
+) -> CommandResult<VersionState> {
+    let conn = state.connect()?;
+    let version = version_name(version);
+    blocking(move || {
+        Ok(VersionState {
+            settings: store::load(&conn, media_id, &version)?,
+            history: store::history_of(&conn, media_id, &version)?,
+            snapshots: store::snapshots(&conn, media_id, &version)?,
+            versions: store::versions(&conn, media_id)?,
+        })
+    })
+    .await
+}
+
+/// Crée une copie virtuelle à partir de la version `from`.
+#[tauri::command]
+pub async fn develop_version_create(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    from: Option<String>,
+    name: String,
+) -> CommandResult<()> {
+    let from = version_name(from);
+    mutate(&state, &writer, move |c| {
+        store::create_version(c, media_id, &from, &name).map(|_| ())
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn develop_version_rename(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    from: String,
+    to: String,
+) -> CommandResult<()> {
+    mutate(&state, &writer, move |c| {
+        store::rename_version(c, media_id, &from, &to)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn develop_version_delete(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    name: String,
+) -> CommandResult<()> {
+    mutate(&state, &writer, move |c| {
+        store::delete_version(c, media_id, &name)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn develop_snapshot_create(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    version: Option<String>,
+    name: String,
+) -> CommandResult<()> {
+    let version = version_name(version);
+    mutate(&state, &writer, move |c| {
+        store::create_snapshot(c, media_id, &version, &name)
+    })
+    .await
+}
+
+/// Applique un instantané (une étape d'historique, donc annulable).
+#[tauri::command]
+pub async fn develop_snapshot_apply(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    version: Option<String>,
+    name: String,
+) -> CommandResult<DevelopSettings> {
+    let version = version_name(version);
+    mutate(&state, &writer, move |c| {
+        store::apply_snapshot(c, media_id, &version, &name)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn develop_snapshot_rename(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    version: Option<String>,
+    from: String,
+    to: String,
+) -> CommandResult<()> {
+    let version = version_name(version);
+    mutate(&state, &writer, move |c| {
+        store::rename_snapshot(c, media_id, &version, &from, &to)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn develop_snapshot_delete(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_id: i64,
+    version: Option<String>,
+    name: String,
+) -> CommandResult<()> {
+    let version = version_name(version);
+    mutate(&state, &writer, move |c| {
+        store::delete_snapshot(c, media_id, &version, &name)
+    })
+    .await
 }

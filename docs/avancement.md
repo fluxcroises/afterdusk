@@ -260,3 +260,13 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Corrigé : les raccourcis des menus dessinés (Windows) reconnaissaient la position de la touche et non la lettre ; en AZERTY, Ctrl+Z ne répondait pas (y compris pour annuler un envoi à la corbeille).
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : Auto puis contraste, Ctrl+Z, clic sur « Original », vue scindée, historique retrouvé après redémarrage, XMP sans réglages à l'original, originaux identiques. Non vérifié à l'écran : la touche « \ » et le bouton maintenu (couverts par les tests du magasin).
 - Intégration Mac : luminance de l'histogramme calculée en entiers, identique sur tous les processeurs graphiques.
+
+### 2026-10-19 (suite) : V0.2, instantanés et copies virtuelles
+
+- Intégration : l'historique et les correctifs Mac (histogramme vérifié, luminance en entiers) sont verts sur Windows et macOS (run 39318908279).
+- Instantanés : panneau du Retoucher, « + » garde les réglages affichés sous un nom libre (« Instantané 1 »…), un clic les applique (une étape d'historique, annulable), double-clic pour renommer, corbeille au survol (avec confirmation). Ils ont leur table (migration 0006) et survivent aux étapes d'historique remplacées après une annulation ; la colonne `snapshot_name` prévue en 0004, jamais utilisée, est retirée.
+- Copies virtuelles : panneau Versions (« Originale » puis les copies), « + » crée une copie des réglages affichés et l'affiche ; chaque version a ses réglages, son historique (qui commence par « Copie virtuelle créée ») et ses instantanés ; renommer, supprimer (confirmation, aucun fichier touché).
+- XMP : `afterdusk:Snapshots` (instantanés de l'originale) et `afterdusk:Versions` (copies, leurs réglages et instantanés), absents quand ils sont vides, pour une restauration après reconstruction de la base.
+- Corrigé : une retouche enregistrée pendant l'écriture du XMP pouvait être retirée de la file sans être écrite (seules la note, le drapeau et la couleur étaient comparés). `media.xmp_pending` devient un compteur de modifications ; le fil d'écriture ne retire la photo que si le compteur n'a pas bougé.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : instantané, copie virtuelle retouchée à part, retour à l'originale, application de l'instantané, XMP complet, originaux identiques. Non vérifié à l'écran : renommer par double-clic et supprimer (couverts par les tests du cœur).
+- Reste : les copies virtuelles n'apparaissent pas encore comme vignettes séparées dans Trier et Bibliothèque ; elles viendront avec les aperçus rendus d'après les retouches (étape de l'export).

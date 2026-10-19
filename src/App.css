@@ -2791,3 +2791,50 @@ input[type="radio"] {
   width: 14px;
   height: 14px;
 }
+
+.develop-names {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.develop-name-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.develop-name-row .list-row {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Corbeille de la ligne : visible au survol ou au clavier. */
+.develop-name-delete {
+  position: absolute;
+  right: var(--ad-space-2);
+  opacity: 0;
+}
+
+.develop-name-row:hover .develop-name-delete,
+.develop-name-delete:focus-within {
+  opacity: 1;
+}
+
+.develop-name-delete .icon-button {
+  width: 22px;
+  height: 22px;
+}
+
+.develop-name-delete .icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.develop-name-input {
+  width: 100%;
+  height: var(--ad-row-height);
+  margin: 0 var(--ad-space-2);
+  padding: 0 var(--ad-space-2);
+  font: var(--ad-font-ui);
+}

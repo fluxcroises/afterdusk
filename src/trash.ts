@@ -1,14 +1,11 @@
-import { isTauri } from "@tauri-apps/api/core";
 import i18n from "./i18n";
 import { useLibrary } from "./store/library";
+import { confirmWarning as confirmDialog } from "./ui/confirm";
 
-/** Demande de confirmation native ; dans un navigateur (développement), celle du navigateur. */
-async function confirmWarning(text: string, okLabel: string): Promise<boolean> {
-  if (!isTauri()) return window.confirm(text);
-  const { ask } = await import("@tauri-apps/plugin-dialog");
-  return ask(text, {
+/** Demande de confirmation des opérations de corbeille. */
+function confirmWarning(text: string, okLabel: string): Promise<boolean> {
+  return confirmDialog(text, {
     title: i18n.t("trash.confirmTitle"),
-    kind: "warning",
     okLabel,
     cancelLabel: i18n.t("trash.cancel"),
   });

@@ -302,7 +302,11 @@
     "mediaNotFound": "Cette photo n'existe plus dans la bibliothèque.",
     "fileMoveFailed": "Un fichier n'a pas pu être déplacé ; rien n'a été modifié.",
     "developUnsupported": "La retouche est réservée aux fichiers RAW pour l'instant ; les JPEG, HEIF et TIFF suivront.",
-    "historyStepMissing": "Cette étape n'existe plus dans l'historique."
+    "historyStepMissing": "Cette étape n'existe plus dans l'historique.",
+    "versionMissing": "Cette version n'existe plus.",
+    "snapshotMissing": "Cet instantané n'existe plus.",
+    "nameTaken": "Ce nom est déjà pris.",
+    "invalidName": "Le nom ne peut pas être vide (64 caractères au plus)."
   },
   "home": {
     "morning": "Bonjour",
@@ -527,13 +531,33 @@
       "autoWhite": "Balance des blancs automatique : {{value}}",
       "custom": "{{temperature}}, teinte {{tint}}",
       "undo": "Annuler",
-      "redo": "Rétablir"
+      "redo": "Rétablir",
+      "snapshot": "Instantané : {{name}}",
+      "versionCreated": "Copie virtuelle créée"
     },
     "compare": {
       "hold": "Avant (maintenir pour voir l'original)",
       "split": "Avant / après côte à côte",
       "before": "Avant",
       "after": "Après"
+    },
+    "renameHint": "Double-cliquez pour renommer.",
+    "versions": {
+      "title": "Versions",
+      "original": "Originale",
+      "create": "Nouvelle copie virtuelle",
+      "defaultName": "Copie {{n}}",
+      "delete": "Supprimer la copie",
+      "confirmDelete": "Supprimer la copie virtuelle « {{name}} » avec son historique et ses instantanés ? Le fichier de la photo n'est pas touché."
+    },
+    "snapshots": {
+      "title": "Instantanés",
+      "create": "Garder les réglages affichés",
+      "defaultName": "Instantané {{n}}",
+      "delete": "Supprimer l'instantané",
+      "empty": "Aucun instantané. Le bouton + garde les réglages affichés sous un nom.",
+      "hint": "Cliquez pour appliquer, double-cliquez pour renommer.",
+      "confirmDelete": "Supprimer l'instantané « {{name}} » ?"
     }
   }
 }

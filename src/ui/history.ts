@@ -41,6 +41,10 @@ export function describeStep(
   language: string,
   presets: WhitePreset[] = [],
 ): string {
+  if (step.label.startsWith("snapshot:")) {
+    return t("develop.history.snapshot", { name: step.label.slice("snapshot:".length) });
+  }
+  if (step.label === "version.create") return t("develop.history.versionCreated");
   const [section, key, auto] = step.label.split(".");
   const s = step.settings;
   if (step.label === "light.auto") return t("develop.history.autoLight");
