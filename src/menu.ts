@@ -43,6 +43,7 @@ export const KEY_HINTS: Record<string, string> = {
   "color-green": "8",
   "color-blue": "9",
   "filter-bar": "\\",
+  "stack-toggle": "S",
 };
 
 /**
@@ -206,12 +207,37 @@ export function buildMenuItems(t: TFunction): Item[] {
       },
       separator,
       {
+        id: "stack-toggle",
+        text: t("menu.stackToggle"),
+        enabled: canMark,
+        action: whenMarkable(() => void useLibrary.getState().toggleStack()),
+      },
+      {
+        id: "stack-top",
+        text: t("menu.stackTop"),
+        enabled: canMark,
+        action: whenMarkable(() => void useLibrary.getState().setStackTop()),
+      },
+      separator,
+      {
         id: "trash",
         text: t("menu.moveToTrash"),
         // Suppr comme Lightroom ; ⌘⌫ comme le Finder.
         accelerator: isMac ? "CmdOrCtrl+Backspace" : "Delete",
         enabled: canMark,
         action: whenMarkable(() => void useLibrary.getState().moveToTrash()),
+      },
+      {
+        id: "trash-jpeg",
+        text: t("menu.trashJpeg"),
+        enabled: canMark,
+        action: whenMarkable(() => void useLibrary.getState().trashFormat("image")),
+      },
+      {
+        id: "trash-raw",
+        text: t("menu.trashRaw"),
+        enabled: canMark,
+        action: whenMarkable(() => void useLibrary.getState().trashFormat("raw")),
       },
       {
         id: "trash-rejected",

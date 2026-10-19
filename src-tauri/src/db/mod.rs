@@ -22,6 +22,7 @@ pub enum DbError {
 const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0001_initial.sql"),
     include_str!("migrations/0002_recherche_supprimable.sql"),
+    include_str!("migrations/0003_piles_raw_jpeg.sql"),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;

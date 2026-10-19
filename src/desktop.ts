@@ -113,6 +113,11 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     return false;
   }
 
+  if (e.code === "KeyS" || (e.code === "" && e.key.toLowerCase() === "s")) {
+    void library.toggleStack();
+    return true;
+  }
+
   const d = digit(e);
   if (d !== null && Number(d) <= 5) {
     void library.setRating(Number(d));

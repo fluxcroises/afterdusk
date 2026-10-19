@@ -52,11 +52,13 @@ pub fn apply_mark(conn: &mut Connection, ids: &[i64], mark: Mark) -> Result<usiz
         "UPDATE media SET {column} = ?2, xmp_pending = 1, updated_at = ?3
          WHERE id = ?1 AND {column} IS NOT ?2"
     );
+    // Les marques appartiennent au déclenchement : toute la pile RAW + JPEG.
+    let ids = super::pairs::expand(conn, ids, None)?;
     let tx = conn.transaction()?;
     let mut changed = 0;
     {
         let mut stmt = tx.prepare(&sql)?;
-        for id in ids {
+        for id in &ids {
             changed += stmt.execute(params![id, value, now])?;
         }
     }

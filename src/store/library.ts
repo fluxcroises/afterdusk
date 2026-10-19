@@ -16,11 +16,22 @@ export interface MediaSummary {
   hasPreview: boolean;
   /** Date de mise à la corbeille (vue Corbeille seulement). */
   trashedAt: string | null;
+  /** Fichiers de la pile RAW + JPEG (1 pour une photo seule). */
+  stackSize: number;
+  /** Pile dépliée : fichier du dessus, pour les fichiers du dessous. */
+  companionOf: number | null;
+}
+
+/** Fichier du dessus de la pile d'une photo de la grille. */
+export function stackTop(m: Pick<MediaSummary, "id" | "companionOf">): number {
+  return m.companionOf ?? m.id;
 }
 
 export interface TrashReport {
   done: number;
   failed: number;
+  /** Photos réellement déplacées dans la corbeille, pour l'annulation. */
+  moved?: number[];
 }
 
 export interface TrashSummary {
@@ -151,6 +162,8 @@ export interface MediaDetails {
   iso: number | null;
   exposureCompensation: number | null;
   keywords: string[];
+  /** Pile RAW + JPEG : noms des fichiers, le dessus d'abord. */
+  stackFiles: string[];
 }
 
 export type ColorName = "red" | "yellow" | "green" | "blue" | "purple";
@@ -170,10 +183,20 @@ function readAutoAdvance(): boolean {
 export const libraryApi = {
   mediaList: (
     libraryId: number,
-    query: { albumId: number | null; trashed: boolean; filter: MediaFilter; sort: MediaSort },
+    query: {
+      albumId: number | null;
+      trashed: boolean;
+      filter: MediaFilter;
+      sort: MediaSort;
+      expanded: number[];
+    },
   ) => invoke<MediaSummary[]>("media_list", { libraryId, ...query }),
+  trashFormat: (ids: number[], format: "raw" | "image") =>
+    invoke<TrashReport>("media_trash_format", { ids, format }),
+  setStackTop: (id: number) => invoke<null>("pile_set_top", { id }),
   filterOptions: (libraryId: number) => invoke<FilterOptions>("filter_options", { libraryId }),
-  trash: (ids: number[]) => invoke<TrashReport>("media_trash", { ids }),
+  trash: (ids: number[], wholePiles = true) =>
+    invoke<TrashReport>("media_trash", { ids, wholePiles }),
   restore: (ids: number[]) => invoke<TrashReport>("media_restore", { ids }),
   emptyTrash: (libraryId: number, ids: number[] | null) =>
     invoke<TrashReport>("trash_empty", { libraryId, ids }),
@@ -236,6 +259,8 @@ interface LibraryState {
   albumSort: AlbumSort;
   /** Recherche de la vue Albums (nom et lieu), sans toucher au filtre des photos. */
   albumQuery: string;
+  /** Piles RAW + JPEG dépliées (fichier du dessus). */
+  expanded: number[];
   /** Dernier envoi dans la corbeille, que Ctrl+Z restaure (l'annonce, elle, s'efface). */
   undoIds: number[] | null;
   media: MediaSummary[];
@@ -293,6 +318,12 @@ interface LibraryState {
   resetFilter: () => Promise<void>;
   setSort: (sort: MediaSort) => Promise<void>;
   setShowAlbums: (value: boolean) => void;
+  /** S : déplie ou replie la pile de la photo active. */
+  toggleStack: (id?: number) => Promise<void>;
+  /** Photo > Mettre en haut de la pile. */
+  setStackTop: (id?: number) => Promise<void>;
+  /** Photo > Envoyer le JPEG (ou le RAW) dans la corbeille : l'autre fichier reste. */
+  trashFormat: (format: "raw" | "image") => Promise<void>;
   setAlbumSort: (sort: AlbumSort) => void;
 }
 
@@ -310,7 +341,14 @@ export const useLibrary = create<LibraryState>((set, get) => {
     if (selectedId === null || trash) return;
     // Dans la grille, toute la sélection ; ailleurs, la photo active.
     const ids = view === "grid" && selectedIds.length > 1 ? selectedIds : [selectedId];
-    const targets = new Set(ids);
+    // Les marques valent pour toute la pile RAW + JPEG (le cœur fait de même).
+    const tops = new Set(
+      ids.map((id) => {
+        const m = media.find((x) => x.id === id);
+        return m ? stackTop(m) : id;
+      }),
+    );
+    const targets = new Set(media.filter((m) => tops.has(stackTop(m))).map((m) => m.id));
     const before = new Map(media.filter((m) => targets.has(m.id)).map((m) => [m.id, m] as const));
     if (before.size === 0) return;
     set((s) => ({
@@ -332,8 +370,8 @@ export const useLibrary = create<LibraryState>((set, get) => {
 
   /** Ce qu'affiche la grille : source (album, corbeille), filtre et tri. */
   function query(albumId = get().albumId, trash = get().trash) {
-    const { filter, sort } = get();
-    return { albumId: trash ? null : albumId, trashed: trash, filter, sort };
+    const { filter, sort, expanded } = get();
+    return { albumId: trash ? null : albumId, trashed: trash, filter, sort, expanded };
   }
 
   /** Recharge la grille, la photo active gardée si elle y est encore. */
@@ -409,6 +447,7 @@ export const useLibrary = create<LibraryState>((set, get) => {
     showAlbums: false,
     albumSort: "date",
     albumQuery: "",
+    expanded: [],
     media: [],
     total: 0,
     selectedId: null,
@@ -588,10 +627,15 @@ export const useLibrary = create<LibraryState>((set, get) => {
 
     moveToTrash: async (ids = get().targetIds()) => {
       if (ids.length === 0 || get().trash) return;
+      const { media, expanded } = get();
+      const opened = ids.some((id) => {
+        const m = media.find((x) => x.id === id);
+        return m !== undefined && expanded.includes(stackTop(m));
+      });
       try {
-        const report = await libraryApi.trash(ids);
+        const report = await libraryApi.trash(ids, !opened);
         reportFailures(report);
-        set({ notice: { kind: "trashed", count: report.done }, undoIds: ids });
+        set({ notice: { kind: "trashed", count: report.done }, undoIds: report.moved ?? ids });
         await refresh();
       } catch (e) {
         set({ error: toCommandError(e) });
@@ -647,6 +691,51 @@ export const useLibrary = create<LibraryState>((set, get) => {
     setSort: async (sort) => {
       set({ sort });
       await reloadMedia();
+    },
+
+    toggleStack: async (id = get().selectedId ?? undefined) => {
+      const m = get().media.find((x) => x.id === id);
+      if (!m) return;
+      const top = stackTop(m);
+      const head = get().media.find((x) => x.id === top);
+      if (!head || head.stackSize < 2) return;
+      const open = get().expanded.includes(top);
+      set((s) => ({
+        expanded: open ? s.expanded.filter((x) => x !== top) : [...s.expanded, top],
+      }));
+      await reloadMedia();
+      // Replier depuis un fichier du dessous : la pile reste sélectionnée.
+      if (open && get().selectedId !== top) await get().select(top);
+    },
+
+    setStackTop: async (id = get().selectedId ?? undefined) => {
+      const m = get().media.find((x) => x.id === id);
+      if (!m || m.companionOf === null) return;
+      const oldTop = m.companionOf;
+      try {
+        await libraryApi.setStackTop(m.id);
+        set((s) => ({
+          expanded: s.expanded.map((x) => (x === oldTop ? m.id : x)),
+        }));
+        await reloadMedia();
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    trashFormat: async (format) => {
+      const ids = get().targetIds();
+      if (ids.length === 0 || get().trash) return;
+      try {
+        const report = await libraryApi.trashFormat(ids, format);
+        reportFailures(report);
+        if (report.done === 0) return;
+        // Annuler restaure le fichier jeté, pas la photo sélectionnée.
+        set({ notice: { kind: "trashed", count: report.done }, undoIds: report.moved ?? [] });
+        await refresh();
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
     },
 
     setShowAlbums: (value) =>

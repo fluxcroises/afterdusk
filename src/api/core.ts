@@ -23,6 +23,8 @@ export interface SourceEntry {
   capturedAt: string;
   camera: string;
   alreadyImported: boolean;
+  /** Paire RAW + JPEG : le JPEG (ou HEIF) du boîtier, importé avec le RAW. */
+  companions: { path: string; fileName: string; alreadyImported: boolean }[];
 }
 
 export interface SourceDay {
@@ -48,6 +50,8 @@ export interface ImportOptions {
   keywords: string[];
   creator: string | null;
   rights: string | null;
+  /** Paires RAW + JPEG : ne copier que le RAW. */
+  skipPairJpegs: boolean;
 }
 
 export interface ImportProgress {

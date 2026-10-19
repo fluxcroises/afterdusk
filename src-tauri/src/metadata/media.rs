@@ -21,7 +21,7 @@ pub const RAW_EXTENSIONS: &[&str] = &[
 /// Autres images importées en V0.1.
 pub const IMAGE_EXTENSIONS: &[&str] = &["jpg", "jpeg", "heic", "heif", "hif", "tif", "tiff", "png"];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MediaFormat {
     Raw,

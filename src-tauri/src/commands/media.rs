@@ -15,6 +15,7 @@ pub async fn media_list(
     trashed: Option<bool>,
     filter: Option<MediaFilter>,
     sort: Option<MediaSort>,
+    expanded: Option<Vec<i64>>,
 ) -> CommandResult<Vec<MediaSummary>> {
     let conn = state.connect()?;
     let query = MediaQuery {
@@ -22,6 +23,7 @@ pub async fn media_list(
         trashed: trashed.unwrap_or(false),
         filter: filter.unwrap_or_default(),
         sort: sort.unwrap_or_default(),
+        expanded: expanded.unwrap_or_default(),
     };
     blocking(move || Ok(media::list_media(&conn, library_id, &query)?)).await
 }

@@ -7,7 +7,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 
 use super::filter::{MediaFilter, MediaSort};
-use super::{LibraryError, get_library, paths};
+use super::{LibraryError, get_library, pairs, paths};
 use crate::db::now_utc;
 use crate::metadata::media::{MediaFormat, format_of};
 use crate::raw::preview::{self, Generated, PreviewError, SIZES};
@@ -29,6 +29,35 @@ pub struct MediaSummary {
     pub has_preview: bool,
     /// Date de mise à la corbeille (vue Corbeille seulement).
     pub trashed_at: Option<String>,
+    /// Fichiers de la pile RAW + JPEG (1 pour une photo seule).
+    pub stack_size: i64,
+    /// Pile dépliée : fichier du dessus, pour les fichiers du dessous.
+    pub companion_of: Option<i64>,
+}
+
+const SUMMARY_COLUMNS: &str = "m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
+     m.width, m.height, m.orientation,
+     (SELECT count(*) FROM previews p WHERE p.media_id = m.id) = 3,
+     m.trashed_at, m.companion_of";
+
+fn summary(r: &rusqlite::Row<'_>, stack_size: i64) -> rusqlite::Result<MediaSummary> {
+    let path: String = r.get(2)?;
+    Ok(MediaSummary {
+        id: r.get(0)?,
+        album_id: r.get(1)?,
+        file_name: path.rsplit('/').next().unwrap_or(&path).to_owned(),
+        captured_at: r.get(3)?,
+        rating: r.get(4)?,
+        flag: r.get(5)?,
+        color: r.get(6)?,
+        width: r.get(7)?,
+        height: r.get(8)?,
+        orientation: r.get(9)?,
+        has_preview: r.get(10)?,
+        trashed_at: r.get(11)?,
+        companion_of: r.get(12)?,
+        stack_size,
+    })
 }
 
 /// Ce qu'affiche une grille : bibliothèque ou album, ou corbeille, filtrés et triés.
@@ -39,6 +68,8 @@ pub struct MediaQuery {
     pub trashed: bool,
     pub filter: MediaFilter,
     pub sort: MediaSort,
+    /// Piles dépliées (fichier du dessus) : leurs autres fichiers suivent.
+    pub expanded: Vec<i64>,
 }
 
 pub fn list_media(
@@ -47,6 +78,7 @@ pub fn list_media(
     query: &MediaQuery,
 ) -> Result<Vec<MediaSummary>, LibraryError> {
     let (mut clauses, mut values) = query.filter.to_sql();
+    clauses.push(pairs::HEAD_SQL.to_owned());
     clauses.insert(0, "m.library_id = ?".to_owned());
     values.insert(0, library_id.into());
     clauses.push(
@@ -67,34 +99,39 @@ pub fn list_media(
         query.sort.order_by().to_owned()
     };
     let mut stmt = conn.prepare(&format!(
-        "SELECT m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
-                m.width, m.height, m.orientation,
-                (SELECT count(*) FROM previews p WHERE p.media_id = m.id) = 3,
-                m.trashed_at
+        "SELECT {SUMMARY_COLUMNS}, {}
          FROM media m
          WHERE {}
          ORDER BY {order}",
+        pairs::STACK_SIZE_SQL,
         clauses.join(" AND ")
     ))?;
-    let rows = stmt
+    let heads: Vec<MediaSummary> = stmt
         .query_map(rusqlite::params_from_iter(values), |r| {
-            let path: String = r.get(2)?;
-            Ok(MediaSummary {
-                id: r.get(0)?,
-                album_id: r.get(1)?,
-                file_name: path.rsplit('/').next().unwrap_or(&path).to_owned(),
-                captured_at: r.get(3)?,
-                rating: r.get(4)?,
-                flag: r.get(5)?,
-                color: r.get(6)?,
-                width: r.get(7)?,
-                height: r.get(8)?,
-                orientation: r.get(9)?,
-                has_preview: r.get(10)?,
-                trashed_at: r.get(11)?,
-            })
+            summary(r, r.get(13)?)
         })?
         .collect::<Result<_, _>>()?;
+    if query.expanded.is_empty() {
+        return Ok(heads);
+    }
+    // Piles dépliées : les fichiers du dessous suivent celui du dessus.
+    let mut below = conn.prepare(&format!(
+        "SELECT {SUMMARY_COLUMNS} FROM media m
+         WHERE m.companion_of = ?1 AND m.state = ?2 ORDER BY m.path"
+    ))?;
+    let state = if query.trashed { "trashed" } else { "normal" };
+    let mut rows = Vec::with_capacity(heads.len());
+    for head in heads {
+        let open = head.stack_size > 1 && query.expanded.contains(&head.id);
+        let id = head.id;
+        rows.push(head);
+        if open {
+            let files: Vec<MediaSummary> = below
+                .query_map(params![id, state], |r| summary(r, 1))?
+                .collect::<Result<_, _>>()?;
+            rows.extend(files);
+        }
+    }
     Ok(rows)
 }
 
@@ -116,19 +153,22 @@ pub struct AlbumSummary {
 }
 
 pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummary>, LibraryError> {
-    let mut stmt = conn.prepare(
+    let mut stmt = conn.prepare(&format!(
         "SELECT a.id, a.name, a.folder, a.start_date, a.end_date,
-                (SELECT count(*) FROM media m WHERE m.album_id = a.id AND m.state = 'normal'),
+                (SELECT count(*) FROM media m WHERE m.album_id = a.id AND m.state = 'normal'
+                   AND {head}),
                 coalesce((SELECT m.id FROM media m
                            WHERE m.id = a.cover_media_id AND m.state = 'normal'),
                          (SELECT m.id FROM media m WHERE m.album_id = a.id AND m.state = 'normal'
+                            AND {head}
                           ORDER BY m.captured_at, m.path LIMIT 1)),
                 EXISTS (SELECT 1 FROM media m
                          WHERE m.id = a.cover_media_id AND m.state = 'normal'),
                 a.place
          FROM albums a WHERE a.library_id = ?1
          ORDER BY a.start_date DESC, a.name",
-    )?;
+        head = pairs::HEAD_SQL
+    ))?;
     let rows = stmt
         .query_map([library_id], |r| {
             Ok(AlbumSummary {
@@ -164,14 +204,15 @@ pub fn highlights(
     library_id: i64,
     limit: usize,
 ) -> Result<Vec<Highlight>, LibraryError> {
-    let mut stmt = conn.prepare(
+    let mut stmt = conn.prepare(&format!(
         "SELECT m.id, a.name, m.captured_at FROM media m
          JOIN albums a ON a.id = m.album_id
-         WHERE m.library_id = ?1 AND m.state = 'normal' AND m.flag >= 0
+         WHERE m.library_id = ?1 AND m.state = 'normal' AND m.flag >= 0 AND {}
            AND EXISTS (SELECT 1 FROM previews p WHERE p.media_id = m.id AND p.size = 2048)
          ORDER BY m.flag DESC, m.rating DESC, m.captured_at DESC
          LIMIT ?2",
-    )?;
+        pairs::HEAD_SQL
+    ))?;
     let rows = stmt
         .query_map(params![library_id, limit as i64], |r| {
             Ok(Highlight {
@@ -205,15 +246,16 @@ pub struct MediaDetails {
     pub iso: Option<f64>,
     pub exposure_compensation: Option<f64>,
     pub keywords: Vec<String>,
+    /// Pile RAW + JPEG : noms des fichiers, le dessus d'abord.
+    pub stack_files: Vec<String>,
 }
 
 /// Séparateur des mots-clés dans `group_concat` (caractère de contrôle US).
 const KEYWORD_SEPARATOR: char = 31u8 as char;
 
 pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>, LibraryError> {
-    Ok(conn
-        .query_row(
-            "SELECT m.id, m.path, m.original_name, m.captured_at, m.utc_offset, m.width, m.height,
+    conn.query_row(
+        "SELECT m.id, m.path, m.original_name, m.captured_at, m.utc_offset, m.width, m.height,
                     trim(coalesce(c.make, '') || ' ' || coalesce(c.model, '')), l.model,
                     e.focal_length, e.focal_length_35mm, e.aperture, e.shutter, e.iso,
                     e.exposure_compensation,
@@ -224,34 +266,53 @@ pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>,
              LEFT JOIN gear l ON l.id = m.lens_id
              LEFT JOIN media_exif e ON e.media_id = m.id
              WHERE m.id = ?1",
-            [id],
-            |r| {
-                let path: String = r.get(1)?;
-                Ok(MediaDetails {
-                    id: r.get(0)?,
-                    file_name: path.rsplit('/').next().unwrap_or(&path).to_owned(),
-                    path,
-                    original_name: r.get(2)?,
-                    captured_at: r.get(3)?,
-                    utc_offset: r.get(4)?,
-                    width: r.get(5)?,
-                    height: r.get(6)?,
-                    camera: r.get::<_, Option<String>>(7)?.filter(|s| !s.is_empty()),
-                    lens: r.get(8)?,
-                    focal_length: r.get(9)?,
-                    focal_length_35mm: r.get(10)?,
-                    aperture: r.get(11)?,
-                    shutter: r.get(12)?,
-                    iso: r.get(13)?,
-                    exposure_compensation: r.get(14)?,
-                    keywords: r
-                        .get::<_, Option<String>>(15)?
-                        .map(|k| k.split(KEYWORD_SEPARATOR).map(str::to_owned).collect())
-                        .unwrap_or_default(),
-                })
-            },
-        )
-        .optional()?)
+        [id],
+        |r| {
+            let path: String = r.get(1)?;
+            Ok(MediaDetails {
+                id: r.get(0)?,
+                file_name: path.rsplit('/').next().unwrap_or(&path).to_owned(),
+                path,
+                original_name: r.get(2)?,
+                captured_at: r.get(3)?,
+                utc_offset: r.get(4)?,
+                width: r.get(5)?,
+                height: r.get(6)?,
+                camera: r.get::<_, Option<String>>(7)?.filter(|s| !s.is_empty()),
+                lens: r.get(8)?,
+                focal_length: r.get(9)?,
+                focal_length_35mm: r.get(10)?,
+                aperture: r.get(11)?,
+                shutter: r.get(12)?,
+                iso: r.get(13)?,
+                exposure_compensation: r.get(14)?,
+                keywords: r
+                    .get::<_, Option<String>>(15)?
+                    .map(|k| k.split(KEYWORD_SEPARATOR).map(str::to_owned).collect())
+                    .unwrap_or_default(),
+                stack_files: Vec::new(),
+            })
+        },
+    )
+    .optional()?
+    .map(|mut details| -> Result<MediaDetails, LibraryError> {
+        let state: String =
+            conn.query_row("SELECT state FROM media WHERE id = ?1", [id], |r| r.get(0))?;
+        let ids = pairs::members(conn, id, Some(&state))?;
+        if ids.len() > 1 {
+            for member in ids {
+                let path: String =
+                    conn.query_row("SELECT path FROM media WHERE id = ?1", [member], |r| {
+                        r.get(0)
+                    })?;
+                details
+                    .stack_files
+                    .push(path.rsplit('/').next().unwrap_or(&path).to_owned());
+            }
+        }
+        Ok(details)
+    })
+    .transpose()
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -292,11 +353,34 @@ pub fn generate_previews(
     }
     let abs = paths::to_absolute(&lib.root_path, &path)?;
     let format = format_of(&abs).ok_or_else(|| CacheError::UnknownFormat(path.clone()))?;
-    let generated = preview::generate(&abs, format, orientation, cache_root, media_id)?;
-    let source = match format {
+    let mut generated = preview::generate(&abs, format, orientation, cache_root, media_id)?;
+    let mut source = match format {
         MediaFormat::Raw => "embedded",
         MediaFormat::Image => "decoded",
     };
+    // Aperçu intégré plus petit que le grand palier (Sony, Panasonic) : le
+    // JPEG du boîtier, s'il est dans la pile, donne des aperçus nets.
+    let largest = generated
+        .iter()
+        .map(|g| g.width.max(g.height))
+        .max()
+        .unwrap_or(0);
+    let top_size = SIZES.iter().copied().max().unwrap_or(0);
+    if format == MediaFormat::Raw
+        && largest < top_size
+        && let Some((jpeg, jpeg_orientation, jpeg_long_side)) =
+            companion_jpeg(conn, &lib.root_path, media_id)?
+        && jpeg_long_side > i64::from(largest)
+    {
+        generated = preview::generate(
+            &jpeg,
+            MediaFormat::Image,
+            jpeg_orientation,
+            cache_root,
+            media_id,
+        )?;
+        source = "decoded";
+    }
     let now = now_utc();
     for g in &generated {
         conn.execute(
@@ -315,6 +399,43 @@ pub fn generate_previews(
         )?;
     }
     Ok(generated)
+}
+
+/// JPEG du boîtier dans la pile RAW + JPEG d'une photo : chemin absolu,
+/// orientation et plus grand côté.
+fn companion_jpeg(
+    conn: &Connection,
+    root: &Path,
+    media_id: i64,
+) -> Result<Option<(PathBuf, u8, i64)>, CacheError> {
+    let state: String =
+        conn.query_row("SELECT state FROM media WHERE id = ?1", [media_id], |r| {
+            r.get(0)
+        })?;
+    for member in pairs::members(conn, media_id, Some(&state))? {
+        if member == media_id {
+            continue;
+        }
+        let (path, orientation, long_side): (String, u8, Option<i64>) = conn.query_row(
+            "SELECT path, orientation, max(coalesce(width, 0), coalesce(height, 0))
+             FROM media WHERE id = ?1",
+            [member],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?;
+        let is_jpeg = Path::new(&path)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg"));
+        if is_jpeg {
+            let abs = paths::to_absolute(root, &path)?;
+            // Sans dimensions en EXIF, l'en-tête du JPEG les donne.
+            let long_side = match long_side {
+                Some(n) if n > 0 => n,
+                _ => image::image_dimensions(&abs).map_or(0, |(w, h)| i64::from(w.max(h))),
+            };
+            return Ok(Some((abs, orientation, long_side)));
+        }
+    }
+    Ok(None)
 }
 
 /// JPEG pleine définition pour le zoom 100 % : le plus grand aperçu intégré
@@ -341,6 +462,13 @@ pub fn full_size_jpeg(conn: &Connection, media_id: i64) -> Result<Option<Vec<u8>
         .is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg"));
     match format_of(&abs) {
         Some(MediaFormat::Raw) => {
+            // Le JPEG du boîtier a la définition du capteur, au moins autant
+            // que l'aperçu intégré : on le préfère quand il est dans la pile.
+            if let Some((jpeg, _, _)) = companion_jpeg(conn, &lib.root_path, media_id)? {
+                return std::fs::read(&jpeg)
+                    .map(Some)
+                    .map_err(|source| PreviewError::Io { path: jpeg, source }.into());
+            }
             let mut raw = crate::raw::RawFile::open(&abs).map_err(PreviewError::from)?;
             let preview = raw.preview().map_err(PreviewError::from)?;
             Ok((preview.format == crate::raw::PreviewFormat::Jpeg).then_some(preview.data))

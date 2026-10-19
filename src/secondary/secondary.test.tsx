@@ -17,6 +17,8 @@ const photo = (id: number) => ({
   orientation: 1,
   hasPreview: false,
   trashedAt: null,
+  stackSize: 1,
+  companionOf: null,
 });
 
 const media = [1, 2, 3, 4, 5, 6, 7, 8].map(photo);

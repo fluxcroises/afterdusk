@@ -124,3 +124,16 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur (é
 - Tests : filtres combinés, boîtier, objectif, période, recherche (accents, morceau de nom, caractères spéciaux), tri et corbeille sur les six RAW de test-assets ; côté interface, transmission du filtre, champs vidés, recherche et tri des albums.
 - Vérifié dans l'application compilée sous Windows (bibliothèque de contrôle de deux albums, base de l'utilisateur mise de côté puis remise) : vue Albums, note, retenues, recherche, boîtier, tri par note.
 - Critère « Vue Bibliothèque avec albums, filtres de base et recherche » coché : CI verte sur Windows et macOS (run 39249029586).
+
+### 2026-10-19 (suite) : piles RAW + JPEG
+
+Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; choix consignés dans la décision 0003.
+
+- Un RAW et son JPEG (ou HEIF) du même déclenchement forment une pile : même dossier, même nom sans extension (casse ignorée), prises de vue à 2 secondes près. Repliée, la pile occupe une case avec une pastille « 2 » et compte pour une photo ; S ou un clic sur la pastille la déplie ; Photo > « Mettre en haut de la pile » choisit le fichier affiché.
+- Les marques appartiennent au déclenchement : elles valent pour les deux fichiers et sont écrites dans les deux XMP.
+- Corbeille au choix : Suppr sur une pile repliée envoie les deux fichiers, sur une pile dépliée le fichier choisi ; Photo > « Envoyer le JPEG / le RAW dans la corbeille » garde l'autre. Le fichier resté prend la place du dessus ; un fichier restauré retrouve sa pile ; Ctrl+Z restaure le fichier jeté.
+- Import : une case par paire sur la source ; option mémorisée « Importer aussi le JPEG des paires » ; un seul numéro `{seq}` et un même nom (y compris le suffixe -2) pour les deux fichiers, calculé sur le RAW.
+- Aperçus et zoom 100 % d'un RAW tirés du JPEG du boîtier quand l'aperçu intégré est plus petit (Sony 1616 px, Panasonic 1920 px).
+- Migration 0003 : colonne `companion_of` et paires déjà importées reliées (aucun fichier touché).
+- Tests : reconnaissance (casse, heures écartées, autre dossier, HEIF), import, renommage, option sans JPEG, marques dans les deux XMP, corbeille au choix du format avec empreintes inchangées, pile entière, aperçus, migration ; côté interface, S, marques sur la pile, Suppr pile repliée ou dépliée, annulation.
+- Vérifié dans l'application compilée sous Windows (carte de contrôle : ARW et RW2 avec un JPEG de boîtier, base de l'utilisateur mise de côté puis remise) : pastille, dépliage, note partagée, mise en haut de la pile, envoi du RAW seul. L'annulation de cet envoi restaurait la photo sélectionnée au lieu du RAW : corrigé (le cœur renvoie les fichiers déplacés), couvert par les tests, non revérifié dans l'application. L'écran d'import avec paires n'a pas été vérifié à l'écran (couvert par les tests).

@@ -2087,3 +2087,50 @@ button.color-chip[aria-pressed="true"] {
 .album-grid-empty {
   padding: var(--ad-space-4);
 }
+
+/* ---------- Piles RAW + JPEG ---------- */
+
+.media-cell-image,
+.import-tile-preview,
+.strip-cell {
+  position: relative;
+}
+
+/* Nombre de fichiers de la pile, en coin de miniature ; un clic la déplie. */
+.stack-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font: var(--ad-font-meta);
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  color: var(--ad-text);
+  background: color-mix(in srgb, var(--ad-panel) 85%, transparent);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.media-cell[data-open] .stack-badge {
+  color: var(--ad-workspace);
+  background: var(--ad-accent);
+  border-color: var(--ad-accent);
+}
+
+/* Pile dépliée : les fichiers du dessous sont reliés à celui du dessus. */
+.media-cell[data-open],
+.media-cell[data-below] {
+  box-shadow: inset 0 -2px 0 var(--ad-accent);
+}
+
+.media-cell[data-below] {
+  background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
+}
+
+.strip-cell[data-below] {
+  border-bottom-color: var(--ad-accent);
+}

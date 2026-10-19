@@ -92,6 +92,7 @@ fn setup() -> Setup {
         keywords: vec!["Normandie".into()],
         creator: None,
         rights: None,
+        skip_pair_jpegs: false,
     };
     let id = import::plan(&mut conn, &opts).unwrap();
     import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();

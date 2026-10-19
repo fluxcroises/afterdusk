@@ -23,6 +23,8 @@ const photo = (id: number, flag = 0) => ({
   orientation: 1,
   hasPreview: false,
   trashedAt: null,
+  stackSize: 1,
+  companionOf: null,
 });
 
 /** Le cœur simulé : une bibliothèque de trois photos et sa corbeille. */
@@ -76,7 +78,7 @@ describe("corbeille", () => {
 
   it("envoie la sélection, puis Annuler la restaure", async () => {
     await useLibrary.getState().moveToTrash();
-    expect(invoke).toHaveBeenCalledWith("media_trash", { ids: [2] });
+    expect(invoke).toHaveBeenCalledWith("media_trash", { ids: [2], wholePiles: true });
     let s = useLibrary.getState();
     expect(s.media.map((m) => m.id)).toEqual([1, 3]);
     expect(s.trashCount).toBe(1);

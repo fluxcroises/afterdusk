@@ -16,6 +16,11 @@ function dayLabel(day: string, language: string): string {
   }).format(date);
 }
 
+/** « DSC_0001.JPG » → « JPG » : le nom du JPEG d'une paire est celui du RAW. */
+function extension(name: string): string {
+  return name.split(".").pop()?.toUpperCase() ?? name;
+}
+
 function Tile({ file }: { file: SourceEntry }) {
   const { t } = useTranslation();
   const checked = useImport((s) => s.selected.has(file.path));
@@ -32,7 +37,11 @@ function Tile({ file }: { file: SourceEntry }) {
       aria-disabled={file.alreadyImported || undefined}
       data-imported={file.alreadyImported || undefined}
       disabled={file.alreadyImported || running}
-      title={file.alreadyImported ? t("import.alreadyImported") : file.fileName}
+      title={
+        file.alreadyImported
+          ? t("import.alreadyImported")
+          : [file.fileName, ...file.companions.map((c) => c.fileName)].join(" + ")
+      }
       onClick={() => toggle(file.path)}
     >
       <span className="import-tile-check" aria-hidden="true">
@@ -43,8 +52,18 @@ function Tile({ file }: { file: SourceEntry }) {
           src={sourceThumbnailUrl(file.path)}
           fallback={file.fileName.split(".").pop()?.toUpperCase()}
         />
+        {file.companions.length > 0 && (
+          <span
+            className="stack-badge"
+            title={t("pile.badge", { count: file.companions.length + 1 })}
+          >
+            {file.companions.length + 1}
+          </span>
+        )}
       </span>
-      <span className="import-tile-name">{file.fileName}</span>
+      <span className="import-tile-name">
+        {[file.fileName, ...file.companions.map((c) => extension(c.fileName))].join(" + ")}
+      </span>
       <span className="import-tile-meta">
         {file.alreadyImported ? t("import.alreadyImported") : `${time} · ${file.camera || "—"}`}
       </span>

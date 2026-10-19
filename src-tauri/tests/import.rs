@@ -92,6 +92,7 @@ fn options(s: &Setup, files: Vec<PathBuf>) -> ImportOptions {
         keywords: vec!["test".into()],
         creator: Some("Lewis Bedar".into()),
         rights: Some("© 2026 Lewis Bedar".into()),
+        skip_pair_jpegs: false,
     }
 }
 
@@ -414,6 +415,7 @@ fn cinq_cents_fichiers_sans_perte() {
         keywords: vec![],
         creator: None,
         rights: None,
+        skip_pair_jpegs: false,
     };
     let id = import::plan(&mut conn, &opts).unwrap();
 

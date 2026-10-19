@@ -116,6 +116,9 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
       </PanelSection>
       <PanelSection id={`${scope}.metadata`} title={t("info.metadata")}>
         <FieldRow label={t("info.fileName")} value={d?.fileName} />
+        {d && d.stackFiles.length > 1 && (
+          <FieldRow label={t("info.stackFiles")} value={d.stackFiles.join(" + ")} />
+        )}
         <FieldRow label={t("info.originalName")} value={d?.originalName} />
         <FieldRow
           label={t("info.captureTime")}

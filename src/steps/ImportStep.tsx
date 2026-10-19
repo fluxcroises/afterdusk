@@ -89,6 +89,9 @@ function DestinationPanel() {
   const libraryId = useImport((s) => s.libraryId);
   const selectLibrary = useImport((s) => s.selectLibrary);
   const form = useImport((s) => s.form);
+  const hasPairs = useImport(
+    (s) => s.source?.days.some((d) => d.files.some((f) => f.companions.length > 0)) ?? false,
+  );
   const update = useImport((s) => s.updateForm);
   const running = useImport((s) => s.running);
   const library = libraries.find((l) => l.id === libraryId);
@@ -142,6 +145,19 @@ function DestinationPanel() {
           value={library?.folderTemplate ?? t("import.defaultFolderTemplate")}
         />
       </PanelSection>
+      {hasPairs && (
+        <PanelSection id="import.pairs" title={t("import.pairs")}>
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.pairJpegs}
+              onChange={(e) => update({ pairJpegs: e.target.checked })}
+            />
+            {t("import.pairJpegs")}
+          </label>
+          <PanelNote>{t("import.pairJpegsHint")}</PanelNote>
+        </PanelSection>
+      )}
       <PanelSection id="import.renaming" title={t("import.renaming")}>
         <label className="check-row">
           <input

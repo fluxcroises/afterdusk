@@ -9,7 +9,7 @@
 pub mod copy;
 pub mod scan;
 
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use crate::db::now_utc;
 use crate::library::paths::{self, PathError};
 use crate::library::template::{self, TemplateValues};
-use crate::library::{self, GearKind, Library, LibraryError};
+use crate::library::{self, GearKind, Library, LibraryError, pairs};
 use crate::metadata::media::{MediaFormat, MediaMetadata, format_of};
 use crate::metadata::xmp::{self, SidecarData, SidecarNaming};
 use copy::CopyError;
@@ -71,6 +71,9 @@ pub struct ImportOptions {
     pub keywords: Vec<String>,
     pub creator: Option<String>,
     pub rights: Option<String>,
+    /// Paires RAW + JPEG : ne copier que le RAW (décision 0003).
+    #[serde(default)]
+    pub skip_pair_jpegs: bool,
 }
 
 /// Options conservées en base pour la reprise (sans la liste des fichiers).
@@ -187,22 +190,65 @@ pub fn plan(conn: &mut Connection, options: &ImportOptions) -> Result<i64, Impor
     )?;
     let import_id = tx.last_insert_rowid();
 
+    // Paires RAW + JPEG : le compagnon passe juste avant son RAW, avec le même
+    // numéro et le même nom ; à la copie du RAW, la pile est formée et ses
+    // aperçus peuvent profiter du JPEG.
+    let candidates: Vec<pairs::Candidate<'_>> = files
+        .iter()
+        .map(|f| pairs::Candidate {
+            path: &f.path,
+            format: f.format,
+            captured_at: Some(f.captured_at.as_str()),
+        })
+        .collect();
+    let mut companions: HashMap<usize, Vec<usize>> = HashMap::new();
+    let mut is_companion = vec![false; files.len()];
+    for (raw, companion) in pairs::find_pairs(&candidates) {
+        companions.entry(raw).or_default().push(companion);
+        is_companion[companion] = true;
+    }
+    let shots: Vec<Vec<usize>> = (0..files.len())
+        .filter(|&i| !is_companion[i])
+        .map(|i| {
+            let mut shot = if options.skip_pair_jpegs {
+                Vec::new()
+            } else {
+                companions.remove(&i).unwrap_or_default()
+            };
+            shot.push(i);
+            shot
+        })
+        .collect();
+
     let mut sequence = 0u32;
     let mut seen_in_batch = HashSet::new();
-    for file in &files {
-        let duplicate =
-            known.contains(&file.fingerprint) || !seen_in_batch.insert(file.fingerprint.clone());
-        let target = if duplicate {
-            String::new()
-        } else {
+    for shot in &shots {
+        let fresh: Vec<usize> = shot
+            .iter()
+            .copied()
+            .filter(|&i| {
+                let f = &files[i].fingerprint;
+                !known.contains(f) && seen_in_batch.insert(f.clone())
+            })
+            .collect();
+        if !fresh.is_empty() {
             sequence += 1;
+        }
+        let mut names = Vec::new();
+        let mut folder = String::new();
+        // Le nom d'une paire se calcule sur le RAW (dernier du déclenchement) :
+        // date, boîtier et nom d'origine identiques pour ses deux fichiers.
+        let lead = fresh.last().map(|&i| &files[i]);
+        for &i in &fresh {
+            let file = &files[i];
+            let lead = lead.unwrap_or(file);
             let folder_date = if options.album_per_day {
-                &file.captured_at
+                &lead.captured_at
             } else {
                 &first_date
             };
-            let camera = file.metadata.camera_label();
-            let stem = Path::new(&file.file_name)
+            let camera = lead.metadata.camera_label();
+            let stem = Path::new(&lead.file_name)
                 .file_stem()
                 .map(|s| s.to_string_lossy().into_owned())
                 .unwrap_or_default();
@@ -213,60 +259,100 @@ pub fn plan(conn: &mut Connection, options: &ImportOptions) -> Result<i64, Impor
                 original_stem: &stem,
                 sequence,
             };
-            let folder = template::render_folder(&lib.folder_template, &values)?;
+            folder = template::render_folder(&lib.folder_template, &values)?;
             let name = if options.rename {
                 let ext = Path::new(&file.file_name)
                     .extension()
                     .map(|e| e.to_string_lossy().into_owned())
                     .unwrap_or_default();
                 let values = TemplateValues {
-                    captured_at: &file.captured_at,
+                    captured_at: &lead.captured_at,
                     ..values
                 };
                 template::render_file_name(&rename_template, &values, &ext)?
             } else {
                 paths::sanitize_component(&file.file_name)
             };
-            unique_target(&lib.root_path, &folder, &name, &mut taken)
-        };
-        tx.execute(
-            "INSERT INTO import_items (import_id, source_path, source_size, source_mtime,
-                                       fingerprint, target_path, status, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params![
-                import_id,
-                file.path.to_string_lossy(),
-                file.size as i64,
-                file.modified,
-                file.fingerprint,
-                target,
-                if duplicate { "duplicate" } else { "pending" },
-                now_utc()
-            ],
-        )?;
+            names.push(name);
+        }
+        // Un même suffixe -2, -3… pour toute la paire, qui garde un nom commun.
+        let mut targets = unique_targets(&lib.root_path, &folder, &names, &mut taken).into_iter();
+        let mut item_ids = Vec::new();
+        for &i in shot {
+            let file = &files[i];
+            let duplicate = !fresh.contains(&i);
+            let target = if duplicate {
+                String::new()
+            } else {
+                targets.next().unwrap_or_default()
+            };
+            tx.execute(
+                "INSERT INTO import_items (import_id, source_path, source_size, source_mtime,
+                                           fingerprint, target_path, status, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![
+                    import_id,
+                    file.path.to_string_lossy(),
+                    file.size as i64,
+                    file.modified,
+                    file.fingerprint,
+                    target,
+                    if duplicate { "duplicate" } else { "pending" },
+                    now_utc()
+                ],
+            )?;
+            item_ids.push(tx.last_insert_rowid());
+        }
+        // Le RAW (dernier de la paire) et chacun de ses compagnons se connaissent.
+        if let Some((&raw_item, rest)) = item_ids.split_last() {
+            for &companion in rest {
+                tx.execute(
+                    "UPDATE import_items SET pair_item_id = ?2 WHERE id = ?1",
+                    params![companion, raw_item],
+                )?;
+                tx.execute(
+                    "UPDATE import_items SET pair_item_id = ?2 WHERE id = ?1",
+                    params![raw_item, companion],
+                )?;
+            }
+        }
     }
+    tx.execute(
+        "UPDATE imports SET files_total = ?2 WHERE id = ?1",
+        params![import_id, shots.iter().map(Vec::len).sum::<usize>() as i64],
+    )?;
     tx.commit()?;
     Ok(import_id)
 }
 
-/// Chemin relatif libre : ni prévu dans cet import, ni en base, ni sur le disque.
-fn unique_target(root: &Path, folder: &str, name: &str, taken: &mut HashSet<String>) -> String {
-    let (stem, ext) = match name.rsplit_once('.') {
-        Some((s, e)) if !s.is_empty() => (s.to_owned(), format!(".{e}")),
-        _ => (name.to_owned(), String::new()),
+/// Chemins relatifs libres pour les fichiers d'un déclenchement : ni prévus
+/// dans cet import, ni en base, ni sur le disque. Le même suffixe `-n` est
+/// appliqué à tous, pour qu'une paire RAW + JPEG garde un nom commun.
+fn unique_targets(
+    root: &Path,
+    folder: &str,
+    names: &[String],
+    taken: &mut HashSet<String>,
+) -> Vec<String> {
+    let candidate = |name: &str, n: u32| {
+        if n == 1 {
+            return format!("{folder}/{name}");
+        }
+        match name.rsplit_once('.') {
+            Some((stem, ext)) if !stem.is_empty() => format!("{folder}/{stem}-{n}.{ext}"),
+            _ => format!("{folder}/{name}-{n}"),
+        }
     };
     let mut n = 1;
     loop {
-        let candidate = if n == 1 {
-            format!("{folder}/{name}")
-        } else {
-            format!("{folder}/{stem}-{n}{ext}")
-        };
-        let free = !taken.contains(&candidate.to_lowercase())
-            && paths::to_absolute(root, &candidate).is_ok_and(|p| !p.exists());
+        let all: Vec<String> = names.iter().map(|name| candidate(name, n)).collect();
+        let free = all.iter().all(|c| {
+            !taken.contains(&c.to_lowercase())
+                && paths::to_absolute(root, c).is_ok_and(|p| !p.exists())
+        });
         if free {
-            taken.insert(candidate.to_lowercase());
-            return candidate;
+            taken.extend(all.iter().map(|c| c.to_lowercase()));
+            return all;
         }
         n += 1;
     }
@@ -397,6 +483,7 @@ pub fn run(
         progress.media_id = None;
         match process_item(conn, &lib, &options, import_id, &mut item) {
             Ok(media_id) => {
+                link_pair(conn, item.id, media_id)?;
                 progress.imported += 1;
                 progress.media_id = Some(media_id);
             }
@@ -421,6 +508,35 @@ pub fn run(
         on_progress(&progress);
     }
     stop(conn, import_id, ImportOutcome::Done)
+}
+
+/// Pile RAW + JPEG : dès que les deux fichiers d'une paire sont en base, le
+/// compagnon passe sous le RAW.
+fn link_pair(conn: &Connection, item_id: i64, media_id: i64) -> Result<(), ImportError> {
+    let partner: Option<i64> = conn
+        .query_row(
+            "SELECT p.media_id FROM import_items i JOIN import_items p ON p.id = i.pair_item_id
+             WHERE i.id = ?1 AND p.status = 'done'",
+            [item_id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .flatten();
+    let Some(partner) = partner else {
+        return Ok(());
+    };
+    let is_raw = |id: i64| -> Result<bool, ImportError> {
+        let path: String =
+            conn.query_row("SELECT path FROM media WHERE id = ?1", [id], |r| r.get(0))?;
+        Ok(format_of(Path::new(&path)) == Some(MediaFormat::Raw))
+    };
+    let (raw, companion) = if is_raw(media_id)? {
+        (media_id, partner)
+    } else {
+        (partner, media_id)
+    };
+    pairs::link(conn, raw, companion)?;
+    Ok(())
 }
 
 fn stop(
@@ -540,7 +656,9 @@ fn copy_to_library(conn: &Connection, lib: &Library, item: &mut Item) -> Result<
         // Un autre fichier occupe la place : on choisit un nouveau nom.
         let (folder, name) = item.target.rsplit_once('/').unwrap_or(("", &item.target));
         let mut taken = HashSet::new();
-        item.target = unique_target(&lib.root_path, folder, name, &mut taken);
+        item.target = unique_targets(&lib.root_path, folder, &[name.to_owned()], &mut taken)
+            .pop()
+            .unwrap_or_default();
         set_status(conn, item, "pending")?;
         target = paths::to_absolute(&lib.root_path, &item.target).map_err(|e| file_err(&e))?;
     }

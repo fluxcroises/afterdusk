@@ -111,7 +111,10 @@
     "dayCount_one": "{{count}} photo",
     "dayCount_other": "{{count}} photos",
     "dayImported_one": "{{count}} déjà importée",
-    "dayImported_other": "{{count}} déjà importées"
+    "dayImported_other": "{{count}} déjà importées",
+    "pairs": "Paires RAW + JPEG",
+    "pairJpegs": "Importer aussi le JPEG des paires",
+    "pairJpegsHint": "Les deux fichiers d'un déclenchement forment une pile. Sans le JPEG, seul le RAW est copié ; il reste sur la carte."
   },
   "catalog": {
     "title": "Catalogue",
@@ -134,7 +137,8 @@
     "originalName": "Nom d'origine",
     "dimensions": "Dimensions",
     "exposureCompensation": "Correction",
-    "noKeywords": "Aucun mot-clé."
+    "noKeywords": "Aucun mot-clé.",
+    "stackFiles": "Pile"
   },
   "cull": {
     "emptyTitle": "Aucune photo à trier",
@@ -221,7 +225,11 @@
     "restore": "Restaurer",
     "purge": "Supprimer définitivement…",
     "find": "Rechercher…",
-    "filterBar": "Barre de filtres"
+    "filterBar": "Barre de filtres",
+    "stackToggle": "Déplier ou replier la pile",
+    "stackTop": "Mettre en haut de la pile",
+    "trashJpeg": "Envoyer le JPEG dans la corbeille",
+    "trashRaw": "Envoyer le RAW dans la corbeille"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -356,5 +364,11 @@
     "noMatchText": "Élargissez la période, la note ou la recherche.",
     "noAlbum": "Aucun album ne correspond.",
     "searchHint": "Albums, noms de fichiers, mots-clés et lieux"
+  },
+  "pile": {
+    "badge_one": "{{count}} fichier",
+    "badge_other": "Pile de {{count}} fichiers",
+    "expand": "Déplier la pile",
+    "collapse": "Replier la pile"
   }
 }

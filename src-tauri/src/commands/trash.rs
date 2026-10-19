@@ -6,21 +6,64 @@ use tauri::State;
 use super::error::CommandResult;
 use super::marks::XmpWriter;
 use super::{AppState, blocking};
-use crate::library::marks;
 use crate::library::trash::{self, TrashReport};
+use crate::library::{marks, pairs};
+use crate::metadata::media::MediaFormat;
 
+/// Envoie des photos à la corbeille : les piles entières (pile repliée), ou
+/// seulement les fichiers désignés (`whole_piles` faux, pile dépliée).
 #[tauri::command]
-pub async fn media_trash(state: State<'_, AppState>, ids: Vec<i64>) -> CommandResult<TrashReport> {
+pub async fn media_trash(
+    state: State<'_, AppState>,
+    ids: Vec<i64>,
+    whole_piles: Option<bool>,
+) -> CommandResult<TrashReport> {
     let mut conn = state.connect()?;
     blocking(move || {
-        // Les notes en attente partent dans le XMP avant que le fichier ne bouge :
-        // la photo restaurée retrouve ses marques.
-        if let Err(err) = marks::flush_pending_xmp(&conn, usize::MAX) {
-            eprintln!("XMP avant corbeille : {err}");
-        }
-        Ok(trash::move_to_trash(&mut conn, &ids)?)
+        let ids = if whole_piles.unwrap_or(true) {
+            pairs::expand(&conn, &ids, Some("normal"))?
+        } else {
+            ids
+        };
+        Ok(trash_files(&mut conn, &ids)?)
     })
     .await
+}
+
+fn trash_files(
+    conn: &mut rusqlite::Connection,
+    ids: &[i64],
+) -> Result<TrashReport, trash::TrashError> {
+    // Les notes en attente partent dans le XMP avant que le fichier ne bouge :
+    // la photo restaurée retrouve ses marques.
+    if let Err(err) = marks::flush_pending_xmp(conn, usize::MAX) {
+        eprintln!("XMP avant corbeille : {err}");
+    }
+    trash::move_to_trash(conn, ids)
+}
+
+/// Photo > Envoyer le JPEG (ou le RAW) dans la corbeille : dans chaque pile,
+/// les fichiers de ce format partent, l'autre reste. Une photo seule, ou une
+/// pile dont tous les fichiers ont ce format, n'est pas touchée.
+#[tauri::command]
+pub async fn media_trash_format(
+    state: State<'_, AppState>,
+    ids: Vec<i64>,
+    format: MediaFormat,
+) -> CommandResult<TrashReport> {
+    let mut conn = state.connect()?;
+    blocking(move || {
+        let chosen = pairs::files_of_format(&conn, &ids, format)?;
+        Ok(trash_files(&mut conn, &chosen)?)
+    })
+    .await
+}
+
+/// Photo > Mettre en haut de la pile.
+#[tauri::command]
+pub async fn pile_set_top(state: State<'_, AppState>, id: i64) -> CommandResult<()> {
+    let mut conn = state.connect()?;
+    blocking(move || Ok(pairs::set_top(&mut conn, id)?)).await
 }
 
 #[tauri::command]
@@ -30,7 +73,11 @@ pub async fn media_restore(
     ids: Vec<i64>,
 ) -> CommandResult<TrashReport> {
     let mut conn = state.connect()?;
-    let report = blocking(move || Ok(trash::restore(&mut conn, &ids)?)).await?;
+    let report = blocking(move || {
+        let ids = pairs::expand(&conn, &ids, Some("trashed"))?;
+        Ok(trash::restore(&mut conn, &ids)?)
+    })
+    .await?;
     writer.wake();
     Ok(report)
 }
@@ -47,7 +94,7 @@ pub async fn trash_empty(
     let cache_root = state.cache_root.clone();
     blocking(move || {
         let ids = match ids {
-            Some(ids) => ids,
+            Some(ids) => pairs::expand(&conn, &ids, Some("trashed"))?,
             None => trash::trashed_ids(&conn, Some(library_id), None)?,
         };
         Ok(trash::purge(&mut conn, &cache_root, &ids)?)
@@ -71,7 +118,7 @@ pub async fn trash_summary(
     let conn = state.connect()?;
     blocking(move || {
         Ok(TrashSummary {
-            count: trash::trashed_ids(&conn, Some(library_id), None)?.len(),
+            count: trash::trashed_count(&conn, library_id)?,
             retention_days: trash::retention_days(&conn)?,
         })
     })

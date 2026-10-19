@@ -17,6 +17,18 @@ export interface ImportForm {
   backup: boolean;
   keywords: string;
   rights: string;
+  /** Paires RAW + JPEG : importer aussi le JPEG (choix mémorisé). */
+  pairJpegs: boolean;
+}
+
+const PAIR_JPEGS_KEY = "afterdusk.import.pairJpegs";
+
+function readPairJpegs(): boolean {
+  try {
+    return window.localStorage.getItem(PAIR_JPEGS_KEY) !== "false";
+  } catch {
+    return true;
+  }
 }
 
 interface ImportState {
@@ -91,6 +103,7 @@ export const useImport = create<ImportState>((set, get) => ({
     backup: true,
     keywords: "",
     rights: "",
+    pairJpegs: readPairJpegs(),
   },
   progress: null,
   running: false,
@@ -173,7 +186,16 @@ export const useImport = create<ImportState>((set, get) => ({
   selectAll: (value) =>
     set((s) => ({ selected: value && s.source ? newMedia(s.source) : new Set() })),
 
-  updateForm: (patch) => set((s) => ({ form: { ...s.form, ...patch } })),
+  updateForm: (patch) => {
+    if (patch.pairJpegs !== undefined) {
+      try {
+        window.localStorage.setItem(PAIR_JPEGS_KEY, String(patch.pairJpegs));
+      } catch {
+        // Préférence de confort : sans stockage, elle vaut pour la session.
+      }
+    }
+    set((s) => ({ form: { ...s.form, ...patch } }));
+  },
 
   start: async (sourceLabel) => {
     const { libraryId, source, selected, form, libraries } = get();
@@ -185,7 +207,12 @@ export const useImport = create<ImportState>((set, get) => ({
         libraryId,
         sourcePath: source.root,
         sourceLabel,
-        files: [...selected],
+        // Une case par déclenchement : le JPEG d'une paire part avec son RAW ;
+        // le cœur l'écarte si l'option le demande.
+        files: source.days
+          .flatMap((d) => d.files)
+          .filter((f) => selected.has(f.path))
+          .flatMap((f) => [f.path, ...f.companions.map((c) => c.path)]),
         albumName: form.albumName.trim(),
         albumPerDay: form.albumPerDay,
         rename: form.rename,
@@ -196,6 +223,7 @@ export const useImport = create<ImportState>((set, get) => ({
           .filter(Boolean),
         creator: null,
         rights: form.rights.trim() || null,
+        skipPairJpegs: !form.pairJpegs,
       });
     } catch (e) {
       set({ running: false, error: toCommandError(e) });

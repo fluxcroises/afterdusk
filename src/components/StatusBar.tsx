@@ -4,7 +4,12 @@ import { isFiltering, useLibrary } from "../store/library";
 /** Barre d'état en bas de la fenêtre. */
 export function StatusBar() {
   const { t } = useTranslation();
-  const count = useLibrary((s) => s.media.length);
+  // Une pile dépliée compte pour une photo.
+  const count = useLibrary(
+    (s) =>
+      s.media.filter((m) => m.companionOf === null || !s.media.some((x) => x.id === m.companionOf))
+        .length,
+  );
   const selected = useLibrary((s) => s.selectedIds.length);
   // Photos de la source affichée, avant filtre.
   const total = useLibrary((s) =>

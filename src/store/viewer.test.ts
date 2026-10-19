@@ -23,6 +23,8 @@ const photo = (id: number) => ({
   orientation: 1,
   hasPreview: true,
   trashedAt: null,
+  stackSize: 1,
+  companionOf: null,
 });
 
 const press = (key: string, code = "") =>

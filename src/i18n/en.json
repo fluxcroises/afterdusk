@@ -111,7 +111,10 @@
     "dayCount_one": "{{count}} photo",
     "dayCount_other": "{{count}} photos",
     "dayImported_one": "{{count}} already imported",
-    "dayImported_other": "{{count}} already imported"
+    "dayImported_other": "{{count}} already imported",
+    "pairs": "RAW + JPEG pairs",
+    "pairJpegs": "Also import the JPEG of each pair",
+    "pairJpegsHint": "Both files of a shot form a stack. Without the JPEG, only the RAW is copied; the JPEG stays on the card."
   },
   "catalog": {
     "title": "Catalog",
@@ -134,7 +137,8 @@
     "originalName": "Original name",
     "dimensions": "Dimensions",
     "exposureCompensation": "Exposure comp.",
-    "noKeywords": "No keywords."
+    "noKeywords": "No keywords.",
+    "stackFiles": "Stack"
   },
   "cull": {
     "emptyTitle": "No photos to cull",
@@ -221,7 +225,11 @@
     "restore": "Restore",
     "purge": "Delete Permanently…",
     "find": "Find…",
-    "filterBar": "Filter Bar"
+    "filterBar": "Filter Bar",
+    "stackToggle": "Expand or Collapse Stack",
+    "stackTop": "Move to Top of Stack",
+    "trashJpeg": "Move JPEG to Trash",
+    "trashRaw": "Move RAW to Trash"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -356,5 +364,11 @@
     "noMatchText": "Widen the dates, rating or search.",
     "noAlbum": "No matching albums.",
     "searchHint": "Albums, file names, keywords and places"
+  },
+  "pile": {
+    "badge_one": "{{count}} file",
+    "badge_other": "Stack of {{count}} files",
+    "expand": "Expand stack",
+    "collapse": "Collapse stack"
   }
 }

@@ -22,6 +22,8 @@ const photo = (id: number) => ({
   orientation: 1,
   hasPreview: false,
   trashedAt: null,
+  stackSize: 1,
+  companionOf: null,
 });
 
 const album = (id: number, name: string, startDate: string, place: string | null): Album => ({
@@ -64,6 +66,7 @@ describe("filtres de la grille", () => {
       trashed: false,
       filter: { flags: [1], query: "plage" },
       sort: "captureTime",
+      expanded: [],
     });
     const s = useLibrary.getState();
     expect(s.media.map((m) => m.id)).toEqual([2]);

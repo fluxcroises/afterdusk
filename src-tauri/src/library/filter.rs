@@ -209,8 +209,9 @@ pub fn filter_options(conn: &Connection, library_id: i64) -> Result<FilterOption
         let mut stmt = conn.prepare(&format!(
             "SELECT g.id, trim(g.make || ' ' || g.model), count(*)
              FROM media m JOIN gear g ON g.id = m.{column}
-             WHERE m.library_id = ?1 AND m.state = 'normal' AND g.hidden = 0
-             GROUP BY g.id ORDER BY 2"
+             WHERE m.library_id = ?1 AND m.state = 'normal' AND g.hidden = 0 AND {}
+             GROUP BY g.id ORDER BY 2",
+            super::pairs::HEAD_SQL
         ))?;
         let rows = stmt
             .query_map([library_id], |r| {

@@ -50,6 +50,8 @@ pub enum TrashError {
 pub struct TrashReport {
     pub done: usize,
     pub failed: usize,
+    /// Photos réellement déplacées, pour l'annulation (Ctrl+Z).
+    pub moved: Vec<i64>,
 }
 
 struct Entry {
@@ -167,12 +169,17 @@ pub fn move_to_trash(conn: &mut Connection, ids: &[i64]) -> Result<TrashReport, 
                     params![id, now_utc(), e.path, trashed, sidecar],
                 )?;
                 report.done += 1;
+                report.moved.push(id);
             }
             Err(err) => {
                 eprintln!("corbeille, média {id} : {err}");
                 report.failed += 1;
             }
         }
+    }
+    // Un dessus de pile parti seul : le fichier resté prend sa place.
+    for &id in ids {
+        super::pairs::promote_after_leaving(conn, id)?;
     }
     Ok(report)
 }
@@ -324,6 +331,19 @@ pub fn trashed_ids(
         .query_map(params![library_id, cutoff], |r| r.get(0))?
         .collect::<Result<_, _>>()?;
     Ok(ids)
+}
+
+/// Photos de la corbeille comme les montre la grille : une pile compte pour une.
+pub fn trashed_count(conn: &Connection, library_id: i64) -> Result<usize, TrashError> {
+    let n: i64 = conn.query_row(
+        &format!(
+            "SELECT count(*) FROM media m WHERE m.library_id = ?1 AND m.state = 'trashed' AND {}",
+            super::pairs::HEAD_SQL
+        ),
+        [library_id],
+        |r| r.get(0),
+    )?;
+    Ok(n as usize)
 }
 
 /// Vidage automatique au démarrage : bibliothèques branchées seulement.

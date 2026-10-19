@@ -68,8 +68,16 @@ function MediaContextMenu({
       ) : (
         <>
           {item(t("menu.setAlbumCover"), () => void setAsCover(media.id))}
+          {media.companionOf !== null &&
+            item(t("menu.stackTop"), () => void useLibrary.getState().setStackTop(media.id))}
           <div className="menu-separator" role="separator" />
           {item(t("menu.moveToTrash"), () => void useLibrary.getState().moveToTrash())}
+          {(media.stackSize > 1 || media.companionOf !== null) && (
+            <>
+              {item(t("menu.trashJpeg"), () => void useLibrary.getState().trashFormat("image"))}
+              {item(t("menu.trashRaw"), () => void useLibrary.getState().trashFormat("raw"))}
+            </>
+          )}
         </>
       )}
     </div>,
@@ -146,6 +154,7 @@ function MediaCell({
   );
   const trashed = useLibrary((s) => s.trash);
   const retentionDays = useLibrary((s) => s.retentionDays);
+  const expanded = useLibrary((s) => s.expanded.includes(media.id));
   const { t } = useTranslation();
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLButtonElement>(null);
@@ -162,6 +171,8 @@ function MediaCell({
       aria-pressed={selected}
       data-active={active || undefined}
       data-rejected={media.flag === -1 || undefined}
+      data-below={media.companionOf !== null || undefined}
+      data-open={(media.stackSize > 1 && expanded) || undefined}
       title={media.fileName}
       onClick={(e) => void select(media.id, selectMode(e))}
       onDoubleClick={() => useLibrary.getState().setView("loupe")}
@@ -176,6 +187,18 @@ function MediaCell({
           src={media.hasPreview ? previewUrl(media.id, 256, version) : null}
           fallback={media.fileName.split(".").pop()?.toUpperCase()}
         />
+        {media.stackSize > 1 && (
+          <span
+            className="stack-badge"
+            title={t(expanded ? "pile.collapse" : "pile.expand") + " (S)"}
+            onClick={(e) => {
+              e.stopPropagation();
+              void useLibrary.getState().toggleStack(media.id);
+            }}
+          >
+            {media.stackSize}
+          </span>
+        )}
       </span>
       <span className="media-cell-name">{media.fileName}</span>
       {trashed ? (
@@ -230,9 +253,11 @@ function StripCell({
       aria-pressed={selected}
       data-active={active || undefined}
       title={media.fileName}
+      data-below={media.companionOf !== null || undefined}
       onClick={(e) => void select(media.id, selectMode(e))}
     >
       <Thumbnail src={media.hasPreview ? previewUrl(media.id, 256, version) : null} />
+      {media.stackSize > 1 && <span className="stack-badge">{media.stackSize}</span>}
     </button>
   );
 }

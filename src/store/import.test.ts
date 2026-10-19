@@ -13,7 +13,7 @@ vi.mock("../api/core", async (original) => ({
 
 const { useImport } = await import("./import");
 
-const entry = (path: string, alreadyImported = false) => ({
+const entry = (path: string, alreadyImported = false, companions: string[] = []) => ({
   path,
   fileName: path.split("/").pop() ?? path,
   size: 1,
@@ -21,6 +21,11 @@ const entry = (path: string, alreadyImported = false) => ({
   capturedAt: "2026-10-18T21:04:59",
   camera: "X-T3",
   alreadyImported,
+  companions: companions.map((c) => ({
+    path: c,
+    fileName: c.split("/").pop() ?? c,
+    alreadyImported,
+  })),
 });
 
 const source: SourceView = {
@@ -28,7 +33,10 @@ const source: SourceView = {
   ignored: 0,
   days: [
     { day: "2026-10-17", files: [entry("/carte/a.RAF", true), entry("/carte/b.RAF")] },
-    { day: "2026-10-18", files: [entry("/carte/c.RAF"), entry("/carte/d.RAF")] },
+    {
+      day: "2026-10-18",
+      files: [entry("/carte/c.RAF", false, ["/carte/c.JPG"]), entry("/carte/d.RAF")],
+    },
   ],
 };
 
@@ -91,8 +99,10 @@ describe("store d'import", () => {
       rights: null,
       // Pas de dossier de sauvegarde dans cette bibliothèque.
       backup: false,
+      skipPairJpegs: false,
     });
-    expect(options?.files.sort()).toEqual(["/carte/b.RAF", "/carte/c.RAF"]);
+    // Le JPEG d'une paire part avec son RAW.
+    expect(options?.files.sort()).toEqual(["/carte/b.RAF", "/carte/c.JPG", "/carte/c.RAF"]);
     expect(useImport.getState().running).toBe(true);
   });
 });

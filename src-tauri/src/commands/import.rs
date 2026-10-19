@@ -1,6 +1,7 @@
 //! Import depuis l'interface : analyse de la source, lancement en tâche de
 //! fond avec progression par événements, arrêt et reprise.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -12,6 +13,7 @@ use super::error::{CommandError, CommandResult};
 use super::previews::PreviewQueue;
 use super::{AppState, blocking};
 use crate::import::{self, ImportOptions, ImportOutcome, RecentImport, ResumableImport, scan};
+use crate::library::pairs;
 use crate::metadata::media::MediaFormat;
 
 pub const EVENT_PROGRESS: &str = "import-progress";
@@ -26,6 +28,16 @@ pub struct SourceEntry {
     pub format: MediaFormat,
     pub captured_at: String,
     pub camera: String,
+    pub already_imported: bool,
+    /// Paire RAW + JPEG : le JPEG (ou HEIF) du boîtier, importé avec le RAW.
+    pub companions: Vec<CompanionEntry>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanionEntry {
+    pub path: PathBuf,
+    pub file_name: String,
     pub already_imported: bool,
 }
 
@@ -63,10 +75,38 @@ pub async fn source_scan(
             None => Default::default(),
         };
         let result = scan::scan(&path)?;
+        // Paires RAW + JPEG : une case par déclenchement.
+        let candidates: Vec<pairs::Candidate<'_>> = result
+            .files
+            .iter()
+            .map(|f| pairs::Candidate {
+                path: &f.path,
+                format: f.format,
+                captured_at: Some(f.captured_at.as_str()),
+            })
+            .collect();
+        let mut companions: HashMap<usize, Vec<CompanionEntry>> = HashMap::new();
+        let mut is_companion = vec![false; result.files.len()];
+        for (raw, companion) in pairs::find_pairs(&candidates) {
+            let f = &result.files[companion];
+            is_companion[companion] = true;
+            companions.entry(raw).or_default().push(CompanionEntry {
+                path: f.path.clone(),
+                file_name: f.file_name.clone(),
+                already_imported: known.contains(&f.fingerprint),
+            });
+        }
         let mut days: Vec<SourceDay> = Vec::new();
-        for file in result.files {
+        for (index, file) in result.files.into_iter().enumerate() {
+            if is_companion[index] {
+                continue;
+            }
+            let companions = companions.remove(&index).unwrap_or_default();
             let entry = SourceEntry {
-                already_imported: known.contains(&file.fingerprint),
+                // Déjà importée : tous les fichiers du déclenchement le sont.
+                already_imported: known.contains(&file.fingerprint)
+                    && companions.iter().all(|c| c.already_imported),
+                companions,
                 camera: file.metadata.camera_label(),
                 path: file.path.clone(),
                 file_name: file.file_name.clone(),

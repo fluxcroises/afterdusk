@@ -23,6 +23,8 @@ const photo = (id: number) => ({
   orientation: 1,
   hasPreview: false,
   trashedAt: null,
+  stackSize: 1,
+  companionOf: null,
 });
 
 const key = (init: KeyboardEventInit) => new KeyboardEvent("keydown", init);

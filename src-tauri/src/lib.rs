@@ -113,6 +113,8 @@ pub fn run() {
             commands::media::welcome_highlights,
             commands::trash::media_trash,
             commands::trash::media_restore,
+            commands::trash::media_trash_format,
+            commands::trash::pile_set_top,
             commands::trash::trash_empty,
             commands::trash::trash_summary,
             commands::trash::trash_retention_get,
