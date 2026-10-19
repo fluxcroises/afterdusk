@@ -2646,3 +2646,51 @@ input[type="radio"] {
   gap: var(--ad-space-2);
   width: 190px;
 }
+
+/* Retoucher */
+.develop-view {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--ad-space-4);
+  overflow: hidden;
+}
+
+.develop-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.develop-loading {
+  position: absolute;
+  inset: auto 0 var(--ad-space-4);
+  text-align: center;
+  color: var(--ad-text-secondary);
+  font-size: var(--ad-font-meta);
+}
+
+.develop-slider {
+  display: grid;
+  gap: var(--ad-space-1);
+  padding: var(--ad-space-1) 0;
+}
+
+.develop-slider-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ad-text-secondary);
+  font-size: var(--ad-font-ui);
+}
+
+.develop-slider output {
+  color: var(--ad-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.develop-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--ad-accent);
+}

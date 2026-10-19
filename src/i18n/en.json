@@ -300,7 +300,8 @@
     "trashPartial": "Some files could not be moved; they stayed where they were.",
     "noRejected": "No rejected photos in this view.",
     "mediaNotFound": "This photo no longer exists in the library.",
-    "fileMoveFailed": "A file could not be moved; nothing was changed."
+    "fileMoveFailed": "A file could not be moved; nothing was changed.",
+    "developUnsupported": "Editing is limited to RAW files for now; JPEG, HEIF and TIFF will follow."
   },
   "home": {
     "morning": "Hello",
@@ -467,5 +468,23 @@
     "copied": "Copied to the clipboard",
     "publicDomain": "public domain",
     "componentsLead": "Components:"
+  },
+  "develop": {
+    "image": "Photo being edited",
+    "light": "Light",
+    "exposure": "Exposure",
+    "ev": "{{value}} EV",
+    "resetHint": "Double-click to reset.",
+    "color": "Color",
+    "whiteBalance": "White balance",
+    "asShot": "As shot",
+    "cpu": "CPU",
+    "status": "{{width}} × {{height}} · rendered in {{render}} ms ({{engine}}) · shown in {{total}} ms · original decoded in {{decode}} ms",
+    "emptyTitle": "No photos to edit",
+    "emptyText": "Import photos or pick an album in the left panel.",
+    "chooseTitle": "Choose a photo",
+    "chooseText": "Select a photo in the filmstrip to edit it.",
+    "errorTitle": "This photo can't be opened",
+    "loading": "Developing the original…"
   }
 }

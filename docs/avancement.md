@@ -222,3 +222,13 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 ### 2026-10-19 (suite) : vérifications sur Mac reportées
 
 - Les deux critères restants de la V0.1 (carte détectée en moins de 5 s, passage d'une photo à la suivante en moins de 100 ms) ne demandent plus qu'une mesure sur un Mac. L'utilisateur y a accès et préfère la faire plus tard, une fois le développement bien avancé ; les deux critères restent ouverts d'ici là.
+
+### 2026-10-19 (suite) : V0.2, première étape de la retouche (décision 0005)
+
+- Format des réglages : JSON creux par sections, `version` migrée à la lecture et `process` figé ; valeurs ramenées dans leurs plages. Migration 0004 (`edits`, `edit_history`, `presets`). Réglages écrits dans le XMP (`afterdusk:Develop`) par le fil d'écriture des marques, retirés au retour au neutre.
+- Décodage complet par LibRaw (XYZ linéaire 16 bits, balance et matrice du boîtier, AHD) ; pipeline de référence au processeur en Rec. 2020 linéaire flottant : exposition, courbe neutre à épaule, sRGB.
+- Processus 1 calibré sur les six formats : à +1 IL de base, la luminance moyenne du rendu neutre égale celle du JPEG du boîtier (rapports de 0,88 à 1,20, moyenne géométrique 1,00). Orientation conforme, originaux inchangés.
+- Jumeau GPU (wgpu 30, WGSL ; Direct3D 12, Metal, Vulkan) : écart d'au plus un niveau sur 255 avec le processeur sur un dégradé et les six formats. Sans processeur graphique, rendu au processeur (`AFTERDUSK_GPU=0` pour le forcer).
+- Écran Retoucher : photo de la pellicule développée depuis l'original, curseur d'exposition (double-clic : zéro), balance des blancs « Telle que prise », enregistrement 600 ms après le dernier geste ou au changement de photo ; durée du rendu affichée dans la barre d'outils.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises), RTX 3060 Ti, aperçu de 1506 × 1006 : rendu 2,5 à 8 ms au GPU et 9 ms au processeur ; image affichée 44 à 51 ms après le geste, transfert et dessin compris ; original décodé en 160 à 550 ms à l'ouverture. Réglage retrouvé en base, dans l'historique et dans le XMP ; originaux identiques (SHA-256). La cible de 100 ms est à mesurer sur une carte graphique intégrée.
+- Reste pour ce critère et les suivants : l'aperçu est réduit par blocs entiers (1500 px au lieu de 2048 pour un capteur de 24 Mpx), retouche des JPEG, HEIF et TIFF, restauration des retouches depuis le XMP après reconstruction de la base.

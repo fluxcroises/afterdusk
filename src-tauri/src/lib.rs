@@ -87,6 +87,7 @@ pub fn run() {
             );
             purge_expired_trash(db_path.clone(), cache_root.clone());
             app.manage(XmpWriter::start(db_path.clone()));
+            app.manage(commands::develop::DevelopEngine::new());
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
             commands::library::watch_libraries(
@@ -151,6 +152,10 @@ pub fn run() {
             commands::marks::media_set_rating,
             commands::marks::media_set_flag,
             commands::marks::media_set_color,
+            commands::develop::develop_open,
+            commands::develop::develop_render,
+            commands::develop::develop_close,
+            commands::develop::develop_save,
         ])
         .run(tauri::generate_context!());
     if let Err(error) = result {

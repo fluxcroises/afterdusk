@@ -4,4 +4,5 @@
 pub mod gpu;
 pub mod pipeline;
 pub mod settings;
+pub mod source;
 pub mod store;

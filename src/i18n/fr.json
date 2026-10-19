@@ -300,7 +300,8 @@
     "trashPartial": "Certains fichiers n'ont pas pu être déplacés ; ils sont restés à leur place.",
     "noRejected": "Aucune photo rejetée dans cette vue.",
     "mediaNotFound": "Cette photo n'existe plus dans la bibliothèque.",
-    "fileMoveFailed": "Un fichier n'a pas pu être déplacé ; rien n'a été modifié."
+    "fileMoveFailed": "Un fichier n'a pas pu être déplacé ; rien n'a été modifié.",
+    "developUnsupported": "La retouche est réservée aux fichiers RAW pour l'instant ; les JPEG, HEIF et TIFF suivront."
   },
   "home": {
     "morning": "Bonjour",
@@ -467,5 +468,23 @@
     "copied": "Copiées dans le presse-papiers",
     "publicDomain": "domaine public",
     "componentsLead": "Composants :"
+  },
+  "develop": {
+    "image": "Photo en cours de retouche",
+    "light": "Lumière",
+    "exposure": "Exposition",
+    "ev": "{{value}} IL",
+    "resetHint": "Double-cliquez pour revenir à zéro.",
+    "color": "Couleur",
+    "whiteBalance": "Balance des blancs",
+    "asShot": "Telle que prise",
+    "cpu": "processeur",
+    "status": "{{width}} × {{height}} · rendu {{render}} ms ({{engine}}) · affiché en {{total}} ms · original décodé en {{decode}} ms",
+    "emptyTitle": "Aucune photo à retoucher",
+    "emptyText": "Importez des photos ou choisissez un album dans le panneau de gauche.",
+    "chooseTitle": "Choisissez une photo",
+    "chooseText": "Sélectionnez une photo dans la pellicule pour la retoucher.",
+    "errorTitle": "Cette photo ne peut pas être ouverte",
+    "loading": "Développement de l'original…"
   }
 }
