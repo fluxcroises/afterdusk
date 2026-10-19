@@ -472,12 +472,39 @@ fn apercus_et_fiche_apres_import() {
         assert!(media::cached_preview(&cache, m.id, 256).is_some());
     }
 
+    // Illustration de l'accueil : seulement des photos avec un aperçu 2048 px.
+    let highlights = media::highlights(&s.conn, s.library_id, 12).unwrap();
+    assert_eq!(highlights.len(), 2);
+
     let recent = import::recent_imports(&s.conn, s.library_id, 5, 3).unwrap();
     assert_eq!(recent.len(), 1);
     assert_eq!((recent[0].count, recent[0].media_ids.len()), (4, 3));
 
     let albums = media::list_albums(&s.conn, s.library_id).unwrap();
     assert_eq!(albums.iter().map(|a| a.count).sum::<i64>(), 4);
+    assert!(albums.iter().all(|a| a.cover_media_id.is_some()));
+
+    // Couverture choisie : seulement une photo de l'album.
+    let (album_a, album_b) = (albums[0].id, albums[1].id);
+    let in_b: i64 = s
+        .conn
+        .query_row(
+            "SELECT id FROM media WHERE album_id = ?1 LIMIT 1",
+            [album_b],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert!(library::set_album_cover(&s.conn, album_a, in_b).is_err());
+    library::set_album_cover(&s.conn, album_b, in_b).unwrap();
+    let albums = media::list_albums(&s.conn, s.library_id).unwrap();
+    assert_eq!(
+        albums
+            .iter()
+            .find(|a| a.id == album_b)
+            .unwrap()
+            .cover_media_id,
+        Some(in_b)
+    );
 
     let canon = list
         .iter()

@@ -84,6 +84,8 @@ pub fn run() {
             commands::media::media_list,
             commands::media::albums_list,
             commands::media::media_details,
+            commands::media::album_set_cover,
+            commands::media::welcome_highlights,
             commands::marks::media_set_rating,
             commands::marks::media_set_flag,
             commands::marks::media_set_color,

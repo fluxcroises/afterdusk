@@ -162,6 +162,16 @@ export function buildMenuItems(t: TFunction): Item[] {
         })),
       },
       separator,
+      {
+        id: "album-cover",
+        text: t("menu.setAlbumCover"),
+        enabled: canMark,
+        action: whenMarkable(() => {
+          const id = useLibrary.getState().selectedId;
+          if (id !== null) void useLibrary.getState().setAsCover(id);
+        }),
+      },
+      separator,
       { id: "trash", text: t("menu.moveToTrash"), enabled: false },
     ],
   };

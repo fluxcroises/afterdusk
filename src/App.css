@@ -1148,67 +1148,8 @@ input[type="checkbox"] {
   background: var(--ad-surface);
 }
 
-.home-actions {
-  padding: var(--ad-space-3);
-  border-bottom: 1px solid var(--ad-border-strong);
-}
-
-.home {
-  max-width: 1040px;
-  padding: var(--ad-space-5) 40px 48px;
-}
-
-.home-title {
-  font: 600 24px/1.3 var(--ad-font);
-  color: var(--ad-text);
-}
-
-.home-intro {
-  max-width: 620px;
-  margin-top: var(--ad-space-2);
-  font-size: 13px;
-  color: var(--ad-text-secondary);
-}
-
-.home > .banner {
-  position: static;
-  margin-top: var(--ad-space-4);
-  border: 1px solid var(--ad-border);
-  border-radius: var(--ad-radius-md);
-}
-
 .banner-info {
   background: var(--ad-panel);
-}
-
-.home-section {
-  margin-top: 32px;
-}
-
-.home-heading {
-  font: 600 15px/1.4 var(--ad-font);
-  color: var(--ad-text);
-}
-
-.home-subheading {
-  margin-top: 2px;
-  color: var(--ad-text-secondary);
-}
-
-.home-card {
-  margin-top: var(--ad-space-3);
-  background: var(--ad-panel);
-  border: 1px solid var(--ad-border-strong);
-  border-radius: var(--ad-radius-lg);
-}
-
-.home-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ad-space-3);
-  padding: var(--ad-space-3) var(--ad-space-4);
-  color: var(--ad-text-secondary);
 }
 
 .link-button {
@@ -1222,206 +1163,14 @@ input[type="checkbox"] {
   color: var(--ad-text);
 }
 
-.link-button svg {
-  width: 14px;
-  height: 14px;
-}
-
-.home-strip {
-  display: flex;
-  gap: 2px;
-  padding: 0 var(--ad-space-4) var(--ad-space-4);
-  overflow: hidden;
-}
-
-.home-strip-cell {
-  flex: none;
-  width: 150px;
-  aspect-ratio: 3 / 2;
-}
-
-.home-strip-cell:hover {
-  outline: 1px solid var(--ad-text-secondary);
-}
-
-.home-strip-more {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 40px;
-  color: var(--ad-text-secondary);
-}
-
-.drop-zone {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ad-space-4);
-  max-width: 620px;
-  margin-top: var(--ad-space-3);
-  padding: var(--ad-space-5);
-  border: 1px dashed var(--ad-text-muted);
-  border-radius: var(--ad-radius-lg);
-  color: var(--ad-text-secondary);
-}
-
-.drop-zone p {
-  flex: 1 1 260px;
-}
-
-.drop-zone-icon {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  color: var(--ad-text);
-}
-
 .button-inline {
   width: auto;
   flex: none;
 }
 
-/* Glisser un dossier au-dessus de la fenêtre. */
-.app[data-dropping] .drop-zone {
-  border-color: var(--ad-accent);
-  background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
-}
-
 .app[data-dropping] .workspace {
   outline: 2px dashed var(--ad-accent);
   outline-offset: -8px;
-}
-
-.journey {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: var(--ad-space-3);
-  margin-top: var(--ad-space-3);
-}
-
-.journey-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ad-space-1);
-  padding: 0 0 var(--ad-space-3);
-  text-align: left;
-  background: var(--ad-panel);
-  border: 1px solid var(--ad-border-strong);
-  border-radius: var(--ad-radius-lg);
-  overflow: hidden;
-  transition: border-color var(--ad-transition);
-}
-
-.journey-card:hover {
-  border-color: var(--ad-text-muted);
-}
-
-.journey-art {
-  position: relative;
-  display: grid;
-  place-items: center;
-  height: 112px;
-  margin-bottom: var(--ad-space-2);
-  background: var(--ad-inset);
-  color: var(--ad-text-secondary);
-}
-
-.journey-art svg {
-  width: 44px;
-  height: 44px;
-}
-
-.journey-index {
-  position: absolute;
-  top: var(--ad-space-2);
-  left: var(--ad-space-3);
-  font: var(--ad-font-meta);
-  font-variant-numeric: tabular-nums;
-  color: var(--ad-text-muted);
-}
-
-.journey-title,
-.journey-text,
-.journey-meta {
-  padding: 0 var(--ad-space-3);
-}
-
-.journey-title {
-  font: var(--ad-font-panel-title);
-  color: var(--ad-text);
-}
-
-.journey-text {
-  color: var(--ad-text-secondary);
-}
-
-.journey-meta {
-  margin-top: var(--ad-space-1);
-  font: var(--ad-font-meta);
-  color: var(--ad-success);
-}
-
-.journey-card[data-later] .journey-meta {
-  color: var(--ad-text-muted);
-}
-
-.journey-card[data-later] .journey-art svg {
-  color: var(--ad-text-muted);
-}
-
-/* ---------- Fenêtre d'accueil ---------- */
-
-.welcome {
-  display: flex;
-  height: 100vh;
-}
-
-.welcome-sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 248px;
-  flex: none;
-  background: var(--ad-panel);
-  border-right: 1px solid var(--ad-border-strong);
-}
-
-.welcome-brand {
-  display: flex;
-  align-items: center;
-  gap: var(--ad-space-2);
-  height: var(--ad-topbar-height);
-  padding: 0 var(--ad-space-4);
-  border-bottom: 1px solid var(--ad-border-strong);
-}
-
-.welcome-main {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  background: var(--ad-workspace);
-}
-
-.welcome-scroll {
-  flex: 1;
-  overflow: auto;
-}
-
-.welcome-footer {
-  display: flex;
-  align-items: center;
-  gap: var(--ad-space-3);
-  height: 36px;
-  padding: 0 var(--ad-space-5);
-  flex: none;
-  font: var(--ad-font-meta);
-  color: var(--ad-text-secondary);
-  border-top: 1px solid var(--ad-border-strong);
-}
-
-.welcome[data-dropping] .drop-zone {
-  border-color: var(--ad-accent);
-  background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
 }
 
 /* ---------- Barre de menus dessinée (Windows) ---------- */
@@ -1544,19 +1293,353 @@ input[type="checkbox"] {
   color: #ffffff;
 }
 
-/* ---------- Barre de titre de l'accueil ---------- */
+/* ---------- Fenêtre d'accueil (dans l'esprit d'Affinity) ---------- */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--ad-workspace);
+}
 
 .welcome-titlebar {
   display: flex;
-  align-items: stretch;
   justify-content: flex-end;
-  height: var(--ad-topbar-height);
+  height: 32px;
   flex: none;
+  background: var(--ad-bg);
+}
+
+.welcome-titlebar .window-control {
+  width: 42px;
+}
+
+.welcome-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-4);
+  padding: var(--ad-space-2) var(--ad-space-5) var(--ad-space-4);
+  flex: none;
+  background: var(--ad-bg);
+}
+
+html[data-platform="mac"] .welcome-titlebar {
+  height: 40px;
+}
+
+.welcome-logo {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  background: var(--ad-text);
+  mask: url("./assets/logo.svg") center / contain no-repeat;
+}
+
+.welcome-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.welcome-greeting {
+  font: 600 18px/1.2 var(--ad-font);
+}
+
+.library-switcher {
+  position: relative;
+}
+
+.library-switcher-button {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+  color: var(--ad-text-secondary);
+}
+
+.library-switcher-button:hover {
+  color: var(--ad-text);
+}
+
+.library-switcher-button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.library-switcher .menu-list {
+  top: calc(100% + 6px);
+  min-width: 320px;
+}
+
+.menu-check {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  flex: none;
+}
+
+.menu-check svg {
+  width: 13px;
+  height: 13px;
+}
+
+.library-switcher .menu-accelerator {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welcome-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.welcome-actions .icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ad-radius-lg);
+}
+
+.welcome-actions .icon-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.welcome-primary {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ad-radius-lg);
+  background: var(--ad-accent);
+  color: var(--ad-on-accent);
+  transition: background var(--ad-transition);
+}
+
+.welcome-primary:hover:not(:disabled) {
+  background: var(--ad-accent-hover);
+}
+
+.welcome-primary:disabled {
+  background: var(--ad-surface);
+  color: var(--ad-text-muted);
+}
+
+.welcome-primary svg {
+  width: 24px;
+  height: 24px;
+}
+
+.welcome-tabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--ad-space-2);
+  padding: var(--ad-space-2);
+  flex: none;
+  background: var(--ad-bg);
+  border-top: 1px solid var(--ad-border-strong);
   border-bottom: 1px solid var(--ad-border-strong);
 }
 
-html[data-platform="mac"] .welcome-brand {
-  padding-left: 84px;
+.welcome-tab {
+  height: 28px;
+  padding: 0 var(--ad-space-4);
+  border-radius: var(--ad-radius-md);
+  color: var(--ad-text-secondary);
+}
+
+.welcome-tab:hover {
+  color: var(--ad-text);
+}
+
+.welcome-tab[aria-selected="true"] {
+  background: var(--ad-accent);
+  color: var(--ad-on-accent);
+  font-weight: 600;
+}
+
+.welcome-scroll {
+  flex: 1;
+  overflow: auto;
+  padding-bottom: var(--ad-space-5);
+}
+
+/* Photo d'illustration, en pleine largeur, sans bordure ni effet. */
+.welcome-hero {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: var(--ad-bg);
+}
+
+.welcome-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: welcome-hero-in 600ms ease-out both;
+}
+
+@keyframes welcome-hero-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.welcome-hero-caption {
+  position: absolute;
+  right: var(--ad-space-4);
+  bottom: var(--ad-space-3);
+  padding: 2px var(--ad-space-2);
+  font: var(--ad-font-meta);
+  color: var(--ad-text);
+  background: rgb(0 0 0 / 0.45);
+  border-radius: var(--ad-radius-sm);
+}
+
+/* Sans photo : le symbole en filigrane. */
+.welcome-hero-mark {
+  position: absolute;
+  inset: 0;
+  background: var(--ad-hover);
+  opacity: 0.25;
+  mask: url("./assets/logo.svg") center / 160px no-repeat;
+}
+
+.welcome-banner {
+  position: static;
+  margin: var(--ad-space-4) var(--ad-space-5) 0;
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-md);
+}
+
+.welcome-row {
+  margin-top: var(--ad-space-5);
+}
+
+.welcome-row-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 var(--ad-space-5);
+  margin-bottom: var(--ad-space-3);
+}
+
+.welcome-row-header h2 {
+  font: var(--ad-font-panel-title);
+}
+
+.welcome-strip {
+  display: flex;
+  gap: var(--ad-space-2);
+  padding: 0 var(--ad-space-5) var(--ad-space-2);
+  overflow-x: auto;
+}
+
+.welcome-strip-cell {
+  flex: none;
+  width: 168px;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--ad-radius-md);
+  overflow: hidden;
+}
+
+.welcome-strip-cell:hover,
+.album-card:hover .album-card-cover {
+  outline: 1px solid var(--ad-text-secondary);
+  outline-offset: -1px;
+}
+
+.album-card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 200px;
+  text-align: left;
+}
+
+.album-card-cover {
+  display: block;
+  aspect-ratio: 3 / 2;
+  margin-bottom: var(--ad-space-1);
+  border-radius: var(--ad-radius-md);
+  overflow: hidden;
+}
+
+/* Couverture recadrée pour remplir la vignette, comme les cartes d'Affinity. */
+.album-card-cover .thumbnail img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+}
+
+.album-card-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.album-card-meta {
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+}
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--ad-space-4);
+  padding: var(--ad-space-5);
+}
+
+.album-grid .album-card {
+  width: auto;
+}
+
+.welcome-hint {
+  padding: 0 var(--ad-space-5);
+  color: var(--ad-text-secondary);
+}
+
+.welcome-first {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ad-space-3);
+  max-width: 560px;
+  margin: var(--ad-space-5);
+  padding: var(--ad-space-5);
+  border: 1px dashed var(--ad-text-muted);
+  border-radius: var(--ad-radius-lg);
+}
+
+.welcome-first h2 {
+  font: var(--ad-font-panel-title);
+}
+
+.welcome-first p {
+  color: var(--ad-text-secondary);
+}
+
+.welcome[data-dropping] .welcome-scroll {
+  outline: 2px dashed var(--ad-accent);
+  outline-offset: -8px;
+}
+
+.welcome-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-3);
+  height: 36px;
+  padding: 0 var(--ad-space-5);
+  flex: none;
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+  background: var(--ad-bg);
+  border-top: 1px solid var(--ad-border-strong);
 }
 
 /* ---------- Marques sous les miniatures ---------- */
@@ -1610,4 +1693,11 @@ button.color-chip[aria-pressed="true"] {
 
 .stars .icon-button svg[fill="currentColor"] {
   color: var(--ad-text);
+}
+
+/* ---------- Menu contextuel ---------- */
+
+.context-menu {
+  position: fixed;
+  top: auto;
 }

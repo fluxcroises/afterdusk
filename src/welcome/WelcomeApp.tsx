@@ -1,43 +1,45 @@
-import { isTauri } from "@tauri-apps/api/core";
-import {
-  ChevronRight,
-  FolderPlus,
-  HardDriveDownload,
-  Images,
-  type LucideIcon,
-  Share,
-  SlidersHorizontal,
-  SquareCheckBig,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { invoke, isTauri } from "@tauri-apps/api/core";
+import { Check, ChevronDown, FolderOpen, Images, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { newLibrary, pickFolder } from "../actions";
 import { api, type RecentImport } from "../api/core";
 import { previewUrl } from "../api/previews";
 import { useAppEvents } from "../appEvents";
-import { ListRow, PanelSection } from "../components/PanelSection";
+import { IconButton } from "../components/IconButton";
 import { Thumbnail } from "../components/Thumbnail";
 import { WindowControls } from "../components/WindowControls";
 import { drawsOwnMenus } from "../platform";
 import { useImport } from "../store/import";
 import { useLayout } from "../store/layout";
-import { useLibrary } from "../store/library";
-import { AVAILABLE_IN, CURRENT_VERSION, type Step } from "../store/navigation";
+import { type AlbumSummary, useLibrary } from "../store/library";
 import { greetingKey } from "../ui/greeting";
 import { openMain, setWelcomeOnStartup, welcomeOnStartup } from "../windows";
 import "../App.css";
 
-const JOURNEY: { step: Step; icon: LucideIcon }[] = [
-  { step: "import", icon: HardDriveDownload },
-  { step: "cull", icon: SquareCheckBig },
-  { step: "develop", icon: SlidersHorizontal },
-  { step: "deliver", icon: Share },
-];
+type Tab = "home" | "albums";
 
-function useRecentImports() {
+interface Highlight {
+  mediaId: number;
+  albumName: string;
+  capturedAt: string | null;
+}
+
+/** Données de l'accueil, rechargées quand la bibliothèque change ou au retour sur l'accueil. */
+function pickHighlight(libraryId: number): Promise<Highlight | null> {
+  return invoke<Highlight[]>("welcome_highlights", { libraryId }).then(
+    // Une photo différente à chaque ouverture, comme les écrans de démarrage d'Adobe.
+    (list) => list[Math.floor(Math.random() * list.length)] ?? null,
+  );
+}
+
+function useWelcomeData() {
   const libraryId = useImport((s) => s.libraryId);
   const libraries = useImport((s) => s.libraries);
   const [recent, setRecent] = useState<RecentImport[]>([]);
+  const [highlight, setHighlight] = useState<Highlight | null>(null);
+  const previewsReady = useLibrary((s) => Object.keys(s.versions).length);
+
   useEffect(() => {
     if (!isTauri() || libraryId === null) return;
     let current = true;
@@ -45,12 +47,29 @@ function useRecentImports() {
       .importsRecent(libraryId)
       .then((r) => current && setRecent(r))
       .catch(() => current && setRecent([]));
+    pickHighlight(libraryId)
+      .then((h) => current && setHighlight(h))
+      .catch(() => current && setHighlight(null));
     return () => {
       current = false;
     };
     // `libraries` change à chaque rafraîchissement de l'accueil.
   }, [libraryId, libraries]);
-  return libraryId === null ? [] : recent;
+
+  // Sans illustration (premier import), un nouvel aperçu prêt relance la recherche.
+  const missing = highlight === null;
+  useEffect(() => {
+    if (!isTauri() || libraryId === null || !missing || previewsReady === 0) return;
+    let current = true;
+    pickHighlight(libraryId)
+      .then((h) => current && h && setHighlight(h))
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+  }, [libraryId, missing, previewsReady]);
+
+  return libraryId === null ? { recent: [], highlight: null } : { recent, highlight };
 }
 
 async function importFolder(title: string) {
@@ -58,241 +77,333 @@ async function importFolder(title: string) {
   if (path) await openMain({ screen: "import", scanPath: path });
 }
 
-function RecentActivity({ recent }: { recent: RecentImport[] }) {
-  const { t, i18n } = useTranslation();
-  const versions = useLibrary((s) => s.versions);
-  const latest = recent[0];
-  if (!latest) return null;
-  const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: "long" }).format(
-    new Date(latest.date),
-  );
+function formatDate(value: string | null, language: string): string | null {
+  if (!value) return null;
+  const date = new Date(value.length === 10 ? `${value}T12:00:00` : value);
+  return Number.isNaN(date.getTime())
+    ? null
+    : new Intl.DateTimeFormat(language, { dateStyle: "long" }).format(date);
+}
+
+/** Bibliothèque courante, avec un menu pour en changer ou en créer une. */
+function LibrarySwitcher() {
+  const { t } = useTranslation();
+  const libraries = useImport((s) => s.libraries);
+  const libraryId = useImport((s) => s.libraryId);
+  const selectLibrary = useImport((s) => s.selectLibrary);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = libraries.find((l) => l.id === libraryId);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", close);
+    return () => window.removeEventListener("mousedown", close);
+  }, [open]);
 
   return (
-    <section className="home-section">
-      <h2 className="home-heading">{t("home.recent")}</h2>
-      <div className="home-card">
-        <div className="home-card-header">
-          <span>
-            {t("home.lastImport", { source: latest.sourceLabel, date })}
-            <span className="list-row-count">
-              {" "}
-              · {t("toolbar.photoCount", { count: latest.count })}
-            </span>
-          </span>
-          <button
-            type="button"
-            className="link-button"
-            onClick={() => void openMain({ screen: "library", albumId: null })}
-          >
-            <Images aria-hidden="true" strokeWidth={1.75} />
-            {t("home.viewAll")}
-          </button>
-        </div>
-        <div className="home-strip">
-          {latest.mediaIds.map((id) => (
+    <div className="library-switcher" ref={ref}>
+      <button
+        type="button"
+        className="library-switcher-button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        {current ? current.name : t("app.noLibrary")}
+        <ChevronDown aria-hidden="true" strokeWidth={2} />
+      </button>
+      {open && (
+        <div className="menu-list" role="menu">
+          {libraries.map((l) => (
             <button
-              key={id}
+              key={l.id}
               type="button"
-              className="home-strip-cell"
-              onClick={() => void openMain({ screen: "cull", mediaId: id })}
+              className="menu-row"
+              role="menuitemradio"
+              aria-checked={l.id === libraryId}
+              onClick={() => {
+                selectLibrary(l.id);
+                setOpen(false);
+              }}
             >
-              <Thumbnail src={previewUrl(id, 256, versions[id] ?? 0)} />
+              <span className="menu-check">
+                {l.id === libraryId && <Check aria-hidden="true" strokeWidth={2} />}
+              </span>
+              <span className="menu-label">{l.name}</span>
+              <span className="menu-accelerator">{l.rootPath}</span>
             </button>
           ))}
-          {latest.count > latest.mediaIds.length && (
-            <button
-              type="button"
-              className="home-strip-more"
-              onClick={() => void openMain({ screen: "cull" })}
-            >
-              <ChevronRight aria-hidden="true" />
-              <span className="visually-hidden">{t("home.viewAll")}</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AddPhotos() {
-  const { t } = useTranslation();
-  const hasLibrary = useImport((s) => s.libraries.length > 0);
-
-  if (!hasLibrary) {
-    return (
-      <section className="home-section">
-        <h2 className="home-heading">{t("home.firstStepsTitle")}</h2>
-        <div className="drop-zone">
-          <FolderPlus className="drop-zone-icon" aria-hidden="true" strokeWidth={1.25} />
-          <p>{t("home.firstSteps")}</p>
+          {libraries.length > 0 && <div className="menu-separator" role="separator" />}
           <button
             type="button"
-            className="button button-primary button-inline"
-            onClick={() => void newLibrary()}
+            className="menu-row"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              void newLibrary();
+            }}
           >
-            {t("import.newLibrary")}
+            <span className="menu-check" />
+            <span className="menu-label">{t("import.newLibrary")}</span>
           </button>
         </div>
-      </section>
-    );
-  }
+      )}
+    </div>
+  );
+}
 
+function Header() {
+  const { t } = useTranslation();
+  const hasLibrary = useImport((s) => s.libraryId !== null);
   return (
-    <section className="home-section">
-      <h2 className="home-heading">{t("home.addPhotos")}</h2>
-      <div className="drop-zone">
-        <HardDriveDownload className="drop-zone-icon" aria-hidden="true" strokeWidth={1.25} />
-        <p>{t("home.dropHint")}</p>
-        <button
-          type="button"
-          className="button button-primary button-inline"
+    <header className="welcome-header" data-tauri-drag-region>
+      <span className="welcome-logo" aria-hidden="true" />
+      <div className="welcome-identity" data-tauri-drag-region>
+        <h1 className="welcome-greeting">{t(greetingKey())}</h1>
+        <LibrarySwitcher />
+      </div>
+      <span className="toolbar-spacer" data-tauri-drag-region />
+      <div className="welcome-actions">
+        <IconButton
+          icon={Images}
+          label={t("modules.library")}
+          disabled={!hasLibrary}
+          onClick={() => void openMain({ screen: "library", albumId: null })}
+        />
+        <IconButton
+          icon={FolderOpen}
+          label={t("menu.importFolder")}
+          disabled={!hasLibrary}
           onClick={() => void importFolder(t("import.chooseFolder"))}
-        >
-          {t("menu.importFolder")}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function Journey() {
-  const { t } = useTranslation();
-  return (
-    <section className="home-section">
-      <h2 className="home-heading">{t("home.journey")}</h2>
-      <p className="home-subheading">{t("home.journeyText")}</p>
-      <div className="journey">
-        {JOURNEY.map(({ step, icon: Icon }, index) => {
-          const later = AVAILABLE_IN[step] !== CURRENT_VERSION;
-          return (
-            <button
-              key={step}
-              type="button"
-              className="journey-card"
-              data-later={later || undefined}
-              onClick={() => void openMain({ screen: step })}
-            >
-              <span className="journey-art" aria-hidden="true">
-                <Icon strokeWidth={1} />
-                <span className="journey-index">{index + 1}</span>
-              </span>
-              <span className="journey-title">{t(`modules.${step}`)}</span>
-              <span className="journey-text">{t(`home.steps.${step}`)}</span>
-              <span className="journey-meta">
-                {later
-                  ? t("modules.availableIn", { version: AVAILABLE_IN[step] })
-                  : t("home.available")}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function Sidebar() {
-  const { t } = useTranslation();
-  const total = useLibrary((s) => s.total);
-  const albums = useLibrary((s) => s.albums);
-
-  return (
-    <aside className="welcome-sidebar" aria-label={t("panels.left")}>
-      <div className="welcome-brand" data-tauri-drag-region>
-        <span className="logo" aria-hidden="true" />
-        <span className="brand-name">{t("app.name")}</span>
-      </div>
-      <div className="home-actions">
+        />
         <button
           type="button"
-          className="button button-primary"
+          className="welcome-primary"
+          aria-label={t("modules.import")}
+          title={t("modules.import")}
+          disabled={!hasLibrary}
           onClick={() => void openMain({ screen: "import" })}
         >
-          {t("modules.import")}
+          <Plus aria-hidden="true" strokeWidth={2} />
         </button>
       </div>
-      <div className="side-panel-scroll">
-        <PanelSection id="home.library" title={t("home.yourPhotos")}>
-          <ListRow
-            label={t("catalog.allPhotos")}
-            count={total}
-            onClick={() => void openMain({ screen: "library", albumId: null })}
-          />
-        </PanelSection>
-        <PanelSection id="home.albums" title={t("home.recentAlbums")}>
-          {albums.slice(0, 10).map((a) => (
-            <ListRow
-              key={a.id}
-              label={a.name}
-              count={a.count}
-              onClick={() => void openMain({ screen: "cull", albumId: a.id })}
-            />
-          ))}
-          {albums.length === 0 && <p className="panel-note">{t("catalog.noAlbums")}</p>}
-        </PanelSection>
-      </div>
-    </aside>
+    </header>
   );
 }
 
-/** Fenêtre d'accueil, ouverte au démarrage (cahier des charges, section 6). */
+/** Photo d'illustration, tirée des meilleures photos de la bibliothèque. */
+function Hero({ highlight }: { highlight: Highlight | null }) {
+  const { i18n } = useTranslation();
+  const date = formatDate(highlight?.capturedAt ?? null, i18n.language);
+  return (
+    <section className="welcome-hero" aria-hidden={!highlight}>
+      {highlight ? (
+        <>
+          <img src={previewUrl(highlight.mediaId, 2048) ?? undefined} alt="" decoding="async" />
+          <span className="welcome-hero-caption">
+            {[highlight.albumName, date].filter(Boolean).join(" · ")}
+          </span>
+        </>
+      ) : (
+        <span className="welcome-hero-mark" />
+      )}
+    </section>
+  );
+}
+
+function Row({
+  title,
+  more,
+  onMore,
+  children,
+}: {
+  title: string;
+  more?: string;
+  onMore?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="welcome-row">
+      <header className="welcome-row-header">
+        <h2>{title}</h2>
+        {more && onMore && (
+          <button type="button" className="link-button" onClick={onMore}>
+            {more}
+          </button>
+        )}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function AlbumCard({ album }: { album: AlbumSummary }) {
+  const { t, i18n } = useTranslation();
+  const versions = useLibrary((s) => s.versions);
+  const cover = album.coverMediaId;
+  return (
+    <button
+      type="button"
+      className="album-card"
+      onClick={() => void openMain({ screen: "cull", albumId: album.id })}
+    >
+      <span className="album-card-cover">
+        <Thumbnail src={cover === null ? null : previewUrl(cover, 1024, versions[cover] ?? 0)} />
+      </span>
+      <span className="album-card-name">{album.name}</span>
+      <span className="album-card-meta">
+        {[
+          formatDate(album.startDate, i18n.language),
+          t("toolbar.photoCount", { count: album.count }),
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </span>
+    </button>
+  );
+}
+
+function HomeTab({ recent, onAlbums }: { recent: RecentImport[]; onAlbums: () => void }) {
+  const { t } = useTranslation();
+  const albums = useLibrary((s) => s.albums);
+  const versions = useLibrary((s) => s.versions);
+  const latest = recent[0];
+
+  return (
+    <>
+      {latest && (
+        <Row
+          title={t("home.lastImportTitle", { source: latest.sourceLabel })}
+          more={t("home.more")}
+          onMore={() => void openMain({ screen: "cull" })}
+        >
+          <div className="welcome-strip">
+            {latest.mediaIds.map((id) => (
+              <button
+                key={id}
+                type="button"
+                className="welcome-strip-cell"
+                onClick={() => void openMain({ screen: "cull", mediaId: id })}
+              >
+                <Thumbnail src={previewUrl(id, 256, versions[id] ?? 0)} />
+              </button>
+            ))}
+          </div>
+        </Row>
+      )}
+      {albums.length > 0 && (
+        <Row title={t("home.recentAlbums")} more={t("home.more")} onMore={onAlbums}>
+          <div className="welcome-strip">
+            {albums.slice(0, 8).map((a) => (
+              <AlbumCard key={a.id} album={a} />
+            ))}
+          </div>
+        </Row>
+      )}
+      {!latest && albums.length === 0 && (
+        <Row title={t("home.addPhotos")}>
+          <p className="welcome-hint">{t("home.dropHint")}</p>
+        </Row>
+      )}
+    </>
+  );
+}
+
+function FirstSteps() {
+  const { t } = useTranslation();
+  return (
+    <div className="welcome-first">
+      <h2>{t("home.firstStepsTitle")}</h2>
+      <p>{t("home.firstSteps")}</p>
+      <button
+        type="button"
+        className="button button-primary button-inline"
+        onClick={() => void newLibrary()}
+      >
+        {t("import.newLibrary")}
+      </button>
+    </div>
+  );
+}
+
+/** Fenêtre d'accueil, ouverte au démarrage. */
 export function WelcomeApp() {
   const { t } = useTranslation();
   useAppEvents("welcome");
+  const hasLibrary = useImport((s) => s.libraryId !== null);
   const running = useImport((s) => s.running);
   const resumable = useImport((s) => s.resumable);
+  const albums = useLibrary((s) => s.albums);
   const dropping = useLayout((s) => s.dropping);
-  const recent = useRecentImports();
+  const { recent, highlight } = useWelcomeData();
+  const [tab, setTab] = useState<Tab>("home");
   const [onStartup, setOnStartup] = useState(welcomeOnStartup);
 
   return (
     <div className="welcome" data-dropping={dropping || undefined}>
-      <Sidebar />
-      <div className="welcome-main">
-        <div className="welcome-titlebar" data-tauri-drag-region>
-          {drawsOwnMenus && <WindowControls />}
-        </div>
-        <main className="welcome-scroll">
-          <div className="home">
-            <h1 className="home-title">{t(greetingKey())}</h1>
-            <p className="home-intro">{t("home.intro")}</p>
-
-            {resumable.map((r) => (
-              <div key={r.id} className="banner banner-info" role="status">
-                <span>{t("home.interrupted", { source: r.sourceLabel, count: r.remaining })}</span>
-                <button
-                  type="button"
-                  className="button button-small"
-                  disabled={running}
-                  onClick={() => void openMain({ screen: "import", resumeImportId: r.id })}
-                >
-                  {t("import.resume")}
-                </button>
-              </div>
-            ))}
-
-            <RecentActivity recent={recent} />
-            <AddPhotos />
-            <Journey />
-          </div>
-        </main>
-        <footer className="welcome-footer">
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={onStartup}
-              onChange={(e) => {
-                setOnStartup(e.target.checked);
-                setWelcomeOnStartup(e.target.checked);
-              }}
-            />
-            {t("home.showOnStartup")}
-          </label>
-          <span className="toolbar-spacer" />
-          <span>{t("status.safety")}</span>
-        </footer>
+      <div className="welcome-titlebar" data-tauri-drag-region>
+        {drawsOwnMenus && <WindowControls />}
       </div>
+      <Header />
+      <nav className="welcome-tabs" role="tablist" aria-label={t("app.name")}>
+        {(["home", "albums"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className="welcome-tab"
+            onClick={() => setTab(id)}
+          >
+            {t(id === "home" ? "modules.home" : "catalog.albums")}
+          </button>
+        ))}
+      </nav>
+      <main className="welcome-scroll">
+        {tab === "home" && <Hero highlight={highlight} />}
+        {resumable.map((r) => (
+          <div key={r.id} className="banner banner-info welcome-banner" role="status">
+            <span>{t("home.interrupted", { source: r.sourceLabel, count: r.remaining })}</span>
+            <button
+              type="button"
+              className="button button-small"
+              disabled={running}
+              onClick={() => void openMain({ screen: "import", resumeImportId: r.id })}
+            >
+              {t("import.resume")}
+            </button>
+          </div>
+        ))}
+        {!hasLibrary ? (
+          <FirstSteps />
+        ) : tab === "home" ? (
+          <HomeTab recent={recent} onAlbums={() => setTab("albums")} />
+        ) : (
+          <div className="album-grid">
+            {albums.map((a) => (
+              <AlbumCard key={a.id} album={a} />
+            ))}
+            {albums.length === 0 && <p className="welcome-hint">{t("catalog.noAlbums")}</p>}
+          </div>
+        )}
+      </main>
+      <footer className="welcome-footer">
+        <label className="check-row">
+          <input
+            type="checkbox"
+            checked={onStartup}
+            onChange={(e) => {
+              setOnStartup(e.target.checked);
+              setWelcomeOnStartup(e.target.checked);
+            }}
+          />
+          {t("home.showOnStartup")}
+        </label>
+      </footer>
     </div>
   );
 }

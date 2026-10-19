@@ -72,12 +72,17 @@ pub struct AlbumSummary {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub count: i64,
+    /// Couverture choisie, sinon la première photo de l'album.
+    pub cover_media_id: Option<i64>,
 }
 
 pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummary>, LibraryError> {
     let mut stmt = conn.prepare(
         "SELECT a.id, a.name, a.folder, a.start_date, a.end_date,
-                (SELECT count(*) FROM media m WHERE m.album_id = a.id AND m.state = 'normal')
+                (SELECT count(*) FROM media m WHERE m.album_id = a.id AND m.state = 'normal'),
+                coalesce(a.cover_media_id,
+                         (SELECT m.id FROM media m WHERE m.album_id = a.id AND m.state = 'normal'
+                          ORDER BY m.captured_at, m.path LIMIT 1))
          FROM albums a WHERE a.library_id = ?1
          ORDER BY a.start_date DESC, a.name",
     )?;
@@ -90,6 +95,44 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
                 start_date: r.get(3)?,
                 end_date: r.get(4)?,
                 count: r.get(5)?,
+                cover_media_id: r.get(6)?,
+            })
+        })?
+        .collect::<Result<_, _>>()?;
+    Ok(rows)
+}
+
+/// Photo pouvant illustrer l'accueil.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Highlight {
+    pub media_id: i64,
+    pub album_name: String,
+    pub captured_at: Option<String>,
+}
+
+/// Meilleures photos de la bibliothèque pour l'illustration de l'accueil :
+/// retenues et mieux notées d'abord, puis les plus récentes, avec un aperçu
+/// 2048 px en cache. Les rejetées sont exclues.
+pub fn highlights(
+    conn: &Connection,
+    library_id: i64,
+    limit: usize,
+) -> Result<Vec<Highlight>, LibraryError> {
+    let mut stmt = conn.prepare(
+        "SELECT m.id, a.name, m.captured_at FROM media m
+         JOIN albums a ON a.id = m.album_id
+         WHERE m.library_id = ?1 AND m.state = 'normal' AND m.flag >= 0
+           AND EXISTS (SELECT 1 FROM previews p WHERE p.media_id = m.id AND p.size = 2048)
+         ORDER BY m.flag DESC, m.rating DESC, m.captured_at DESC
+         LIMIT ?2",
+    )?;
+    let rows = stmt
+        .query_map(params![library_id, limit as i64], |r| {
+            Ok(Highlight {
+                media_id: r.get(0)?,
+                album_name: r.get(1)?,
+                captured_at: r.get(2)?,
             })
         })?
         .collect::<Result<_, _>>()?;

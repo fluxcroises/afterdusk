@@ -23,6 +23,7 @@ export interface AlbumSummary {
   startDate: string | null;
   endDate: string | null;
   count: number;
+  coverMediaId: number | null;
 }
 
 export interface MediaDetails {
@@ -66,6 +67,8 @@ export const libraryApi = {
   mediaDetails: (mediaId: number) => invoke<MediaDetails | null>("media_details", { mediaId }),
   setRating: (ids: number[], rating: number) => invoke<number>("media_set_rating", { ids, rating }),
   setFlag: (ids: number[], flag: FlagValue) => invoke<number>("media_set_flag", { ids, flag }),
+  setCover: (albumId: number, mediaId: number) =>
+    invoke<null>("album_set_cover", { albumId, mediaId }),
   setColor: (ids: number[], color: ColorName | null) =>
     invoke<number>("media_set_color", { ids, color }),
 };
@@ -98,6 +101,8 @@ interface LibraryState {
   /** Pose la couleur, ou la retire si la photo l'a déjà (comme Lightroom). */
   toggleColor: (color: ColorName) => Promise<void>;
   setAutoAdvance: (value: boolean) => void;
+  /** La photo devient la couverture de son album. */
+  setAsCover: (mediaId: number) => Promise<void>;
 }
 
 export const useLibrary = create<LibraryState>((set, get) => {
@@ -202,6 +207,19 @@ export const useLibrary = create<LibraryState>((set, get) => {
     setRating: (rating) => mark({ rating }, (ids) => libraryApi.setRating(ids, rating), true),
 
     setFlag: (flag) => mark({ flag }, (ids) => libraryApi.setFlag(ids, flag), true),
+
+    setAsCover: async (mediaId) => {
+      const albumId = get().media.find((m) => m.id === mediaId)?.albumId;
+      if (albumId === undefined) return;
+      try {
+        await libraryApi.setCover(albumId, mediaId);
+        set((s) => ({
+          albums: s.albums.map((a) => (a.id === albumId ? { ...a, coverMediaId: mediaId } : a)),
+        }));
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
 
     toggleColor: (color) => {
       const current = get().media.find((m) => m.id === get().selectedId)?.color ?? null;

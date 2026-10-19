@@ -11,7 +11,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [ ] Les photos déjà importées sont reconnues et grisées lors d'un second import
 - [ ] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
 - [ ] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
-- [ ] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
+- [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
 - [ ] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
 - [ ] Corbeille interne avec restauration et vidage après 30 jours
 - [ ] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
@@ -66,4 +66,11 @@ Tests en place à cette date : 14 tests Rust et 10 tests Vitest.
 - Écrit en base aussitôt (affichage immédiat, valeur rétablie si le cœur refuse), puis dans le XMP par un fil d'arrière-plan qui regroupe les frappes : seuls `xmp:Rating`, `xmp:Label` et `afterdusk:Pick` changent, le reste du fichier est conservé. Une modification faite pendant l'écriture reste en file ; une bibliothèque débranchée est écrite à son retour (nouvel essai chaque minute).
 - Import : la note, le drapeau, la couleur et les mots-clés d'un XMP déjà présent (laissé par un autre logiciel) sont repris en base au lieu d'être remis à zéro.
 - Vérifié de bout en bout dans l'application compilée sous Windows (bibliothèque d'essai de trois RAW importée avec `examples/dev_seed.rs`) : miniatures réelles, touches 4, P et 6, valeurs en base et dans le XMP sur le disque, original identique à la source.
-- Le critère « Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP » sera coché après la CI sur Windows et macOS.
+- Critère « Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP » coché : CI verte sur Windows et macOS (run 39230735901).
+
+### 2026-10-19 (suite) : accueil épuré et couvertures d'album
+
+- Accueil refait dans l'esprit d'Affinity : en-tête compact (salutation, bibliothèque courante avec menu pour en changer ou en créer une), trois actions (Bibliothèque, Importer depuis un dossier, Importer), onglets Accueil et Albums, rangées « Dernier import » et « Albums récents ». La colonne de gauche, le texte d'introduction et les cartes du parcours sont retirés. La bibliothèque choisie est partagée avec la fenêtre principale.
+- Photo d'illustration en tête de l'accueil, comme les écrans de démarrage d'Adobe : tirée au hasard parmi les meilleures photos de la bibliothèque (retenues et mieux notées d'abord, rejetées exclues), avec l'album et la date en légende ; symbole en filigrane tant que la bibliothèque est vide.
+- Couverture d'album : première photo par défaut, ou celle choisie par Photo > Définir comme couverture de l'album ou par clic droit sur la miniature ; badge sur la photo de couverture.
+- Limite connue : la couverture choisie n'est enregistrée qu'en base ; elle serait perdue si la base devait être reconstruite à partir des dossiers et des XMP.

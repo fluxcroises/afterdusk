@@ -46,6 +46,7 @@ impl From<LibraryError> for CommandError {
             LibraryError::MissingRoot(_) => "missingFolder",
             LibraryError::Template(_) => "invalidTemplate",
             LibraryError::NotFound(_) => "libraryNotFound",
+            LibraryError::NotInAlbum { .. } => "notInAlbum",
             LibraryError::Sqlite(_) => "internal",
         };
         Self::new(code, e)

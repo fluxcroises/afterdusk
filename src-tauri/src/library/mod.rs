@@ -22,6 +22,8 @@ pub enum LibraryError {
     MissingRoot(PathBuf),
     #[error(transparent)]
     Template(#[from] template::TemplateError),
+    #[error("la photo {media_id} n'appartient pas à l'album {album_id}")]
+    NotInAlbum { album_id: i64, media_id: i64 },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -140,6 +142,23 @@ pub fn find_or_create_album(
         )?;
     }
     Ok(id)
+}
+
+/// Choisit la photo de couverture d'un album ; la photo doit en faire partie.
+pub fn set_album_cover(
+    conn: &Connection,
+    album_id: i64,
+    media_id: i64,
+) -> Result<(), LibraryError> {
+    let changed = conn.execute(
+        "UPDATE albums SET cover_media_id = ?2
+         WHERE id = ?1 AND EXISTS (SELECT 1 FROM media WHERE id = ?2 AND album_id = ?1)",
+        params![album_id, media_id],
+    )?;
+    if changed == 0 {
+        return Err(LibraryError::NotInAlbum { album_id, media_id });
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

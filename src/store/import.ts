@@ -49,6 +49,26 @@ interface ImportState {
   dismissError: () => void;
 }
 
+const LIBRARY_KEY = "afterdusk.libraryId";
+
+/** Bibliothèque courante, partagée par l'accueil et la fenêtre principale. */
+function rememberLibrary(id: number): void {
+  try {
+    window.localStorage.setItem(LIBRARY_KEY, String(id));
+  } catch {
+    // Sans stockage, chaque fenêtre garde son propre choix pour la session.
+  }
+}
+
+function rememberedLibrary(): number | null {
+  try {
+    const value = Number(window.localStorage.getItem(LIBRARY_KEY));
+    return Number.isInteger(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 const folderName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 /** Par défaut, tout ce qui n'a pas encore été importé est sélectionné. */
@@ -84,10 +104,17 @@ export const useImport = create<ImportState>((set, get) => ({
         api.librariesList(),
         api.importsResumable(),
       ]);
+      // La bibliothèque choisie dans l'autre fenêtre fait foi, si elle existe encore.
+      const remembered = rememberedLibrary();
+      const valid = (id: number | null) => id !== null && libraries.some((l) => l.id === id);
       set((s) => ({
         libraries,
         resumable,
-        libraryId: s.libraryId ?? libraries[0]?.id ?? null,
+        libraryId: valid(remembered)
+          ? remembered
+          : valid(s.libraryId)
+            ? s.libraryId
+            : (libraries[0]?.id ?? null),
       }));
     } catch (e) {
       set({ error: toCommandError(e) });
@@ -97,6 +124,7 @@ export const useImport = create<ImportState>((set, get) => ({
   createLibrary: async (root) => {
     try {
       const library = await api.libraryCreate(folderName(root), root, null);
+      rememberLibrary(library.id);
       set((s) => ({ libraries: [...s.libraries, library], libraryId: library.id }));
       const source = get().source;
       if (source) await get().scanSource(source.root);
@@ -106,6 +134,7 @@ export const useImport = create<ImportState>((set, get) => ({
   },
 
   selectLibrary: (id) => {
+    rememberLibrary(id);
     set({ libraryId: id });
     const source = get().source;
     if (source) void get().scanSource(source.root);
