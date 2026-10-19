@@ -90,6 +90,14 @@ pub fn run() {
             app.manage(queue);
             app.manage(commands::devices::DeviceWatch::start(app.handle().clone()));
             previews::enqueue_missing(app.handle());
+            // Essai de lancement (CI) : échec si l'interface ne s'affiche pas à temps.
+            if std::env::var_os(commands::SMOKE_ENV).is_some() {
+                std::thread::spawn(|| {
+                    std::thread::sleep(std::time::Duration::from_secs(90));
+                    eprintln!("afterdusk : l'interface ne s'est pas affichée en 90 s");
+                    std::process::exit(2);
+                });
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -99,6 +107,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::app_info,
+            commands::app_ready,
             commands::library::libraries_list,
             commands::library::library_create,
             commands::library::library_set_backup,

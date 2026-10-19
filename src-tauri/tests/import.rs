@@ -153,7 +153,14 @@ fn import_complet_avec_sauvegarde_et_xmp() {
     assert_eq!(outcome, ImportOutcome::Done);
     let last = events.last().unwrap();
     assert_eq!((last.imported, last.failed, last.processed), (4, 0, 4));
-    assert!(events.iter().filter(|e| e.media_id.is_some()).count() == 4);
+    // Une photo est annoncée (et ses aperçus demandés) dès la fin de sa copie,
+    // sans attendre la fin de l'import : un événement par fichier, dans l'ordre.
+    let announced: Vec<usize> = events
+        .iter()
+        .filter(|e| e.media_id.is_some())
+        .map(|e| e.processed)
+        .collect();
+    assert_eq!(announced, [1, 2, 3, 4]);
 
     // Rangement par jour et renommage selon le modèle du cahier des charges ;
     // la numérotation suit l'ordre de prise de vue (le Nikon de 2019 d'abord).

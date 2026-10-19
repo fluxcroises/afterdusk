@@ -71,3 +71,17 @@ jobs:
 
       - name: Application — compilation Tauri
         run: npm run tauri build -- --debug --no-bundle
+
+      - name: Application — essai de lancement
+        # La fenêtre s'ouvre, l'interface s'affiche, puis l'application s'arrête
+        # d'elle-même (AFTERDUSK_SMOKE) ; au-delà de 90 s, elle échoue.
+        shell: bash
+        timeout-minutes: 3
+        env:
+          AFTERDUSK_SMOKE: "1"
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            ./src-tauri/target/debug/afterdusk.exe
+          else
+            ./src-tauri/target/debug/afterdusk
+          fi

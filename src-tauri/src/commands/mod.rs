@@ -62,6 +62,20 @@ pub fn app_info() -> AppInfo {
     }
 }
 
+/// Variable d'environnement de l'essai de lancement (CI) : l'application
+/// s'arrête dès que la première fenêtre a affiché l'interface.
+pub const SMOKE_ENV: &str = "AFTERDUSK_SMOKE";
+
+/// L'interface de la première fenêtre est affichée. En essai de lancement,
+/// l'application s'arrête là, avec succès ; sinon, rien.
+#[tauri::command]
+pub fn app_ready(app: tauri::AppHandle, window: tauri::Window) {
+    if std::env::var_os(SMOKE_ENV).is_some() {
+        println!("afterdusk : interface affichée ({})", window.label());
+        app.exit(0);
+    }
+}
+
 /// Exécute un traitement bloquant hors du fil de l'interface.
 pub async fn blocking<T, F>(f: F) -> CommandResult<T>
 where

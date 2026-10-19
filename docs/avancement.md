@@ -191,3 +191,9 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Pour une sauvegarde dans un dossier cloud, l'avertissement « même disque » est remplacé par « Copie envoyée en ligne par OneDrive » : Afterdusk vérifie la copie locale ; l'envoi et l'espace disponible relèvent du service. Afterdusk ne fait aucun appel réseau (règle absolue) : c'est le logiciel du service qui envoie.
 - Tests : détection (OneDrive par variable, Dropbox par `info.json`, dossiers personnels, sans doublon), dossiers `CloudStorage` du Mac, reconnaissance d'une sauvegarde dans un dossier cloud.
 - Vérifié dans l'application compilée sous Windows avec le OneDrive de l'utilisateur (base vide, la sienne mise de côté puis remise ; rien créé dans OneDrive). Non vérifié sur Mac.
+
+### 2026-10-19 (suite) : preuves des critères déjà remplis
+
+- Essai de lancement en CI sur Windows et macOS : l'application compilée démarre avec `AFTERDUSK_SMOKE=1`, la première fenêtre affiche l'interface et le signale au cœur, qui arrête l'application avec succès ; au-delà de 90 s, l'essai échoue. En local sous Windows : interface affichée en 0,74 s.
+- Test d'import resserré : chaque photo est annoncée (et ses aperçus demandés) dès la fin de sa copie, un événement par fichier, dans l'ordre, avant la fin de l'import.
+- Inventaire des preuves déjà en place : six formats RAW lus en CI (`raw_samples`, échantillons de test-assets) ; second import reconnu par empreinte et photos grisées, non sélectionnables (cœur et interface) ; fr.json et en.json aux mêmes clés, menus vérifiés dans les deux langues.
