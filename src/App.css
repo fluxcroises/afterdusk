@@ -1359,8 +1359,8 @@ input[type="checkbox"] {
 }
 
 .welcome-hero-top {
-  height: 36px;
-  padding-left: var(--ad-space-4);
+  height: 48px;
+  padding-left: var(--ad-space-5);
 }
 
 html[data-platform="mac"] .welcome-hero-top {
@@ -1375,8 +1375,18 @@ html[data-platform="mac"] .welcome-hero-top {
 .welcome-brand {
   display: flex;
   align-items: center;
-  gap: var(--ad-space-2);
+  gap: 10px;
   color: var(--ad-text);
+}
+
+/* Plus grand que dans la barre principale : c'est la vitrine de l'application. */
+.welcome-brand .logo {
+  width: 28px;
+  height: 28px;
+}
+
+.welcome-brand .brand-name {
+  font: 600 17px/1 var(--ad-font);
 }
 
 .welcome-hero-caption {
