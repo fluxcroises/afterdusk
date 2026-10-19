@@ -1,18 +1,19 @@
 import { ImageOff, Images, SlidersHorizontal } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { type MouseEvent, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { CatalogPanel } from "../components/CatalogPanels";
+import { ColorSection, HistogramSection, LightSection } from "../components/DevelopPanels";
 import { EmptyState } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
-import { FieldRow, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { EXPOSURE_RANGE, useDevelop } from "../store/develop";
+import { useDevelop } from "../store/develop";
 import { useLibrary } from "../store/library";
 
 /** Image rendue par le cœur, dessinée telle quelle (aucun calcul de couleur ici). */
 function DevelopCanvas() {
   const { t } = useTranslation();
   const frame = useDevelop((s) => s.frame);
+  const picking = useDevelop((s) => s.picking);
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -22,47 +23,34 @@ function DevelopCanvas() {
     canvas.height = frame.height;
     context.putImageData(new ImageData(frame.pixels, frame.width, frame.height), 0, 0);
   }, [frame]);
-  if (!frame) return null;
-  return <canvas ref={ref} className="develop-canvas" aria-label={t("develop.image")} />;
-}
 
-function formatEv(value: number, language: string) {
-  return new Intl.NumberFormat(language, {
-    signDisplay: "exceptZero",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+  // Pipette : le point cliqué, en pixels de l'aperçu rendu.
+  const pick = (e: MouseEvent<HTMLCanvasElement>) => {
+    if (!picking || !frame) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * frame.width;
+    const y = ((e.clientY - rect.top) / rect.height) * frame.height;
+    void useDevelop.getState().pickWhite(x, y);
+  };
+
+  if (!frame) return null;
+  return (
+    <canvas
+      ref={ref}
+      className="develop-canvas"
+      data-picking={picking || undefined}
+      aria-label={t("develop.image")}
+      onClick={pick}
+    />
+  );
 }
 
 function SettingsPanel() {
-  const { t, i18n } = useTranslation();
-  const settings = useDevelop((s) => s.settings);
-  const setExposure = useDevelop((s) => s.setExposure);
-  const exposure = settings?.light?.exposure ?? 0;
   return (
     <>
-      <PanelSection id="develop.light" title={t("develop.light")}>
-        <label className="develop-slider">
-          <span className="develop-slider-head">
-            <span>{t("develop.exposure")}</span>
-            <output>{t("develop.ev", { value: formatEv(exposure, i18n.language) })}</output>
-          </span>
-          <input
-            type="range"
-            min={EXPOSURE_RANGE.min}
-            max={EXPOSURE_RANGE.max}
-            step={EXPOSURE_RANGE.step}
-            value={exposure}
-            disabled={!settings}
-            title={t("develop.resetHint")}
-            onChange={(e) => setExposure(Number(e.currentTarget.value))}
-            onDoubleClick={() => setExposure(0)}
-          />
-        </label>
-      </PanelSection>
-      <PanelSection id="develop.color" title={t("develop.color")}>
-        <FieldRow label={t("develop.whiteBalance")} value={t("develop.asShot")} />
-      </PanelSection>
+      <HistogramSection />
+      <LightSection />
+      <ColorSection />
     </>
   );
 }
@@ -74,6 +62,8 @@ function RenderStatus() {
   const adapter = useDevelop((s) => s.adapter);
   const decodeMs = useDevelop((s) => s.decodeMs);
   const roundTripMs = useDevelop((s) => s.roundTripMs);
+  const picking = useDevelop((s) => s.picking);
+  if (picking) return <span className="toolbar-status">{t("develop.pickHint")}</span>;
   if (!frame) return null;
   return (
     <span className="toolbar-status">

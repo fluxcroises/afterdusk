@@ -477,7 +477,6 @@
     "resetHint": "Double-cliquez pour revenir à zéro.",
     "color": "Couleur",
     "whiteBalance": "Balance des blancs",
-    "asShot": "Telle que prise",
     "cpu": "processeur",
     "status": "{{width}} × {{height}} · rendu {{render}} ms ({{engine}}) · affiché en {{total}} ms · original décodé en {{decode}} ms",
     "emptyTitle": "Aucune photo à retoucher",
@@ -485,6 +484,33 @@
     "chooseTitle": "Choisissez une photo",
     "chooseText": "Sélectionnez une photo dans la pellicule pour la retoucher.",
     "errorTitle": "Cette photo ne peut pas être ouverte",
-    "loading": "Développement de l'original…"
+    "loading": "Développement de l'original…",
+    "brightness": "Luminosité",
+    "contrast": "Contraste",
+    "highlights": "Hautes lumières",
+    "shadows": "Ombres",
+    "whites": "Blancs",
+    "blacks": "Noirs",
+    "vibrance": "Vibrance",
+    "saturation": "Saturation",
+    "temperature": "Température",
+    "tint": "Teinte",
+    "kelvin": "{{value}} K",
+    "pick": "Pipette de balance des blancs",
+    "pickHint": "Cliquez sur un gris ou un blanc de la photo pour neutraliser la dominante.",
+    "wb": {
+      "asShot": "Telle que prise",
+      "daylight": "Lumière du jour",
+      "cloudy": "Nuageux",
+      "shade": "Ombre",
+      "tungsten": "Tungstène",
+      "fluorescent": "Fluorescent",
+      "flash": "Flash",
+      "custom": "Personnalisée"
+    },
+    "clip": {
+      "shadows": "Montrer les ombres bouchées",
+      "highlights": "Montrer les hautes lumières brûlées"
+    }
   }
 }

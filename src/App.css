@@ -2669,7 +2669,7 @@ input[type="radio"] {
   inset: auto 0 var(--ad-space-4);
   text-align: center;
   color: var(--ad-text-secondary);
-  font-size: var(--ad-font-meta);
+  font: var(--ad-font-meta);
 }
 
 .develop-slider {
@@ -2682,7 +2682,7 @@ input[type="radio"] {
   display: flex;
   justify-content: space-between;
   color: var(--ad-text-secondary);
-  font-size: var(--ad-font-ui);
+  font: var(--ad-font-ui);
 }
 
 .develop-slider output {
@@ -2693,4 +2693,81 @@ input[type="radio"] {
 .develop-slider input[type="range"] {
   width: 100%;
   accent-color: var(--ad-accent);
+}
+
+.develop-canvas[data-picking] {
+  cursor: crosshair;
+}
+
+.develop-histogram {
+  position: relative;
+  padding: var(--ad-space-1);
+}
+
+.develop-histogram-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Indicateurs d'écrêtage : coins du haut de l'histogramme. Allumés quand des
+   pixels sont écrêtés, cliqués pour les montrer sur la photo. */
+.develop-clip {
+  position: absolute;
+  top: 4px;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 6px solid transparent;
+  background: none;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.develop-clip-shadows {
+  left: 4px;
+  border-top-color: var(--ad-text-muted);
+  border-left-color: var(--ad-text-muted);
+}
+
+.develop-clip-highlights {
+  right: 4px;
+  border-top-color: var(--ad-text-muted);
+  border-right-color: var(--ad-text-muted);
+}
+
+.develop-clip-shadows[data-lit] {
+  border-top-color: rgb(40 110 255);
+  border-left-color: rgb(40 110 255);
+  opacity: 1;
+}
+
+.develop-clip-highlights[data-lit] {
+  border-top-color: rgb(255 40 40);
+  border-right-color: rgb(255 40 40);
+  opacity: 1;
+}
+
+.develop-clip[aria-pressed="true"] {
+  opacity: 1;
+  outline: 1px solid var(--ad-text);
+  outline-offset: 2px;
+}
+
+.develop-wb {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ad-space-2);
+  padding-bottom: var(--ad-space-1);
+}
+
+.develop-wb-select {
+  display: grid;
+  flex: 1;
+  gap: var(--ad-space-1);
+  color: var(--ad-text-secondary);
+  font: var(--ad-font-ui);
+}
+
+.develop-wb-select select {
+  height: var(--ad-field-height);
 }

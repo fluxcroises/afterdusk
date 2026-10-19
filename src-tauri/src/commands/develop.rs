@@ -95,9 +95,19 @@ pub struct DevelopOpened {
     pub settings: DevelopSettings,
     /// Balance du boîtier, en kelvins et en teinte, pour les curseurs.
     pub as_shot: AsShot,
+    /// Préréglages de balance des blancs et leurs valeurs.
+    pub presets: Vec<WhitePreset>,
     /// Processeur graphique utilisé, ou rien pour le rendu processeur.
     pub adapter: Option<String>,
     pub decode_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WhitePreset {
+    pub name: &'static str,
+    pub temperature: f64,
+    pub tint: f64,
 }
 
 #[derive(Debug, Serialize)]
@@ -137,6 +147,14 @@ pub async fn develop_open(
                 temperature: temperature.round(),
                 tint: tint.round(),
             },
+            presets: white::PRESETS
+                .iter()
+                .map(|&(name, temperature, tint)| WhitePreset {
+                    name,
+                    temperature,
+                    tint,
+                })
+                .collect(),
             adapter: gpu
                 .as_ref()
                 .and(renderer)

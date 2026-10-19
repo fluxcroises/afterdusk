@@ -477,7 +477,6 @@
     "resetHint": "Double-click to reset.",
     "color": "Color",
     "whiteBalance": "White balance",
-    "asShot": "As shot",
     "cpu": "CPU",
     "status": "{{width}} × {{height}} · rendered in {{render}} ms ({{engine}}) · shown in {{total}} ms · original decoded in {{decode}} ms",
     "emptyTitle": "No photos to edit",
@@ -485,6 +484,33 @@
     "chooseTitle": "Choose a photo",
     "chooseText": "Select a photo in the filmstrip to edit it.",
     "errorTitle": "This photo can't be opened",
-    "loading": "Developing the original…"
+    "loading": "Developing the original…",
+    "brightness": "Brightness",
+    "contrast": "Contrast",
+    "highlights": "Highlights",
+    "shadows": "Shadows",
+    "whites": "Whites",
+    "blacks": "Blacks",
+    "vibrance": "Vibrance",
+    "saturation": "Saturation",
+    "temperature": "Temperature",
+    "tint": "Tint",
+    "kelvin": "{{value}} K",
+    "pick": "White balance eyedropper",
+    "pickHint": "Click a grey or white area of the photo to remove the color cast.",
+    "wb": {
+      "asShot": "As shot",
+      "daylight": "Daylight",
+      "cloudy": "Cloudy",
+      "shade": "Shade",
+      "tungsten": "Tungsten",
+      "fluorescent": "Fluorescent",
+      "flash": "Flash",
+      "custom": "Custom"
+    },
+    "clip": {
+      "shadows": "Show clipped shadows",
+      "highlights": "Show clipped highlights"
+    }
   }
 }
