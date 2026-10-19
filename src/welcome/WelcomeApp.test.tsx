@@ -37,6 +37,13 @@ describe("fenêtre d'accueil", () => {
     expect(screen.getByRole("button", { name: "Importer" })).toBeDisabled();
   });
 
+  it("ne reprend pas les onglets d'Affinity : la photo sert d'en-tête", () => {
+    useImport.setState({ libraries: [library(1, "Photos")], libraryId: 1 });
+    render(<WelcomeApp />);
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Albums" })).toBeInTheDocument();
+  });
+
   it("le bouton principal ouvre Importer dans la fenêtre principale", () => {
     useImport.setState({ libraries: [library(1, "Photos")], libraryId: 1 });
     render(<WelcomeApp />);
@@ -44,7 +51,7 @@ describe("fenêtre d'accueil", () => {
     expect(openMain).toHaveBeenCalledWith({ screen: "import" });
   });
 
-  it("onglet Albums : une vignette ouvre l'album dans Trier", () => {
+  it("la liste des albums ouvre l'album dans Trier", () => {
     useImport.setState({ libraries: [library(1, "Photos")], libraryId: 1 });
     useLibrary.setState({
       albums: [
@@ -60,7 +67,6 @@ describe("fenêtre d'accueil", () => {
       ],
     });
     render(<WelcomeApp />);
-    fireEvent.click(screen.getByRole("tab", { name: "Albums" }));
     fireEvent.click(screen.getByRole("button", { name: /Saint-Malo/ }));
     expect(openMain).toHaveBeenCalledWith({ screen: "cull", albumId: 9 });
   });

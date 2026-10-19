@@ -242,12 +242,14 @@
     "dropHint": "Insérez une carte mémoire, glissez un dossier dans la fenêtre, ou",
     "firstStepsTitle": "Pour commencer",
     "firstSteps": "Choisissez le dossier où Afterdusk rangera vos photos : disque interne, disque externe ou NAS. Vos fichiers y resteront lisibles sans Afterdusk.",
-    "recentAlbums": "Albums récents",
     "interrupted_one": "Un import depuis « {{source}} » a été interrompu : {{count}} fichier reste à copier.",
     "interrupted_other": "Un import depuis « {{source}} » a été interrompu : {{count}} fichiers restent à copier.",
     "showOnStartup": "Afficher l'accueil au démarrage",
     "lastImportTitle": "Dernier import · {{source}}",
-    "more": "Plus…"
+    "folder": "Dossier…",
+    "cullThem": "Les trier",
+    "allAlbums": "Tous les albums ({{count}})",
+    "fewerAlbums": "Réduire"
   },
   "keys": {
     "ctrl": "Ctrl",

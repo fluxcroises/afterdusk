@@ -1293,7 +1293,7 @@ input[type="checkbox"] {
   color: #ffffff;
 }
 
-/* ---------- Fenêtre d'accueil (dans l'esprit d'Affinity) ---------- */
+/* ---------- Fenêtre d'accueil : la photo d'abord ---------- */
 
 .welcome {
   display: flex;
@@ -1302,48 +1302,104 @@ input[type="checkbox"] {
   background: var(--ad-workspace);
 }
 
-.welcome-titlebar {
+/* En-tête : la photo d'illustration, avec titre et actions posés dessus. */
+.welcome-hero {
+  position: relative;
   display: flex;
-  justify-content: flex-end;
-  height: 32px;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 300px;
   flex: none;
+  overflow: hidden;
   background: var(--ad-bg);
 }
 
-.welcome-titlebar .window-control {
-  width: 42px;
+.welcome-hero-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: welcome-hero-in 700ms ease-out both;
 }
 
-.welcome-header {
+@keyframes welcome-hero-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Voile sombre neutre (pas un dégradé coloré) pour la lisibilité du texte. */
+.welcome-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgb(0 0 0 / 0.45), transparent 22%),
+    linear-gradient(to top, rgb(0 0 0 / 0.7), transparent 55%);
+}
+
+/* Sans photo : le symbole en filigrane. */
+.welcome-hero-mark {
+  position: absolute;
+  inset: 0;
+  background: var(--ad-hover);
+  opacity: 0.22;
+  mask: url("./assets/logo.svg") center / 180px no-repeat;
+}
+
+.welcome-hero-top,
+.welcome-hero-bottom {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: var(--ad-space-4);
-  padding: var(--ad-space-2) var(--ad-space-5) var(--ad-space-4);
-  flex: none;
-  background: var(--ad-bg);
+  gap: var(--ad-space-3);
 }
 
-html[data-platform="mac"] .welcome-titlebar {
-  height: 40px;
+.welcome-hero-top {
+  height: 36px;
+  padding-left: var(--ad-space-4);
 }
 
-.welcome-logo {
-  width: 40px;
-  height: 40px;
-  flex: none;
-  background: var(--ad-text);
-  mask: url("./assets/logo.svg") center / contain no-repeat;
+html[data-platform="mac"] .welcome-hero-top {
+  padding-left: 84px;
+}
+
+.welcome-hero-top .window-control {
+  width: 42px;
+  color: var(--ad-text);
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+  color: var(--ad-text);
+}
+
+.welcome-hero-caption {
+  padding-right: var(--ad-space-3);
+  font: var(--ad-font-meta);
+  color: rgb(255 255 255 / 0.75);
+}
+
+.welcome-hero-bottom {
+  align-items: flex-end;
+  padding: 0 var(--ad-space-5) var(--ad-space-5);
 }
 
 .welcome-identity {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ad-space-1);
   min-width: 0;
 }
 
 .welcome-greeting {
-  font: 600 18px/1.2 var(--ad-font);
+  font: 600 30px/1.1 var(--ad-font);
+  color: #ffffff;
 }
 
 .library-switcher {
@@ -1354,11 +1410,12 @@ html[data-platform="mac"] .welcome-titlebar {
   display: flex;
   align-items: center;
   gap: var(--ad-space-1);
-  color: var(--ad-text-secondary);
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.8);
 }
 
 .library-switcher-button:hover {
-  color: var(--ad-text);
+  color: #ffffff;
 }
 
 .library-switcher-button svg {
@@ -1395,115 +1452,38 @@ html[data-platform="mac"] .welcome-titlebar {
   gap: var(--ad-space-2);
 }
 
-.welcome-actions .icon-button {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--ad-radius-lg);
-}
-
-.welcome-actions .icon-button svg {
-  width: 22px;
-  height: 22px;
-}
-
-.welcome-primary {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--ad-radius-lg);
-  background: var(--ad-accent);
-  color: var(--ad-on-accent);
-  transition: background var(--ad-transition);
-}
-
-.welcome-primary:hover:not(:disabled) {
-  background: var(--ad-accent-hover);
-}
-
-.welcome-primary:disabled {
-  background: var(--ad-surface);
-  color: var(--ad-text-muted);
-}
-
-.welcome-primary svg {
-  width: 24px;
-  height: 24px;
-}
-
-.welcome-tabs {
+.welcome-actions .button {
   display: flex;
-  justify-content: center;
+  align-items: center;
   gap: var(--ad-space-2);
-  padding: var(--ad-space-2);
-  flex: none;
-  background: var(--ad-bg);
-  border-top: 1px solid var(--ad-border-strong);
-  border-bottom: 1px solid var(--ad-border-strong);
 }
 
-.welcome-tab {
-  height: 28px;
-  padding: 0 var(--ad-space-4);
-  border-radius: var(--ad-radius-md);
-  color: var(--ad-text-secondary);
+.welcome-actions .button svg {
+  width: 16px;
+  height: 16px;
 }
 
-.welcome-tab:hover {
-  color: var(--ad-text);
+/* Bouton discret posé sur la photo. */
+.button-ghost {
+  width: auto;
+  font-weight: 400;
+  color: #ffffff;
+  background: rgb(0 0 0 / 0.35);
+  border: 1px solid rgb(255 255 255 / 0.25);
 }
 
-.welcome-tab[aria-selected="true"] {
-  background: var(--ad-accent);
-  color: var(--ad-on-accent);
-  font-weight: 600;
+.button-ghost:hover:not(:disabled) {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.button-ghost:disabled {
+  color: rgb(255 255 255 / 0.4);
+  background: rgb(0 0 0 / 0.2);
 }
 
 .welcome-scroll {
   flex: 1;
   overflow: auto;
-  padding-bottom: var(--ad-space-5);
-}
-
-/* Photo d'illustration, en pleine largeur, sans bordure ni effet. */
-.welcome-hero {
-  position: relative;
-  height: 220px;
-  overflow: hidden;
-  background: var(--ad-bg);
-}
-
-.welcome-hero img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  animation: welcome-hero-in 600ms ease-out both;
-}
-
-@keyframes welcome-hero-in {
-  from {
-    opacity: 0;
-  }
-}
-
-.welcome-hero-caption {
-  position: absolute;
-  right: var(--ad-space-4);
-  bottom: var(--ad-space-3);
-  padding: 2px var(--ad-space-2);
-  font: var(--ad-font-meta);
-  color: var(--ad-text);
-  background: rgb(0 0 0 / 0.45);
-  border-radius: var(--ad-radius-sm);
-}
-
-/* Sans photo : le symbole en filigrane. */
-.welcome-hero-mark {
-  position: absolute;
-  inset: 0;
-  background: var(--ad-hover);
-  opacity: 0.25;
-  mask: url("./assets/logo.svg") center / 160px no-repeat;
 }
 
 .welcome-banner {
@@ -1513,62 +1493,51 @@ html[data-platform="mac"] .welcome-titlebar {
   border-radius: var(--ad-radius-md);
 }
 
-.welcome-row {
-  margin-top: var(--ad-space-5);
+/* Deux colonnes : planche contact à gauche, albums à droite. */
+.welcome-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  padding: var(--ad-space-5);
 }
 
-.welcome-row-header {
+@media (max-width: 900px) {
+  .welcome-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.welcome-section-header {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  padding: 0 var(--ad-space-5);
+  gap: var(--ad-space-2);
   margin-bottom: var(--ad-space-3);
+  padding-bottom: var(--ad-space-2);
+  border-bottom: 1px solid var(--ad-border);
 }
 
-.welcome-row-header h2 {
+.welcome-section-header h2 {
   font: var(--ad-font-panel-title);
 }
 
-.welcome-strip {
-  display: flex;
-  gap: var(--ad-space-2);
-  padding: 0 var(--ad-space-5) var(--ad-space-2);
-  overflow-x: auto;
+.welcome-section-meta {
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
 }
 
-.welcome-strip-cell {
-  flex: none;
-  width: 168px;
+.contact-sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: 4px;
+}
+
+.contact-sheet-cell {
   aspect-ratio: 3 / 2;
-  border-radius: var(--ad-radius-md);
   overflow: hidden;
 }
 
-.welcome-strip-cell:hover,
-.album-card:hover .album-card-cover {
-  outline: 1px solid var(--ad-text-secondary);
-  outline-offset: -1px;
-}
-
-.album-card {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  gap: 2px;
-  width: 200px;
-  text-align: left;
-}
-
-.album-card-cover {
-  display: block;
-  aspect-ratio: 3 / 2;
-  margin-bottom: var(--ad-space-1);
-  border-radius: var(--ad-radius-md);
-  overflow: hidden;
-}
-
-/* Couverture recadrée pour remplir la vignette, comme les cartes d'Affinity. */
-.album-card-cover .thumbnail img {
+.contact-sheet-cell .thumbnail img,
+.album-row-cover .thumbnail img {
   width: 100%;
   height: 100%;
   max-width: none;
@@ -1576,44 +1545,80 @@ html[data-platform="mac"] .welcome-titlebar {
   object-fit: cover;
 }
 
-.album-card-name {
+.contact-sheet-cell:hover {
+  outline: 1px solid var(--ad-text-secondary);
+  outline-offset: -1px;
+}
+
+.album-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.album-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-3);
+  padding: 6px var(--ad-space-2);
+  margin: 0 calc(-1 * var(--ad-space-2));
+  text-align: left;
+  border-radius: var(--ad-radius-md);
+}
+
+.album-row:hover {
+  background: var(--ad-panel);
+}
+
+.album-row-cover {
+  display: block;
+  width: 60px;
+  aspect-ratio: 3 / 2;
+  flex: none;
+  overflow: hidden;
+  border-radius: var(--ad-radius-sm);
+}
+
+.album-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.album-row-name {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-weight: 600;
+  color: var(--ad-text);
 }
 
-.album-card-meta {
+.album-row-meta,
+.album-row-count {
   font: var(--ad-font-meta);
   color: var(--ad-text-secondary);
-}
-
-.album-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--ad-space-4);
-  padding: var(--ad-space-5);
-}
-
-.album-grid .album-card {
-  width: auto;
+  white-space: nowrap;
 }
 
 .welcome-hint {
-  padding: 0 var(--ad-space-5);
   color: var(--ad-text-secondary);
 }
 
 .welcome-first {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--ad-space-3);
-  max-width: 560px;
+  align-items: center;
+  gap: var(--ad-space-4);
+  max-width: 720px;
   margin: var(--ad-space-5);
   padding: var(--ad-space-5);
   border: 1px dashed var(--ad-text-muted);
   border-radius: var(--ad-radius-lg);
+}
+
+.welcome-first-icon {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  color: var(--ad-text);
 }
 
 .welcome-first h2 {
@@ -1621,6 +1626,7 @@ html[data-platform="mac"] .welcome-titlebar {
 }
 
 .welcome-first p {
+  margin-top: var(--ad-space-1);
   color: var(--ad-text-secondary);
 }
 
@@ -1633,12 +1639,11 @@ html[data-platform="mac"] .welcome-titlebar {
   display: flex;
   align-items: center;
   gap: var(--ad-space-3);
-  height: 36px;
+  height: 34px;
   padding: 0 var(--ad-space-5);
   flex: none;
   font: var(--ad-font-meta);
   color: var(--ad-text-secondary);
-  background: var(--ad-bg);
   border-top: 1px solid var(--ad-border-strong);
 }
 

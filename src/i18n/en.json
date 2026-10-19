@@ -242,12 +242,14 @@
     "dropHint": "Insert a memory card, drop a folder onto the window, or",
     "firstStepsTitle": "Getting started",
     "firstSteps": "Choose the folder where Afterdusk will store your photos: internal drive, external drive or NAS. Your files stay readable without Afterdusk.",
-    "recentAlbums": "Recent albums",
     "interrupted_one": "An import from “{{source}}” was interrupted: {{count}} file left to copy.",
     "interrupted_other": "An import from “{{source}}” was interrupted: {{count}} files left to copy.",
     "showOnStartup": "Show at startup",
     "lastImportTitle": "Last import · {{source}}",
-    "more": "More…"
+    "folder": "Folder…",
+    "cullThem": "Cull them",
+    "allAlbums": "All albums ({{count}})",
+    "fewerAlbums": "Show less"
   },
   "keys": {
     "ctrl": "Ctrl",

@@ -1,12 +1,18 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { Check, ChevronDown, FolderOpen, Images, Plus } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  FolderOpen,
+  FolderPlus,
+  HardDriveDownload,
+  Images,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { newLibrary, pickFolder } from "../actions";
 import { api, type RecentImport } from "../api/core";
 import { previewUrl } from "../api/previews";
 import { useAppEvents } from "../appEvents";
-import { IconButton } from "../components/IconButton";
 import { Thumbnail } from "../components/Thumbnail";
 import { WindowControls } from "../components/WindowControls";
 import { drawsOwnMenus } from "../platform";
@@ -16,8 +22,6 @@ import { type AlbumSummary, useLibrary } from "../store/library";
 import { greetingKey } from "../ui/greeting";
 import { openMain, setWelcomeOnStartup, welcomeOnStartup } from "../windows";
 import "../App.css";
-
-type Tab = "home" | "albums";
 
 interface Highlight {
   mediaId: number;
@@ -156,160 +160,169 @@ function LibrarySwitcher() {
   );
 }
 
-function Header() {
-  const { t } = useTranslation();
+/**
+ * En-tête de l'accueil : la photo d'illustration occupe le haut de la fenêtre,
+ * la barre de titre passe par-dessus, la salutation et les actions sont posées
+ * en bas de l'image.
+ */
+function Hero({ highlight }: { highlight: Highlight | null }) {
+  const { t, i18n } = useTranslation();
   const hasLibrary = useImport((s) => s.libraryId !== null);
+  const date = formatDate(highlight?.capturedAt ?? null, i18n.language);
+  const caption = highlight ? [highlight.albumName, date].filter(Boolean).join(", ") : null;
+
   return (
-    <header className="welcome-header" data-tauri-drag-region>
-      <span className="welcome-logo" aria-hidden="true" />
-      <div className="welcome-identity" data-tauri-drag-region>
-        <h1 className="welcome-greeting">{t(greetingKey())}</h1>
-        <LibrarySwitcher />
+    <header className="welcome-hero" data-tauri-drag-region>
+      {highlight ? (
+        <img
+          className="welcome-hero-photo"
+          src={previewUrl(highlight.mediaId, 2048) ?? undefined}
+          alt=""
+          decoding="async"
+          data-tauri-drag-region
+        />
+      ) : (
+        <span className="welcome-hero-mark" data-tauri-drag-region />
+      )}
+      <div className="welcome-hero-top" data-tauri-drag-region>
+        <span className="welcome-brand" data-tauri-drag-region>
+          <span className="logo" aria-hidden="true" />
+          <span className="brand-name">{t("app.name")}</span>
+        </span>
+        <span className="toolbar-spacer" data-tauri-drag-region />
+        {caption && (
+          <span className="welcome-hero-caption" data-tauri-drag-region>
+            {caption}
+          </span>
+        )}
+        {drawsOwnMenus && <WindowControls />}
       </div>
-      <span className="toolbar-spacer" data-tauri-drag-region />
-      <div className="welcome-actions">
-        <IconButton
-          icon={Images}
-          label={t("modules.library")}
-          disabled={!hasLibrary}
-          onClick={() => void openMain({ screen: "library", albumId: null })}
-        />
-        <IconButton
-          icon={FolderOpen}
-          label={t("menu.importFolder")}
-          disabled={!hasLibrary}
-          onClick={() => void importFolder(t("import.chooseFolder"))}
-        />
-        <button
-          type="button"
-          className="welcome-primary"
-          aria-label={t("modules.import")}
-          title={t("modules.import")}
-          disabled={!hasLibrary}
-          onClick={() => void openMain({ screen: "import" })}
-        >
-          <Plus aria-hidden="true" strokeWidth={2} />
-        </button>
+      <div className="welcome-hero-bottom" data-tauri-drag-region>
+        <div className="welcome-identity">
+          <h1 className="welcome-greeting">{t(greetingKey())}</h1>
+          <LibrarySwitcher />
+        </div>
+        <span className="toolbar-spacer" data-tauri-drag-region />
+        <div className="welcome-actions">
+          <button
+            type="button"
+            className="button button-ghost"
+            disabled={!hasLibrary}
+            onClick={() => void openMain({ screen: "library", albumId: null })}
+          >
+            <Images aria-hidden="true" strokeWidth={1.75} />
+            {t("modules.library")}
+          </button>
+          <button
+            type="button"
+            className="button button-ghost"
+            disabled={!hasLibrary}
+            onClick={() => void importFolder(t("import.chooseFolder"))}
+          >
+            <FolderOpen aria-hidden="true" strokeWidth={1.75} />
+            {t("home.folder")}
+          </button>
+          <button
+            type="button"
+            className="button button-primary button-inline"
+            disabled={!hasLibrary}
+            onClick={() => void openMain({ screen: "import" })}
+          >
+            <HardDriveDownload aria-hidden="true" strokeWidth={1.75} />
+            {t("modules.import")}
+          </button>
+        </div>
       </div>
     </header>
   );
 }
 
-/** Photo d'illustration, tirée des meilleures photos de la bibliothèque. */
-function Hero({ highlight }: { highlight: Highlight | null }) {
-  const { i18n } = useTranslation();
-  const date = formatDate(highlight?.capturedAt ?? null, i18n.language);
+/** Planche contact du dernier import. */
+function ContactSheet({ latest }: { latest: RecentImport }) {
+  const { t, i18n } = useTranslation();
+  const versions = useLibrary((s) => s.versions);
+  const date = formatDate(latest.date, i18n.language);
   return (
-    <section className="welcome-hero" aria-hidden={!highlight}>
-      {highlight ? (
-        <>
-          <img src={previewUrl(highlight.mediaId, 2048) ?? undefined} alt="" decoding="async" />
-          <span className="welcome-hero-caption">
-            {[highlight.albumName, date].filter(Boolean).join(" · ")}
-          </span>
-        </>
-      ) : (
-        <span className="welcome-hero-mark" />
-      )}
-    </section>
-  );
-}
-
-function Row({
-  title,
-  more,
-  onMore,
-  children,
-}: {
-  title: string;
-  more?: string;
-  onMore?: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="welcome-row">
-      <header className="welcome-row-header">
-        <h2>{title}</h2>
-        {more && onMore && (
-          <button type="button" className="link-button" onClick={onMore}>
-            {more}
-          </button>
-        )}
+    <section className="welcome-section">
+      <header className="welcome-section-header">
+        <h2>{t("home.lastImportTitle", { source: latest.sourceLabel })}</h2>
+        <span className="welcome-section-meta">
+          {[date, t("toolbar.photoCount", { count: latest.count })].filter(Boolean).join(" · ")}
+        </span>
+        <span className="toolbar-spacer" />
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => void openMain({ screen: "cull" })}
+        >
+          {t("home.cullThem")}
+        </button>
       </header>
-      {children}
+      <div className="contact-sheet">
+        {latest.mediaIds.slice(0, 12).map((id) => (
+          <button
+            key={id}
+            type="button"
+            className="contact-sheet-cell"
+            onClick={() => void openMain({ screen: "cull", mediaId: id })}
+          >
+            <Thumbnail src={previewUrl(id, 256, versions[id] ?? 0)} />
+          </button>
+        ))}
+      </div>
     </section>
   );
 }
 
-function AlbumCard({ album }: { album: AlbumSummary }) {
+function AlbumRow({ album }: { album: AlbumSummary }) {
   const { t, i18n } = useTranslation();
   const versions = useLibrary((s) => s.versions);
   const cover = album.coverMediaId;
   return (
     <button
       type="button"
-      className="album-card"
+      className="album-row"
       onClick={() => void openMain({ screen: "cull", albumId: album.id })}
     >
-      <span className="album-card-cover">
-        <Thumbnail src={cover === null ? null : previewUrl(cover, 1024, versions[cover] ?? 0)} />
+      <span className="album-row-cover">
+        <Thumbnail src={cover === null ? null : previewUrl(cover, 256, versions[cover] ?? 0)} />
       </span>
-      <span className="album-card-name">{album.name}</span>
-      <span className="album-card-meta">
-        {[
-          formatDate(album.startDate, i18n.language),
-          t("toolbar.photoCount", { count: album.count }),
-        ]
-          .filter(Boolean)
-          .join(" · ")}
+      <span className="album-row-text">
+        <span className="album-row-name">{album.name}</span>
+        <span className="album-row-meta">{formatDate(album.startDate, i18n.language) ?? "—"}</span>
       </span>
+      <span className="album-row-count">{t("toolbar.photoCount", { count: album.count })}</span>
     </button>
   );
 }
 
-function HomeTab({ recent, onAlbums }: { recent: RecentImport[]; onAlbums: () => void }) {
+/** Liste des albums, du plus récent au plus ancien ; dépliable. */
+function AlbumList() {
   const { t } = useTranslation();
   const albums = useLibrary((s) => s.albums);
-  const versions = useLibrary((s) => s.versions);
-  const latest = recent[0];
-
+  const [all, setAll] = useState(false);
+  const shown = all ? albums : albums.slice(0, 6);
   return (
-    <>
-      {latest && (
-        <Row
-          title={t("home.lastImportTitle", { source: latest.sourceLabel })}
-          more={t("home.more")}
-          onMore={() => void openMain({ screen: "cull" })}
-        >
-          <div className="welcome-strip">
-            {latest.mediaIds.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className="welcome-strip-cell"
-                onClick={() => void openMain({ screen: "cull", mediaId: id })}
-              >
-                <Thumbnail src={previewUrl(id, 256, versions[id] ?? 0)} />
-              </button>
-            ))}
-          </div>
-        </Row>
+    <section className="welcome-section">
+      <header className="welcome-section-header">
+        <h2>{t("catalog.albums")}</h2>
+        <span className="toolbar-spacer" />
+        {albums.length > 6 && (
+          <button type="button" className="link-button" onClick={() => setAll(!all)}>
+            {all ? t("home.fewerAlbums") : t("home.allAlbums", { count: albums.length })}
+          </button>
+        )}
+      </header>
+      {albums.length === 0 ? (
+        <p className="welcome-hint">{t("catalog.noAlbums")}</p>
+      ) : (
+        <div className="album-list">
+          {shown.map((a) => (
+            <AlbumRow key={a.id} album={a} />
+          ))}
+        </div>
       )}
-      {albums.length > 0 && (
-        <Row title={t("home.recentAlbums")} more={t("home.more")} onMore={onAlbums}>
-          <div className="welcome-strip">
-            {albums.slice(0, 8).map((a) => (
-              <AlbumCard key={a.id} album={a} />
-            ))}
-          </div>
-        </Row>
-      )}
-      {!latest && albums.length === 0 && (
-        <Row title={t("home.addPhotos")}>
-          <p className="welcome-hint">{t("home.dropHint")}</p>
-        </Row>
-      )}
-    </>
+    </section>
   );
 }
 
@@ -317,8 +330,11 @@ function FirstSteps() {
   const { t } = useTranslation();
   return (
     <div className="welcome-first">
-      <h2>{t("home.firstStepsTitle")}</h2>
-      <p>{t("home.firstSteps")}</p>
+      <FolderPlus className="welcome-first-icon" aria-hidden="true" strokeWidth={1.25} />
+      <div>
+        <h2>{t("home.firstStepsTitle")}</h2>
+        <p>{t("home.firstSteps")}</p>
+      </div>
       <button
         type="button"
         className="button button-primary button-inline"
@@ -337,34 +353,15 @@ export function WelcomeApp() {
   const hasLibrary = useImport((s) => s.libraryId !== null);
   const running = useImport((s) => s.running);
   const resumable = useImport((s) => s.resumable);
-  const albums = useLibrary((s) => s.albums);
   const dropping = useLayout((s) => s.dropping);
   const { recent, highlight } = useWelcomeData();
-  const [tab, setTab] = useState<Tab>("home");
   const [onStartup, setOnStartup] = useState(welcomeOnStartup);
+  const latest = recent[0];
 
   return (
     <div className="welcome" data-dropping={dropping || undefined}>
-      <div className="welcome-titlebar" data-tauri-drag-region>
-        {drawsOwnMenus && <WindowControls />}
-      </div>
-      <Header />
-      <nav className="welcome-tabs" role="tablist" aria-label={t("app.name")}>
-        {(["home", "albums"] as const).map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            className="welcome-tab"
-            onClick={() => setTab(id)}
-          >
-            {t(id === "home" ? "modules.home" : "catalog.albums")}
-          </button>
-        ))}
-      </nav>
+      <Hero highlight={highlight} />
       <main className="welcome-scroll">
-        {tab === "home" && <Hero highlight={highlight} />}
         {resumable.map((r) => (
           <div key={r.id} className="banner banner-info welcome-banner" role="status">
             <span>{t("home.interrupted", { source: r.sourceLabel, count: r.remaining })}</span>
@@ -380,14 +377,19 @@ export function WelcomeApp() {
         ))}
         {!hasLibrary ? (
           <FirstSteps />
-        ) : tab === "home" ? (
-          <HomeTab recent={recent} onAlbums={() => setTab("albums")} />
         ) : (
-          <div className="album-grid">
-            {albums.map((a) => (
-              <AlbumCard key={a.id} album={a} />
-            ))}
-            {albums.length === 0 && <p className="welcome-hint">{t("catalog.noAlbums")}</p>}
+          <div className="welcome-columns">
+            {latest ? (
+              <ContactSheet latest={latest} />
+            ) : (
+              <section className="welcome-section">
+                <header className="welcome-section-header">
+                  <h2>{t("home.addPhotos")}</h2>
+                </header>
+                <p className="welcome-hint">{t("home.dropHint")}</p>
+              </section>
+            )}
+            <AlbumList />
           </div>
         )}
       </main>
@@ -403,6 +405,8 @@ export function WelcomeApp() {
           />
           {t("home.showOnStartup")}
         </label>
+        <span className="toolbar-spacer" />
+        <span>{t("status.safety")}</span>
       </footer>
     </div>
   );
