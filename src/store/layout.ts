@@ -19,6 +19,19 @@ interface LayoutState {
    */
   immersive: boolean;
   setImmersive: (value: boolean) => void;
+  /** Barre de filtres au-dessus de la grille (\). */
+  filterBar: boolean;
+  setFilterBar: (value: boolean) => void;
+}
+
+const FILTER_BAR_KEY = "afterdusk.filterBar";
+
+function readFilterBar(): boolean {
+  try {
+    return window.localStorage.getItem(FILTER_BAR_KEY) !== "false";
+  } catch {
+    return true;
+  }
 }
 
 export const useLayout = create<LayoutState>((set) => ({
@@ -30,6 +43,15 @@ export const useLayout = create<LayoutState>((set) => ({
   setImmersive: (value) => {
     set({ immersive: value });
     if (isTauri()) void getCurrentWindow().setFullscreen(value);
+  },
+  filterBar: readFilterBar(),
+  setFilterBar: (value) => {
+    set({ filterBar: value });
+    try {
+      window.localStorage.setItem(FILTER_BAR_KEY, String(value));
+    } catch {
+      // Préférence de confort : sans stockage, elle vaut pour la session.
+    }
   },
   togglePanel: (panel) => set((s) => ({ visible: { ...s.visible, [panel]: !s.visible[panel] } })),
   toggleSection: (id) => set((s) => ({ collapsed: { ...s.collapsed, [id]: !s.collapsed[id] } })),

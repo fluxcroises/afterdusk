@@ -465,7 +465,7 @@ fn apercus_et_fiche_apres_import() {
     assert_eq!(generated, 2);
     assert_eq!(media::missing_previews(&s.conn).unwrap().len(), 2);
 
-    let list = media::list_media(&s.conn, s.library_id, None, false).unwrap();
+    let list = media::list_media(&s.conn, s.library_id, &Default::default()).unwrap();
     assert_eq!(list.len(), 4);
     assert_eq!(list.iter().filter(|m| m.has_preview).count(), 2);
     for m in list.iter().filter(|m| m.has_preview) {

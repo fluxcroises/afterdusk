@@ -1,6 +1,15 @@
-import { ChevronsRight, Columns2, Flag, FlagOff, LayoutGrid, Square, Star } from "lucide-react";
+import {
+  BookImage,
+  ChevronsRight,
+  Columns2,
+  Flag,
+  FlagOff,
+  LayoutGrid,
+  Square,
+  Star,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useLibrary } from "../store/library";
+import { type AlbumSort, type MediaSort, useLibrary } from "../store/library";
 import { COLOR_LABELS } from "../ui/labels";
 import { IconButton } from "./IconButton";
 
@@ -8,23 +17,37 @@ interface GridToolbarProps {
   count: number;
   /** Notes, drapeaux et couleurs : propres au tri. */
   culling?: boolean;
+  /** Bibliothèque : bouton de la vue Albums. */
+  albums?: boolean;
 }
 
-/** Grille (G), visionneuse (Entrée) ou comparaison (C). */
-function ViewModes({ disabled }: { disabled: boolean }) {
+/** Albums (Bibliothèque), grille (G), visionneuse (Entrée) ou comparaison (C). */
+function ViewModes({ disabled, albums }: { disabled: boolean; albums?: boolean }) {
   const { t } = useTranslation();
-  const view = useLibrary((s) => s.view);
-  const setView = useLibrary((s) => s.setView);
+  const showAlbums = useLibrary((s) => s.showAlbums);
+  const view = useLibrary((s) => (s.showAlbums ? null : s.view));
+  const setView = (v: "grid" | "loupe" | "compare") => {
+    useLibrary.getState().setShowAlbums(false);
+    useLibrary.getState().setView(v);
+  };
   const hasSelection = useLibrary((s) => s.selectedId !== null);
   const canCompare = useLibrary((s) => s.media.length >= 2 && s.selectedId !== null);
   return (
     <div className="toolbar-group">
+      {albums && (
+        <IconButton
+          icon={BookImage}
+          label={t("toolbar.albums")}
+          pressed={showAlbums}
+          onClick={() => useLibrary.getState().setShowAlbums(true)}
+        />
+      )}
       <IconButton
         icon={LayoutGrid}
         label={t("toolbar.grid")}
         shortcut="G"
         pressed={view === "grid"}
-        disabled={disabled}
+        disabled={disabled && !showAlbums}
         onClick={() => setView("grid")}
       />
       <IconButton
@@ -124,22 +147,42 @@ function MarkTools({ disabled }: { disabled: boolean }) {
 }
 
 /** Barre d'outils sous l'espace de travail. */
-export function GridToolbar({ count, culling }: GridToolbarProps) {
+export function GridToolbar({ count, culling, albums }: GridToolbarProps) {
   const { t } = useTranslation();
   const empty = count === 0;
+  const showAlbums = useLibrary((s) => albums === true && s.showAlbums);
+  const sort = useLibrary((s) => s.sort);
+  const albumSort = useLibrary((s) => s.albumSort);
+  const trash = useLibrary((s) => s.trash);
 
   return (
     <>
-      <ViewModes disabled={empty} />
+      <ViewModes disabled={empty} albums={albums} />
       {culling && <MarkTools disabled={empty} />}
       <span className="toolbar-spacer" />
       <label className="toolbar-field">
         {t("toolbar.sort")}
-        <select disabled={empty} defaultValue="captureTime">
-          <option value="captureTime">{t("toolbar.sortCaptureTime")}</option>
-          <option value="fileName">{t("toolbar.sortFileName")}</option>
-          <option value="rating">{t("toolbar.sortRating")}</option>
-        </select>
+        {showAlbums ? (
+          <select
+            value={albumSort}
+            onChange={(e) => useLibrary.getState().setAlbumSort(e.target.value as AlbumSort)}
+          >
+            <option value="date">{t("toolbar.sortAlbumDate")}</option>
+            <option value="name">{t("toolbar.sortAlbumName")}</option>
+            <option value="place">{t("toolbar.sortAlbumPlace")}</option>
+          </select>
+        ) : (
+          <select
+            // La corbeille reste rangée par date de suppression.
+            disabled={trash}
+            value={sort}
+            onChange={(e) => void useLibrary.getState().setSort(e.target.value as MediaSort)}
+          >
+            <option value="captureTime">{t("toolbar.sortCaptureTime")}</option>
+            <option value="fileName">{t("toolbar.sortFileName")}</option>
+            <option value="rating">{t("toolbar.sortRating")}</option>
+          </select>
+        )}
       </label>
     </>
   );

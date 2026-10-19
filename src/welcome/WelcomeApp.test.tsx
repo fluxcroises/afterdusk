@@ -64,6 +64,7 @@ describe("fenêtre d'accueil", () => {
           count: 98,
           coverMediaId: null,
           coverChosen: false,
+          place: null,
         },
       ],
     });

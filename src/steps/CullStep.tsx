@@ -1,11 +1,12 @@
-import { Images, Trash2 } from "lucide-react";
+import { Images, SearchX, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Compare } from "../components/Compare";
 import { Loupe } from "../components/Loupe";
 import { MediaGrid } from "../components/MediaGrid";
-import { useLibrary } from "../store/library";
+import { isFiltering, useLibrary } from "../store/library";
 import { CatalogPanel, PhotoInfoPanel } from "../components/CatalogPanels";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { FilterBar } from "../components/FilterBar";
 import { TrashBar, TrashNotice } from "../components/TrashBanners";
 import { EmptyState, Kbd } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
@@ -18,11 +19,13 @@ export function CullStep() {
   const error = useLibrary((s) => s.error);
   const view = useLibrary((s) => s.view);
   const trash = useLibrary((s) => s.trash);
+  const filtering = useLibrary((s) => isFiltering(s.filter));
   return (
     <ScreenLayout
       left={<CatalogPanel scope="cull" navigator />}
       right={<PhotoInfoPanel scope="cull" />}
       toolbar={<GridToolbar count={count} culling />}
+      header={<FilterBar />}
       filmstrip={<Filmstrip />}
     >
       <ErrorBanner error={error} onDismiss={() => useLibrary.setState({ error: null })} />
@@ -31,6 +34,17 @@ export function CullStep() {
       {trash && count === 0 ? (
         <EmptyState icon={Trash2} title={t("trash.emptyTitle")}>
           {t("trash.emptyText")}
+        </EmptyState>
+      ) : count === 0 && filtering ? (
+        <EmptyState icon={SearchX} title={t("filter.noMatchTitle")}>
+          <p>{t("filter.noMatchText")}</p>
+          <button
+            type="button"
+            className="button button-small"
+            onClick={() => void useLibrary.getState().resetFilter()}
+          >
+            {t("filter.reset")}
+          </button>
         </EmptyState>
       ) : count > 0 ? (
         view === "loupe" ? (

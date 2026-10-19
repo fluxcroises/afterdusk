@@ -2,7 +2,10 @@ use tauri::State;
 
 use super::error::CommandResult;
 use super::{AppState, blocking};
-use crate::library::media::{self, AlbumSummary, Highlight, MediaDetails, MediaSummary};
+use crate::library::filter::{self, FilterOptions, MediaFilter, MediaSort};
+use crate::library::media::{
+    self, AlbumSummary, Highlight, MediaDetails, MediaQuery, MediaSummary,
+};
 
 #[tauri::command]
 pub async fn media_list(
@@ -10,10 +13,27 @@ pub async fn media_list(
     library_id: i64,
     album_id: Option<i64>,
     trashed: Option<bool>,
+    filter: Option<MediaFilter>,
+    sort: Option<MediaSort>,
 ) -> CommandResult<Vec<MediaSummary>> {
     let conn = state.connect()?;
-    let trashed = trashed.unwrap_or(false);
-    blocking(move || Ok(media::list_media(&conn, library_id, album_id, trashed)?)).await
+    let query = MediaQuery {
+        album_id,
+        trashed: trashed.unwrap_or(false),
+        filter: filter.unwrap_or_default(),
+        sort: sort.unwrap_or_default(),
+    };
+    blocking(move || Ok(media::list_media(&conn, library_id, &query)?)).await
+}
+
+/// Boîtiers, objectifs et période proposés par la barre de filtres.
+#[tauri::command]
+pub async fn filter_options(
+    state: State<'_, AppState>,
+    library_id: i64,
+) -> CommandResult<FilterOptions> {
+    let conn = state.connect()?;
+    blocking(move || Ok(filter::filter_options(&conn, library_id)?)).await
 }
 
 #[tauri::command]

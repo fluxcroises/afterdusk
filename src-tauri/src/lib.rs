@@ -106,6 +106,7 @@ pub fn run() {
             commands::import::imports_resumable,
             commands::import::imports_recent,
             commands::media::media_list,
+            commands::media::filter_options,
             commands::media::albums_list,
             commands::media::media_details,
             commands::media::album_set_cover,

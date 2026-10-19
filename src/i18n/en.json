@@ -44,7 +44,11 @@
       "blue": "Blue",
       "purple": "Purple"
     },
-    "autoAdvance": "Auto advance after rating"
+    "autoAdvance": "Auto advance after rating",
+    "albums": "Albums",
+    "sortAlbumDate": "Date",
+    "sortAlbumName": "Name",
+    "sortAlbumPlace": "Place"
   },
   "filmstrip": {
     "empty": "No photos",
@@ -215,13 +219,19 @@
     "secondary": "Secondary Display",
     "moveRejectedToTrash": "Move Rejected Photos to Trash…",
     "restore": "Restore",
-    "purge": "Delete Permanently…"
+    "purge": "Delete Permanently…",
+    "find": "Find…",
+    "filterBar": "Filter Bar"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
     "selection_other": "{{count}} photos · {{selected}} selected",
     "safety": "Originals read-only · XMP",
-    "safetyHint": "Afterdusk never modifies your originals: ratings and settings are written to the database and to an XMP sidecar file."
+    "safetyHint": "Afterdusk never modifies your originals: ratings and settings are written to the database and to an XMP sidecar file.",
+    "filtered_one": "{{count}} of {{total}} photos · {{selected}} selected",
+    "filtered_other": "{{count}} of {{total}} photos · {{selected}} selected",
+    "albums_one": "{{count}} album",
+    "albums_other": "{{count}} albums"
   },
   "navigator": {
     "title": "Navigator",
@@ -320,5 +330,31 @@
     "daysLeft_other": "{{count}} days left",
     "emptyTitle": "The trash is empty",
     "emptyText": "Deleted photos land here and can be restored."
+  },
+  "filter": {
+    "search": "Search",
+    "searchAlbums": "Search albums",
+    "searchLabel": "Search",
+    "period": "Dates",
+    "from": "From",
+    "to": "To",
+    "rating": "Rating",
+    "anyRating": "Any rating",
+    "atLeast": "{{stars}} and up",
+    "unrated": "Unrated",
+    "flags": "Flag",
+    "picked": "Picks",
+    "unflagged": "Unflagged",
+    "rejected": "Rejects",
+    "colors": "Color",
+    "camera": "Camera",
+    "anyCamera": "All cameras",
+    "lens": "Lens",
+    "anyLens": "All lenses",
+    "reset": "Reset",
+    "noMatchTitle": "No matching photos",
+    "noMatchText": "Widen the dates, rating or search.",
+    "noAlbum": "No matching albums.",
+    "searchHint": "Albums, file names, keywords and places"
   }
 }

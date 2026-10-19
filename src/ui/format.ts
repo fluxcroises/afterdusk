@@ -1,4 +1,5 @@
 /** Mise en forme des valeurs photographiques selon la langue. */
+import type { AlbumSummary } from "../store/library";
 
 export function formatShutter(seconds: number | null): string | null {
   if (seconds === null || seconds <= 0) return null;
@@ -37,4 +38,18 @@ export function formatCaptureTime(value: string | null, language: string): strin
   return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "medium" }).format(
     date,
   );
+}
+
+/** Dates d'un album : un jour, ou du premier au dernier. */
+export function albumDates(
+  album: Pick<AlbumSummary, "startDate" | "endDate">,
+  language: string,
+): string | null {
+  if (!album.startDate) return null;
+  const format = new Intl.DateTimeFormat(language, { dateStyle: "medium" });
+  // Midi : le jour reste le même quel que soit le fuseau.
+  const day = (d: string) => new Date(`${d}T12:00:00`);
+  const start = day(album.startDate);
+  if (!album.endDate || album.endDate === album.startDate) return format.format(start);
+  return `${format.format(start)} – ${format.format(day(album.endDate))}`;
 }

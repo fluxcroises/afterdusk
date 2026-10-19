@@ -70,6 +70,11 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     else return false;
     return true;
   }
+  if (e.key === "\\") {
+    const layout = useLayout.getState();
+    layout.setFilterBar(!layout.filterBar);
+    return true;
+  }
   if (e.key === "Enter" && library.selectedId !== null) {
     library.setView("loupe");
     return true;

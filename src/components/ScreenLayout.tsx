@@ -7,6 +7,8 @@ interface ScreenLayoutProps {
   right?: ReactNode;
   /** Barre d'outils sous l'espace de travail. */
   toolbar?: ReactNode;
+  /** Bandeau au-dessus de l'espace de travail (barre de filtres), hors défilement. */
+  header?: ReactNode;
   /** Pied du panneau droit (bouton d'action principale). */
   rightFooter?: ReactNode;
   filmstrip?: ReactNode;
@@ -18,6 +20,7 @@ export function ScreenLayout({
   left,
   right,
   toolbar,
+  header,
   rightFooter,
   filmstrip,
   children,
@@ -36,6 +39,7 @@ export function ScreenLayout({
           </aside>
         )}
         <div className="workspace-column">
+          {header && !immersive && <div className="workspace-header">{header}</div>}
           <main className="workspace">{children}</main>
           {toolbar && !immersive && <div className="toolbar">{toolbar}</div>}
         </div>

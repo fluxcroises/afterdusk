@@ -44,7 +44,11 @@
       "blue": "Bleu",
       "purple": "Violet"
     },
-    "autoAdvance": "Avance automatique après une note"
+    "autoAdvance": "Avance automatique après une note",
+    "albums": "Albums",
+    "sortAlbumDate": "Date",
+    "sortAlbumName": "Nom",
+    "sortAlbumPlace": "Lieu"
   },
   "filmstrip": {
     "empty": "Aucune photo",
@@ -215,13 +219,19 @@
     "secondary": "Second écran",
     "moveRejectedToTrash": "Envoyer les rejetées dans la corbeille…",
     "restore": "Restaurer",
-    "purge": "Supprimer définitivement…"
+    "purge": "Supprimer définitivement…",
+    "find": "Rechercher…",
+    "filterBar": "Barre de filtres"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
     "selection_other": "{{count}} photos · {{selected}} sélectionnée(s)",
     "safety": "Originaux en lecture seule · XMP",
-    "safetyHint": "Afterdusk ne modifie jamais vos originaux : notes et réglages sont écrits dans la base et dans un fichier XMP à côté."
+    "safetyHint": "Afterdusk ne modifie jamais vos originaux : notes et réglages sont écrits dans la base et dans un fichier XMP à côté.",
+    "filtered_one": "{{count}} sur {{total}} photos · {{selected}} sélectionnée",
+    "filtered_other": "{{count}} sur {{total}} photos · {{selected}} sélectionnée(s)",
+    "albums_one": "{{count}} album",
+    "albums_other": "{{count}} albums"
   },
   "navigator": {
     "title": "Navigateur",
@@ -320,5 +330,31 @@
     "daysLeft_other": "{{count}} jours restants",
     "emptyTitle": "La corbeille est vide",
     "emptyText": "Les photos supprimées arrivent ici et peuvent être restaurées."
+  },
+  "filter": {
+    "search": "Rechercher",
+    "searchAlbums": "Rechercher un album",
+    "searchLabel": "Recherche",
+    "period": "Période",
+    "from": "Du",
+    "to": "Au",
+    "rating": "Note",
+    "anyRating": "Toutes les notes",
+    "atLeast": "{{stars}} et plus",
+    "unrated": "Non notées",
+    "flags": "Drapeau",
+    "picked": "Retenues",
+    "unflagged": "Sans drapeau",
+    "rejected": "Rejetées",
+    "colors": "Couleur",
+    "camera": "Boîtier",
+    "anyCamera": "Tous les boîtiers",
+    "lens": "Objectif",
+    "anyLens": "Tous les objectifs",
+    "reset": "Réinitialiser",
+    "noMatchTitle": "Aucune photo ne correspond",
+    "noMatchText": "Élargissez la période, la note ou la recherche.",
+    "noAlbum": "Aucun album ne correspond.",
+    "searchHint": "Albums, noms de fichiers, mots-clés et lieux"
   }
 }

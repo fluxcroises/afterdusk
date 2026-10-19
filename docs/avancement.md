@@ -113,3 +113,13 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur (é
 - Tests : déplacement et restauration à l'identique (empreinte, XMP), restauration sans écraser, vidage limité à la corbeille avec la sauvegarde intacte, purge après le délai, bibliothèque débranchée ; côté interface, envoi, annulation, rejetées, corbeille sans tri, jours restants.
 - Vérifié dans l'application compilée sous Windows, sur une bibliothèque de contrôle (les six RAW de test-assets, base de l'utilisateur mise de côté puis remise) : Suppr, rejetées avec confirmation, vue Corbeille, Restaurer, Vider.
 - Critère « Corbeille interne avec restauration et vidage après 30 jours » coché : CI verte sur Windows et macOS (run 39245921321).
+
+### 2026-10-19 (suite) : filtres, recherche et vue Albums
+
+- Barre de filtres au-dessus de la grille, dans Bibliothèque et Trier (Affichage > Barre de filtres, ou \) : recherche, période (du… au…), note (« ★★★ et plus », 5 étoiles, non notées), drapeaux (retenues, sans drapeau, rejetées, cumulables), couleurs, boîtier et objectif (avec le nombre de photos), Réinitialiser. Les filtres se combinent ; la barre d'état affiche « 12 sur 340 photos ».
+- Recherche (Ctrl+F, ⌘F) sur les albums, mots-clés, lieux et noms de fichiers, sans tenir compte des accents ni de la casse, par l'index FTS5 ; une partie de nom de fichier (« 7m3 ») est trouvée aussi. Le texte saisi n'est jamais interprété : pas d'erreur sur les guillemets ou les caractères spéciaux.
+- Le filtrage est fait par le cœur en SQL. Une note ou un drapeau posé pendant le tri ne fait pas disparaître la photo de la grille : la liste se met à jour au prochain changement de filtre.
+- Tri de la grille opérationnel : date de prise de vue, nom de fichier, note.
+- Vue Albums dans Bibliothèque (bouton à gauche des vues) : couvertures, dates, lieu, nombre de photos ; tri par date, nom ou lieu ; la recherche porte alors sur les albums ; un clic ouvre l'album.
+- Tests : filtres combinés, boîtier, objectif, période, recherche (accents, morceau de nom, caractères spéciaux), tri et corbeille sur les six RAW de test-assets ; côté interface, transmission du filtre, champs vidés, recherche et tri des albums.
+- Vérifié dans l'application compilée sous Windows (bibliothèque de contrôle de deux albums, base de l'utilisateur mise de côté puis remise) : vue Albums, note, retenues, recherche, boîtier, tri par note.

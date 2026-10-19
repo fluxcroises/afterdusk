@@ -12,6 +12,7 @@ import i18n from "./i18n";
 import { drawsOwnMenus, isMac } from "./platform";
 import { showWelcome, toggleSecondary } from "./windows";
 import { purgeSelection, trashRejected } from "./trash";
+import { focusSearch } from "./search";
 import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
 import { COLOR_LABELS } from "./ui/labels";
@@ -41,6 +42,7 @@ export const KEY_HINTS: Record<string, string> = {
   "color-yellow": "7",
   "color-green": "8",
   "color-blue": "9",
+  "filter-bar": "\\",
 };
 
 /**
@@ -117,6 +119,15 @@ export function buildMenuItems(t: TFunction): Item[] {
       { item: "Paste", text: t("menu.paste") },
       separator,
       { item: "SelectAll", text: t("menu.selectAll") },
+      {
+        id: "find",
+        text: t("menu.find"),
+        accelerator: "CmdOrCtrl+F",
+        action: () => {
+          const screen = useNavigation.getState().screen;
+          if (screen === "cull" || screen === "library") focusSearch();
+        },
+      },
       { id: "select-none", text: t("menu.selectNone"), enabled: false },
       ...(isMac ? [] : [separator, preferences]),
     ],
@@ -252,6 +263,14 @@ export function buildMenuItems(t: TFunction): Item[] {
         text: t("menu.toggleRight"),
         accelerator: "F8",
         action: () => layout.togglePanel("right"),
+      },
+      {
+        id: "filter-bar",
+        text: t("menu.filterBar"),
+        action: () => {
+          const { filterBar, setFilterBar } = useLayout.getState();
+          setFilterBar(!filterBar);
+        },
       },
       {
         id: "toggle-filmstrip",

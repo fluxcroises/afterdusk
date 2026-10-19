@@ -34,6 +34,80 @@ export interface TrashNotice {
   count: number;
 }
 
+export type RatingOp = "atLeast" | "atMost" | "exactly";
+
+/** Filtre de la grille ; un champ absent ne filtre pas (voir `library/filter.rs`). */
+export interface MediaFilter {
+  from?: string;
+  to?: string;
+  rating?: { op: RatingOp; value: number };
+  /** Drapeaux retenus parmi -1, 0, 1 ; vide = tous. */
+  flags?: FlagValue[];
+  /** Couleurs retenues ; vide = toutes. */
+  colors?: ColorName[];
+  cameraId?: number;
+  lensId?: number;
+  query?: string;
+}
+
+export type MediaSort = "captureTime" | "fileName" | "rating";
+export type AlbumSort = "date" | "name" | "place";
+
+export interface GearOption {
+  id: number;
+  name: string;
+  count: number;
+}
+
+export interface FilterOptions {
+  cameras: GearOption[];
+  lenses: GearOption[];
+  firstDay: string | null;
+  lastDay: string | null;
+}
+
+/** Le filtre restreint-il la grille ? */
+export function isFiltering(filter: MediaFilter): boolean {
+  return (
+    !!filter.from ||
+    !!filter.to ||
+    !!filter.rating ||
+    (filter.flags?.length ?? 0) > 0 ||
+    (filter.colors?.length ?? 0) > 0 ||
+    filter.cameraId !== undefined ||
+    filter.lensId !== undefined ||
+    !!filter.query?.trim()
+  );
+}
+
+/** Texte comparable : minuscules, sans accents. */
+export function fold(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+/** Albums de la vue Albums : recherche sur le nom et le lieu, puis tri. */
+export function visibleAlbums(albums: AlbumSummary[], query: string, sort: AlbumSort) {
+  const words = fold(query).split(/\s+/).filter(Boolean);
+  const found = albums.filter((a) => {
+    const text = fold(`${a.name} ${a.place ?? ""}`);
+    return words.every((w) => text.includes(w));
+  });
+  const byName = (a: AlbumSummary, b: AlbumSummary) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  return found.sort((a, b) => {
+    if (sort === "name") return byName(a, b);
+    if (sort === "place") {
+      // Sans lieu en dernier.
+      if (!a.place !== !b.place) return a.place ? -1 : 1;
+      return (a.place ?? "").localeCompare(b.place ?? "") || byName(a, b);
+    }
+    return (b.startDate ?? "").localeCompare(a.startDate ?? "") || byName(a, b);
+  });
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Jours avant la suppression définitive d'une photo de la corbeille. */
@@ -54,6 +128,7 @@ export interface AlbumSummary {
   startDate: string | null;
   endDate: string | null;
   count: number;
+  place: string | null;
   coverMediaId: number | null;
   coverChosen: boolean;
 }
@@ -93,8 +168,11 @@ function readAutoAdvance(): boolean {
 }
 
 export const libraryApi = {
-  mediaList: (libraryId: number, albumId: number | null, trashed = false) =>
-    invoke<MediaSummary[]>("media_list", { libraryId, albumId, trashed }),
+  mediaList: (
+    libraryId: number,
+    query: { albumId: number | null; trashed: boolean; filter: MediaFilter; sort: MediaSort },
+  ) => invoke<MediaSummary[]>("media_list", { libraryId, ...query }),
+  filterOptions: (libraryId: number) => invoke<FilterOptions>("filter_options", { libraryId }),
   trash: (ids: number[]) => invoke<TrashReport>("media_trash", { ids }),
   restore: (ids: number[]) => invoke<TrashReport>("media_restore", { ids }),
   emptyTrash: (libraryId: number, ids: number[] | null) =>
@@ -150,6 +228,14 @@ interface LibraryState {
   trashCount: number;
   retentionDays: number;
   notice: TrashNotice | null;
+  filter: MediaFilter;
+  sort: MediaSort;
+  filterOptions: FilterOptions | null;
+  /** Bibliothèque : vue des albums (couvertures) plutôt que des photos. */
+  showAlbums: boolean;
+  albumSort: AlbumSort;
+  /** Recherche de la vue Albums (nom et lieu), sans toucher au filtre des photos. */
+  albumQuery: string;
   /** Dernier envoi dans la corbeille, que Ctrl+Z restaure (l'annonce, elle, s'efface). */
   undoIds: number[] | null;
   media: MediaSummary[];
@@ -202,6 +288,12 @@ interface LibraryState {
   /** Annule le dernier envoi dans la corbeille. */
   undoTrash: () => Promise<void>;
   setRetentionDays: (days: number) => Promise<void>;
+  /** Modifie le filtre (un champ `undefined` le retire) et recharge la grille. */
+  setFilter: (patch: Partial<MediaFilter>) => Promise<void>;
+  resetFilter: () => Promise<void>;
+  setSort: (sort: MediaSort) => Promise<void>;
+  setShowAlbums: (value: boolean) => void;
+  setAlbumSort: (sort: AlbumSort) => void;
 }
 
 export const useLibrary = create<LibraryState>((set, get) => {
@@ -238,6 +330,32 @@ export const useLibrary = create<LibraryState>((set, get) => {
     }
   }
 
+  /** Ce qu'affiche la grille : source (album, corbeille), filtre et tri. */
+  function query(albumId = get().albumId, trash = get().trash) {
+    const { filter, sort } = get();
+    return { albumId: trash ? null : albumId, trashed: trash, filter, sort };
+  }
+
+  /** Recharge la grille, la photo active gardée si elle y est encore. */
+  async function reloadMedia(): Promise<void> {
+    const { libraryId } = get();
+    if (libraryId === null) return;
+    try {
+      const media = await libraryApi.mediaList(libraryId, query());
+      set({ media });
+      const keep = media.find((m) => m.id === get().selectedId) ?? media[0];
+      if (keep) {
+        if (keep.id !== get().selectedId) await get().select(keep.id);
+        else
+          set((s) => ({
+            selectedIds: s.selectedIds.filter((id) => media.some((m) => m.id === id)),
+          }));
+      } else set({ selectedId: null, selectedIds: [], details: null, view: "grid" });
+    } catch (e) {
+      set({ error: toCommandError(e) });
+    }
+  }
+
   /**
    * Recharge albums, photos et corbeille après une opération sur des fichiers.
    * La photo active est gardée si elle est toujours là, sinon sa voisine.
@@ -249,16 +367,18 @@ export const useLibrary = create<LibraryState>((set, get) => {
       0,
       media.findIndex((m) => m.id === selectedId),
     );
-    const [albums, list, summary] = await Promise.all([
+    const [albums, list, summary, filterOptions] = await Promise.all([
       libraryApi.albumsList(libraryId),
-      libraryApi.mediaList(libraryId, trash ? null : albumId, trash),
+      libraryApi.mediaList(libraryId, query(albumId, trash)),
       libraryApi.trashSummary(libraryId),
+      libraryApi.filterOptions(libraryId),
     ]);
     const total = albums.reduce((n, a) => n + a.count, 0);
     set({
       albums,
       media: list,
       total,
+      filterOptions,
       trashCount: summary.count,
       retentionDays: summary.retentionDays,
     });
@@ -283,6 +403,12 @@ export const useLibrary = create<LibraryState>((set, get) => {
     retentionDays: 30,
     notice: null,
     undoIds: null,
+    filter: {},
+    sort: "captureTime",
+    filterOptions: null,
+    showAlbums: false,
+    albumSort: "date",
+    albumQuery: "",
     media: [],
     total: 0,
     selectedId: null,
@@ -304,10 +430,13 @@ export const useLibrary = create<LibraryState>((set, get) => {
         const same = get().libraryId === libraryId;
         const albumId = same ? get().albumId : null;
         const trash = same && get().trash;
-        const [albums, media, summary] = await Promise.all([
+        // Une autre bibliothèque : ses boîtiers et ses dates ne sont pas les mêmes.
+        if (!same) set({ filter: {} });
+        const [albums, media, summary, filterOptions] = await Promise.all([
           libraryApi.albumsList(libraryId),
-          libraryApi.mediaList(libraryId, trash ? null : albumId, trash),
+          libraryApi.mediaList(libraryId, query(albumId, trash)),
           libraryApi.trashSummary(libraryId),
+          libraryApi.filterOptions(libraryId),
         ]);
         const total = albums.reduce((n, a) => n + a.count, 0);
         const selectedId = media.some((m) => m.id === get().selectedId)
@@ -322,6 +451,7 @@ export const useLibrary = create<LibraryState>((set, get) => {
           total,
           trashCount: summary.count,
           retentionDays: summary.retentionDays,
+          filterOptions,
           error: null,
         });
         if (selectedId !== null) await get().select(selectedId);
@@ -335,8 +465,8 @@ export const useLibrary = create<LibraryState>((set, get) => {
       const { libraryId } = get();
       if (libraryId === null) return;
       try {
-        const media = await libraryApi.mediaList(libraryId, albumId);
-        set({ albumId, media, trash: false });
+        const media = await libraryApi.mediaList(libraryId, query(albumId, false));
+        set({ albumId, media, trash: false, showAlbums: false });
         const first = media[0];
         if (first) await get().select(first.id);
         else set({ selectedId: null, details: null });
@@ -435,8 +565,8 @@ export const useLibrary = create<LibraryState>((set, get) => {
       const { libraryId } = get();
       if (libraryId === null) return;
       try {
-        const media = await libraryApi.mediaList(libraryId, null, true);
-        set({ trash: true, media, view: "grid", zoom: null });
+        const media = await libraryApi.mediaList(libraryId, query(null, true));
+        set({ trash: true, media, view: "grid", zoom: null, showAlbums: false });
         const first = media[0];
         if (first) await get().select(first.id);
         else set({ selectedId: null, selectedIds: [], details: null });
@@ -497,6 +627,32 @@ export const useLibrary = create<LibraryState>((set, get) => {
       const ids = get().undoIds;
       if (ids) await get().restore(ids);
     },
+
+    setFilter: async (patch) => {
+      // Un champ vide (undefined, texte vide, liste vide) ne filtre pas : il disparaît.
+      const next = Object.fromEntries(
+        Object.entries({ ...get().filter, ...patch }).filter(
+          ([, v]) => v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0),
+        ),
+      ) as MediaFilter;
+      set({ filter: next });
+      await reloadMedia();
+    },
+
+    resetFilter: async () => {
+      set({ filter: {} });
+      await reloadMedia();
+    },
+
+    setSort: async (sort) => {
+      set({ sort });
+      await reloadMedia();
+    },
+
+    setShowAlbums: (value) =>
+      set(value ? { showAlbums: true, view: "grid" } : { showAlbums: false }),
+
+    setAlbumSort: (albumSort) => set({ albumSort }),
 
     setRetentionDays: async (days) => {
       try {

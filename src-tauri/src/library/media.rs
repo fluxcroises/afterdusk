@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 
+use super::filter::{MediaFilter, MediaSort};
 use super::{LibraryError, get_library, paths};
 use crate::db::now_utc;
 use crate::metadata::media::{MediaFormat, format_of};
@@ -30,26 +31,53 @@ pub struct MediaSummary {
     pub trashed_at: Option<String>,
 }
 
-/// Médias d'une bibliothèque (ou d'un album), par date de prise de vue ; ou,
-/// avec `trashed`, ceux de sa corbeille, les plus récemment jetés d'abord.
+/// Ce qu'affiche une grille : bibliothèque ou album, ou corbeille, filtrés et triés.
+#[derive(Debug, Clone, Default)]
+pub struct MediaQuery {
+    pub album_id: Option<i64>,
+    /// Corbeille : les plus récemment jetées d'abord, quel que soit le tri.
+    pub trashed: bool,
+    pub filter: MediaFilter,
+    pub sort: MediaSort,
+}
+
 pub fn list_media(
     conn: &Connection,
     library_id: i64,
-    album_id: Option<i64>,
-    trashed: bool,
+    query: &MediaQuery,
 ) -> Result<Vec<MediaSummary>, LibraryError> {
-    let mut stmt = conn.prepare(
+    let (mut clauses, mut values) = query.filter.to_sql();
+    clauses.insert(0, "m.library_id = ?".to_owned());
+    values.insert(0, library_id.into());
+    clauses.push(
+        if query.trashed {
+            "m.state = 'trashed'"
+        } else {
+            "m.state = 'normal'"
+        }
+        .to_owned(),
+    );
+    if let Some(album_id) = query.album_id {
+        clauses.push("m.album_id = ?".to_owned());
+        values.push(album_id.into());
+    }
+    let order = if query.trashed {
+        format!("m.trashed_at DESC, {}", query.sort.order_by())
+    } else {
+        query.sort.order_by().to_owned()
+    };
+    let mut stmt = conn.prepare(&format!(
         "SELECT m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
                 m.width, m.height, m.orientation,
                 (SELECT count(*) FROM previews p WHERE p.media_id = m.id) = 3,
                 m.trashed_at
          FROM media m
-         WHERE m.library_id = ?1 AND (?2 IS NULL OR m.album_id = ?2)
-           AND m.state = CASE WHEN ?3 THEN 'trashed' ELSE 'normal' END
-         ORDER BY CASE WHEN ?3 THEN m.trashed_at END DESC, m.captured_at, m.path",
-    )?;
+         WHERE {}
+         ORDER BY {order}",
+        clauses.join(" AND ")
+    ))?;
     let rows = stmt
-        .query_map(params![library_id, album_id, trashed], |r| {
+        .query_map(rusqlite::params_from_iter(values), |r| {
             let path: String = r.get(2)?;
             Ok(MediaSummary {
                 id: r.get(0)?,
@@ -83,6 +111,8 @@ pub struct AlbumSummary {
     pub cover_media_id: Option<i64>,
     /// La couverture a-t-elle été choisie par l'utilisateur ?
     pub cover_chosen: bool,
+    /// Saisie libre en V0.1.
+    pub place: Option<String>,
 }
 
 pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummary>, LibraryError> {
@@ -94,7 +124,8 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
                          (SELECT m.id FROM media m WHERE m.album_id = a.id AND m.state = 'normal'
                           ORDER BY m.captured_at, m.path LIMIT 1)),
                 EXISTS (SELECT 1 FROM media m
-                         WHERE m.id = a.cover_media_id AND m.state = 'normal')
+                         WHERE m.id = a.cover_media_id AND m.state = 'normal'),
+                a.place
          FROM albums a WHERE a.library_id = ?1
          ORDER BY a.start_date DESC, a.name",
     )?;
@@ -109,6 +140,7 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
                 count: r.get(5)?,
                 cover_media_id: r.get(6)?,
                 cover_chosen: r.get(7)?,
+                place: r.get(8)?,
             })
         })?
         .collect::<Result<_, _>>()?;

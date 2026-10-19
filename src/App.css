@@ -1958,3 +1958,132 @@ button.color-chip[aria-pressed="true"] {
   margin: 0;
   color: var(--ad-text-muted);
 }
+
+/* ---------- Barre de filtres ---------- */
+
+.workspace-header {
+  border-bottom: 1px solid var(--ad-border-strong);
+  background: var(--ad-panel);
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ad-space-2);
+  padding: var(--ad-space-1) var(--ad-space-3);
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+}
+
+.filter-search {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+  height: var(--ad-field-height);
+  padding: 0 var(--ad-space-2);
+  background: var(--ad-inset);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+}
+
+.filter-search:focus-within {
+  border-color: var(--ad-accent);
+}
+
+.filter-search svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.filter-search input {
+  width: 22ch;
+  min-width: 0;
+  font: inherit;
+  color: var(--ad-text);
+  background: none;
+  border: 0;
+  outline: none;
+}
+
+.filter-bar input[type="date"] {
+  height: var(--ad-field-height);
+  padding: 0 var(--ad-space-1);
+  font: inherit;
+  color: var(--ad-text);
+  color-scheme: dark;
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-sm);
+}
+
+/* Les champs gardent leur largeur : la barre passe à la ligne plutôt que de les tronquer. */
+.filter-bar > * {
+  flex: none;
+}
+
+.filter-reset {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+}
+
+.filter-reset svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- Vue Albums ---------- */
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--ad-space-3);
+  padding: var(--ad-space-3);
+}
+
+.album-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+  padding: var(--ad-space-2);
+  text-align: left;
+  border-radius: var(--ad-radius-md);
+  transition: background var(--ad-transition);
+}
+
+.album-card:hover {
+  background: var(--ad-hover);
+}
+
+.album-card-cover {
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border-radius: var(--ad-radius-sm);
+}
+
+.album-card-cover .thumbnail img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+}
+
+.album-card-name {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ad-text);
+}
+
+.album-card-meta {
+  font: var(--ad-font-meta);
+  color: var(--ad-text-muted);
+}
+
+.album-grid-empty {
+  padding: var(--ad-space-4);
+}
