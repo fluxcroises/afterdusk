@@ -131,10 +131,48 @@ select:disabled {
   flex: none;
 }
 
-/* macOS : place pour les trois pastilles de la barre de titre transparente. */
+/* macOS : place pour les trois pastilles de la barre de titre transparente,
+   puis un fin séparateur avant le logo (comme Finder ou Xcode). En plein
+   écran, les pastilles disparaissent avec leur place. */
 html[data-platform="mac"] .top-bar {
-  padding-left: 84px;
+  padding-left: 80px;
   padding-right: var(--ad-space-3);
+}
+
+html[data-platform="mac"] .top-bar .brand-home,
+html[data-platform="mac"] .welcome-brand {
+  position: relative;
+  margin-left: var(--ad-space-4);
+}
+
+html[data-platform="mac"] .top-bar .brand-home::before,
+html[data-platform="mac"] .welcome-brand::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: calc(-1 * var(--ad-space-3));
+  width: 1px;
+  background: var(--ad-border);
+}
+
+html[data-platform="mac"] .welcome-brand::before {
+  background: rgb(255 255 255 / 0.3);
+}
+
+html[data-platform="mac"][data-fullscreen="true"] .top-bar,
+html[data-platform="mac"][data-fullscreen="true"] .welcome-hero-top {
+  padding-left: var(--ad-space-3);
+}
+
+html[data-platform="mac"][data-fullscreen="true"] .top-bar .brand-home,
+html[data-platform="mac"][data-fullscreen="true"] .welcome-brand {
+  margin-left: 0;
+}
+
+html[data-platform="mac"][data-fullscreen="true"] .top-bar .brand-home::before,
+html[data-platform="mac"][data-fullscreen="true"] .welcome-brand::before {
+  content: none;
 }
 
 .logo {
@@ -1378,7 +1416,7 @@ input[type="checkbox"] {
 }
 
 html[data-platform="mac"] .welcome-hero-top {
-  padding-left: 84px;
+  padding-left: 80px;
 }
 
 .welcome-hero-top .window-control {
