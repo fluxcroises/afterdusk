@@ -214,6 +214,7 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - Import, rangement, sauvegarde et tri identiques aux photos (notes, drapeaux, couleurs, corbeille).
 - Miniature, durée, résolution, cadence et codec affichés ; lecture intégrée avec défilement image par image.
 - Pas de montage ni de retouche vidéo ; export limité à la copie des originaux.
+- **Traitement vidéo simple, demandé par l'utilisateur (2026-10-19)**, à placer après la V0.4 et à valider : couper le début et la fin d'un clip (sans réencodage quand c'est possible), extraire une image en photo, réglages de base (exposition, balance des blancs, contraste, saturation, recadrage, redressement) appliqués par le même moteur que les photos, export H.264 ou HEVC par FFmpeg. Pas de montage multi-pistes, de transitions ni d'étalonnage avancé : le niveau de DaVinci Resolve n'est pas visé.
 - Fichiers annexes des boîtiers (proxys, fichiers XML de métadonnées) rattachés à leur vidéo et déplacés avec elle.
 
 ### 4.10 Réglages \[V0.1 et suivantes\]
@@ -452,7 +453,7 @@ Crée docs/avancement.md avec les critères de la V0.1 et coche-les au fur et à
 **Hors périmètre jusqu'à la V1**
 
 - Retouches locales (masques, pinceau, dégradés), suppression de défauts, fusion HDR et panoramas
-- Montage et retouche vidéo
+- Montage vidéo (plusieurs clips, transitions, pistes) et étalonnage avancé ; le traitement simple d'un clip est prévu (section 4.9)
 - Synchronisation cloud, comptes utilisateurs, applications mobiles
 - Impression et mise en page
 - Connexion en direct au boîtier (tethering)

@@ -1,6 +1,6 @@
 # 0005 — Format des réglages de retouche et pipeline de développement
 
-Date : 2026-10-19 · Statut : **proposée**, à valider avant tout code
+Date : 2026-10-19 · Statut : **adoptée** (les cinq recommandations validées par l'utilisateur le 2026-10-19)
 
 ## Contexte
 
