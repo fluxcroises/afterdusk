@@ -4,20 +4,20 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 
 ## V0.1 : Importer et trier
 
-- [ ] Projet Tauri 2 qui se compile et se lance sur Windows et macOS, avec intégration continue GitHub Actions sur les deux systèmes
+- [x] Projet Tauri 2 qui se compile et se lance sur Windows et macOS, avec intégration continue GitHub Actions sur les deux systèmes
 - [x] Première ouverture guidée (bibliothèque, sauvegarde, rangement, identité)
 - [ ] Une carte SD insérée est détectée en moins de 5 secondes et l'import proposé
 - [ ] Import de 500 RAW avec rangement, renommage, sauvegarde et vérification par somme de contrôle, sans aucune perte, en cas de coupure comprise (reprise propre au redémarrage)
-- [ ] Les photos déjà importées sont reconnues et grisées lors d'un second import
-- [ ] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
+- [x] Les photos déjà importées sont reconnues et grisées lors d'un second import
+- [x] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
 - [ ] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
 - [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
 - [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
 - [x] Corbeille interne avec restauration et vidage après 30 jours
 - [x] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
 - [ ] Bibliothèque sur disque externe débranché consultable via le cache
-- [ ] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
-- [ ] Interface en français et en anglais
+- [x] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
+- [x] Interface en français et en anglais
 
 ## Journal
 
@@ -197,3 +197,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Essai de lancement en CI sur Windows et macOS : l'application compilée démarre avec `AFTERDUSK_SMOKE=1`, la première fenêtre affiche l'interface et le signale au cœur, qui arrête l'application avec succès ; au-delà de 90 s, l'essai échoue. En local sous Windows : interface affichée en 0,74 s.
 - Test d'import resserré : chaque photo est annoncée (et ses aperçus demandés) dès la fin de sa copie, un événement par fichier, dans l'ordre, avant la fin de l'import.
 - Inventaire des preuves déjà en place : six formats RAW lus en CI (`raw_samples`, échantillons de test-assets) ; second import reconnu par empreinte et photos grisées, non sélectionnables (cœur et interface) ; fr.json et en.json aux mêmes clés, menus vérifiés dans les deux langues.
+- Critères cochés sur ces preuves, CI verte sur Windows et macOS avec l'essai de lancement (« interface affichée » dans les journaux des deux systèmes, run 39278550831) : projet Tauri 2 compilé et lancé, photos déjà importées grisées, aperçus dès la fin de chaque copie, six formats RAW, interface en français et en anglais.
