@@ -2426,3 +2426,29 @@ input[type="radio"] {
   max-width: none;
   margin-left: 0;
 }
+
+/*
+ * Première ouverture : l'assistant occupe toute la hauteur sous la photo, et
+ * Précédent / Suivant restent au même endroit quelle que soit l'étape.
+ */
+.welcome-scroll:has(.onboarding-layout) {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-scroll .onboarding-layout {
+  flex: 1;
+  align-items: stretch;
+}
+
+.onboarding-layout .onboarding-illustration {
+  align-self: start;
+}
+
+.onboarding-layout .onboarding-body {
+  flex: 1;
+}
+
+.onboarding-layout .onboarding-footer {
+  margin-top: auto;
+}
