@@ -63,16 +63,37 @@ fn is_hidden(name: &str) -> bool {
     name.starts_with('.') || name.eq_ignore_ascii_case("System Volume Information")
 }
 
+/// Dossiers de vignettes que les boîtiers écrivent pour leurs vidéos
+/// (`PRIVATE/M4ROOT/THMBNL` chez Sony) : ce ne sont pas des photos.
+fn is_thumbnail_folder(name: &str) -> bool {
+    name.eq_ignore_ascii_case("THMBNL")
+}
+
+/// Où chercher les photos : sur une carte ou un boîtier, le dossier `DCIM`
+/// (norme DCF), et rien d'autre ; ailleurs, tout le dossier choisi.
+pub fn photo_root(root: &Path) -> PathBuf {
+    let dcim = root.join("DCIM");
+    if dcim.is_dir() {
+        dcim
+    } else {
+        root.to_path_buf()
+    }
+}
+
 /// Parcourt la source et lit chaque média reconnu.
 pub fn scan(root: &Path) -> Result<ScanResult, ScanError> {
     if !root.is_dir() {
         return Err(ScanError::NotADirectory(root.to_path_buf()));
     }
     let mut result = ScanResult::default();
-    let walker = WalkDir::new(root)
+    let walker = WalkDir::new(photo_root(root))
         .follow_links(false)
         .into_iter()
-        .filter_entry(|e| e.depth() == 0 || !is_hidden(&e.file_name().to_string_lossy()));
+        .filter_entry(|e| {
+            let name = e.file_name().to_string_lossy();
+            e.depth() == 0
+                || !(is_hidden(&name) || (e.file_type().is_dir() && is_thumbnail_folder(&name)))
+        });
     for entry in walker {
         let Ok(entry) = entry else {
             result.ignored += 1;
@@ -193,6 +214,51 @@ mod tests {
         // Sans EXIF, la date de modification sert de date de prise de vue.
         assert!(!result.files[0].has_capture_date);
         assert_eq!(result.files[0].captured_at.len(), 19);
+    }
+
+    /// Carte d'un boîtier Sony : photos dans DCIM, vidéos et leurs vignettes
+    /// JPEG dans PRIVATE/M4ROOT. Seules les photos sont proposées.
+    #[test]
+    fn carte_sony_seulement_le_dcim() {
+        let dir = tempfile::tempdir().unwrap();
+        let dcim = dir.path().join("DCIM").join("100MSDCF");
+        let m4root = dir.path().join("PRIVATE").join("M4ROOT");
+        std::fs::create_dir_all(&dcim).unwrap();
+        std::fs::create_dir_all(m4root.join("THMBNL")).unwrap();
+        std::fs::create_dir_all(m4root.join("CLIP")).unwrap();
+        std::fs::write(dcim.join("DSC00028.ARW"), b"arw").unwrap();
+        std::fs::write(dcim.join("DSC00028.JPG"), b"jpg").unwrap();
+        std::fs::write(m4root.join("THMBNL").join("C0002T01.JPG"), b"jpg").unwrap();
+        std::fs::write(m4root.join("CLIP").join("C0002.MP4"), b"mp4").unwrap();
+
+        let names: Vec<_> = scan(dir.path())
+            .unwrap()
+            .files
+            .into_iter()
+            .map(|f| f.file_name)
+            .collect();
+        assert_eq!(names, ["DSC00028.ARW", "DSC00028.JPG"]);
+
+        // Un dossier quelconque est parcouru en entier, sauf les vignettes.
+        let folder = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(folder.path().join("Sortie").join("THMBNL")).unwrap();
+        std::fs::write(folder.path().join("Sortie").join("IMG_1.JPG"), b"jpg").unwrap();
+        std::fs::write(
+            folder
+                .path()
+                .join("Sortie")
+                .join("THMBNL")
+                .join("C0001T01.JPG"),
+            b"jpg",
+        )
+        .unwrap();
+        let names: Vec<_> = scan(folder.path())
+            .unwrap()
+            .files
+            .into_iter()
+            .map(|f| f.file_name)
+            .collect();
+        assert_eq!(names, ["IMG_1.JPG"]);
     }
 
     #[test]

@@ -2371,3 +2371,39 @@ input[type="radio"] {
     display: none;
   }
 }
+
+/*
+ * Cadres de miniature au format 3:2, quelle que soit l'orientation de la
+ * photo : une photo en hauteur s'inscrit dans le cadre au lieu de l'étirer
+ * (et toute la rangée avec lui). La photo est posée sur le cadre, entière.
+ */
+.media-cell-image,
+.import-tile-preview,
+.strip-cell,
+.navigator-preview,
+.contact-sheet-cell,
+.album-row-cover,
+.album-card-cover {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.thumbnail {
+  position: relative;
+}
+
+.thumbnail img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
+
+.contact-sheet-cell .thumbnail img,
+.album-row-cover .thumbnail img,
+.album-card-cover .thumbnail img {
+  object-fit: cover;
+}
