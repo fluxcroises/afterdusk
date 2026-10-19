@@ -148,8 +148,8 @@ fn main(
         atomicAdd(&local_hist[q.x], 1u);
         atomicAdd(&local_hist[256u + q.y], 1u);
         atomicAdd(&local_hist[512u + q.z], 1u);
-        let l = 0.2126 * f32(q.x) + 0.7152 * f32(q.y) + 0.0722 * f32(q.z);
-        atomicAdd(&local_hist[768u + min(u32(l + 0.5), 255u)], 1u);
+        let l = (2126u * q.x + 7152u * q.y + 722u * q.z + 5000u) / 10000u;
+        atomicAdd(&local_hist[768u + min(l, 255u)], 1u);
         dst[i] = q.x | (q.y << 8u) | (q.z << 16u) | (255u << 24u);
     }}
     workgroupBarrier();

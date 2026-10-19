@@ -353,11 +353,13 @@ pub fn quantize(v: f32) -> u8 {
     (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8
 }
 
-/// Case de luminance d'un pixel 8 bits (coefficients Rec. 709 sur les valeurs codées).
+/// Case de luminance d'un pixel 8 bits (coefficients Rec. 709 sur les valeurs
+/// codées), en arithmétique entière : identique au bit près sur le processeur
+/// et sur tous les processeurs graphiques.
 #[inline]
 pub fn luma_bin(q: [u8; 3]) -> usize {
-    let l = 0.2126 * f32::from(q[0]) + 0.7152 * f32::from(q[1]) + 0.0722 * f32::from(q[2]);
-    ((l + 0.5) as usize).min(255)
+    let l = 2126 * u32::from(q[0]) + 7152 * u32::from(q[1]) + 722 * u32::from(q[2]);
+    (((l + 5000) / 10_000) as usize).min(255)
 }
 
 /// Rendu : pixels RGBA 8 bits (avertissements d'écrêtage peints si demandés)
