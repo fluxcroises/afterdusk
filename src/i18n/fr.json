@@ -417,23 +417,23 @@
     },
     "library": {
       "title": "Où ranger vos photos ?",
-      "text": "Afterdusk copie vos photos dans ce dossier, rangées par date et par album. Les originaux de la carte ne sont jamais modifiés. Choisissez un disque qui a de la place ; vous pourrez en ajouter d'autres plus tard.",
+      "text": "Vos photos y sont copiées, rangées par date et par album ; les originaux de la carte ne sont jamais modifiés.",
       "folder": "Dossier de la bibliothèque",
       "name": "Nom"
     },
     "backup": {
       "title": "Une seconde copie à chaque import",
-      "text": "Chaque photo importée peut être copiée aussi sur un autre disque, vérifiée par somme de contrôle. Rien n'y est jamais supprimé automatiquement. Vous pourrez la choisir plus tard dans les réglages.",
+      "text": "Chaque import peut aussi être copié sur un autre disque, vérifié ; rien n'y est jamais supprimé.",
       "folder": "Dossier de sauvegarde",
       "none": "Pas de sauvegarde pour l'instant"
     },
     "folders": {
       "title": "Comment ranger les imports ?",
-      "text": "Un dossier par sortie, daté, est le choix le plus courant. Les noms de fichiers du boîtier peuvent être gardés tels quels."
+      "text": "Un dossier daté par sortie est le choix le plus courant ; les noms du boîtier peuvent rester tels quels."
     },
     "identity": {
       "title": "Qui signe ces photos ?",
-      "text": "Votre nom et votre copyright sont écrits dans les fichiers XMP à l'import, lisibles par les autres logiciels. Tout est facultatif."
+      "text": "Votre nom et votre copyright sont écrits dans les XMP de chaque import. Tout est facultatif."
     },
     "back": "Précédent",
     "next": "Suivant",

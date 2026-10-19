@@ -2193,7 +2193,6 @@ button.color-chip[aria-pressed="true"] {
 }
 
 .onboarding-text {
-  max-width: 60ch;
   margin: 0 0 var(--ad-space-3);
   color: var(--ad-text-secondary);
 }

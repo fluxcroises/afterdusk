@@ -417,23 +417,23 @@
     },
     "library": {
       "title": "Where should your photos go?",
-      "text": "Afterdusk copies your photos into this folder, organised by date and album. The originals on the card are never modified. Pick a disk with room to spare; you can add more libraries later.",
+      "text": "Your photos are copied here, organised by date and album; the originals on the card are never modified.",
       "folder": "Library folder",
       "name": "Name"
     },
     "backup": {
       "title": "A second copy with every import",
-      "text": "Each imported photo can also be copied to another disk, verified by checksum. Nothing is ever deleted from it automatically. You can also choose it later in the settings.",
+      "text": "Each import can also be copied to another disk and verified; nothing is ever deleted from it.",
       "folder": "Backup folder",
       "none": "No backup for now"
     },
     "folders": {
       "title": "How should imports be organised?",
-      "text": "One dated folder per outing is the most common choice. The camera's file names can be kept as they are."
+      "text": "One dated folder per outing is the most common choice; the camera's file names can stay as they are."
     },
     "identity": {
       "title": "Who signs these photos?",
-      "text": "Your name and copyright are written to the XMP files on import, readable by other software. Everything is optional."
+      "text": "Your name and copyright are written to the XMP of every import. Everything is optional."
     },
     "back": "Back",
     "next": "Next",
