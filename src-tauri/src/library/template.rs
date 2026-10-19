@@ -125,6 +125,28 @@ pub fn validate(template: &str) -> Result<(), TemplateError> {
     render_folder(template, &v).map(|_| ())
 }
 
+/// Aperçu d'un rangement et d'un renommage sur une photo d'exemple, pour les
+/// réglages et la première ouverture : `2026/2026-10-18 Sortie/…`.
+pub fn preview(
+    folder_template: &str,
+    rename_template: Option<&str>,
+    album: &str,
+) -> Result<String, TemplateError> {
+    let v = TemplateValues {
+        captured_at: "2026-10-18T21:04:59",
+        album,
+        camera: "X-T5",
+        original_stem: "DSCF0042",
+        sequence: 42,
+    };
+    let folder = render_folder(folder_template, &v)?;
+    let name = match rename_template {
+        Some(t) => render_file_name(t, &v, "RAF")?,
+        None => "DSCF0042.RAF".to_owned(),
+    };
+    Ok(format!("{folder}/{name}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,6 +1,7 @@
 //! Bibliothèques, albums et matériel détecté.
 
 pub mod filter;
+pub mod identity;
 pub mod marks;
 pub mod media;
 pub mod pairs;
@@ -106,6 +107,23 @@ pub fn set_templates(
         "UPDATE libraries SET folder_template = ?2, rename_template = ?3 WHERE id = ?1",
         params![id, folder_template, rename_template],
     )?;
+    Ok(())
+}
+
+/// Dossier de sauvegarde (absolu), ou aucun.
+pub fn set_backup(conn: &Connection, id: i64, backup: Option<&Path>) -> Result<(), LibraryError> {
+    if let Some(b) = backup
+        && !b.is_dir()
+    {
+        return Err(LibraryError::MissingRoot(b.to_path_buf()));
+    }
+    let changed = conn.execute(
+        "UPDATE libraries SET backup_path = ?2 WHERE id = ?1",
+        params![id, backup.map(|b| b.to_string_lossy().into_owned())],
+    )?;
+    if changed == 0 {
+        return Err(LibraryError::NotFound(id));
+    }
     Ok(())
 }
 

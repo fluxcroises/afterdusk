@@ -1,12 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import {
-  Check,
-  ChevronDown,
-  FolderOpen,
-  FolderPlus,
-  HardDriveDownload,
-  Images,
-} from "lucide-react";
+import { Check, ChevronDown, FolderOpen, HardDriveDownload, Images } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { newLibrary, pickFolder } from "../actions";
@@ -17,6 +10,7 @@ import { Thumbnail } from "../components/Thumbnail";
 import { WindowControls } from "../components/WindowControls";
 import { drawsOwnMenus } from "../platform";
 import { useImport } from "../store/import";
+import { Onboarding } from "./Onboarding";
 import { useLayout } from "../store/layout";
 import { type AlbumSummary, useLibrary } from "../store/library";
 import { greetingKey } from "../ui/greeting";
@@ -326,26 +320,6 @@ function AlbumList() {
   );
 }
 
-function FirstSteps() {
-  const { t } = useTranslation();
-  return (
-    <div className="welcome-first">
-      <FolderPlus className="welcome-first-icon" aria-hidden="true" strokeWidth={1.25} />
-      <div>
-        <h2>{t("home.firstStepsTitle")}</h2>
-        <p>{t("home.firstSteps")}</p>
-      </div>
-      <button
-        type="button"
-        className="button button-primary button-inline"
-        onClick={() => void newLibrary()}
-      >
-        {t("import.newLibrary")}
-      </button>
-    </div>
-  );
-}
-
 /** Fenêtre d'accueil, ouverte au démarrage. */
 export function WelcomeApp() {
   const { t } = useTranslation();
@@ -376,7 +350,7 @@ export function WelcomeApp() {
           </div>
         ))}
         {!hasLibrary ? (
-          <FirstSteps />
+          <Onboarding />
         ) : (
           <div className="welcome-columns">
             {latest ? (

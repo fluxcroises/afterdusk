@@ -116,7 +116,23 @@ export const api = {
   importsResumable: () => invoke<ResumableImport[]>("imports_resumable"),
   importsRecent: (libraryId: number) => invoke<RecentImport[]>("imports_recent", { libraryId }),
   appInfo: () => invoke<{ version: string; libraw: string }>("app_info"),
+  librarySetBackup: (id: number, backup: string | null) =>
+    invoke<Library>("library_set_backup", { id, backup }),
+  librarySetTemplates: (id: number, folderTemplate: string, renameTemplate: string | null) =>
+    invoke<Library>("library_set_templates", { id, folderTemplate, renameTemplate }),
+  templatePreview: (folderTemplate: string, renameTemplate: string | null, album: string) =>
+    invoke<string>("template_preview", { folderTemplate, renameTemplate, album }),
+  sameVolume: (a: string, b: string) => invoke<boolean | null>("same_volume", { a, b }),
+  identityGet: () => invoke<Identity>("identity_get"),
+  identitySet: (identity: Identity) => invoke<Identity>("identity_set", { identity }),
 };
+
+/** Identité du photographe : écrite dans les XMP à l'import. */
+export interface Identity {
+  name: string;
+  copyright: string;
+  website: string;
+}
 
 export const events = {
   onImportProgress: (handler: (p: ImportProgress) => void): Promise<UnlistenFn> =>

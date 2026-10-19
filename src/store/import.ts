@@ -117,6 +117,11 @@ export const useImport = create<ImportState>((set, get) => ({
         api.librariesList(),
         api.importsResumable(),
       ]);
+      // Copyright de l'identité proposé pour l'import, tant que le champ est vide.
+      const identity = await api.identityGet().catch(() => null);
+      if (identity?.copyright && !get().form.rights) {
+        set((s) => ({ form: { ...s.form, rights: identity.copyright } }));
+      }
       // La bibliothèque choisie dans l'autre fenêtre fait foi, si elle existe encore.
       const remembered = rememberedLibrary();
       const valid = (id: number | null) => id !== null && libraries.some((l) => l.id === id);

@@ -4,6 +4,7 @@ import { FieldRow, ListRow, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
 import i18n, { type Language, resources } from "../i18n";
 import { useLibrary } from "../store/library";
+import { IdentityPage, ImportSettings, LibrarySettings } from "../settings/Pages";
 
 /** Corbeille et cache : délai avant suppression définitive. */
 function TrashSettings() {
@@ -79,10 +80,14 @@ export function SettingsView() {
             </label>
             <FieldRow label={t("settings.theme")} value={t("settings.themeDark")} />
           </div>
-        ) : category === "trash" ? (
-          <TrashSettings />
+        ) : category === "library" ? (
+          <LibrarySettings />
+        ) : category === "import" ? (
+          <ImportSettings />
+        ) : category === "identity" ? (
+          <IdentityPage />
         ) : (
-          <p className="panel-note">{t("settings.notYet")}</p>
+          <TrashSettings />
         )}
       </div>
     </ScreenLayout>

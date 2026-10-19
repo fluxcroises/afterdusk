@@ -137,3 +137,16 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Migration 0003 : colonne `companion_of` et paires déjà importées reliées (aucun fichier touché).
 - Tests : reconnaissance (casse, heures écartées, autre dossier, HEIF), import, renommage, option sans JPEG, marques dans les deux XMP, corbeille au choix du format avec empreintes inchangées, pile entière, aperçus, migration ; côté interface, S, marques sur la pile, Suppr pile repliée ou dépliée, annulation.
 - Vérifié dans l'application compilée sous Windows (carte de contrôle : ARW et RW2 avec un JPEG de boîtier, base de l'utilisateur mise de côté puis remise) : pastille, dépliage, note partagée, mise en haut de la pile, envoi du RAW seul. L'annulation de cet envoi restaurait la photo sélectionnée au lieu du RAW : corrigé (le cœur renvoie les fichiers déplacés), couvert par les tests, non revérifié dans l'application. L'écran d'import avec paires n'a pas été vérifié à l'écran (couvert par les tests).
+
+### 2026-10-19 (suite) : première ouverture guidée
+
+- Sans bibliothèque, l'accueil présente un assistant en quatre écrans (§6 du cahier des charges), chacun avec une valeur par défaut :
+  1. Bibliothèque : `Images/Afterdusk`, créé à la fin, nom « Photos ».
+  2. Sauvegarde : facultative, avec un avertissement si elle est sur le disque de la bibliothèque.
+  3. Rangement : année / date et album, année / mois / jour, année / album ou modèle personnalisé ; nom du boîtier gardé ou date, heure, boîtier et numéro ; exemple du résultat calculé par le cœur.
+  4. Identité : nom, copyright proposé à partir du nom (« © 2026 Prénom Nom »), site.
+- L'identité est enregistrée en base (réglage `identity`) : le nom signe les XMP de chaque import (`dc:creator`) et le copyright est proposé dans le panneau d'import.
+- Réglages complétés : Bibliothèques (emplacement, sauvegarde à choisir ou retirer), Import (rangement et renommage avec exemple, valables pour les prochains imports), Identité.
+- Correction : la phrase « Ajouter des photos » de l'accueil se terminait par « ou » depuis la refonte de l'accueil.
+- Tests : identité dans les XMP, sauvegarde refusée si le dossier manque, modèles validés et aperçu, même disque ; côté interface, assistant (étapes, enchaînement des commandes, copyright qui suit le nom), réglages Bibliothèques et Import.
+- Vérifié dans l'application compilée sous Windows, sur une base vide (celle de l'utilisateur mise de côté puis remise) : les quatre écrans, choix d'un rangement et d'un renommage, création de la bibliothèque et de son dossier, retour à l'accueil habituel. Le dossier `Images/Afterdusk` créé par l'essai, vide, a été retiré. La saisie de l'identité et le choix d'un dossier par le sélecteur natif n'ont pas été pilotés à l'écran (couverts par les tests).

@@ -80,9 +80,49 @@ pub fn sanitize_component(text: &str) -> String {
     }
 }
 
+/// Le plus proche dossier existant du chemin (lui-même s'il existe).
+fn existing_ancestor(path: &Path) -> Option<&Path> {
+    path.ancestors().find(|p| p.exists())
+}
+
+/// Deux dossiers sont-ils sur le même disque ? Une sauvegarde sur le disque
+/// de la bibliothèque ne protège pas d'une panne : l'interface le signale.
+/// `None` si l'on ne peut pas le savoir (aucun dossier existant).
+pub fn same_volume(a: &Path, b: &Path) -> Option<bool> {
+    let a = existing_ancestor(a)?;
+    let b = existing_ancestor(b)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        Some(a.metadata().ok()?.dev() == b.metadata().ok()?.dev())
+    }
+    #[cfg(not(unix))]
+    {
+        // Lettre de lecteur ou partage réseau, sans tenir compte de la casse.
+        let prefix = |p: &Path| -> Option<String> {
+            let canonical = p.canonicalize().ok()?;
+            match canonical.components().next()? {
+                Component::Prefix(prefix) => {
+                    Some(prefix.as_os_str().to_string_lossy().to_lowercase())
+                }
+                _ => None,
+            }
+        };
+        Some(prefix(a)? == prefix(b)?)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn meme_disque() {
+        let dir = tempfile::tempdir().unwrap();
+        let a = dir.path().join("Bibliotheque");
+        let b = dir.path().join("Sauvegarde").join("pas encore créé");
+        assert_eq!(same_volume(&a, &b), Some(true));
+    }
 
     #[test]
     fn relatif_avec_barres_obliques_et_nfc() {

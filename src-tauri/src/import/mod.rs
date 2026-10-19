@@ -163,7 +163,13 @@ pub fn plan(conn: &mut Connection, options: &ImportOptions) -> Result<i64, Impor
         album_name: options.album_name.trim().to_owned(),
         backup: options.backup && lib.backup_path.is_some(),
         keywords: options.keywords.clone(),
-        creator: options.creator.clone(),
+        // Sans auteur précisé pour cet import, celui de l'identité.
+        creator: options.creator.clone().or_else(|| {
+            library::identity::get(conn)
+                .ok()
+                .map(|i| i.name)
+                .filter(|n| !n.is_empty())
+        }),
         rights: options.rights.clone(),
     };
 

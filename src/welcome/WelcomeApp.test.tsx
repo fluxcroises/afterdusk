@@ -30,10 +30,19 @@ describe("fenêtre d'accueil", () => {
     useLibrary.setState({ albums: [] });
   });
 
-  it("sans bibliothèque : salue et invite à en créer une, actions grisées", () => {
+  it("sans bibliothèque : salue et ouvre l'assistant de première ouverture", () => {
     render(<WelcomeApp />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Bonjour|Bonsoir/);
-    expect(screen.getByRole("heading", { name: "Pour commencer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Où ranger vos photos ?" })).toBeInTheDocument();
+    // Quatre étapes, la première en cours.
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "1Bibliothèque",
+      "2Sauvegarde",
+      "3Rangement",
+      "4Identité",
+    ]);
+    // Sans dossier choisi (pas de dossier Images hors de l'application), pas de suite.
+    expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Importer" })).toBeDisabled();
   });
 

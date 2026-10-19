@@ -172,11 +172,41 @@
     },
     "theme": "Thème",
     "themeDark": "Sombre",
-    "notYet": "Ces réglages arrivent avec la première ouverture guidée.",
     "trashRetention": "Supprimer définitivement après",
     "days_one": "jour",
     "days_other": "jours",
-    "trashNote": "Les photos envoyées dans la corbeille restent dans le dossier de la bibliothèque et se restaurent à l'identique. Passé ce délai, elles sont supprimées au démarrage d'Afterdusk. La sauvegarde n'est jamais touchée."
+    "trashNote": "Les photos envoyées dans la corbeille restent dans le dossier de la bibliothèque et se restaurent à l'identique. Passé ce délai, elles sont supprimées au démarrage d'Afterdusk. La sauvegarde n'est jamais touchée.",
+    "none": "Aucun",
+    "choose": "Choisir…",
+    "remove": "Retirer",
+    "sameDisk": "Ce dossier est sur le même disque que la bibliothèque : une panne de ce disque emporterait les deux copies.",
+    "exampleAlbum": "Sortie à Cabourg",
+    "folders": "Dossiers",
+    "fileNames": "Noms de fichiers",
+    "folderTemplate": "Modèle de dossier",
+    "folderPresets": {
+      "dateAlbum": "Année / date et album (2026/2026-10-18 Sortie à Cabourg)",
+      "yearMonthDay": "Année / mois / jour (2026/10/18)",
+      "yearAlbum": "Année / album (2026/Sortie à Cabourg)",
+      "custom": "Personnalisé"
+    },
+    "renamePresets": {
+      "original": "Garder le nom du boîtier (DSCF0042.RAF)",
+      "dateSeq": "Date, heure, boîtier et numéro (20261018_210459_X-T5_0042.RAF)"
+    },
+    "example": "Exemple",
+    "tokensHint": "Jetons : {yyyy} {mm} {dd} {hh} {min} {ss} {album} {camera} {original} {seq:4}.",
+    "identityName": "Nom",
+    "identityCopyright": "Copyright",
+    "identityWebsite": "Site",
+    "identityHint": "Le nom et le copyright sont écrits dans les XMP de chaque import ; le site servira au filigrane.",
+    "libraryName": "Nom",
+    "libraryLocation": "Emplacement",
+    "backupFolder": "Sauvegarde",
+    "backupHint": "La sauvegarde vaut pour les prochains imports ; les photos déjà importées n'y sont pas recopiées.",
+    "templatesHint": "Les modèles valent pour les prochains imports ; les photos déjà rangées ne bougent pas.",
+    "save": "Enregistrer",
+    "saved": "Enregistré."
   },
   "menu": {
     "app": "Afterdusk",
@@ -269,7 +299,7 @@
     "morning": "Bonjour",
     "evening": "Bonsoir",
     "addPhotos": "Ajouter des photos",
-    "dropHint": "Insérez une carte mémoire, glissez un dossier dans la fenêtre, ou",
+    "dropHint": "Insérez une carte mémoire, glissez un dossier dans la fenêtre, ou utilisez Importer et Dossier… ci-dessus.",
     "firstStepsTitle": "Pour commencer",
     "firstSteps": "Choisissez le dossier où Afterdusk rangera vos photos : disque interne, disque externe ou NAS. Vos fichiers y resteront lisibles sans Afterdusk.",
     "interrupted_one": "Un import depuis « {{source}} » a été interrompu : {{count}} fichier reste à copier.",
@@ -370,5 +400,37 @@
     "badge_other": "Pile de {{count}} fichiers",
     "expand": "Déplier la pile",
     "collapse": "Replier la pile"
+  },
+  "onboarding": {
+    "defaultName": "Photos",
+    "steps": {
+      "library": "Bibliothèque",
+      "backup": "Sauvegarde",
+      "folders": "Rangement",
+      "identity": "Identité"
+    },
+    "library": {
+      "title": "Où ranger vos photos ?",
+      "text": "Afterdusk copie vos photos dans ce dossier, rangées par date et par album. Les originaux de la carte ne sont jamais modifiés. Choisissez un disque qui a de la place ; vous pourrez en ajouter d'autres plus tard.",
+      "folder": "Dossier de la bibliothèque",
+      "name": "Nom"
+    },
+    "backup": {
+      "title": "Une seconde copie à chaque import",
+      "text": "Chaque photo importée peut être copiée aussi sur un autre disque, vérifiée par somme de contrôle. Rien n'y est jamais supprimé automatiquement. Vous pourrez la choisir plus tard dans les réglages.",
+      "folder": "Dossier de sauvegarde",
+      "none": "Pas de sauvegarde pour l'instant"
+    },
+    "folders": {
+      "title": "Comment ranger les imports ?",
+      "text": "Un dossier par sortie, daté, est le choix le plus courant. Les noms de fichiers du boîtier peuvent être gardés tels quels."
+    },
+    "identity": {
+      "title": "Qui signe ces photos ?",
+      "text": "Votre nom et votre copyright sont écrits dans les fichiers XMP à l'import, lisibles par les autres logiciels. Tout est facultatif."
+    },
+    "back": "Précédent",
+    "next": "Suivant",
+    "finish": "Créer la bibliothèque"
   }
 }
