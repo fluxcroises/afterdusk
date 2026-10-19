@@ -25,6 +25,8 @@ pub enum MarkError {
     Sqlite(#[from] rusqlite::Error),
     #[error("note hors limites : {0}")]
     InvalidRating(u8),
+    #[error(transparent)]
+    Develop(#[from] crate::develop::store::StoreError),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -115,8 +117,10 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
             report.offline += 1;
             continue;
         }
+        // Les retouches partent dans le même XMP que les marques.
+        let develop = crate::develop::store::xmp_json(conn, p.id)?;
         let result = match &p.sidecar {
-            Some(sidecar) => write_marks(lib, sidecar, &p),
+            Some(sidecar) => write_marks(lib, sidecar, &p, develop),
             // Pas d'annexe connue : rien à écrire.
             None => Ok(()),
         };
@@ -139,7 +143,12 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
     Ok(report)
 }
 
-fn write_marks(lib: &Library, sidecar: &str, p: &Pending) -> Result<(), String> {
+fn write_marks(
+    lib: &Library,
+    sidecar: &str,
+    p: &Pending,
+    develop: Option<String>,
+) -> Result<(), String> {
     let path = paths::to_absolute(&lib.root_path, sidecar).map_err(|e| e.to_string())?;
     let mut data = xmp::read_sidecar(&path)
         .map_err(|e| e.to_string())?
@@ -147,6 +156,7 @@ fn write_marks(lib: &Library, sidecar: &str, p: &Pending) -> Result<(), String> 
     data.rating = u8::try_from(p.rating.clamp(0, 5)).unwrap_or(0);
     data.flag = Flag::from_db(p.flag);
     data.label = p.color.as_deref().and_then(ColorLabel::from_db);
+    data.develop = develop;
     xmp::write_sidecar(&path, &data).map_err(|e| e.to_string())
 }
 

@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod db;
+pub mod develop;
 pub mod devices;
 pub mod import;
 pub mod library;
