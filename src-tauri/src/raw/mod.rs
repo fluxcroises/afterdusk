@@ -43,6 +43,8 @@ pub struct DevelopedRaw {
     /// Blanc de la prise de vue (XYZ, Y = 1) : la lumière que la balance du
     /// boîtier a ramenée au blanc D65 de l'image.
     pub as_shot_white: [f64; 3],
+    /// Côté long de l'image en pleine définition (le double en demi-définition).
+    pub full_long_side: u32,
 }
 
 /// Blanc D65 (XYZ, Y = 1).
@@ -316,6 +318,7 @@ impl RawFile {
             height: u32::from(height),
             xyz,
             as_shot_white: color.map_or(D65_WHITE, as_shot_white),
+            full_long_side: u32::from(width.max(height)) * if half_size { 2 } else { 1 },
         })
     }
 

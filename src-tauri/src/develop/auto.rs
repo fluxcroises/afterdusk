@@ -66,6 +66,7 @@ fn sample(image: &WorkingImage) -> WorkingImage {
         height: h,
         rgb,
         as_shot_white: image.as_shot_white,
+        scale: image.scale / stride as f32,
     }
 }
 
@@ -327,6 +328,7 @@ mod tests {
             height: h,
             rgb,
             as_shot_white: D65_WHITE,
+            scale: 1.0,
         }
     }
 

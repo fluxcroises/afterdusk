@@ -4,13 +4,15 @@
 //!
 //! Image de travail : linéaire, Rec. 2020, virgule flottante, 1.0 = blanc du
 //! capteur, à la balance du boîtier. Rendu : exposition et balance des blancs
-//! (une matrice), courbe neutre, tonalité, couleur, sRGB 8 bits, histogramme
-//! et avertissements d'écrêtage.
+//! (une matrice), courbe neutre, tonalité, couleur, vignetage, sRGB, couleurs
+//! par teinte (TSL), courbes de tonalité, grain, 8 bits, histogramme et
+//! avertissements d'écrêtage.
 
 use std::thread;
 
 use serde::Deserialize;
 
+use super::curve;
 use super::settings::DevelopSettings;
 use super::white;
 #[cfg(test)]
@@ -25,6 +27,10 @@ pub struct WorkingImage {
     pub rgb: Vec<f32>,
     /// Blanc de la prise de vue (XYZ, Y = 1), pour changer de balance.
     pub as_shot_white: [f64; 3],
+    /// Côté de l'image de travail rapporté à celui de l'original en pleine
+    /// définition (1 : pleine définition) : le grain, défini en pixels de
+    /// l'original, garde ainsi la même taille apparente.
+    pub scale: f32,
 }
 
 /// XYZ (D65) vers Rec. 2020 linéaire.
@@ -71,12 +77,37 @@ pub mod process1 {
     pub const SHADOWS: f32 = 0.8;
     pub const WHITES: f32 = 0.15;
     pub const BLACKS: f32 = 0.15;
+    /// Couleurs par teinte : décalage de teinte à ±100, en degrés ; part de
+    /// la luminance modulée à ±100 (pondérée par la saturation).
+    pub const HSL_HUE_DEGREES: f32 = 30.0;
+    pub const HSL_LUMINANCE: f32 = 0.5;
+    /// Vignetage : effet aux coins à ±100 ; rayon du point milieu (0 à 100)
+    /// et largeur de la transition (progressivité 0 à 100), sur la demi-
+    /// diagonale.
+    pub const VIGNETTE_AMOUNT: f32 = 0.8;
+    pub const VIGNETTE_MID_MIN: f32 = 0.3;
+    pub const VIGNETTE_MID_RANGE: f32 = 0.6;
+    pub const VIGNETTE_FEATHER_MIN: f32 = 0.05;
+    pub const VIGNETTE_FEATHER_RANGE: f32 = 0.95;
+    /// Grain : amplitude à 100 (en valeur codée) ; taille d'un grain en
+    /// pixels de l'original, de 1 (taille 0) à 5 (taille 100).
+    pub const GRAIN_AMPLITUDE: f32 = 0.18;
+    pub const GRAIN_CELL_MIN: f32 = 1.0;
+    pub const GRAIN_CELL_RANGE: f32 = 4.0;
 }
+
+/// Centres des huit teintes (rouge, orange, jaune, vert, cyan, bleu, violet,
+/// magenta), en degrés ; entre deux centres, les réglages s'interpolent.
+pub const HUE_CENTERS: [f32; 8] = [0.0, 30.0, 60.0, 120.0, 180.0, 240.0, 270.0, 300.0];
 
 /// Bits de [`RenderParams::flags`], communs au shader.
 pub const FLAG_TONE: u32 = 1;
 pub const FLAG_CLIP_HIGHLIGHTS: u32 = 2;
 pub const FLAG_CLIP_SHADOWS: u32 = 4;
+pub const FLAG_CURVE: u32 = 8;
+pub const FLAG_HSL: u32 = 16;
+pub const FLAG_VIGNETTE: u32 = 32;
+pub const FLAG_GRAIN: u32 = 64;
 
 /// Couleurs des avertissements d'écrêtage peints sur l'image.
 pub const CLIP_HIGHLIGHT_RGB: [u8; 3] = [255, 40, 40];
@@ -221,6 +252,7 @@ impl WorkingImage {
             height: oh as u32,
             rgb,
             as_shot_white: raw.as_shot_white,
+            scale: ow.max(oh) as f32 / raw.full_long_side.max(1) as f32,
         }
     }
 
@@ -262,7 +294,7 @@ pub struct Clipping {
 }
 
 /// Paramètres de rendu dérivés des réglages, communs au processeur et au GPU.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RenderParams {
     /// Exposition et balance des blancs, en Rec. 2020 linéaire.
     pub matrix: [[f32; 3]; 3],
@@ -272,6 +304,15 @@ pub struct RenderParams {
     pub saturation: f32,
     pub vibrance: f32,
     pub flags: u32,
+    /// Couleurs par teinte, pour les huit centres : décalage de teinte (en
+    /// degrés), saturation et luminance (de -1 à +1).
+    pub hsl: [[f32; 8]; 3],
+    /// Vignetage : effet aux coins, rayon du point milieu, largeur.
+    pub vignette: [f32; 3],
+    /// Grain : amplitude, taille d'un grain (pixels de l'original), irrégularité (0 à 1).
+    pub grain: [f32; 3],
+    /// Tables des courbes (RVB, rouge, vert, bleu), vide sans courbe.
+    pub curve: Vec<f32>,
 }
 
 impl RenderParams {
@@ -308,19 +349,219 @@ impl RenderParams {
         if clipping.shadows {
             flags |= FLAG_CLIP_SHADOWS;
         }
+        let h = &settings.hsl;
+        let pct = |v: f64| (v / 100.0) as f32;
+        let hsl = [
+            h.hue.values().map(|v| pct(v) * p::HSL_HUE_DEGREES),
+            h.saturation.values().map(pct),
+            h.luminance.values().map(|v| pct(v) * p::HSL_LUMINANCE),
+        ];
+        if !h.is_default() {
+            flags |= FLAG_HSL;
+        }
+        let v = &settings.effects.vignette;
+        let vignette = [
+            pct(v.amount) * p::VIGNETTE_AMOUNT,
+            p::VIGNETTE_MID_MIN + pct(v.midpoint) * p::VIGNETTE_MID_RANGE,
+            p::VIGNETTE_FEATHER_MIN + pct(v.feather) * p::VIGNETTE_FEATHER_RANGE,
+        ];
+        if v.amount != 0.0 {
+            flags |= FLAG_VIGNETTE;
+        }
+        let g = &settings.effects.grain;
+        let grain = [
+            pct(g.amount) * p::GRAIN_AMPLITUDE,
+            p::GRAIN_CELL_MIN + pct(g.size) * p::GRAIN_CELL_RANGE,
+            pct(g.roughness),
+        ];
+        if g.amount != 0.0 {
+            flags |= FLAG_GRAIN;
+        }
+        let curve = curve::tables(&settings.curve).unwrap_or_default();
+        if !curve.is_empty() {
+            flags |= FLAG_CURVE;
+        }
         Self {
             matrix,
             tone,
             saturation: (c.saturation / 100.0) as f32,
             vibrance: (c.vibrance / 100.0) as f32,
             flags,
+            hsl,
+            vignette,
+            grain,
+            curve,
         }
     }
 }
 
-/// Rendu d'un pixel de travail en sRGB codé (0 à 1).
+/// Position d'un pixel dans l'image rendue, pour le vignetage et le grain.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct At {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+    /// Échelle de l'image de travail (voir [`WorkingImage::scale`]).
+    pub scale: f32,
+}
+
+impl At {
+    /// Centre d'une image d'un pixel : ni vignetage, ni grain particulier.
+    pub const CENTER: Self = Self {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        scale: 1.0,
+    };
+}
+
+#[inline]
+fn smoothstep(e0: f32, e1: f32, x: f32) -> f32 {
+    let t = ((x - e0) / (e1 - e0)).clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
+}
+
+/// Facteur de vignetage d'un pixel : 1 au centre, `1 + effet` aux coins.
+#[inline]
+pub fn vignette_factor(v: &[f32; 3], at: &At) -> f32 {
+    let u = (at.x as f32 + 0.5) / at.width as f32 * 2.0 - 1.0;
+    let w = (at.y as f32 + 0.5) / at.height as f32 * 2.0 - 1.0;
+    let r = ((u * u + w * w) * 0.5).sqrt();
+    let m = smoothstep(v[1] - v[2] * 0.5, v[1] + v[2] * 0.5, r);
+    1.0 + v[0] * m
+}
+
+/// Couleurs par teinte, sur des valeurs codées (0 à 1) : teinte, saturation et
+/// luminance de chaque couleur, interpolées entre les deux centres voisins.
+/// Les gris, sans teinte, ne bougent pas.
+#[inline]
+pub fn apply_hsl(c: [f32; 3], hsl: &[[f32; 8]; 3]) -> [f32; 3] {
+    let mx = c[0].max(c[1]).max(c[2]);
+    let mn = c[0].min(c[1]).min(c[2]);
+    let d = mx - mn;
+    if d <= 1e-6 || mx <= 0.0 {
+        return c;
+    }
+    let s = d / mx;
+    let mut h = if mx == c[0] {
+        60.0 * (c[1] - c[2]) / d
+    } else if mx == c[1] {
+        60.0 * ((c[2] - c[0]) / d + 2.0)
+    } else {
+        60.0 * ((c[0] - c[1]) / d + 4.0)
+    };
+    if h < 0.0 {
+        h += 360.0;
+    }
+    let mut seg = 7;
+    for i in 0..7 {
+        if h < HUE_CENTERS[i + 1] {
+            seg = i;
+            break;
+        }
+    }
+    let c0 = HUE_CENTERS[seg];
+    let c1 = if seg == 7 {
+        360.0
+    } else {
+        HUE_CENTERS[seg + 1]
+    };
+    // Lissée : un plateau autour de chaque centre, sans saut entre deux.
+    let t = smoothstep(0.0, 1.0, (h - c0) / (c1 - c0));
+    let next = (seg + 1) % 8;
+    let adj = |k: usize| hsl[k][seg] * (1.0 - t) + hsl[k][next] * t;
+    let mut h2 = h + adj(0);
+    if h2 < 0.0 {
+        h2 += 360.0;
+    }
+    if h2 >= 360.0 {
+        h2 -= 360.0;
+    }
+    let s2 = (s * (1.0 + adj(1))).clamp(0.0, 1.0);
+    let v2 = (mx * (1.0 + adj(2) * s)).clamp(0.0, 1.0);
+    // TSV vers RVB.
+    let chroma = v2 * s2;
+    let hh = h2 / 60.0;
+    let x = chroma * (1.0 - ((hh % 2.0) - 1.0).abs());
+    let m = v2 - chroma;
+    let (r, g, b) = match hh as u32 {
+        0 => (chroma, x, 0.0),
+        1 => (x, chroma, 0.0),
+        2 => (0.0, chroma, x),
+        3 => (0.0, x, chroma),
+        4 => (x, 0.0, chroma),
+        _ => (chroma, 0.0, x),
+    };
+    [r + m, g + m, b + m]
+}
+
+/// Courbes : l'ensemble RVB, puis la courbe de chaque canal.
+#[inline]
+pub fn apply_curve(c: [f32; 3], lut: &[f32]) -> [f32; 3] {
+    let n = curve::LUT_SIZE;
+    let rgb = &lut[..n];
+    std::array::from_fn(|k| curve::sample(&lut[(k + 1) * n..(k + 2) * n], curve::sample(rgb, c[k])))
+}
+
+/// Hachage entier d'un nœud de la grille du grain (identique sur le GPU).
+#[inline]
+pub fn grain_hash(ix: i32, iy: i32, seed: u32) -> f32 {
+    let mut h = (ix as u32).wrapping_mul(0x8da6_b343)
+        ^ (iy as u32).wrapping_mul(0xd816_3841)
+        ^ seed.wrapping_mul(0xcb1a_b31f);
+    h ^= h >> 16;
+    h = h.wrapping_mul(0x7feb_352d);
+    h ^= h >> 15;
+    h = h.wrapping_mul(0x846c_a68b);
+    h ^= h >> 16;
+    (h >> 8) as f32 / 16_777_216.0
+}
+
+/// Bruit de valeur lissé, de 0 à 1.
+#[inline]
+fn value_noise(x: f32, y: f32, seed: u32) -> f32 {
+    let (fx, fy) = (x.floor(), y.floor());
+    let (ix, iy) = (fx as i32, fy as i32);
+    let (tx, ty) = (x - fx, y - fy);
+    let (sx, sy) = (tx * tx * (3.0 - 2.0 * tx), ty * ty * (3.0 - 2.0 * ty));
+    let a = grain_hash(ix, iy, seed);
+    let b = grain_hash(ix + 1, iy, seed);
+    let c = grain_hash(ix, iy + 1, seed);
+    let d = grain_hash(ix + 1, iy + 1, seed);
+    let top = a + (b - a) * sx;
+    let bottom = c + (d - c) * sx;
+    top + (bottom - top) * sy
+}
+
+/// Grain monochrome, plus visible dans les tons moyens ; placé en pixels de
+/// l'original, il garde sa taille apparente quelle que soit l'échelle.
+#[inline]
+pub fn apply_grain(c: [f32; 3], g: &[f32; 3], at: &At) -> [f32; 3] {
+    let cell = g[1];
+    let gx = (at.x as f32 + 0.5) / at.scale / cell;
+    let gy = (at.y as f32 + 0.5) / at.scale / cell;
+    let fine = value_noise(gx * 2.03, gy * 2.03, 1);
+    let n = value_noise(gx, gy, 0) * (1.0 - g[2]) + fine * g[2];
+    // Un pixel d'aperçu couvre plusieurs grains : leur moyenne varie moins.
+    let attenuation = (cell * at.scale).min(1.0);
+    let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    let weight = 0.25 + 3.0 * l * (1.0 - l);
+    let delta = (n - 0.5) * g[0] * attenuation * weight;
+    c.map(|v| v + delta)
+}
+
+/// Rendu d'un pixel de travail en sRGB codé (0 à 1), au centre d'une image
+/// d'un pixel (ni vignetage, ni grain particulier).
 #[inline]
 pub fn render_pixel(rgb: [f32; 3], p: &RenderParams) -> [f32; 3] {
+    render_pixel_at(rgb, p, &At::CENTER)
+}
+
+/// Rendu d'un pixel de travail en sRGB codé (0 à 1), à sa place dans l'image.
+#[inline]
+pub fn render_pixel_at(rgb: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
     let lin = mul(&p.matrix, rgb);
     let mut v = lin.map(neutral_curve);
     if p.flags & FLAG_TONE != 0 {
@@ -344,7 +585,21 @@ pub fn render_pixel(rgb: [f32; 3], p: &RenderParams) -> [f32; 3] {
         let factor = (1.0 + p.saturation) * (1.0 + p.vibrance * dull * dull);
         v = v.map(|c| y + (c - y) * factor);
     }
-    mul(&REC2020_TO_SRGB, v).map(srgb_encode)
+    if p.flags & FLAG_VIGNETTE != 0 {
+        let f = vignette_factor(&p.vignette, at);
+        v = v.map(|c| c * f);
+    }
+    let mut out = mul(&REC2020_TO_SRGB, v).map(srgb_encode);
+    if p.flags & FLAG_HSL != 0 {
+        out = apply_hsl(out, &p.hsl);
+    }
+    if p.flags & FLAG_CURVE != 0 {
+        out = apply_curve(out, &p.curve);
+    }
+    if p.flags & FLAG_GRAIN != 0 {
+        out = apply_grain(out, &p.grain, at);
+    }
+    out
 }
 
 /// Pixel codé sur 8 bits, comme le shader (`pack4x8unorm`).
@@ -426,7 +681,19 @@ pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
                 scope.spawn(move || {
                     let mut hist = vec![0u32; HISTOGRAM_BINS];
                     for (i, px) in slice.as_chunks_mut::<4>().0.iter_mut().enumerate() {
-                        let v = render_pixel([src[i * 3], src[i * 3 + 1], src[i * 3 + 2]], params);
+                        let index = n * chunk + i;
+                        let at = At {
+                            x: (index % image.width as usize) as u32,
+                            y: (index / image.width as usize) as u32,
+                            width: image.width,
+                            height: image.height,
+                            scale: image.scale,
+                        };
+                        let v = render_pixel_at(
+                            [src[i * 3], src[i * 3 + 1], src[i * 3 + 2]],
+                            params,
+                            &at,
+                        );
                         let q = v.map(quantize);
                         hist[usize::from(q[0])] += 1;
                         hist[256 + usize::from(q[1])] += 1;
@@ -615,6 +882,7 @@ mod tests {
             height: h,
             xyz,
             as_shot_white: D65_WHITE,
+            full_long_side: w,
         };
         let img = WorkingImage::from_raw(&raw, 128);
         assert_eq!((img.width, img.height), (128, 85));
@@ -644,6 +912,103 @@ mod tests {
         assert_eq!((same.width, same.height), (w, h));
     }
 
+    fn with(f: impl FnOnce(&mut DevelopSettings)) -> RenderParams {
+        let mut s = DevelopSettings::default();
+        f(&mut s);
+        RenderParams::from_settings(&s, D65_WHITE, Clipping::default())
+    }
+
+    #[test]
+    fn tsl_n_agit_que_sur_sa_teinte() {
+        let red = [0.8f32, 0.2, 0.15];
+        let blue = [0.15f32, 0.25, 0.8];
+        let grey = [0.5f32, 0.5, 0.5];
+        let p = with(|s| s.hsl.saturation.red = -100.0);
+        let r = apply_hsl(red, &p.hsl);
+        assert!(
+            (r[0] - r[1]).abs() < 0.05 && (r[1] - r[2]).abs() < 0.05,
+            "{r:?}"
+        );
+        let close = |a: [f32; 3], b: [f32; 3]| a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-5);
+        assert!(close(apply_hsl(blue, &p.hsl), blue));
+        assert_eq!(apply_hsl(grey, &p.hsl), grey);
+        // Teinte : le rouge glisse vers l'orange ; luminance : le bleu s'assombrit.
+        let p = with(|s| s.hsl.hue.red = 100.0);
+        let r = apply_hsl(red, &p.hsl);
+        assert!(r[1] > red[1] + 0.1, "{r:?}");
+        let p = with(|s| s.hsl.luminance.blue = -100.0);
+        let b = apply_hsl(blue, &p.hsl);
+        assert!(b[2] < blue[2] - 0.1 && b.iter().all(|v| *v >= 0.0), "{b:?}");
+        // Aller-retour TSV sans réglage : identique.
+        let z = with(|_| {});
+        let back = apply_hsl([0.3, 0.6, 0.2], &z.hsl);
+        assert!(
+            back.iter()
+                .zip([0.3, 0.6, 0.2])
+                .all(|(a, b)| (a - b).abs() < 1e-6)
+        );
+    }
+
+    #[test]
+    fn courbe_appliquee_au_rendu() {
+        let p = with(|s| s.curve.rgb = vec![[0.0, 40.0], [255.0, 255.0]]);
+        assert_ne!(p.flags & FLAG_CURVE, 0);
+        let black = render_pixel([0.0, 0.0, 0.0], &p);
+        assert!((black[0] - 40.0 / 255.0).abs() < 2e-3, "{black:?}");
+        // Courbe du seul canal rouge : le vert et le bleu ne bougent pas.
+        let p = with(|s| s.curve.red = vec![[0.0, 0.0], [128.0, 200.0], [255.0, 255.0]]);
+        let base = render_pixel([0.1, 0.1, 0.1], &neutral());
+        let out = render_pixel([0.1, 0.1, 0.1], &p);
+        assert!(out[0] > base[0] + 0.05 && (out[1] - base[1]).abs() < 1e-6);
+    }
+
+    #[test]
+    fn vignetage_aux_coins_seulement() {
+        let p = with(|s| s.effects.vignette.amount = -100.0);
+        let at = |x, y| At {
+            x,
+            y,
+            width: 300,
+            height: 200,
+            scale: 1.0,
+        };
+        assert!((vignette_factor(&p.vignette, &at(150, 100)) - 1.0).abs() < 1e-6);
+        let corner = vignette_factor(&p.vignette, &at(0, 0));
+        assert!(corner < 0.3, "{corner}");
+        let p = with(|s| s.effects.vignette.amount = 60.0);
+        assert!(vignette_factor(&p.vignette, &at(299, 199)) > 1.3);
+    }
+
+    #[test]
+    fn grain_deterministe_centre_et_a_l_echelle() {
+        let p = with(|s| s.effects.grain.amount = 100.0);
+        let px = |x, y, scale| At {
+            x,
+            y,
+            width: 4000,
+            height: 3000,
+            scale,
+        };
+        let grey = [0.5f32, 0.5, 0.5];
+        let a = apply_grain(grey, &p.grain, &px(10, 20, 1.0));
+        assert_eq!(a, apply_grain(grey, &p.grain, &px(10, 20, 1.0)));
+        // Moyenne nulle, écart sensible en pleine définition, atténué en aperçu.
+        let spread = |scale: f32| {
+            let v: Vec<f32> = (0..2000)
+                .map(|i| apply_grain(grey, &p.grain, &px(i % 97 * 7, i / 97 * 5, scale))[0] - 0.5)
+                .collect();
+            let mean = v.iter().sum::<f32>() / v.len() as f32;
+            let var = v.iter().map(|d| (d - mean).powi(2)).sum::<f32>() / v.len() as f32;
+            (mean, var.sqrt())
+        };
+        let (mean, full) = spread(1.0);
+        let (_, preview) = spread(0.2);
+        assert!(mean.abs() < 0.01 && full > 0.01, "{mean} {full}");
+        assert!(preview < full, "{preview} {full}");
+        // Sans grain, rien ne bouge.
+        assert_eq!(with(|_| {}).flags & FLAG_GRAIN, 0);
+    }
+
     #[test]
     fn histogramme_recalcule_identique() {
         let image = WorkingImage {
@@ -651,6 +1016,7 @@ mod tests {
             height: 8,
             rgb: (0..64 * 8 * 3).map(|i| (i % 97) as f32 / 40.0).collect(),
             as_shot_white: D65_WHITE,
+            scale: 1.0,
         };
         let r = render(&image, &neutral());
         assert_eq!(histogram_of(&r.rgba), r.histogram);
@@ -668,6 +1034,7 @@ mod tests {
             height: 1,
             rgb: vec![10.0, 10.0, 10.0, 0.0, 0.0, 0.0],
             as_shot_white: D65_WHITE,
+            scale: 1.0,
         };
         let mut p = neutral();
         p.flags |= FLAG_CLIP_HIGHLIGHTS | FLAG_CLIP_SHADOWS;

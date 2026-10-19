@@ -111,6 +111,19 @@ fn cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
         temperature: 4200.0,
         tint: 12.0,
     };
+    let mut look = DevelopSettings::default();
+    look.curve.rgb = vec![[0.0, 18.0], [70.0, 55.0], [190.0, 205.0], [255.0, 245.0]];
+    look.curve.blue = vec![[0.0, 30.0], [255.0, 230.0]];
+    look.hsl.hue.orange = -40.0;
+    look.hsl.saturation.blue = 60.0;
+    look.hsl.saturation.green = -70.0;
+    look.hsl.luminance.aqua = -50.0;
+    look.hsl.luminance.red = 35.0;
+    look.effects.vignette.amount = -45.0;
+    look.effects.vignette.midpoint = 30.0;
+    look.effects.grain.amount = 60.0;
+    look.effects.grain.size = 40.0;
+    look.effects.grain.roughness = 70.0;
     let mut dark = DevelopSettings::default();
     dark.light.exposure = -2.0;
     dark.light.contrast = -60.0;
@@ -126,6 +139,7 @@ fn cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
         ("neutre", DevelopSettings::default(), Clipping::default()),
         ("tous les curseurs", all, both),
         ("sombre et tungstène", dark, Clipping::default()),
+        ("courbes, TSL, effets", look, Clipping::default()),
     ]
 }
 
@@ -147,6 +161,7 @@ fn degrade_synthetique_identique() {
         height: h,
         rgb,
         as_shot_white: D65_WHITE,
+        scale: 1.0,
     };
     let uploaded = gpu.upload(&image).unwrap();
     for (name, settings, clipping) in cases() {

@@ -96,6 +96,218 @@ impl Color {
     }
 }
 
+/// Point d'une courbe de tonalité : entrée et sortie de 0 à 255, comme
+/// dans les logiciels de développement.
+pub type CurvePoint = [f64; 2];
+
+/// Nombre de points d'une courbe, extrémités comprises.
+pub const CURVE_POINTS_MAX: usize = 16;
+
+// `skip_serializing_if` reçoit une référence au type du champ, ici un `Vec`.
+#[allow(clippy::ptr_arg)]
+fn is_identity_curve(points: &Vec<CurvePoint>) -> bool {
+    points.is_empty()
+}
+
+/// Courbes de tonalité par points : l'ensemble RVB puis chaque canal. Une
+/// courbe vide est l'identité.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Curve {
+    #[serde(skip_serializing_if = "is_identity_curve")]
+    pub rgb: Vec<CurvePoint>,
+    #[serde(skip_serializing_if = "is_identity_curve")]
+    pub red: Vec<CurvePoint>,
+    #[serde(skip_serializing_if = "is_identity_curve")]
+    pub green: Vec<CurvePoint>,
+    #[serde(skip_serializing_if = "is_identity_curve")]
+    pub blue: Vec<CurvePoint>,
+}
+
+impl Curve {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+/// Une valeur de -100 à +100 pour chacune des huit teintes.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct HueSet {
+    #[serde(skip_serializing_if = "is_zero")]
+    pub red: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub orange: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub yellow: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub green: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub aqua: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub blue: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub purple: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub magenta: f64,
+}
+
+impl HueSet {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+
+    /// Les huit valeurs, dans l'ordre du cercle des teintes.
+    pub fn values(&self) -> [f64; 8] {
+        [
+            self.red,
+            self.orange,
+            self.yellow,
+            self.green,
+            self.aqua,
+            self.blue,
+            self.purple,
+            self.magenta,
+        ]
+    }
+
+    fn values_mut(&mut self) -> [&mut f64; 8] {
+        [
+            &mut self.red,
+            &mut self.orange,
+            &mut self.yellow,
+            &mut self.green,
+            &mut self.aqua,
+            &mut self.blue,
+            &mut self.purple,
+            &mut self.magenta,
+        ]
+    }
+}
+
+/// Teinte, saturation et luminance par couleur (TSL).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Hsl {
+    #[serde(skip_serializing_if = "HueSet::is_default")]
+    pub hue: HueSet,
+    #[serde(skip_serializing_if = "HueSet::is_default")]
+    pub saturation: HueSet,
+    #[serde(skip_serializing_if = "HueSet::is_default")]
+    pub luminance: HueSet,
+}
+
+impl Hsl {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+fn fifty() -> f64 {
+    50.0
+}
+
+fn twenty_five() -> f64 {
+    25.0
+}
+
+fn is_fifty(v: &f64) -> bool {
+    *v == 50.0
+}
+
+fn is_twenty_five(v: &f64) -> bool {
+    *v == 25.0
+}
+
+/// Vignetage : intensité de -100 (assombrit les coins) à +100 (les
+/// éclaircit) ; point milieu et progressivité de 0 à 100.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Vignette {
+    #[serde(skip_serializing_if = "is_zero")]
+    pub amount: f64,
+    #[serde(skip_serializing_if = "is_fifty")]
+    pub midpoint: f64,
+    #[serde(skip_serializing_if = "is_fifty")]
+    pub feather: f64,
+}
+
+impl Default for Vignette {
+    fn default() -> Self {
+        Self {
+            amount: 0.0,
+            midpoint: fifty(),
+            feather: fifty(),
+        }
+    }
+}
+
+/// Grain : quantité, taille et irrégularité de 0 à 100.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Grain {
+    #[serde(skip_serializing_if = "is_zero")]
+    pub amount: f64,
+    #[serde(skip_serializing_if = "is_twenty_five")]
+    pub size: f64,
+    #[serde(skip_serializing_if = "is_fifty")]
+    pub roughness: f64,
+}
+
+impl Default for Grain {
+    fn default() -> Self {
+        Self {
+            amount: 0.0,
+            size: twenty_five(),
+            roughness: fifty(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Effects {
+    #[serde(skip_serializing_if = "Vignette::is_default")]
+    pub vignette: Vignette,
+    #[serde(skip_serializing_if = "Grain::is_default")]
+    pub grain: Grain,
+}
+
+impl Vignette {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+impl Grain {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+impl Effects {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+/// Points d'une courbe ramenés dans [0, 255], triés, une seule sortie par
+/// entrée ; moins de deux points : l'identité.
+fn sanitize_curve(points: &mut Vec<CurvePoint>) {
+    points.retain(|p| p[0].is_finite() && p[1].is_finite());
+    for p in points.iter_mut() {
+        p[0] = p[0].clamp(0.0, 255.0);
+        p[1] = p[1].clamp(0.0, 255.0);
+    }
+    points.sort_by(|a, b| a[0].total_cmp(&b[0]));
+    points.dedup_by(|a, b| a[0] == b[0]);
+    points.truncate(CURVE_POINTS_MAX);
+    let identity = points.len() == 2 && points[0] == [0.0, 0.0] && points[1] == [255.0, 255.0];
+    if points.len() < 2 || identity {
+        points.clear();
+    }
+}
+
 /// Réglages d'une version de photo (l'originale ou une copie virtuelle).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -106,6 +318,12 @@ pub struct DevelopSettings {
     pub light: Light,
     #[serde(default, skip_serializing_if = "Color::is_default")]
     pub color: Color,
+    #[serde(default, skip_serializing_if = "Curve::is_default")]
+    pub curve: Curve,
+    #[serde(default, skip_serializing_if = "Hsl::is_default")]
+    pub hsl: Hsl,
+    #[serde(default, skip_serializing_if = "Effects::is_default")]
+    pub effects: Effects,
 }
 
 impl Default for DevelopSettings {
@@ -116,6 +334,9 @@ impl Default for DevelopSettings {
             process: LATEST_PROCESS,
             light: Light::default(),
             color: Color::default(),
+            curve: Curve::default(),
+            hsl: Hsl::default(),
+            effects: Effects::default(),
         }
     }
 }
@@ -192,11 +413,33 @@ impl DevelopSettings {
             *temperature = clamp(*temperature, 2000.0, 50_000.0);
             *tint = clamp(*tint, -150.0, 150.0);
         }
+        let k = &mut self.curve;
+        for points in [&mut k.rgb, &mut k.red, &mut k.green, &mut k.blue] {
+            sanitize_curve(points);
+        }
+        let h = &mut self.hsl;
+        for set in [&mut h.hue, &mut h.saturation, &mut h.luminance] {
+            for v in set.values_mut() {
+                *v = clamp(*v, -100.0, 100.0);
+            }
+        }
+        let v = &mut self.effects.vignette;
+        v.amount = clamp(v.amount, -100.0, 100.0);
+        v.midpoint = clamp(v.midpoint, 0.0, 100.0);
+        v.feather = clamp(v.feather, 0.0, 100.0);
+        let g = &mut self.effects.grain;
+        g.amount = clamp(g.amount, 0.0, 100.0);
+        g.size = clamp(g.size, 0.0, 100.0);
+        g.roughness = clamp(g.roughness, 0.0, 100.0);
         self
     }
 
     pub fn is_neutral(&self) -> bool {
-        self.light.is_default() && self.color.is_default()
+        self.light.is_default()
+            && self.color.is_default()
+            && self.curve.is_default()
+            && self.hsl.is_default()
+            && self.effects.is_default()
     }
 }
 
@@ -239,6 +482,34 @@ mod tests {
                 tint: 150.0
             }
         );
+    }
+
+    #[test]
+    fn sections_intermediaires_creuses_et_bornees() {
+        let s = DevelopSettings::from_json(
+            r#"{"version":1,"curve":{"rgb":[[255,240],[0,12],[128,140],[128,150],[300,-4]]},
+                "hsl":{"saturation":{"blue":-40,"red":250}},
+                "effects":{"vignette":{"amount":-30},"grain":{"amount":20,"size":25}}}"#,
+        )
+        .unwrap();
+        // Triés, bornés, une sortie par entrée (le premier point donné gagne).
+        assert_eq!(s.curve.rgb, [[0.0, 12.0], [128.0, 140.0], [255.0, 240.0]]);
+        assert_eq!(
+            (s.hsl.saturation.blue, s.hsl.saturation.red),
+            (-40.0, 100.0)
+        );
+        assert_eq!(s.effects.vignette.midpoint, 50.0);
+        // Valeurs par défaut absentes du JSON.
+        let json = s.to_json();
+        assert!(!json.contains("midpoint") && !json.contains("size") && !json.contains("green"));
+        assert_eq!(DevelopSettings::from_json(&json).unwrap(), s);
+        // Une courbe identité ou d'un seul point n'est pas enregistrée.
+        let id = DevelopSettings::from_json(
+            r#"{"version":1,"curve":{"rgb":[[0,0],[255,255]],"red":[[10,20]]}}"#,
+        )
+        .unwrap();
+        assert!(id.is_neutral());
+        assert_eq!(id.to_json(), r#"{"version":1,"process":1}"#);
     }
 
     #[test]
