@@ -59,6 +59,16 @@ pub const AD_THUMB_JPEG: c_int = 1;
 pub const AD_THUMB_BITMAP: c_int = 2;
 pub const AD_THUMB_JPEGXL: c_int = 3;
 
+/// Couleur du boîtier relevée par `ad_raw_develop` (voir le fichier d'en-tête).
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct ad_raw_color {
+    pub cam_mul: [f32; 4],
+    pub pre_mul: [f32; 4],
+    pub rgb_cam: [[f32; 4]; 3],
+    pub colors: i32,
+}
+
 unsafe extern "C" {
     pub fn ad_raw_open(utf8_path: *const c_char, error: *mut c_int) -> *mut ad_raw;
     pub fn ad_raw_close(raw: *mut ad_raw);
@@ -98,6 +108,7 @@ unsafe extern "C" {
         width: *mut u16,
         height: *mut u16,
     ) -> c_int;
+    pub fn ad_raw_get_color(raw: *const ad_raw) -> *const ad_raw_color;
     pub fn ad_raw_strerror(error: c_int) -> *const c_char;
     pub fn ad_raw_version() -> *const c_char;
 }

@@ -30,12 +30,16 @@ fn is_zero(v: &f64) -> bool {
     *v == 0.0
 }
 
-/// Lumière : en IL pour l'exposition, de -100 à +100 pour le reste.
+/// Lumière : en IL pour l'exposition, de -100 à +100 pour le reste. La
+/// luminosité éclaircit ou assombrit les tons moyens sans déplacer le blanc
+/// ni le noir (ajoutée en V0.2, absente = 0 : pas de nouvelle version).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Light {
     #[serde(skip_serializing_if = "is_zero")]
     pub exposure: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub brightness: f64,
     #[serde(skip_serializing_if = "is_zero")]
     pub contrast: f64,
     #[serde(skip_serializing_if = "is_zero")]
@@ -172,6 +176,7 @@ impl DevelopSettings {
         let l = &mut self.light;
         l.exposure = clamp(l.exposure, -5.0, 5.0);
         for v in [
+            &mut l.brightness,
             &mut l.contrast,
             &mut l.highlights,
             &mut l.shadows,

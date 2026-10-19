@@ -7,6 +7,7 @@ use std::time::Instant;
 
 use afterdusk_lib::develop::pipeline::{WorkingImage, render_rgba};
 use afterdusk_lib::develop::settings::DevelopSettings;
+use afterdusk_lib::develop::white;
 use afterdusk_lib::raw::RawFile;
 use afterdusk_lib::raw::preview::{decode_jpeg_scaled, orient};
 
@@ -31,6 +32,12 @@ fn rendu_neutre_proche_du_jpeg_du_boitier() {
         let t0 = Instant::now();
         let developed = raw.develop(true).unwrap();
         let decode = t0.elapsed();
+        // Balance du boîtier lue dans ses multiplicateurs : une lumière plausible.
+        let (temperature, tint) = white::temperature_of(white::xy_of(developed.as_shot_white));
+        assert!(
+            (2500.0..10_000.0).contains(&temperature) && tint.abs() < 60.0,
+            "{name} : {temperature:.0} K, teinte {tint:.0}"
+        );
         let working = WorkingImage::from_raw(&developed, 1024);
         let t1 = Instant::now();
         let rgba = render_rgba(&working, &DevelopSettings::default());
@@ -53,7 +60,7 @@ fn rendu_neutre_proche_du_jpeg_du_boitier() {
             "{name} : orientation {ratio_ours:.2} contre {ratio_jpeg:.2}"
         );
         report.push(format!(
-            "{name:22} {}×{} décodage {:>4} ms, rendu {:>3} ms, luminance {ours:.3} (JPEG {theirs:.3}, rapport {:.2})",
+            "{name:22} {}×{} décodage {:>4} ms, rendu {:>3} ms, luminance {ours:.3} (JPEG {theirs:.3}, rapport {:.2}), boîtier {temperature:.0} K / {tint:+.0}",
             working.width,
             working.height,
             decode.as_millis(),

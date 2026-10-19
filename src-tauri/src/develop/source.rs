@@ -32,8 +32,9 @@ pub enum SourceError {
     Raw(#[from] RawError),
 }
 
-/// Décode l'original d'une photo (demi-taille, suffisante pour l'écran) et le
-/// ramène à `max_side` pixels de côté long.
+/// Décode l'original d'une photo et le ramène à `max_side` pixels de côté
+/// long : en demi-définition (quatre fois plus rapide) quand elle suffit, en
+/// pleine définition pour les capteurs trop petits.
 pub fn working_image(
     conn: &Connection,
     media_id: i64,
@@ -56,6 +57,8 @@ pub fn working_image(
         return Err(SourceError::Unsupported(path));
     }
     let mut raw = RawFile::open(&abs)?;
-    let developed = raw.develop(true)?;
+    let info = raw.info();
+    let half = u32::from(info.width.max(info.height)) / 2 >= max_side;
+    let developed = raw.develop(half)?;
     Ok(WorkingImage::from_raw(&developed, max_side))
 }

@@ -15,16 +15,18 @@ use super::error::{CommandError, CommandResult};
 use super::marks::XmpWriter;
 use super::{AppState, blocking};
 use crate::develop::gpu::{GpuImage, GpuRenderer};
-use crate::develop::pipeline::{WorkingImage, render_rgba};
-use crate::develop::settings::DevelopSettings;
+use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
+use crate::develop::settings::{DevelopSettings, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
 use crate::develop::store::{self, StoreError};
+use crate::develop::white;
 
 /// Variable d'environnement : `AFTERDUSK_GPU=0` force le rendu processeur.
 const GPU_ENV: &str = "AFTERDUSK_GPU";
 
-/// En-tête du rendu renvoyé à l'interface, avant les pixels RGBA : largeur,
-/// hauteur, durée du rendu en microsecondes, moteur (1 = GPU), en u32 LE.
+/// En-tête du rendu renvoyé à l'interface : largeur, hauteur, durée du rendu
+/// en microsecondes, moteur (1 = GPU), en u32 LE ; suivent l'histogramme
+/// (4 × 256 u32 : rouge, vert, bleu, luminance) puis les pixels RGBA.
 const HEADER: usize = 16;
 
 impl From<SourceError> for CommandError {
@@ -91,9 +93,18 @@ pub struct DevelopOpened {
     pub width: u32,
     pub height: u32,
     pub settings: DevelopSettings,
+    /// Balance du boîtier, en kelvins et en teinte, pour les curseurs.
+    pub as_shot: AsShot,
     /// Processeur graphique utilisé, ou rien pour le rendu processeur.
     pub adapter: Option<String>,
     pub decode_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsShot {
+    pub temperature: f64,
+    pub tint: f64,
 }
 
 /// Ouvre une photo dans le Retoucher : décode l'original et charge ses réglages.
@@ -116,11 +127,16 @@ pub async fn develop_open(
                 .inspect_err(|e| eprintln!("rendu au processeur : {e}"))
                 .ok()
         });
+        let (temperature, tint) = white::temperature_of(white::xy_of(image.as_shot_white));
         let opened = DevelopOpened {
             media_id,
             width: image.width,
             height: image.height,
             settings,
+            as_shot: AsShot {
+                temperature: temperature.round(),
+                tint: tint.round(),
+            },
             adapter: gpu
                 .as_ref()
                 .and(renderer)
@@ -137,12 +153,15 @@ pub async fn develop_open(
     .await
 }
 
-/// Rend la photo ouverte avec ces réglages : en-tête puis pixels RGBA.
+/// Rend la photo ouverte avec ces réglages : en-tête, histogramme, pixels.
 #[tauri::command]
-pub async fn develop_render(app: AppHandle, settings: DevelopSettings) -> CommandResult<Response> {
+pub async fn develop_render(
+    app: AppHandle,
+    settings: DevelopSettings,
+    clipping: Option<Clipping>,
+) -> CommandResult<Response> {
     let bytes = blocking(move || {
         let engine = app.state::<DevelopEngine>();
-        let settings = settings.sanitized();
         let session = engine
             .session
             .lock()
@@ -150,16 +169,22 @@ pub async fn develop_render(app: AppHandle, settings: DevelopSettings) -> Comman
         let session = session
             .as_ref()
             .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
+        let params = RenderParams::from_settings(
+            &settings.sanitized(),
+            session.image.as_shot_white,
+            clipping.unwrap_or_default(),
+        );
         let started = Instant::now();
         let gpu = engine.gpu().zip(session.gpu.as_ref()).and_then(|(r, img)| {
-            r.render(img, &settings)
+            r.render(img, &params)
                 .inspect_err(|e| eprintln!("rendu au processeur : {e}"))
                 .ok()
         });
         let on_gpu = gpu.is_some();
-        let pixels = gpu.unwrap_or_else(|| render_rgba(&session.image, &settings));
+        let rendered = gpu.unwrap_or_else(|| render(&session.image, &params));
         let micros = u32::try_from(started.elapsed().as_micros()).unwrap_or(u32::MAX);
-        let mut out = Vec::with_capacity(HEADER + pixels.len());
+        let mut out =
+            Vec::with_capacity(HEADER + rendered.histogram.len() * 4 + rendered.rgba.len());
         for v in [
             session.image.width,
             session.image.height,
@@ -168,11 +193,36 @@ pub async fn develop_render(app: AppHandle, settings: DevelopSettings) -> Comman
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
-        out.extend_from_slice(&pixels);
+        for v in &rendered.histogram {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        out.extend_from_slice(&rendered.rgba);
         Ok(out)
     })
     .await?;
     Ok(Response::new(bytes))
+}
+
+/// Pipette : balance des blancs qui rend neutre le point (x, y) de l'image
+/// affichée, en pixels de l'aperçu.
+#[tauri::command]
+pub fn develop_pick_white(
+    engine: State<'_, DevelopEngine>,
+    x: u32,
+    y: u32,
+) -> CommandResult<WhiteBalance> {
+    let session = engine
+        .session
+        .lock()
+        .map_err(|e| CommandError::new("internal", e))?;
+    let image = &session
+        .as_ref()
+        .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
+        .image;
+    let xyz = image
+        .sample_xyz(x, y)
+        .ok_or_else(|| CommandError::new("internal", format!("point {x}, {y} hors de l'image")))?;
+    Ok(white::neutralizing(xyz, image.as_shot_white))
 }
 
 /// Ferme la photo ouverte et libère sa mémoire.

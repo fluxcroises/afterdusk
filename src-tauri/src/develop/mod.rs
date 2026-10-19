@@ -6,3 +6,4 @@ pub mod pipeline;
 pub mod settings;
 pub mod source;
 pub mod store;
+pub mod white;

@@ -155,6 +155,7 @@ pub fn run() {
             commands::develop::develop_open,
             commands::develop::develop_render,
             commands::develop::develop_close,
+            commands::develop::develop_pick_white,
             commands::develop::develop_save,
         ])
         .run(tauri::generate_context!());

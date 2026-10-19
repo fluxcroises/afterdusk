@@ -40,6 +40,46 @@ pub struct DevelopedRaw {
     pub width: u32,
     pub height: u32,
     pub xyz: Vec<u16>,
+    /// Blanc de la prise de vue (XYZ, Y = 1) : la lumière que la balance du
+    /// boîtier a ramenée au blanc D65 de l'image.
+    pub as_shot_white: [f64; 3],
+}
+
+/// Blanc D65 (XYZ, Y = 1).
+pub const D65_WHITE: [f64; 3] = [0.950_47, 1.0, 1.088_83];
+
+/// sRGB linéaire vers XYZ (D65).
+const SRGB_TO_XYZ: [[f64; 3]; 3] = [
+    [0.412_456_4, 0.357_576_1, 0.180_437_5],
+    [0.212_672_9, 0.715_152_2, 0.072_175],
+    [0.019_333_9, 0.119_192, 0.950_304_1],
+];
+
+/// Blanc de la prise de vue d'après les multiplicateurs du boîtier : le gris
+/// neutre de la scène vaut 1 / cam_mul en valeurs du capteur, soit
+/// pre_mul / cam_mul une fois ramené au neutre D65 que `rgb_cam` attend.
+fn as_shot_white(c: &sys::ad_raw_color) -> [f64; 3] {
+    let colors = usize::try_from(c.colors).unwrap_or(3).clamp(3, 4);
+    let pick = |m: &[f32; 4], i: usize| {
+        if i == 3 && m[3] <= 0.0 { m[1] } else { m[i] }
+    };
+    if (0..colors).any(|i| !(pick(&c.cam_mul, i) > 0.0 && pick(&c.pre_mul, i) > 0.0)) {
+        return D65_WHITE;
+    }
+    let mut srgb = [0.0f64; 3];
+    for (j, out) in srgb.iter_mut().enumerate() {
+        for i in 0..colors {
+            let normalized = f64::from(pick(&c.pre_mul, i)) / f64::from(pick(&c.cam_mul, i));
+            *out += f64::from(c.rgb_cam[j][i]) * normalized;
+        }
+    }
+    let xyz: [f64; 3] =
+        std::array::from_fn(|r| (0..3).map(|k| SRGB_TO_XYZ[r][k] * srgb[k]).sum::<f64>());
+    if xyz.iter().all(|v| v.is_finite() && *v > 0.0) {
+        [xyz[0] / xyz[1], 1.0, xyz[2] / xyz[1]]
+    } else {
+        D65_WHITE
+    }
 }
 
 /// Identifiant d'une balise TIFF/EXIF relevée dans le fichier.
@@ -269,10 +309,13 @@ impl RawFile {
         }
         let len = usize::from(width) * usize::from(height) * 3;
         let xyz = unsafe { std::slice::from_raw_parts(data, len) }.to_vec();
+        // SAFETY : la structure vit aussi longtemps que le fichier ouvert.
+        let color = unsafe { sys::ad_raw_get_color(self.handle.as_ptr()).as_ref() };
         Ok(DevelopedRaw {
             width: u32::from(width),
             height: u32::from(height),
             xyz,
+            as_shot_white: color.map_or(D65_WHITE, as_shot_white),
         })
     }
 

@@ -89,6 +89,19 @@ int ad_raw_thumbnail(ad_raw* raw, int index, const uint8_t** data, size_t* size,
 int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* width,
                    uint16_t* height);
 
+/* Couleur du boîtier, relevée par ad_raw_develop avant que LibRaw n'applique
+ * la balance des blancs : multiplicateurs de la prise de vue (cam_mul, nuls
+ * ou négatifs s'ils sont absents), multiplicateurs de la lumière du jour
+ * (pre_mul, neutre D65) et matrice boîtier normalisé vers sRGB linéaire. */
+typedef struct {
+  float cam_mul[4];
+  float pre_mul[4];
+  float rgb_cam[3][4];
+  int32_t colors;
+} ad_raw_color;
+
+const ad_raw_color* ad_raw_get_color(const ad_raw* raw);
+
 const char* ad_raw_strerror(int error);
 const char* ad_raw_version(void);
 

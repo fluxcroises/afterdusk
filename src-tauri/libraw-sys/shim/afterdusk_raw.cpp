@@ -124,6 +124,7 @@ struct ad_raw {
   std::vector<ExifEntry> exif;
   libraw_processed_image_t* thumb = nullptr;
   libraw_processed_image_t* image = nullptr;
+  ad_raw_color color{};
 };
 
 namespace {
@@ -319,6 +320,14 @@ int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* 
 
   int ret = raw->processor.unpack();
   if (ret != LIBRAW_SUCCESS) return ret;
+  /* dcraw_process remplace pre_mul par cam_mul : relevé avant. */
+  const libraw_colordata_t& c = raw->processor.imgdata.color;
+  for (int i = 0; i < 4; i++) {
+    raw->color.cam_mul[i] = c.cam_mul[i];
+    raw->color.pre_mul[i] = c.pre_mul[i];
+    for (int j = 0; j < 3; j++) raw->color.rgb_cam[j][i] = c.rgb_cam[j][i];
+  }
+  raw->color.colors = raw->processor.imgdata.idata.colors;
   ret = raw->processor.dcraw_process();
   if (ret != LIBRAW_SUCCESS) return ret;
   int err = 0;
@@ -333,6 +342,8 @@ int ad_raw_develop(ad_raw* raw, int half_size, const uint16_t** data, uint16_t* 
   *height = raw->image->height;
   return LIBRAW_SUCCESS;
 }
+
+const ad_raw_color* ad_raw_get_color(const ad_raw* raw) { return raw ? &raw->color : nullptr; }
 
 const char* ad_raw_strerror(int error) { return libraw_strerror(error); }
 
