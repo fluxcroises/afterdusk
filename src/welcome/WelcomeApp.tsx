@@ -7,6 +7,7 @@ import { api, type RecentImport } from "../api/core";
 import { previewUrl } from "../api/previews";
 import { useAppEvents } from "../appEvents";
 import { DeviceBanner } from "../components/DeviceBanner";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { Thumbnail } from "../components/Thumbnail";
 import { WindowControls } from "../components/WindowControls";
 import { drawsOwnMenus } from "../platform";
@@ -340,6 +341,7 @@ export function WelcomeApp() {
       <Hero highlight={highlight} />
       <main className="welcome-scroll">
         <DeviceBanner label="welcome" />
+        <OfflineBanner />
         {resumable.map((r) => (
           <div key={r.id} className="banner banner-info welcome-banner" role="status">
             <span>{t("home.interrupted", { source: r.sourceLabel, count: r.remaining })}</span>

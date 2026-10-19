@@ -66,6 +66,13 @@ export function useAppEvents(label: WindowLabel): void {
         (e) => void useDevices.getState().attached(e.payload, label),
       ),
       listen<Device>("device-detached", (e) => useDevices.getState().detached(e.payload)),
+      // Disque d'une bibliothèque débranché ou rebranché : état et grille à jour.
+      listen("library-status", () => {
+        void useImport
+          .getState()
+          .loadLibraries()
+          .then(() => useLibrary.getState().load(useImport.getState().libraryId));
+      }),
       events.onImportProgress(imp.onProgress),
       events.onImportFinished(imp.onFinished),
       listen<{ mediaId: number }>("preview-ready", (e) =>

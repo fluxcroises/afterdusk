@@ -124,9 +124,16 @@ export const api = {
     invoke<string>("template_preview", { folderTemplate, renameTemplate, album }),
   sameVolume: (a: string, b: string) => invoke<boolean | null>("same_volume", { a, b }),
   cloudFolders: () => invoke<CloudFolder[]>("cloud_folders"),
+  libraryOfflineInfo: (id: number) => invoke<OfflineInfo>("library_offline_info", { id }),
   identityGet: () => invoke<Identity>("identity_get"),
   identitySet: (identity: Identity) => invoke<Identity>("identity_set", { identity }),
 };
+
+/** Bibliothèque hors ligne : notes en attente d'écriture et dernier passage du disque. */
+export interface OfflineInfo {
+  pendingXmp: number;
+  lastSeen: string | null;
+}
 
 /** Dossier synchronisé par un service de cloud (OneDrive, Dropbox…). */
 export interface CloudFolder {

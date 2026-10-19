@@ -250,6 +250,9 @@ function ImportFooter() {
   const start = useImport((s) => s.start);
   const cancel = useImport((s) => s.cancel);
   const device = useDevices((s) => s.devices.find((d) => d.root === source?.root));
+  const offline = useImport(
+    (s) => s.libraries.find((l) => l.id === s.libraryId)?.isOnline === false,
+  );
   // Libellé de la source dans l'historique : la carte, ou le nom du dossier.
   const sourceLabel = device
     ? deviceLabel(device)
@@ -274,7 +277,8 @@ function ImportFooter() {
     <button
       type="button"
       className="button button-primary"
-      disabled={selected.size === 0 || libraryId === null}
+      disabled={selected.size === 0 || libraryId === null || offline}
+      title={offline ? t("offline.importDisabled") : undefined}
       onClick={() => void start(sourceLabel)}
     >
       {t("import.startCount", { count: selected.size })}

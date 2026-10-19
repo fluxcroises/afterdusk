@@ -446,5 +446,14 @@
     "cardOf": "{{camera}} card ({{volume}})",
     "detected": "{{device}} detected.",
     "import": "Import"
+  },
+  "offline": {
+    "title": "“{{name}}” is offline.",
+    "text": "Reconnect the disk ({{root}}) to import, delete or zoom to 100%. You can still browse and rate your photos.",
+    "pending_one": "{{count}} rating will be written to its XMP when the disk is back.",
+    "pending_other": "{{count}} ratings will be written to their XMP when the disk is back.",
+    "lastSeen": "Last seen on {{date}}.",
+    "back": "“{{name}}” is available again.",
+    "importDisabled": "The library is offline: reconnect the disk to import."
   }
 }

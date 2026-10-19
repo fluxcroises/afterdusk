@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { useAppEvents } from "./appEvents";
 import { DeviceBanner } from "./components/DeviceBanner";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { PerfOverlay } from "./components/PerfOverlay";
 import { StatusBar } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
@@ -38,6 +39,7 @@ export default function App() {
     <div className="app" data-dropping={dropping || undefined}>
       {!immersive && <TopBar />}
       {!immersive && <DeviceBanner label="main" />}
+      {!immersive && <OfflineBanner />}
       <Current />
       {!immersive && <StatusBar />}
       <PerfOverlay />

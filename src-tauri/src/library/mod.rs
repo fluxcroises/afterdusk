@@ -111,6 +111,39 @@ pub fn set_templates(
     Ok(())
 }
 
+/// Note la présence du disque d'une bibliothèque : `is_online`, et la date
+/// du dernier passage quand il est branché.
+pub fn record_presence(conn: &Connection, id: i64, online: bool) -> Result<(), LibraryError> {
+    conn.execute(
+        "UPDATE libraries SET is_online = ?2,
+                last_seen_at = CASE WHEN ?2 THEN ?3 ELSE last_seen_at END
+         WHERE id = ?1",
+        params![id, online, now_utc()],
+    )?;
+    Ok(())
+}
+
+/// Dernière fois que le disque de la bibliothèque a été vu branché.
+pub fn last_seen(conn: &Connection, id: i64) -> Result<Option<String>, LibraryError> {
+    Ok(conn
+        .query_row(
+            "SELECT last_seen_at FROM libraries WHERE id = ?1",
+            [id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .flatten())
+}
+
+/// Photos dont les marques attendent d'être écrites dans leur XMP.
+pub fn pending_xmp(conn: &Connection, id: i64) -> Result<i64, LibraryError> {
+    Ok(conn.query_row(
+        "SELECT count(*) FROM media WHERE library_id = ?1 AND xmp_pending = 1 AND state = 'normal'",
+        [id],
+        |r| r.get(0),
+    )?)
+}
+
 /// Dossier de sauvegarde (absolu), ou aucun.
 pub fn set_backup(conn: &Connection, id: i64, backup: Option<&Path>) -> Result<(), LibraryError> {
     if let Some(b) = backup

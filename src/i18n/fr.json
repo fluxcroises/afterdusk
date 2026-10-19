@@ -446,5 +446,14 @@
     "cardOf": "Carte {{camera}} ({{volume}})",
     "detected": "{{device}} détectée.",
     "import": "Importer"
+  },
+  "offline": {
+    "title": "« {{name}} » est hors ligne.",
+    "text": "Rebranchez le disque ({{root}}) pour importer, supprimer ou zoomer à 100 %. Vous pouvez parcourir et noter vos photos.",
+    "pending_one": "{{count}} note sera écrite dans son XMP au retour du disque.",
+    "pending_other": "{{count}} notes seront écrites dans leurs XMP au retour du disque.",
+    "lastSeen": "Vu pour la dernière fois le {{date}}.",
+    "back": "« {{name}} » est de nouveau disponible.",
+    "importDisabled": "La bibliothèque est hors ligne : rebranchez le disque pour importer."
   }
 }

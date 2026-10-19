@@ -2490,3 +2490,28 @@ input[type="radio"] {
   margin-top: 2px;
   color: var(--ad-accent);
 }
+
+/* Bibliothèque hors ligne : bandeau sous la barre de titre, ou en tête de l'accueil. */
+.banner-warning {
+  background: color-mix(in srgb, var(--ad-warning) 16%, var(--ad-panel));
+  color: var(--ad-text);
+}
+
+.banner-warning svg {
+  color: var(--ad-warning);
+}
+
+.app > .offline-banner {
+  position: static;
+}
+
+.welcome .offline-banner {
+  position: static;
+  margin: var(--ad-space-4) var(--ad-space-5) 0;
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-md);
+}
+
+.offline-last-seen {
+  color: var(--ad-text-secondary);
+}

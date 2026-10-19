@@ -88,6 +88,10 @@ pub fn run() {
             app.manage(XmpWriter::start(db_path.clone()));
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
+            commands::library::watch_libraries(
+                app.handle().clone(),
+                app.state::<AppState>().db_path.clone(),
+            );
             app.manage(commands::devices::DeviceWatch::start(app.handle().clone()));
             previews::enqueue_missing(app.handle());
             // Essai de lancement (CI) : échec si l'interface ne s'affiche pas à temps.
@@ -115,6 +119,7 @@ pub fn run() {
             commands::library::template_preview,
             commands::library::same_volume,
             commands::library::cloud_folders,
+            commands::library::library_offline_info,
             commands::library::identity_get,
             commands::library::identity_set,
             commands::import::source_scan,
