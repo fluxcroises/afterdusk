@@ -13,7 +13,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [ ] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
 - [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
 - [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
-- [ ] Corbeille interne avec restauration et vidage après 30 jours
+- [x] Corbeille interne avec restauration et vidage après 30 jours
 - [ ] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
 - [ ] Bibliothèque sur disque externe débranché consultable via le cache
 - [ ] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
@@ -112,3 +112,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur (é
 - Migration 0002 : l'index de recherche est recréé avec `contentless_delete` (une table FTS5 sans contenu refusait la suppression d'une fiche) et rempli à nouveau depuis la base.
 - Tests : déplacement et restauration à l'identique (empreinte, XMP), restauration sans écraser, vidage limité à la corbeille avec la sauvegarde intacte, purge après le délai, bibliothèque débranchée ; côté interface, envoi, annulation, rejetées, corbeille sans tri, jours restants.
 - Vérifié dans l'application compilée sous Windows, sur une bibliothèque de contrôle (les six RAW de test-assets, base de l'utilisateur mise de côté puis remise) : Suppr, rejetées avec confirmation, vue Corbeille, Restaurer, Vider.
+- Critère « Corbeille interne avec restauration et vidage après 30 jours » coché : CI verte sur Windows et macOS (run 39245921321).
