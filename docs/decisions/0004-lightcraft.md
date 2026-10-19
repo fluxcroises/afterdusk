@@ -1,6 +1,6 @@
 # 0004 — Ce que l'on peut reprendre de LightCraft
 
-Date : 2026-10-19 · Statut : **proposée** ; questions à trancher au début de la V0.2 (fin du document)
+Date : 2026-10-19 · Statut : **adoptée** (réponses de l'utilisateur du 2026-10-19, en fin de document)
 
 ## Contexte
 
@@ -142,3 +142,14 @@ Ce qu'il est raisonnable de faire :
 4. **Corrections d'objectifs : `lensdb` en Rust plutôt que la bibliothèque lensfun en C.** Le cahier des charges dit « via lensfun » : faut-il comprendre « la base lensfun » (recommandé, sans GLib) ou « la bibliothèque lensfun » ?
 5. **Décodage complet en V0.2** : rester sur LibRaw seul (recommandé : un seul décodeur, toutes nos marques), ou passer à `lightcraft-raw` si une nouvelle mesure en début de V0.2 montre le NEF du Z 6 et une couleur fidèle pour nos six boîtiers ?
 6. **Où placer les attributions** : `THIRD-PARTY.md` à la racine et un écran « À propos » listant LightCraft, GeoNames et lensfun ; ou aussi un en-tête dans chaque fichier repris (requis par la licence MIT, donc recommandé en plus) ?
+
+## Décision
+
+Réponses de l'utilisateur, le 2026-10-19 :
+
+1. **Code repris de LightCraft** : oui, limité à `color`, `lensdb` et `geocode`, avec attribution. Le code repris est un point de départ : on l'améliore ou on le réécrit dès que nos besoins l'exigent, sans s'y sentir tenu.
+2. **Champ « processus »** dans le JSON des réglages, distinct de `version`, dès la première version du format (V0.2).
+3. **Données embarquées** : GeoNames (V0.3) et la base lensfun, livrées avec l'application et créditées dans « À propos » ; jamais téléchargées.
+4. **Corrections d'objectifs** : la base lensfun, lue en Rust (`lensdb`), plutôt que la bibliothèque lensfun en C. « Via lensfun » dans le cahier des charges désigne la base.
+5. **Décodage complet** : LibRaw seul ; `lightcraft-raw` n'est remesuré que si un besoin apparaît.
+6. **Attributions** : `THIRD-PARTY.md` à la racine, la boîte « À propos », et un en-tête dans chaque fichier repris (exigé par la licence MIT).
