@@ -354,4 +354,13 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Une photo retouchée a des aperçus rendus d'après sa retouche (moteur d'export, 2048 px puis 1024 et 256), au lieu de l'aperçu intégré au RAW : grilles de Trier et Bibliothèque, pellicule, visionneuse. Une retouche remise à zéro retrouve l'aperçu du boîtier. Migration 0007 : source d'aperçu « rendered ».
 - Refaits en arrière-plan quand on quitte la photo dans le Retoucher (photo suivante, autre écran), après un collage de réglages, et au démarrage pour toute retouche plus récente que ses aperçus (application fermée en pleine retouche). La visionneuse n'affiche plus l'aperçu intégré pleine définition d'une photo retouchée, qui ne montrerait pas la retouche.
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : filtre noir et blanc appliqué, vignette de la pellicule puis de la grille de Trier en noir et blanc après le passage à la photo suivante ; originaux identiques.
-- Reste : copies virtuelles dans les grilles (et donc à l'export), aperçu du résultat dans Livrer.
+- Reste : aperçu du résultat dans Livrer.
+
+### 2026-10-20 (suite) : V0.2, copies virtuelles dans les grilles
+
+- Choix de l'utilisateur : chaque copie virtuelle apparaît comme une vignette à part, juste après sa photo, avec son aperçu rendu d'après ses propres réglages et une pastille « Copie » ; elle se sélectionne et s'exporte comme une photo ; note, drapeau et couleur restent ceux de la photo.
+- Identifiant de grille négatif (moins l'identifiant de la version) : sélection, pellicule, visionneuse et aperçus fonctionnent sans changement ; le cœur ramène la copie à sa photo pour les marques, la fiche et la couverture d'album. Une copie ne va pas à la corbeille (elle se supprime dans le Retoucher). Ouverte dans le Retoucher, elle s'affiche dans sa version.
+- Aperçus des copies : rendus à part (sans ligne dans `previews`, la copie n'étant pas un média), refaits quand on quitte la photo et au démarrage s'ils sont plus anciens que la retouche ou absents.
+- Export : la copie est rendue avec ses réglages, nommée « nom - Copie 1.jpg » ; le preset des originaux l'ignore (même fichier). Copier-coller : une copie reçoit le collage dans sa version.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : copie créée et passée en noir et blanc dans le Retoucher, vignette « Copie » en noir et blanc après la photo dans Trier et dans la pellicule, note posée sur la copie visible sur la photo, originaux identiques.
+

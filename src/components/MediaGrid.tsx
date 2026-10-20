@@ -71,7 +71,8 @@ function MediaContextMenu({
           {media.companionOf !== null &&
             item(t("menu.stackTop"), () => void useLibrary.getState().setStackTop(media.id))}
           <div className="menu-separator" role="separator" />
-          {item(t("menu.moveToTrash"), () => void useLibrary.getState().moveToTrash())}
+          {!media.copyOf &&
+            item(t("menu.moveToTrash"), () => void useLibrary.getState().moveToTrash())}
           {(media.stackSize > 1 || media.companionOf !== null) && (
             <>
               {item(t("menu.trashJpeg"), () => void useLibrary.getState().trashFormat("image"))}
@@ -173,7 +174,7 @@ function MediaCell({
       data-rejected={media.flag === -1 || undefined}
       data-below={media.companionOf !== null || undefined}
       data-open={(media.stackSize > 1 && expanded) || undefined}
-      title={media.fileName}
+      title={media.version ? `${media.fileName} · ${media.version}` : media.fileName}
       onClick={(e) => void select(media.id, selectMode(e))}
       onDoubleClick={() => useLibrary.getState().setView("loupe")}
       onContextMenu={(e) => {
@@ -187,6 +188,11 @@ function MediaCell({
           src={media.hasPreview ? previewUrl(media.id, 256, version) : null}
           fallback={media.fileName.split(".").pop()?.toUpperCase()}
         />
+        {media.copyOf && (
+          <span className="copy-badge" title={media.version ?? undefined}>
+            {t("grid.copy")}
+          </span>
+        )}
         {media.stackSize > 1 && (
           <span
             className="stack-badge"
@@ -252,11 +258,12 @@ function StripCell({
       className="strip-cell"
       aria-pressed={selected}
       data-active={active || undefined}
-      title={media.fileName}
+      title={media.version ? `${media.fileName} · ${media.version}` : media.fileName}
       data-below={media.companionOf !== null || undefined}
       onClick={(e) => void select(media.id, selectMode(e))}
     >
       <Thumbnail src={media.hasPreview ? previewUrl(media.id, 256, version) : null} />
+      {media.copyOf && <span className="copy-badge copy-badge-small" aria-hidden="true" />}
       {media.stackSize > 1 && <span className="stack-badge">{media.stackSize}</span>}
     </button>
   );

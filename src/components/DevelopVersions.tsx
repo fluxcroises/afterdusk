@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ORIGINAL, freeName, useDevelop } from "../store/develop";
+import { useLibrary } from "../store/library";
 import { confirmWarning } from "../ui/confirm";
 import { IconButton } from "./IconButton";
 import { PanelSection } from "./PanelSection";
@@ -83,7 +84,22 @@ export function VersionsSection() {
   const version = useDevelop((s) => s.version);
   const versions = useDevelop((s) => s.versions);
   const disabled = useDevelop((s) => s.settings === null);
-  const { selectVersion, createVersion, renameVersion, deleteVersion } = useDevelop.getState();
+  const { selectVersion } = useDevelop.getState();
+  // La grille montre les copies : elle suit chaque création, renommage ou suppression.
+  const reload = () => void useLibrary.getState().reloadMedia();
+  const createVersion = async (name: string) => {
+    await useDevelop.getState().createVersion(name);
+    reload();
+  };
+  const renameVersion = async (from: string, to: string) => {
+    const ok = await useDevelop.getState().renameVersion(from, to);
+    reload();
+    return ok;
+  };
+  const deleteVersion = async (name: string) => {
+    await useDevelop.getState().deleteVersion(name);
+    reload();
+  };
 
   const create = () =>
     void createVersion(

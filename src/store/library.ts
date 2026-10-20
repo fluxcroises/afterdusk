@@ -20,11 +20,18 @@ export interface MediaSummary {
   stackSize: number;
   /** Pile dépliée : fichier du dessus, pour les fichiers du dessous. */
   companionOf: number | null;
+  /** Copie virtuelle (identifiant négatif) : la photo dont elle est la copie. */
+  copyOf?: number | null;
+  /** Copie virtuelle : son nom. */
+  version?: string | null;
 }
 
-/** Fichier du dessus de la pile d'une photo de la grille. */
-export function stackTop(m: Pick<MediaSummary, "id" | "companionOf">): number {
-  return m.companionOf ?? m.id;
+/**
+ * Fichier du dessus de la pile d'une photo de la grille ; une copie
+ * virtuelle compte pour sa photo (mêmes marques).
+ */
+export function stackTop(m: Pick<MediaSummary, "id" | "companionOf" | "copyOf">): number {
+  return m.copyOf ?? m.companionOf ?? m.id;
 }
 
 export interface TrashReport {
@@ -291,6 +298,8 @@ interface LibraryState {
   /** `at` : horodatage de la frappe, pour mesurer l'affichage de la suivante. */
   move: (delta: number, at?: number) => void;
   previewReady: (mediaId: number) => void;
+  /** Recharge la grille (copie virtuelle créée, renommée ou supprimée). */
+  reloadMedia: () => Promise<void>;
   setRating: (rating: number) => Promise<void>;
   setFlag: (flag: FlagValue) => Promise<void>;
   /** Pose la couleur, ou la retire si la photo l'a déjà (comme Lightroom). */
@@ -575,6 +584,8 @@ export const useLibrary = create<LibraryState>((set, get) => {
 
     setZoom: (zoom) => set({ zoom }),
 
+    reloadMedia: () => reloadMedia(),
+
     previewReady: (mediaId) =>
       set((s) => ({
         versions: { ...s.versions, [mediaId]: (s.versions[mediaId] ?? 0) + 1 },
@@ -625,7 +636,9 @@ export const useLibrary = create<LibraryState>((set, get) => {
         .media.filter((m) => m.flag === -1)
         .map((m) => m.id),
 
-    moveToTrash: async (ids = get().targetIds()) => {
+    moveToTrash: async (targets = get().targetIds()) => {
+      // Une copie virtuelle n'est pas un fichier : elle se supprime dans le Retoucher.
+      const ids = targets.filter((id) => id > 0);
       if (ids.length === 0 || get().trash) return;
       const { media, expanded } = get();
       const opened = ids.some((id) => {

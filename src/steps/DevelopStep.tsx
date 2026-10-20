@@ -302,7 +302,11 @@ export function DevelopStep() {
   });
 
   useEffect(() => {
-    if (selectedId !== null) void useDevelop.getState().open(selectedId);
+    if (selectedId === null) return;
+    // Copie virtuelle : sa photo, dans sa version.
+    const item = useLibrary.getState().media.find((m) => m.id === selectedId);
+    if (item?.copyOf) void useDevelop.getState().open(item.copyOf, item.version ?? undefined);
+    else void useDevelop.getState().open(selectedId);
   }, [selectedId]);
   // Quitter le Retoucher enregistre le dernier réglage et libère l'image.
   useEffect(() => () => void useDevelop.getState().close(), []);

@@ -467,7 +467,8 @@ interface DevelopState {
   version: string;
   versions: Version[];
   snapshots: Snapshot[];
-  open: (mediaId: number) => Promise<void>;
+  /** Ouvre une photo, dans sa version originale ou dans une copie virtuelle. */
+  open: (mediaId: number, version?: string) => Promise<void>;
   setLight: (key: LightKey, value: number) => void;
   setColor: (key: ColorKey, value: number) => void;
   setWhiteBalance: (wb: WhiteBalance) => void;
@@ -903,8 +904,11 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     selectedSpot: null,
     showDust: false,
 
-    open: async (mediaId) => {
-      if (get().mediaId === mediaId && get().settings) return;
+    open: async (mediaId, version = ORIGINAL) => {
+      if (get().mediaId === mediaId && get().settings) {
+        if (get().version !== version) await get().selectVersion(version);
+        return;
+      }
       await get().flush();
       const token = ++openToken;
       set({
@@ -944,6 +948,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           lensName: opened.lens,
         });
         await Promise.all([render(), loadState(mediaId)]);
+        if (version !== ORIGINAL && token === openToken) await get().selectVersion(version);
         if (get().tool === "filters") void refreshThumbs();
         // Après un moment sur la même photo, le zoom se prépare sans bloquer.
         if (prepareTimer) clearTimeout(prepareTimer);
@@ -1165,9 +1170,12 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     pasteSettings: async (mediaIds) => {
       const { clipboard, mediaId, settings } = get();
       if (!clipboard) return;
-      const others = mediaIds.filter((id) => id !== mediaId);
       try {
-        if (mediaId !== null && settings && mediaIds.includes(mediaId)) {
+        // La photo ouverte se colle sur place (dans sa version originale) ;
+        // le reste, copies virtuelles comprises, par le cœur.
+        const here = get().version === ORIGINAL ? mediaId : null;
+        const others = mediaIds.filter((id) => id !== here);
+        if (here !== null && settings && mediaIds.includes(here)) {
           await get().flush();
           const next = await invoke<DevelopSettings>("develop_paste_apply", {
             settings: get().settings ?? settings,
@@ -1186,6 +1194,11 @@ export const useDevelop = create<DevelopState>()((set, get) => {
             from: clipboard.settings,
             controls: clipboard.controls,
           });
+          // Copie virtuelle ouverte : ses réglages ont pu changer dans la base.
+          if (mediaId !== null && get().version !== ORIGINAL && get().mediaId === mediaId) {
+            await loadState(mediaId);
+            void render();
+          }
         }
         set({ notice: i18next.t("develop.paste.done", { count: mediaIds.length }) });
         if (noticeTimer) clearTimeout(noticeTimer);

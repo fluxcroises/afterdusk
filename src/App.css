@@ -3542,3 +3542,24 @@ input[type="radio"] {
   width: 16px;
   height: 16px;
 }
+
+/* Copie virtuelle dans les grilles : pastille « Copie » en haut à gauche. */
+.copy-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  font: var(--ad-font-meta);
+  pointer-events: none;
+}
+
+.copy-badge-small {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  background: var(--ad-accent);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
+}

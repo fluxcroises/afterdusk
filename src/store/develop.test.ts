@@ -648,6 +648,21 @@ describe("Retoucher", () => {
     expect(useDevelop.getState().notice).toContain("3");
   });
 
+  it("copie virtuelle : ouverte dans sa version", async () => {
+    await useDevelop.getState().open(7, "Noir et blanc");
+    expect(useDevelop.getState().version).toBe("Noir et blanc");
+    expect(
+      calls("develop_state").some(
+        ([, a]) => (a as { version: string }).version === "Noir et blanc",
+      ),
+    ).toBe(true);
+    // Même photo, l'originale : on change seulement de version.
+    const opens = calls("develop_open").length;
+    await useDevelop.getState().open(7);
+    expect(useDevelop.getState().version).toBe("");
+    expect(calls("develop_open").length).toBe(opens);
+  });
+
   it("visualisation des poussières : demandée au rendu dans l'outil seulement", async () => {
     await useDevelop.getState().open(7);
     useDevelop.getState().setShowDust(true);

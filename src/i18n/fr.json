@@ -346,7 +346,8 @@
     "close": "Fermer"
   },
   "grid": {
-    "albumCover": "Couverture de l'album"
+    "albumCover": "Couverture de l'album",
+    "copy": "Copie"
   },
   "loupe": {
     "preparing": "Aperçu en préparation…",
