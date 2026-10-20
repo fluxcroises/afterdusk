@@ -113,6 +113,18 @@ describe("libellés de l'historique", () => {
     expect(describeStep(step("geometry.crop", {}), t, "fr")).toBe("Recadrage");
   });
 
+  it("filtres", () => {
+    const t = i18next.getFixedT("fr");
+    expect(describeStep(step("look:filmBw400", {}), t, "fr")).toBe("Filtre : Noir et blanc 400");
+    expect(describeStep(step("look:user-3:Mes couleurs: été", {}), t, "fr")).toBe(
+      "Filtre : Mes couleurs: été",
+    );
+    expect(describeStep(step("look.amount", { look: { id: "vivid", amount: 40 } }), t, "fr")).toBe(
+      "Intensité du filtre 40 %",
+    );
+    expect(describeStep(step("look.remove", {}), t, "fr")).toBe("Filtre retiré");
+  });
+
   it("corrections d'objectif", () => {
     const t = i18next.getFixedT("fr");
     expect(describeStep(step("lens.enabled", { lens: { enabled: false } }), t, "fr")).toBe(

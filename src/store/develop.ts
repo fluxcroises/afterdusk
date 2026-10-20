@@ -149,7 +149,56 @@ export interface SpotBrush {
 }
 
 /** Outil de la barre de droite. */
-export type DevelopTool = "adjust" | "crop" | "spots";
+export type DevelopTool = "adjust" | "filters" | "crop" | "spots";
+
+/** Pellicule évoquée par une simulation de film (boîte dessinée, sans marque). */
+export interface Film {
+  kind: "negative" | "slide" | "bw";
+  iso: number;
+  colors: [string, string];
+}
+
+/** Preset de la galerie, miroir de `develop::presets::PresetSummary`. */
+export interface PresetSummary {
+  id: string;
+  /** Nom d'un preset personnel ; les presets fournis sont nommés par l'interface. */
+  name: string | null;
+  film: Film | null;
+  controls: string[];
+}
+
+export interface PresetGroup {
+  id: string;
+  user: boolean;
+  presets: PresetSummary[];
+}
+
+/** Vignette d'un preset rendue sur la photo ouverte. */
+export interface PresetThumb {
+  width: number;
+  height: number;
+  pixels: Uint8ClampedArray<ArrayBuffer>;
+}
+
+/** Vignettes renvoyées par `develop_preset_previews`. */
+export function parseThumbs(buffer: ArrayBuffer): PresetThumb[] {
+  const view = new DataView(buffer);
+  const count = view.getUint32(0, true);
+  const out: PresetThumb[] = [];
+  let at = 4;
+  for (let i = 0; i < count; i++) {
+    const width = view.getUint32(at, true);
+    const height = view.getUint32(at + 4, true);
+    at += 8;
+    const size = width * height * 4;
+    out.push({ width, height, pixels: new Uint8ClampedArray(buffer.slice(at, at + size)) });
+    at += size;
+  }
+  return out;
+}
+
+/** Délai après un réglage avant de refaire les vignettes de la galerie. */
+export const THUMBS_DELAY_MS = 400;
 
 const r5 = (v: number) => Math.round(v * 100000) / 100000;
 
@@ -182,6 +231,8 @@ export interface DevelopSettings {
     grain?: Partial<Record<EffectKey<"grain">, number>>;
   };
   geometry?: Geometry;
+  /** Dernier preset appliqué par la galerie, et son intensité (%). */
+  look?: { id: string; amount: number };
   /** Corrections d'objectif ; absentes : actives, à 100 % du profil. */
   lens?: Partial<LensSettings>;
   spots?: Spot[];
@@ -378,6 +429,10 @@ interface DevelopState {
   compare: CompareMode;
   /** Rendu de l'original (réglages neutres), pour l'avant/après. */
   beforeFrame: DevelopFrame | null;
+  /** Presets de la galerie, chargés à la première ouverture. */
+  presetGroups: PresetGroup[] | null;
+  /** Vignettes par identifiant de preset (« » : l'original). */
+  presetThumbs: Record<string, PresetThumb>;
   /** Objectif reconnu dans la base lensfun, ou rien. */
   lensName: string | null;
   /** Outil choisi dans la barre de droite. */
@@ -431,6 +486,15 @@ interface DevelopState {
   redo: () => Promise<void>;
   setCompare: (mode: CompareMode) => void;
   setTool: (tool: DevelopTool) => Promise<void>;
+  loadPresets: () => Promise<void>;
+  /** Applique un preset (`null` : l'original) ; l'intensité par défaut est 100 %. */
+  applyPreset: (id: string | null, amount?: number) => Promise<void>;
+  /** Intensité du preset appliqué, de 0 à 100 %. */
+  setPresetAmount: (amount: number) => Promise<void>;
+  /** Nouveau preset personnel depuis les réglages affichés. */
+  createPreset: (name: string, controls: string[]) => Promise<boolean>;
+  renamePreset: (id: string, name: string) => Promise<boolean>;
+  deletePreset: (id: string) => Promise<void>;
   /** Nouvelle correction en (x, y), fractions de la source ; sa source est
    * choisie par le cœur. */
   addSpot: (x: number, y: number) => Promise<void>;
@@ -514,6 +578,56 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     const { settings, cropping } = get();
     if (!settings || !cropping || !settings.geometry?.crop) return settings;
     return put(settings, "geometry", sparseGeometry({ ...settings.geometry, crop: FULL_CROP }));
+  }
+
+  let thumbsTimer: ReturnType<typeof setTimeout> | null = null;
+  let thumbsRunning = false;
+  let thumbsAgain = false;
+
+  /** Toutes les vignettes de la galerie, l'original compris. */
+  async function refreshThumbs() {
+    if (thumbsRunning) {
+      thumbsAgain = true;
+      return;
+    }
+    thumbsRunning = true;
+    try {
+      do {
+        thumbsAgain = false;
+        const { settings, mediaId, presetGroups, tool } = get();
+        if (!settings || mediaId === null || !presetGroups || tool !== "filters") return;
+        const ids = ["", ...presetGroups.flatMap((g) => g.presets.map((p) => p.id))];
+        const size = Math.round(160 * (window.devicePixelRatio || 1));
+        const buffer = await invoke<ArrayBuffer>("develop_preset_previews", {
+          settings: renderedSettings(),
+          ids,
+          amount: 100,
+          size,
+        });
+        if (get().mediaId !== mediaId) return;
+        const thumbs = parseThumbs(buffer);
+        set({ presetThumbs: Object.fromEntries(ids.map((id, i) => [id, thumbs[i]])) });
+      } while (thumbsAgain);
+    } catch (e) {
+      set({ error: toCommandError(e) });
+    } finally {
+      thumbsRunning = false;
+    }
+  }
+
+  function scheduleThumbs() {
+    if (get().tool !== "filters") return;
+    if (thumbsTimer) clearTimeout(thumbsTimer);
+    thumbsTimer = setTimeout(() => void refreshThumbs(), THUMBS_DELAY_MS);
+  }
+
+  /** Libellé d'historique d'un preset : son identifiant, et son nom s'il est personnel. */
+  function lookLabel(id: string | null): string {
+    if (id === null) return "look.remove";
+    const name = get()
+      .presetGroups?.flatMap((g) => g.presets)
+      .find((p) => p.id === id)?.name;
+    return name ? `look:${id}:${name}` : `look:${id}`;
   }
 
   /** Avertissements demandés, et visualisation des poussières dans l'outil. */
@@ -653,6 +767,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     set({ settings });
     void render();
     pendingLabel = label;
+    scheduleThumbs();
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => void get().flush(), SAVE_DELAY_MS);
   }
@@ -762,6 +877,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     cropping: false,
     cropStart: null,
     tool: "adjust",
+    presetGroups: null,
+    presetThumbs: {},
     lensName: null,
     sourceSize: null,
     spotBrush: { radius: 0.01, feather: SPOT_FEATHER_DEFAULT, mode: "heal" },
@@ -793,6 +910,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         tool: get().tool === "crop" ? "adjust" : get().tool,
         selectedSpot: null,
         sourceSize: null,
+        presetThumbs: {},
       });
       try {
         const opened = await invoke<DevelopOpened>("develop_open", { mediaId });
@@ -808,6 +926,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           lensName: opened.lens,
         });
         await Promise.all([render(), loadState(mediaId)]);
+        if (get().tool === "filters") void refreshThumbs();
         // Après un moment sur la même photo, le zoom se prépare sans bloquer.
         if (prepareTimer) clearTimeout(prepareTimer);
         prepareTimer = setTimeout(() => {
@@ -1011,6 +1130,86 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       }
       set({ tool, selectedSpot: null, picking: false });
       void render();
+      if (tool === "filters") {
+        await get().loadPresets();
+        void refreshThumbs();
+      }
+    },
+
+    loadPresets: async () => {
+      try {
+        const presetGroups = await invoke<PresetGroup[]>("presets_list");
+        set({ presetGroups });
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    applyPreset: async (id, amount = 100) => {
+      const { settings, mediaId } = get();
+      if (!settings) return;
+      await get().flush();
+      try {
+        const next = await invoke<DevelopSettings>("develop_preset_apply", {
+          settings: get().settings ?? settings,
+          id,
+          amount,
+        });
+        if (get().mediaId !== mediaId) return;
+        change(next, lookLabel(id));
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    setPresetAmount: async (amount) => {
+      const { settings } = get();
+      const look = settings?.look;
+      if (!settings || !look) return;
+      try {
+        const next = await invoke<DevelopSettings>("develop_preset_apply", {
+          settings,
+          id: look.id,
+          amount: Math.round(amount),
+        });
+        change(next, "look.amount");
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    createPreset: async (name, controls) => {
+      const { settings } = get();
+      if (!settings) return false;
+      try {
+        await invoke("presets_create", { name, settings, controls });
+        await get().loadPresets();
+        void refreshThumbs();
+        return true;
+      } catch (e) {
+        set({ error: toCommandError(e) });
+        return false;
+      }
+    },
+
+    renamePreset: async (id, name) => {
+      try {
+        await invoke("presets_rename", { id, name });
+        await get().loadPresets();
+        return true;
+      } catch (e) {
+        set({ error: toCommandError(e) });
+        return false;
+      }
+    },
+
+    deletePreset: async (id) => {
+      try {
+        await invoke("presets_delete", { id });
+        await get().loadPresets();
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
     },
 
     addSpot: async (x, y) => {

@@ -561,7 +561,10 @@
         "off": "Lens corrections off",
         "distortion": "Lens distortion {{value}}%",
         "vignetting": "Lens vignetting {{value}}%"
-      }
+      },
+      "look": "Filter: {{name}}",
+      "lookRemoved": "Filter removed",
+      "lookAmount": "Filter amount {{value}}%"
     },
     "compare": {
       "hold": "Before (hold to see the original)",
@@ -670,7 +673,8 @@
       "label": "Editing tools",
       "adjust": "Adjust",
       "crop": "Crop",
-      "spots": "Heal spots"
+      "spots": "Heal spots",
+      "filters": "Filters"
     },
     "spots": {
       "title": "Spot healing",
@@ -697,6 +701,84 @@
       "distortion": "Distortion",
       "vignetting": "Vignetting",
       "percent": "{{value}}%"
+    },
+    "presets": {
+      "title": "Filters",
+      "autoOptimize": "Auto enhance",
+      "original": "Original",
+      "amount": "Amount",
+      "create": "Create a preset from this photo",
+      "name": "Preset name",
+      "save": "Save",
+      "delete": "Delete preset",
+      "renameHint": "Double-click to rename",
+      "confirmDelete": "Delete the preset “{{name}}”? Photos using it keep their settings.",
+      "userEmpty": "Your presets will appear here. Edit a photo, then create one.",
+      "groups": {
+        "essentials": "Essentials",
+        "bw": "Black and white",
+        "film": "Film simulations",
+        "exposure": "Exposure",
+        "vignette": "Vignette",
+        "user": "My presets"
+      },
+      "films": {
+        "negative": "color negative",
+        "slide": "slide film",
+        "bw": "black and white"
+      },
+      "filmShort": {
+        "negative": "COLOR",
+        "slide": "SLIDE",
+        "bw": "B&W"
+      },
+      "items": {
+        "natural": "Natural",
+        "vivid": "Vivid",
+        "punchy": "Punchy",
+        "soft": "Soft",
+        "matte": "Matte",
+        "warm": "Warm",
+        "cool": "Cool",
+        "portrait": "Portrait",
+        "landscape": "Landscape",
+        "bwNeutral": "B&W neutral",
+        "bwContrast": "B&W contrast",
+        "bwSoft": "B&W soft",
+        "filmWarmNegative": "Warm color negative",
+        "filmGoldNegative": "Golden color negative",
+        "filmVividSlide": "Saturated slide",
+        "filmNeutralSlide": "Neutral slide",
+        "filmClassicSlide": "Classic slide",
+        "filmTungstenCine": "Tungsten cine",
+        "filmBw100": "Black and white 100",
+        "filmBw400": "Black and white 400",
+        "filmBw3200": "Black and white 3200",
+        "exposureMinus1": "-1 EV",
+        "exposureMinusHalf": "-0.5 EV",
+        "exposurePlusHalf": "+0.5 EV",
+        "exposurePlus1": "+1 EV",
+        "vignetteLight": "Light",
+        "vignetteStrong": "Strong"
+      }
+    },
+    "sections": {
+      "legend": "Settings kept",
+      "all": "All",
+      "none": "None",
+      "exposure": "Exposure",
+      "tone": "Tone (contrast, highlights, shadows…)",
+      "whiteBalance": "White balance",
+      "presence": "Vibrance and saturation",
+      "curve": "Tone curve",
+      "hsl": "Colors (HSL)",
+      "sharpening": "Sharpening",
+      "noise": "Noise reduction",
+      "vignette": "Vignette",
+      "grain": "Grain",
+      "lens": "Lens corrections",
+      "geometry": "Crop and straighten",
+      "spots": "Spot healing"
     }
   }
 }

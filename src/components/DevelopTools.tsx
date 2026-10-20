@@ -1,10 +1,11 @@
-import { Bandage, Crop, type LucideIcon, SlidersHorizontal } from "lucide-react";
+import { Bandage, Crop, type LucideIcon, SlidersHorizontal, WandSparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { type DevelopTool, useDevelop } from "../store/develop";
 import { useLayout } from "../store/layout";
 
 const TOOLS: { tool: DevelopTool; icon: LucideIcon; shortcut?: string }[] = [
   { tool: "adjust", icon: SlidersHorizontal },
+  { tool: "filters", icon: WandSparkles },
   { tool: "crop", icon: Crop, shortcut: "R" },
   { tool: "spots", icon: Bandage, shortcut: "Q" },
 ];

@@ -17,6 +17,7 @@ import {
   LensSection,
 } from "../components/DevelopAdvanced";
 import { type Box, CropOverlay, CropSection } from "../components/DevelopCrop";
+import { FiltersPanel } from "../components/DevelopFilters";
 import { SpotOverlay, SpotsSection, type View } from "../components/DevelopSpots";
 import { DevelopToolRail } from "../components/DevelopTools";
 import { SnapshotsSection, VersionsSection } from "../components/DevelopVersions";
@@ -215,6 +216,7 @@ function SettingsPanel() {
           <LensSection />
         </>
       )}
+      {tool === "filters" && <FiltersPanel />}
       {tool === "crop" && <CropSection />}
       {tool === "spots" && <SpotsSection />}
     </>

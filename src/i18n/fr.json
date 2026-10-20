@@ -561,7 +561,10 @@
         "off": "Corrections d'objectif désactivées",
         "distortion": "Distorsion de l'objectif {{value}} %",
         "vignetting": "Vignetage de l'objectif {{value}} %"
-      }
+      },
+      "look": "Filtre : {{name}}",
+      "lookRemoved": "Filtre retiré",
+      "lookAmount": "Intensité du filtre {{value}} %"
     },
     "compare": {
       "hold": "Avant (maintenir pour voir l'original)",
@@ -670,7 +673,8 @@
       "label": "Outils de retouche",
       "adjust": "Réglages",
       "crop": "Recadrer",
-      "spots": "Corriger les défauts"
+      "spots": "Corriger les défauts",
+      "filters": "Filtres"
     },
     "spots": {
       "title": "Correcteur de défauts",
@@ -697,6 +701,84 @@
       "distortion": "Distorsion",
       "vignetting": "Vignetage",
       "percent": "{{value}} %"
+    },
+    "presets": {
+      "title": "Filtres",
+      "autoOptimize": "Optimisation automatique",
+      "original": "Original",
+      "amount": "Intensité",
+      "create": "Créer un preset depuis cette photo",
+      "name": "Nom du preset",
+      "save": "Enregistrer",
+      "delete": "Supprimer le preset",
+      "renameHint": "Double-clic pour renommer",
+      "confirmDelete": "Supprimer le preset « {{name}} » ? Les photos qui l'utilisent gardent leurs réglages.",
+      "userEmpty": "Vos presets apparaîtront ici. Réglez une photo, puis créez-en un.",
+      "groups": {
+        "essentials": "Essentiels",
+        "bw": "Noir et blanc",
+        "film": "Simulations de film",
+        "exposure": "Exposition",
+        "vignette": "Vignetage",
+        "user": "Mes presets"
+      },
+      "films": {
+        "negative": "négatif couleur",
+        "slide": "inversible (diapositive)",
+        "bw": "noir et blanc"
+      },
+      "filmShort": {
+        "negative": "COULEUR",
+        "slide": "DIAPO",
+        "bw": "N&B"
+      },
+      "items": {
+        "natural": "Naturel",
+        "vivid": "Éclatant",
+        "punchy": "Contrasté",
+        "soft": "Doux",
+        "matte": "Mat",
+        "warm": "Chaud",
+        "cool": "Froid",
+        "portrait": "Portrait",
+        "landscape": "Paysage",
+        "bwNeutral": "N&B neutre",
+        "bwContrast": "N&B contrasté",
+        "bwSoft": "N&B doux",
+        "filmWarmNegative": "Négatif couleur chaud",
+        "filmGoldNegative": "Négatif couleur doré",
+        "filmVividSlide": "Inversible saturé",
+        "filmNeutralSlide": "Inversible neutre",
+        "filmClassicSlide": "Inversible classique",
+        "filmTungstenCine": "Cinéma tungstène",
+        "filmBw100": "Noir et blanc 100",
+        "filmBw400": "Noir et blanc 400",
+        "filmBw3200": "Noir et blanc 3200",
+        "exposureMinus1": "-1 IL",
+        "exposureMinusHalf": "-0,5 IL",
+        "exposurePlusHalf": "+0,5 IL",
+        "exposurePlus1": "+1 IL",
+        "vignetteLight": "Léger",
+        "vignetteStrong": "Marqué"
+      }
+    },
+    "sections": {
+      "legend": "Réglages gardés",
+      "all": "Tout",
+      "none": "Rien",
+      "exposure": "Exposition",
+      "tone": "Tonalité (contraste, hautes lumières, ombres…)",
+      "whiteBalance": "Balance des blancs",
+      "presence": "Vibrance et saturation",
+      "curve": "Courbe de tonalité",
+      "hsl": "Couleurs (TSL)",
+      "sharpening": "Netteté",
+      "noise": "Réduction du bruit",
+      "vignette": "Vignetage",
+      "grain": "Grain",
+      "lens": "Corrections d'objectif",
+      "geometry": "Recadrage et redressement",
+      "spots": "Corrections de défauts"
     }
   }
 }

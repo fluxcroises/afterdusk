@@ -111,6 +111,32 @@ beforeEach(() => {
     }
     if (cmd === "develop_auto_straighten") return -2.4;
     if (cmd === "develop_spot_source") return [0.123456789, 0.4];
+    if (cmd === "presets_list")
+      return [
+        {
+          id: "essentials",
+          user: false,
+          presets: [{ id: "vivid", name: null, film: null, controls: ["color.vibrance"] }],
+        },
+        { id: "user", user: true, presets: [] },
+      ];
+    if (cmd === "develop_preset_apply") {
+      const id = a.id as string | null;
+      const base = a.settings as Record<string, unknown>;
+      if (id === null) return { version: 1, process: 1 };
+      return { ...base, color: { vibrance: 35 }, look: { id, amount: a.amount } };
+    }
+    if (cmd === "develop_preset_previews") {
+      // Deux vignettes de 1 × 1 : l'original et « vivid ».
+      const buffer = new ArrayBuffer(4 + 2 * (8 + 4));
+      const view = new DataView(buffer);
+      view.setUint32(0, 2, true);
+      for (const at of [4, 16]) {
+        view.setUint32(at, 1, true);
+        view.setUint32(at + 4, 1, true);
+      }
+      return buffer;
+    }
     if (cmd === "develop_pick_white") return { mode: "custom", temperature: 3900, tint: 6 };
     if (cmd === "develop_auto_light")
       return {
@@ -129,6 +155,8 @@ afterEach(async () => {
     clipping: { highlights: false, shadows: false },
     tool: "adjust",
     showDust: false,
+    presetGroups: null,
+    presetThumbs: {},
   });
   vi.useRealTimers();
 });
@@ -571,6 +599,29 @@ describe("Retoucher", () => {
     expect(useDevelop.getState().settings?.lens).toEqual({ enabled: false });
     useDevelop.getState().setLens("enabled", true);
     expect(useDevelop.getState().settings?.lens).toBeUndefined();
+  });
+
+  it("galerie : vignettes, preset appliqué, intensité, original", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().setTool("filters");
+    await vi.waitFor(() =>
+      expect(Object.keys(useDevelop.getState().presetThumbs).sort()).toEqual(["", "vivid"]),
+    );
+    expect(calls("develop_preset_previews")[0]?.[1]).toMatchObject({
+      ids: ["", "vivid"],
+      amount: 100,
+    });
+    await useDevelop.getState().applyPreset("vivid");
+    expect(useDevelop.getState().settings?.look).toEqual({ id: "vivid", amount: 100 });
+    await useDevelop.getState().setPresetAmount(40.4);
+    expect(useDevelop.getState().settings?.look?.amount).toBe(40);
+    await useDevelop.getState().applyPreset(null);
+    await useDevelop.getState().flush();
+    expect(saves().map((a) => (a as { label: string }).label)).toEqual([
+      "look:vivid",
+      "look.amount",
+      "look.remove",
+    ]);
   });
 
   it("visualisation des poussières : demandée au rendu dans l'outil seulement", async () => {

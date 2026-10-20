@@ -55,6 +55,18 @@ export function describeStep(
     return t("develop.history.snapshot", { name: step.label.slice("snapshot:".length) });
   }
   if (step.label === "version.create") return t("develop.history.versionCreated");
+  if (step.label.startsWith("look:")) {
+    // « look:identifiant » (preset fourni) ou « look:identifiant:nom » (personnel).
+    const rest = step.label.slice("look:".length);
+    const cut = rest.indexOf(":");
+    const name =
+      cut >= 0 ? rest.slice(cut + 1) : t(`develop.presets.items.${rest}`, { defaultValue: rest });
+    return t("develop.history.look", { name });
+  }
+  if (step.label === "look.remove") return t("develop.history.lookRemoved");
+  if (step.label === "look.amount") {
+    return t("develop.history.lookAmount", { value: step.settings.look?.amount ?? 100 });
+  }
   const [section, key, auto] = step.label.split(".");
   const s = step.settings;
   if (step.label === "light.auto") return t("develop.history.autoLight");

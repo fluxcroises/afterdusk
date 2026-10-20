@@ -3205,3 +3205,164 @@ input[type="radio"] {
   color: var(--ad-text);
   font: var(--ad-font-ui);
 }
+
+/* Galerie de filtres : grille de trois colonnes, vignettes carrées. */
+.develop-optimize {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ad-space-2);
+  width: 100%;
+  margin-bottom: var(--ad-space-3);
+}
+
+.develop-optimize svg {
+  width: 16px;
+  height: 16px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ad-space-2);
+  margin-bottom: var(--ad-space-2);
+}
+
+.filter-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.filter-tile-button {
+  display: block;
+  padding: 0;
+  border-radius: var(--ad-radius-sm);
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+
+.filter-tile-button:hover {
+  outline-color: var(--ad-border-strong);
+}
+
+.filter-tile[data-checked] .filter-tile-button {
+  outline-color: var(--ad-accent);
+}
+
+.filter-tile-image {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--ad-radius-sm);
+  background: var(--ad-surface);
+}
+
+.filter-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.filter-thumb[data-loading] {
+  opacity: 0;
+}
+
+.film-box {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  width: 38%;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+
+.filter-tile-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ad-accent);
+  color: #fff;
+}
+
+.filter-tile-check svg {
+  width: 12px;
+  height: 12px;
+}
+
+.filter-tile-label {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ad-text-secondary);
+  font: var(--ad-font-meta);
+  line-height: 1.25;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.filter-tile[data-checked] .filter-tile-label {
+  color: var(--ad-text);
+}
+
+.filter-tile-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.filter-tile-delete {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  opacity: 0;
+  background: var(--ad-panel);
+  border-radius: var(--ad-radius-sm);
+}
+
+.filter-tile:hover .filter-tile-delete,
+.filter-tile-delete:focus-within {
+  opacity: 1;
+}
+
+.develop-preset-create {
+  width: 100%;
+}
+
+.develop-preset-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+}
+
+.develop-preset-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section-picker {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.section-picker legend {
+  margin-bottom: 4px;
+  color: var(--ad-text-secondary);
+  font: var(--ad-font-meta);
+}
+
+.section-picker-all {
+  display: flex;
+  gap: var(--ad-space-1);
+  margin-bottom: 4px;
+}
