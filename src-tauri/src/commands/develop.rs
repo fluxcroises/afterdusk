@@ -26,6 +26,7 @@ use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
 use crate::develop::spots;
 use crate::develop::store::{self, History, ORIGINAL, Snapshot, StoreError, Version};
 use crate::develop::white;
+use crate::library::copies;
 use crate::library::media::is_stale;
 use crate::raw::DevelopedRaw;
 
@@ -572,10 +573,17 @@ pub fn develop_close(app: AppHandle, engine: State<'_, DevelopEngine>) {
 /// Photo quittée dans le Retoucher : ses aperçus sont refaits d'après la
 /// retouche s'ils sont plus anciens qu'elle (grilles, pellicule, visionneuse).
 fn refresh_previews(app: &AppHandle, media_id: i64) {
-    if let Ok(conn) = app.state::<AppState>().connect()
-        && is_stale(&conn, media_id)
-    {
-        app.state::<PreviewQueue>().push(media_id);
+    let state = app.state::<AppState>();
+    let Ok(conn) = state.connect() else {
+        return;
+    };
+    let queue = app.state::<PreviewQueue>();
+    if is_stale(&conn, media_id) {
+        queue.push(media_id);
+    }
+    // Ses copies virtuelles retouchées, chacune son aperçu.
+    for item in copies::stale_copies(&conn, &state.cache_root, Some(media_id)).unwrap_or_default() {
+        queue.push(item);
     }
 }
 
@@ -978,10 +986,15 @@ pub async fn develop_paste(
     let changed = blocking(move || {
         let mut changed = Vec::new();
         for id in media_ids {
-            let current = store::load(&conn, id, ORIGINAL)?;
+            // Une copie virtuelle reçoit le collage dans sa version.
+            let Some((media, version)) = copies::resolve(&conn, id).map_err(StoreError::from)?
+            else {
+                continue;
+            };
+            let current = store::load(&conn, media, &version)?;
             let next = presets::paste(&path, &current, &from, &controls)?;
             if next != current {
-                store::save(&mut conn, id, ORIGINAL, next, "paste")?;
+                store::save(&mut conn, media, &version, next, "paste")?;
                 changed.push(id);
             }
         }

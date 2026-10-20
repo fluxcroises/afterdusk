@@ -10,6 +10,8 @@ use tauri::State;
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
 use crate::db;
+use crate::library::LibraryError;
+use crate::library::copies;
 use crate::library::marks::{self, Mark, MarkError};
 use crate::metadata::xmp::{ColorLabel, Flag};
 
@@ -83,7 +85,12 @@ async fn apply(
     mark: Mark,
 ) -> CommandResult<usize> {
     let mut conn = state.connect()?;
-    let changed = blocking(move || Ok(marks::apply_mark(&mut conn, &ids, mark)?)).await?;
+    let changed = blocking(move || {
+        // Copies virtuelles : les marques sont celles de leur photo.
+        let ids = copies::media_ids(&conn, &ids).map_err(LibraryError::from)?;
+        Ok(marks::apply_mark(&mut conn, &ids, mark)?)
+    })
+    .await?;
     if changed > 0 {
         writer.wake();
     }

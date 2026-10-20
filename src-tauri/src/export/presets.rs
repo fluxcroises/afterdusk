@@ -259,7 +259,13 @@ pub fn file_stem(
         .replace("{original}", &stem(original))
         .replace("{date}", date)
         .replace("{seq}", &format!("{seq:03}"));
-    let clean: String = out
+    let clean = clean_name(&out);
+    if clean.is_empty() { stem(name) } else { clean }
+}
+
+/// Nom de fichier sans caractères interdits ni points ou espaces aux bords.
+pub fn clean_name(text: &str) -> String {
+    let clean: String = text
         .chars()
         .map(|c| {
             if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') || c.is_control() {
@@ -269,8 +275,7 @@ pub fn file_stem(
             }
         })
         .collect();
-    let clean = clean.trim().trim_matches('.').to_owned();
-    if clean.is_empty() { stem(name) } else { clean }
+    clean.trim().trim_matches('.').to_owned()
 }
 
 /// Premier chemin libre : « nom.ext », puis « nom (2).ext »… Jamais

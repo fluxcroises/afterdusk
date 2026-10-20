@@ -18,8 +18,9 @@ use super::presets::{self, ExportPreset, ExportSettings, Output};
 use super::render::{RenderOptions, Resize, render_photo};
 use crate::db;
 use crate::develop::lens::{self, Shot};
-use crate::develop::store::{self, ORIGINAL};
+use crate::develop::store;
 use crate::import::copy::copy_verified;
+use crate::library::copies;
 use crate::library::{get_library, paths};
 use crate::metadata::media::{MediaFormat, format_of, read_metadata};
 use crate::metadata::xmp::read_sidecar;
@@ -65,6 +66,9 @@ pub struct Progress {
 
 /// Une photo de la bibliothèque, telle que l'export la voit.
 struct Photo {
+    media_id: i64,
+    /// Version exportée : vide pour l'originale, nom d'une copie virtuelle.
+    version: String,
     path: PathBuf,
     sidecar: Option<PathBuf>,
     name: String,
@@ -78,7 +82,10 @@ type PhotoError = (String, String, String);
 /// Ligne `media` : bibliothèque, chemin, XMP, nom d'origine, date.
 type MediaRow = (i64, String, Option<String>, String, Option<String>);
 
-fn photo(conn: &Connection, id: i64) -> Result<Photo, PhotoError> {
+fn photo(conn: &Connection, item: i64) -> Result<Photo, PhotoError> {
+    let (id, version) = copies::resolve(conn, item)
+        .map_err(|e| (item.to_string(), "internal".to_owned(), e.to_string()))?
+        .ok_or_else(|| (item.to_string(), "mediaNotFound".to_owned(), String::new()))?;
     let row: Option<MediaRow> = conn
         .query_row(
             "SELECT library_id, path, sidecar_path, original_name, captured_at FROM media WHERE id = ?1",
@@ -102,6 +109,8 @@ fn photo(conn: &Connection, id: i64) -> Result<Photo, PhotoError> {
         paths::to_absolute(&lib.root_path, &rel).map_err(|e| fail("internal", e.to_string()))?;
     let sidecar = sidecar.and_then(|s| paths::to_absolute(&lib.root_path, &s).ok());
     Ok(Photo {
+        media_id: id,
+        version,
         path,
         sidecar,
         name,
@@ -110,25 +119,31 @@ fn photo(conn: &Connection, id: i64) -> Result<Photo, PhotoError> {
     })
 }
 
-/// Exporte une photo avec un preset ; renvoie le fichier écrit.
+/// Exporte une photo avec un preset ; renvoie le fichier écrit, ou rien
+/// (copie virtuelle avec le preset des originaux : le fichier est le même).
 fn export_one(
     conn: &Connection,
-    id: i64,
     photo: &Photo,
     preset: &ExportPreset,
     settings: &ExportSettings,
     dir: &Path,
     seq: usize,
-) -> Result<PathBuf, ExportError> {
-    let stem = presets::file_stem(
+) -> Result<Option<PathBuf>, ExportError> {
+    let mut stem = presets::file_stem(
         &preset.naming,
         &photo.name,
         &photo.original,
         photo.captured_at.as_deref(),
         seq,
     );
+    if !photo.version.is_empty() {
+        stem = format!("{stem} - {}", presets::clean_name(&photo.version));
+    }
     std::fs::create_dir_all(dir)?;
     let Some(format) = preset.output.format() else {
+        if !photo.version.is_empty() {
+            return Ok(None);
+        }
         // Copie vérifiée de l'original, et de son XMP.
         let ext = photo
             .path
@@ -143,13 +158,13 @@ fn export_one(
                 copy_verified(side, &xmp).map_err(|e| ExportError::Copy(e.to_string()))?;
             }
         }
-        return Ok(target);
+        return Ok(Some(target));
     };
     if format_of(&photo.path) != Some(MediaFormat::Raw) {
         return Err(ExportError::Unsupported(photo.name.clone()));
     }
-    let develop =
-        store::load(conn, id, ORIGINAL).map_err(|e| ExportError::Settings(e.to_string()))?;
+    let develop = store::load(conn, photo.media_id, &photo.version)
+        .map_err(|e| ExportError::Settings(e.to_string()))?;
     let mut raw = RawFile::open(&photo.path)?;
     let profile = lens::find_profile(&Shot::from(&raw.info()));
     let color = if matches!(preset.output, Output::Avif { .. }) {
@@ -176,7 +191,7 @@ fn export_one(
     let embedded = metadata::embedded(&meta, preset.metadata)?;
     let target = presets::free_path(dir, &stem, format.extension());
     encode::write(&image, format, &color.icc()?, &embedded, &target)?;
-    Ok(target)
+    Ok(Some(target))
 }
 
 /// Plusieurs photos à la fois, moins pour les grandes sorties (mémoire).
@@ -257,7 +272,7 @@ pub fn run(
                                     break;
                                 }
                                 if let Err(e) =
-                                    export_one(&conn, id, &p, preset, settings, dir, index + 1)
+                                    export_one(&conn, &p, preset, settings, dir, index + 1)
                                 {
                                     failures.push(Failure {
                                         file: p.name.clone(),

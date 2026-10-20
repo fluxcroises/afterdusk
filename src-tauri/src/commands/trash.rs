@@ -19,6 +19,8 @@ pub async fn media_trash(
     whole_piles: Option<bool>,
 ) -> CommandResult<TrashReport> {
     let mut conn = state.connect()?;
+    // Une copie virtuelle n'est pas un fichier : elle ne va pas à la corbeille.
+    let ids: Vec<i64> = ids.into_iter().filter(|id| *id > 0).collect();
     blocking(move || {
         let ids = if whole_piles.unwrap_or(true) {
             pairs::expand(&conn, &ids, Some("normal"))?
@@ -52,6 +54,7 @@ pub async fn media_trash_format(
     format: MediaFormat,
 ) -> CommandResult<TrashReport> {
     let mut conn = state.connect()?;
+    let ids: Vec<i64> = ids.into_iter().filter(|id| *id > 0).collect();
     blocking(move || {
         let chosen = pairs::files_of_format(&conn, &ids, format)?;
         Ok(trash_files(&mut conn, &chosen)?)
@@ -62,6 +65,9 @@ pub async fn media_trash_format(
 /// Photo > Mettre en haut de la pile.
 #[tauri::command]
 pub async fn pile_set_top(state: State<'_, AppState>, id: i64) -> CommandResult<()> {
+    if id < 0 {
+        return Ok(());
+    }
     let mut conn = state.connect()?;
     blocking(move || Ok(pairs::set_top(&mut conn, id)?)).await
 }

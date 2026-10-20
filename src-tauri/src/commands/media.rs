@@ -2,6 +2,7 @@ use tauri::State;
 
 use super::error::CommandResult;
 use super::{AppState, blocking};
+use crate::library::copies;
 use crate::library::filter::{self, FilterOptions, MediaFilter, MediaSort};
 use crate::library::media::{
     self, AlbumSummary, Highlight, MediaDetails, MediaQuery, MediaSummary,
@@ -25,7 +26,15 @@ pub async fn media_list(
         sort: sort.unwrap_or_default(),
         expanded: expanded.unwrap_or_default(),
     };
-    blocking(move || Ok(media::list_media(&conn, library_id, &query)?)).await
+    let cache_root = state.cache_root.clone();
+    blocking(move || {
+        let mut list = media::list_media(&conn, library_id, &query)?;
+        for m in list.iter_mut().filter(|m| m.copy_of.is_some()) {
+            m.has_preview = copies::has_previews(&cache_root, m.id);
+        }
+        Ok(list)
+    })
+    .await
 }
 
 /// Boîtiers, objectifs et période proposés par la barre de filtres.
@@ -63,7 +72,13 @@ pub async fn album_set_cover(
     media_id: i64,
 ) -> CommandResult<()> {
     let conn = state.connect()?;
-    blocking(move || Ok(crate::library::set_album_cover(&conn, album_id, media_id)?)).await
+    blocking(move || {
+        let media_id = copies::resolve(&conn, media_id)
+            .map_err(crate::library::LibraryError::from)?
+            .map_or(media_id, |(m, _)| m);
+        Ok(crate::library::set_album_cover(&conn, album_id, media_id)?)
+    })
+    .await
 }
 
 /// Candidates pour la photo d'illustration de l'accueil (l'interface en tire une).

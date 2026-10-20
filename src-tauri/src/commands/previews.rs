@@ -93,7 +93,11 @@ pub fn enqueue_missing(app: &AppHandle) {
     let queue = app.state::<PreviewQueue>();
     if let Ok(conn) = state.connect() {
         let missing = missing_previews(&conn).unwrap_or_default();
-        let stale = stale_previews(&conn).unwrap_or_default();
+        let mut stale = stale_previews(&conn).unwrap_or_default();
+        stale.extend(
+            crate::library::copies::stale_copies(&conn, &state.cache_root, None)
+                .unwrap_or_default(),
+        );
         for id in missing
             .iter()
             .chain(stale.iter().filter(|id| !missing.contains(id)))

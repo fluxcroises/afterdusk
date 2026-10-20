@@ -7,7 +7,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 
 use super::filter::{MediaFilter, MediaSort};
-use super::{LibraryError, get_library, pairs, paths};
+use super::{LibraryError, copies, get_library, pairs, paths};
 use crate::db::now_utc;
 use crate::develop::lens::{self, Shot};
 use crate::develop::settings::DevelopSettings;
@@ -39,6 +39,10 @@ pub struct MediaSummary {
     pub stack_size: i64,
     /// Pile dépliée : fichier du dessus, pour les fichiers du dessous.
     pub companion_of: Option<i64>,
+    /// Copie virtuelle (identifiant négatif) : la photo dont elle est la copie.
+    pub copy_of: Option<i64>,
+    /// Copie virtuelle : son nom.
+    pub version: Option<String>,
 }
 
 const SUMMARY_COLUMNS: &str = "m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
@@ -63,6 +67,8 @@ fn summary(r: &rusqlite::Row<'_>, stack_size: i64) -> rusqlite::Result<MediaSumm
         trashed_at: r.get(11)?,
         companion_of: r.get(12)?,
         stack_size,
+        copy_of: None,
+        version: None,
     })
 }
 
@@ -117,6 +123,40 @@ pub fn list_media(
             summary(r, r.get(13)?)
         })?
         .collect::<Result<_, _>>()?;
+    let rows = expand_piles(conn, query, heads)?;
+    if query.trashed {
+        return Ok(rows);
+    }
+    // Copies virtuelles juste après leur photo (marques partagées).
+    let copies = copies::copies_by_media(conn, library_id)?;
+    if copies.is_empty() {
+        return Ok(rows);
+    }
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        let of = copies.get(&row.id).cloned().unwrap_or_default();
+        let parent = row.clone();
+        out.push(row);
+        for c in of {
+            out.push(MediaSummary {
+                id: c.item_id,
+                copy_of: Some(parent.id),
+                version: Some(c.version),
+                stack_size: 1,
+                companion_of: None,
+                ..parent.clone()
+            });
+        }
+    }
+    Ok(out)
+}
+
+/// Piles dépliées : les fichiers du dessous suivent celui du dessus.
+fn expand_piles(
+    conn: &Connection,
+    query: &MediaQuery,
+    heads: Vec<MediaSummary>,
+) -> Result<Vec<MediaSummary>, LibraryError> {
     if query.expanded.is_empty() {
         return Ok(heads);
     }
@@ -260,6 +300,10 @@ pub struct MediaDetails {
 const KEYWORD_SEPARATOR: char = 31u8 as char;
 
 pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>, LibraryError> {
+    // Copie virtuelle : la fiche de sa photo.
+    let Some((id, _)) = copies::resolve(conn, id)? else {
+        return Ok(None);
+    };
     conn.query_row(
         "SELECT m.id, m.path, m.original_name, m.captured_at, m.utc_offset, m.width, m.height,
                     trim(coalesce(c.make, '') || ' ' || coalesce(c.model, '')), l.model,
@@ -345,8 +389,10 @@ pub enum CacheError {
 pub fn generate_previews(
     conn: &Connection,
     cache_root: &Path,
-    media_id: i64,
+    item_id: i64,
 ) -> Result<Vec<Generated>, CacheError> {
+    let (media_id, version) =
+        copies::resolve(conn, item_id)?.ok_or(CacheError::NotFound(item_id))?;
     let (library_id, path, orientation): (i64, String, u8) = conn
         .query_row(
             "SELECT library_id, path, orientation FROM media WHERE id = ?1",
@@ -361,6 +407,13 @@ pub fn generate_previews(
     }
     let abs = paths::to_absolute(&lib.root_path, &path)?;
     let format = format_of(&abs).ok_or_else(|| CacheError::UnknownFormat(path.clone()))?;
+    // Copie virtuelle : rendue d'après ses propres réglages, sans ligne dans
+    // `previews` (elle n'est pas un média).
+    if item_id != media_id {
+        let settings =
+            store::load(conn, media_id, &version).map_err(|e| CacheError::Render(e.to_string()))?;
+        return rendered_previews(&abs, &settings, cache_root, item_id);
+    }
     // Photo retouchée : l'aperçu montre la retouche, rendue par le moteur.
     if format == MediaFormat::Raw
         && let Some(settings) = retouched(conn, media_id)
@@ -526,6 +579,10 @@ fn companion_jpeg(
 /// débranchée ou si le format n'en fournit pas : l'interface garde alors
 /// l'aperçu 2048 px. L'orientation n'est pas appliquée (voir `orientation`).
 pub fn full_size_jpeg(conn: &Connection, media_id: i64) -> Result<Option<Vec<u8>>, CacheError> {
+    // Copie virtuelle : l'aperçu rendu de 2048 px suffit.
+    if copies::is_copy(media_id) {
+        return Ok(None);
+    }
     let (library_id, path): (i64, String) = conn
         .query_row(
             "SELECT library_id, path FROM media WHERE id = ?1",
