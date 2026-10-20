@@ -152,6 +152,10 @@ struct RawPreset {
     film: Option<Film>,
 }
 
+/// Ce que le copier-coller peut transmettre en plus : géométrie et
+/// corrections de défauts (jamais dans un preset).
+const PASTE_ONLY: &[&str] = &["geometry", "spots"];
+
 fn check_controls(controls: &[String]) -> Result<(), PresetError> {
     match controls.iter().find(|c| !PATHS.contains(&c.as_str())) {
         Some(bad) => Err(PresetError::InvalidControl(bad.clone())),
@@ -521,6 +525,38 @@ pub fn apply(current: &DevelopSettings, preset: &Preset, amount: f64) -> Develop
     out
 }
 
+/// Copier-coller : `current` dont les réglages `controls` prennent les valeurs
+/// de `from`. L'aspect de `from` (galerie) le suit quand tout ce qu'il
+/// commande est collé ; sinon celui de `current` reste noté.
+pub fn paste(
+    path: &Path,
+    current: &DevelopSettings,
+    from: &DevelopSettings,
+    controls: &[String],
+) -> Result<DevelopSettings, PresetError> {
+    if let Some(bad) = controls
+        .iter()
+        .find(|c| !PATHS.contains(&c.as_str()) && !PASTE_ONLY.contains(&c.as_str()))
+    {
+        return Err(PresetError::InvalidControl(bad.clone()));
+    }
+    let mut out = apply_paths(current, from, controls);
+    out.look = current.look.clone();
+    if let Some(look) = &from.look {
+        let covered = find(path, &look.id).is_ok_and(|p| {
+            p.controls.iter().all(|c| {
+                controls
+                    .iter()
+                    .any(|k| k == c || c.starts_with(&format!("{k}.")))
+            })
+        });
+        if covered {
+            out.look = Some(look.clone());
+        }
+    }
+    Ok(out)
+}
+
 /// Retire l'aspect appliqué : les réglages qu'il commandait reviennent à leur
 /// valeur neutre (vignette « Original » de la galerie).
 pub fn remove(current: &DevelopSettings, preset: Option<&Preset>) -> DevelopSettings {
@@ -607,6 +643,52 @@ mod tests {
         // À 0 % : rien.
         let zero = scaled(&film.settings, 0.0);
         assert!(zero.light.is_default() && zero.color.is_default());
+    }
+
+    #[test]
+    fn copier_coller_choisi() {
+        let none = Path::new("absent.json");
+        let mut from = DevelopSettings::default();
+        from.light.exposure = 1.0;
+        from.light.contrast = 30.0;
+        from.geometry.angle = 4.0;
+        from.spots.push(crate::develop::settings::Spot {
+            x: 0.5,
+            y: 0.5,
+            radius: 0.01,
+            source_x: 0.6,
+            source_y: 0.5,
+            feather: 50.0,
+            mode: crate::develop::settings::SpotMode::Heal,
+        });
+        let mut target = DevelopSettings::default();
+        target.light.exposure = -0.5;
+        target.color.vibrance = 20.0;
+        let c = |v: &[&str]| v.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+        let out = paste(none, &target, &from, &c(&["light.contrast", "spots"])).unwrap();
+        assert_eq!((out.light.exposure, out.light.contrast), (-0.5, 30.0));
+        assert_eq!(out.color.vibrance, 20.0);
+        assert_eq!(out.spots.len(), 1);
+        assert_eq!(out.geometry.angle, 0.0);
+        let all = paste(none, &target, &from, &c(&["light", "geometry"])).unwrap();
+        assert_eq!((all.light.exposure, all.geometry.angle), (1.0, 4.0));
+        assert!(paste(none, &target, &from, &c(&["version"])).is_err());
+        // L'aspect suit quand tout ce qu'il commande est collé.
+        let vivid = find(none, "vivid").unwrap();
+        let styled = apply(&from, &vivid, 80.0);
+        let looks = vivid.controls.clone();
+        let with_look = paste(none, &target, &styled, &looks).unwrap();
+        assert_eq!(with_look.look, styled.look);
+        let partial = paste(none, &target, &styled, &c(&["curve"])).unwrap();
+        assert!(partial.look.is_none());
+        // Une section entière couvre ses réglages.
+        let whole = paste(
+            none,
+            &target,
+            &styled,
+            &c(&["light", "color", "curve", "hsl", "effects"]),
+        );
+        assert_eq!(whole.unwrap().look, styled.look);
     }
 
     #[test]

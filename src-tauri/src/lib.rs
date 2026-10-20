@@ -163,6 +163,8 @@ pub fn run() {
             commands::develop::develop_spot_source,
             commands::develop::develop_preset_apply,
             commands::develop::develop_preset_previews,
+            commands::develop::develop_paste_apply,
+            commands::develop::develop_paste,
             commands::presets::presets_list,
             commands::presets::presets_create,
             commands::presets::presets_rename,

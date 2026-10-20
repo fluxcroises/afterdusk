@@ -920,3 +920,55 @@ pub async fn develop_preset_previews(
     .await?;
     Ok(Response::new(bytes))
 }
+
+/// Copier-coller sur la photo ouverte : ses réglages avec ceux de `from`
+/// pour les réglages `controls` (enregistrés ensuite par l'interface).
+#[tauri::command]
+pub async fn develop_paste_apply(
+    state: State<'_, AppState>,
+    settings: DevelopSettings,
+    from: DevelopSettings,
+    controls: Vec<String>,
+) -> CommandResult<DevelopSettings> {
+    let path = super::presets::user_file(&state);
+    blocking(move || {
+        Ok(presets::paste(
+            &path,
+            &settings.sanitized(),
+            &from.sanitized(),
+            &controls,
+        )?)
+    })
+    .await
+}
+
+/// Copier-coller sur d'autres photos (leur version originale) : chacune
+/// reçoit une étape d'historique « paste » et son XMP est mis à jour.
+/// Renvoie le nombre de photos modifiées.
+#[tauri::command]
+pub async fn develop_paste(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    media_ids: Vec<i64>,
+    from: DevelopSettings,
+    controls: Vec<String>,
+) -> CommandResult<u32> {
+    let path = super::presets::user_file(&state);
+    let from = from.sanitized();
+    let mut conn = state.connect()?;
+    let count = blocking(move || {
+        let mut count = 0u32;
+        for id in media_ids {
+            let current = store::load(&conn, id, ORIGINAL)?;
+            let next = presets::paste(&path, &current, &from, &controls)?;
+            if next != current {
+                store::save(&mut conn, id, ORIGINAL, next, "paste")?;
+                count += 1;
+            }
+        }
+        Ok(count)
+    })
+    .await?;
+    writer.wake();
+    Ok(count)
+}
