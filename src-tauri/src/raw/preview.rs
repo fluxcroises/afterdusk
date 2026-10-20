@@ -189,6 +189,29 @@ pub fn cache_path(cache_root: &Path, media_id: i64, size: u32) -> PathBuf {
         .join(format!("{media_id}-{size}.jpg"))
 }
 
+/// Les trois paliers d'après une image déjà prête (rendu d'une retouche).
+pub fn generate_from(
+    img: RgbImage,
+    cache_root: &Path,
+    media_id: i64,
+) -> Result<Vec<Generated>, PreviewError> {
+    let mut current = img;
+    let mut out = Vec::new();
+    for &size in SIZES.iter().rev() {
+        current = fit(&current, size);
+        let data = encode_jpeg(&current)?;
+        write_atomically(&cache_path(cache_root, media_id, size), &data)?;
+        out.push(Generated {
+            size,
+            width: current.width(),
+            height: current.height(),
+            bytes: data.len() as u64,
+        });
+    }
+    out.reverse();
+    Ok(out)
+}
+
 /// Produit les trois paliers en une seule lecture du fichier. Un palier plus
 /// grand que l'aperçu disponible reçoit l'aperçu à sa taille d'origine.
 pub fn generate(

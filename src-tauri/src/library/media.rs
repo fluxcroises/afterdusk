@@ -9,8 +9,14 @@ use serde::Serialize;
 use super::filter::{MediaFilter, MediaSort};
 use super::{LibraryError, get_library, pairs, paths};
 use crate::db::now_utc;
+use crate::develop::lens::{self, Shot};
+use crate::develop::settings::DevelopSettings;
+use crate::develop::store::{self, ORIGINAL};
+use crate::export::color::ColorSpace;
+use crate::export::render::{RenderOptions, Resize, Sharpen, render_photo};
 use crate::metadata::media::{MediaFormat, format_of};
 use crate::raw::preview::{self, Generated, PreviewError, SIZES};
+use image::RgbImage;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -331,6 +337,8 @@ pub enum CacheError {
     Offline(PathBuf),
     #[error("format sans aperçu : {0}")]
     UnknownFormat(String),
+    #[error("rendu de la retouche impossible : {0}")]
+    Render(String),
 }
 
 /// Génère et indexe les aperçus d'un média, depuis l'original dans la bibliothèque.
@@ -353,6 +361,14 @@ pub fn generate_previews(
     }
     let abs = paths::to_absolute(&lib.root_path, &path)?;
     let format = format_of(&abs).ok_or_else(|| CacheError::UnknownFormat(path.clone()))?;
+    // Photo retouchée : l'aperçu montre la retouche, rendue par le moteur.
+    if format == MediaFormat::Raw
+        && let Some(settings) = retouched(conn, media_id)
+    {
+        let generated = rendered_previews(&abs, &settings, cache_root, media_id)?;
+        record(conn, media_id, &generated, "rendered")?;
+        return Ok(generated);
+    }
     let mut generated = preview::generate(&abs, format, orientation, cache_root, media_id)?;
     let mut source = match format {
         MediaFormat::Raw => "embedded",
@@ -381,8 +397,19 @@ pub fn generate_previews(
         )?;
         source = "decoded";
     }
+    record(conn, media_id, &generated, source)?;
+    Ok(generated)
+}
+
+/// Note les aperçus produits.
+fn record(
+    conn: &Connection,
+    media_id: i64,
+    generated: &[Generated],
+    source: &str,
+) -> Result<(), CacheError> {
     let now = now_utc();
-    for g in &generated {
+    for g in generated {
         conn.execute(
             "INSERT OR REPLACE INTO previews
                (media_id, size, width, height, bytes, source, created_at, last_used)
@@ -398,7 +425,62 @@ pub fn generate_previews(
             ],
         )?;
     }
-    Ok(generated)
+    Ok(())
+}
+
+/// Réglages de la version originale d'une photo retouchée, ou rien.
+pub fn retouched(conn: &Connection, media_id: i64) -> Option<DevelopSettings> {
+    store::load(conn, media_id, ORIGINAL)
+        .ok()
+        .filter(|s| !s.is_neutral())
+}
+
+/// Aperçus rendus d'après la retouche (2048 px, puis les paliers plus petits).
+fn rendered_previews(
+    path: &Path,
+    settings: &DevelopSettings,
+    cache_root: &Path,
+    media_id: i64,
+) -> Result<Vec<Generated>, CacheError> {
+    let largest = SIZES.iter().copied().max().unwrap_or(2048);
+    let mut raw = crate::raw::RawFile::open(path).map_err(PreviewError::from)?;
+    let profile = lens::find_profile(&Shot::from(&raw.info()));
+    let options = RenderOptions {
+        resize: Resize::LongSide(largest),
+        sharpen: Sharpen::Screen,
+        color: ColorSpace::Srgb,
+    };
+    let img = render_photo(&mut raw, settings, profile.as_ref(), options, None)
+        .map_err(|e| CacheError::Render(e.to_string()))?;
+    let rgb = RgbImage::from_raw(img.width, img.height, img.to_u8())
+        .ok_or_else(|| CacheError::Render("dimensions".into()))?;
+    Ok(preview::generate_from(rgb, cache_root, media_id)?)
+}
+
+/// Photos dont la retouche est plus récente que les aperçus.
+pub fn stale_previews(conn: &Connection) -> Result<Vec<i64>, LibraryError> {
+    let mut stmt = conn.prepare(
+        "SELECT e.media_id FROM edits e JOIN media m ON m.id = e.media_id
+         WHERE e.name = '' AND m.state = 'normal'
+           AND e.updated_at >= coalesce(
+             (SELECT min(p.created_at) FROM previews p WHERE p.media_id = e.media_id), '')",
+    )?;
+    let ids = stmt
+        .query_map([], |r| r.get(0))?
+        .collect::<Result<_, _>>()?;
+    Ok(ids)
+}
+
+/// La retouche d'une photo est-elle plus récente que ses aperçus ?
+pub fn is_stale(conn: &Connection, media_id: i64) -> bool {
+    conn.query_row(
+        "SELECT e.updated_at >= coalesce(
+           (SELECT min(p.created_at) FROM previews p WHERE p.media_id = e.media_id), '')
+         FROM edits e WHERE e.media_id = ?1 AND e.name = ''",
+        [media_id],
+        |r| r.get::<_, bool>(0),
+    )
+    .unwrap_or(false)
 }
 
 /// JPEG du boîtier dans la pile RAW + JPEG d'une photo : chemin absolu,
@@ -461,6 +543,9 @@ pub fn full_size_jpeg(conn: &Connection, media_id: i64) -> Result<Option<Vec<u8>
         .extension()
         .is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg"));
     match format_of(&abs) {
+        // Photo retouchée : l'aperçu intégré ne la montre pas, l'interface
+        // garde l'aperçu rendu de 2048 px.
+        Some(MediaFormat::Raw) if retouched(conn, media_id).is_some() => Ok(None),
         Some(MediaFormat::Raw) => {
             // Le JPEG du boîtier a la définition du capteur, au moins autant
             // que l'aperçu intégré : on le préfère quand il est dans la pile.

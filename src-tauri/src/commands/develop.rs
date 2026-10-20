@@ -13,6 +13,7 @@ use tauri::{AppHandle, Manager, State};
 
 use super::error::{CommandError, CommandResult};
 use super::marks::XmpWriter;
+use super::previews::PreviewQueue;
 use super::{AppState, blocking};
 use crate::develop::auto;
 use crate::develop::geometry;
@@ -25,6 +26,7 @@ use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
 use crate::develop::spots;
 use crate::develop::store::{self, History, ORIGINAL, Snapshot, StoreError, Version};
 use crate::develop::white;
+use crate::library::media::is_stale;
 use crate::raw::DevelopedRaw;
 
 /// Variable d'environnement : `AFTERDUSK_GPU=0` force le rendu processeur.
@@ -210,6 +212,10 @@ pub async fn develop_open(
             .session
             .lock()
             .map_err(|e| CommandError::new("internal", e))?;
+        let previous = session.as_ref().map(|s| s.media_id);
+        if let Some(previous) = previous.filter(|p| *p != media_id) {
+            refresh_previews(&app, previous);
+        }
         *session = Some(Session {
             media_id,
             base,
@@ -555,9 +561,21 @@ pub fn develop_pick_white(
 
 /// Ferme la photo ouverte et libère sa mémoire.
 #[tauri::command]
-pub fn develop_close(engine: State<'_, DevelopEngine>) {
-    if let Ok(mut session) = engine.session.lock() {
-        *session = None;
+pub fn develop_close(app: AppHandle, engine: State<'_, DevelopEngine>) {
+    if let Ok(mut session) = engine.session.lock()
+        && let Some(previous) = session.take()
+    {
+        refresh_previews(&app, previous.media_id);
+    }
+}
+
+/// Photo quittée dans le Retoucher : ses aperçus sont refaits d'après la
+/// retouche s'ils sont plus anciens qu'elle (grilles, pellicule, visionneuse).
+fn refresh_previews(app: &AppHandle, media_id: i64) {
+    if let Ok(conn) = app.state::<AppState>().connect()
+        && is_stale(&conn, media_id)
+    {
+        app.state::<PreviewQueue>().push(media_id);
     }
 }
 
@@ -947,6 +965,7 @@ pub async fn develop_paste_apply(
 /// Renvoie le nombre de photos modifiées.
 #[tauri::command]
 pub async fn develop_paste(
+    app: AppHandle,
     state: State<'_, AppState>,
     writer: State<'_, XmpWriter>,
     media_ids: Vec<i64>,
@@ -956,19 +975,24 @@ pub async fn develop_paste(
     let path = super::presets::user_file(&state);
     let from = from.sanitized();
     let mut conn = state.connect()?;
-    let count = blocking(move || {
-        let mut count = 0u32;
+    let changed = blocking(move || {
+        let mut changed = Vec::new();
         for id in media_ids {
             let current = store::load(&conn, id, ORIGINAL)?;
             let next = presets::paste(&path, &current, &from, &controls)?;
             if next != current {
                 store::save(&mut conn, id, ORIGINAL, next, "paste")?;
-                count += 1;
+                changed.push(id);
             }
         }
-        Ok(count)
+        Ok(changed)
     })
     .await?;
     writer.wake();
-    Ok(count)
+    // Aperçus refaits d'après la nouvelle retouche.
+    let queue = app.state::<PreviewQueue>();
+    for id in &changed {
+        queue.push(*id);
+    }
+    Ok(changed.len() as u32)
 }

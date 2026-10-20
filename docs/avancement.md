@@ -348,3 +348,10 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Écran Livrer : la sélection au centre, presets cochés et leurs options dépliables, filigrane, destination et ouverture du dossier à droite, bouton « Exporter N photos », progression puis bilan dans la barre d'outils.
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : export Web avec filigrane et Instagram dans deux sous-dossiers, fichiers justes (2048 × 1368, objectif corrigé, filigrane), originaux identiques. Le sélecteur de dossier natif n'a pas été piloté (destination préparée dans `export.json`).
 - Reste : HEIF par le système, vignettes rendues d'après les retouches (Trier, Bibliothèque, copies virtuelles), aperçu du résultat dans Livrer, export rendu des JPEG.
+
+### 2026-10-20 (suite) : V0.2, vignettes d'après les retouches
+
+- Une photo retouchée a des aperçus rendus d'après sa retouche (moteur d'export, 2048 px puis 1024 et 256), au lieu de l'aperçu intégré au RAW : grilles de Trier et Bibliothèque, pellicule, visionneuse. Une retouche remise à zéro retrouve l'aperçu du boîtier. Migration 0007 : source d'aperçu « rendered ».
+- Refaits en arrière-plan quand on quitte la photo dans le Retoucher (photo suivante, autre écran), après un collage de réglages, et au démarrage pour toute retouche plus récente que ses aperçus (application fermée en pleine retouche). La visionneuse n'affiche plus l'aperçu intégré pleine définition d'une photo retouchée, qui ne montrerait pas la retouche.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : filtre noir et blanc appliqué, vignette de la pellicule puis de la grille de Trier en noir et blanc après le passage à la photo suivante ; originaux identiques.
+- Reste : copies virtuelles dans les grilles (et donc à l'export), aperçu du résultat dans Livrer.

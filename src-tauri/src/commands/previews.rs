@@ -17,7 +17,9 @@ use tauri::{AppHandle, Emitter, Manager, UriSchemeContext, Wry};
 
 use super::AppState;
 use crate::db;
-use crate::library::media::{cached_preview, full_size_jpeg, generate_previews, missing_previews};
+use crate::library::media::{
+    cached_preview, full_size_jpeg, generate_previews, missing_previews, stale_previews,
+};
 use crate::metadata::media::{format_of, read_metadata};
 use crate::raw::preview::{self, SIZES};
 
@@ -84,15 +86,19 @@ fn worker(app: &AppHandle, db_path: &Path, cache_root: &Path, receiver: &Mutex<R
     }
 }
 
-/// Rattrapage au démarrage : médias importés sans aperçu complet.
+/// Rattrapage au démarrage : médias importés sans aperçu complet, et photos
+/// retouchées depuis leurs aperçus (application fermée pendant la retouche).
 pub fn enqueue_missing(app: &AppHandle) {
     let state = app.state::<AppState>();
     let queue = app.state::<PreviewQueue>();
-    if let Ok(conn) = state.connect()
-        && let Ok(ids) = missing_previews(&conn)
-    {
-        for id in ids {
-            queue.push(id);
+    if let Ok(conn) = state.connect() {
+        let missing = missing_previews(&conn).unwrap_or_default();
+        let stale = stale_previews(&conn).unwrap_or_default();
+        for id in missing
+            .iter()
+            .chain(stale.iter().filter(|id| !missing.contains(id)))
+        {
+            queue.push(*id);
         }
     }
 }
