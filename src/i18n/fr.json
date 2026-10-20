@@ -555,6 +555,12 @@
         "radius": "Taille de correction",
         "feather": "Adoucissement de correction",
         "mode": "Mode de correction"
+      },
+      "lens": {
+        "on": "Corrections d'objectif activées",
+        "off": "Corrections d'objectif désactivées",
+        "distortion": "Distorsion de l'objectif {{value}} %",
+        "vignetting": "Vignetage de l'objectif {{value}} %"
       }
     },
     "compare": {
@@ -683,6 +689,14 @@
       "count_other": "{{count}} corrections",
       "remove": "Retirer",
       "clear": "Tout effacer"
+    },
+    "lens": {
+      "title": "Objectif",
+      "unknown": "Objectif non reconnu : aucune correction. La base lensfun ne le connaît pas, ou le fichier ne le nomme pas.",
+      "enabled": "Corriger l'objectif (distorsion, aberrations, vignetage)",
+      "distortion": "Distorsion",
+      "vignetting": "Vignetage",
+      "percent": "{{value}} %"
     }
   }
 }

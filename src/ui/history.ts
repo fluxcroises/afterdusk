@@ -85,6 +85,13 @@ export function describeStep(
           : angle,
     });
   }
+  if (section === "lens" && key) {
+    if (key === "enabled") {
+      return t(`develop.history.lens.${s.lens?.enabled === false ? "off" : "on"}`);
+    }
+    const v = s.lens?.[key as "distortion" | "vignetting"] ?? 100;
+    return t(`develop.history.lens.${key}`, { value: v });
+  }
   if (section === "spots" && key) {
     return t(`develop.history.spots.${key}`);
   }

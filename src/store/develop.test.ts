@@ -93,6 +93,7 @@ beforeEach(() => {
         height: 1,
         sourceWidth: 2,
         sourceHeight: 1,
+        lens: "Sony FE 16-35mm f/2.8 GM",
         settings: { version: 1, process: 1 },
         asShot: { temperature: 4550, tint: -12 },
         presets,
@@ -558,6 +559,18 @@ describe("Retoucher", () => {
     expect(useDevelop.getState().settings?.spots).toHaveLength(1);
     await useDevelop.getState().clearSpots();
     expect(useDevelop.getState().settings?.spots).toBeUndefined();
+  });
+
+  it("objectif : reconnu à l'ouverture, réglages creux", async () => {
+    await useDevelop.getState().open(7);
+    expect(useDevelop.getState().lensName).toBe("Sony FE 16-35mm f/2.8 GM");
+    useDevelop.getState().setLens("distortion", 60.4);
+    expect(useDevelop.getState().settings?.lens).toEqual({ distortion: 60 });
+    useDevelop.getState().setLens("enabled", false);
+    useDevelop.getState().setLens("distortion", 100);
+    expect(useDevelop.getState().settings?.lens).toEqual({ enabled: false });
+    useDevelop.getState().setLens("enabled", true);
+    expect(useDevelop.getState().settings?.lens).toBeUndefined();
   });
 
   it("visualisation des poussières : demandée au rendu dans l'outil seulement", async () => {

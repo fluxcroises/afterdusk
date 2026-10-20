@@ -555,6 +555,12 @@
         "radius": "Spot size",
         "feather": "Spot feather",
         "mode": "Spot mode"
+      },
+      "lens": {
+        "on": "Lens corrections on",
+        "off": "Lens corrections off",
+        "distortion": "Lens distortion {{value}}%",
+        "vignetting": "Lens vignetting {{value}}%"
       }
     },
     "compare": {
@@ -683,6 +689,14 @@
       "count_other": "{{count}} spots",
       "remove": "Remove",
       "clear": "Clear all"
+    },
+    "lens": {
+      "title": "Lens",
+      "unknown": "Lens not recognized: no correction. The lensfun database does not know it, or the file does not name it.",
+      "enabled": "Correct the lens (distortion, aberrations, vignetting)",
+      "distortion": "Distortion",
+      "vignetting": "Vignetting",
+      "percent": "{{value}}%"
     }
   }
 }

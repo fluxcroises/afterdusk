@@ -13,6 +13,8 @@ import { systemReport, useAbout } from "../store/about";
 const COMPONENTS: { name: string; license: string; version?: keyof AppInfo }[] = [
   { name: "LibRaw", license: "LGPL 2.1", version: "libraw" },
   { name: "Adobe XMP Toolkit", license: "BSD 3" },
+  { name: "lensfun (portage Rust)", license: "LGPL 3" },
+  { name: "Base lensfun", license: "CC BY-SA 3.0" },
   { name: "SQLite", license: "publicDomain", version: "sqlite" },
   { name: "Tauri", license: "MIT / Apache 2.0", version: "tauri" },
   { name: "React", license: "MIT" },

@@ -3198,3 +3198,10 @@ input[type="radio"] {
   stroke-width: 1;
   stroke-dasharray: 2 3;
 }
+
+/* Objectif reconnu (section Objectif du Retoucher). */
+.develop-lens-name {
+  margin: 0 0 var(--ad-space-2);
+  color: var(--ad-text);
+  font: var(--ad-font-ui);
+}

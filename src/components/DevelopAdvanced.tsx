@@ -14,6 +14,7 @@ import {
   HUES,
   type HslKind,
   IDENTITY_CURVE,
+  LENS_DEFAULTS,
   useDevelop,
 } from "../store/develop";
 import { curveAt } from "../ui/curve";
@@ -349,6 +350,48 @@ export function DetailSection() {
       <p className="panel-note">{t("develop.detail.hint")}</p>
       <DetailSliders group="sharpening" />
       <DetailSliders group="noise" />
+    </PanelSection>
+  );
+}
+
+/** Objectif : reconnu dans la base lensfun, corrections dosables. */
+export function LensSection() {
+  const { t } = useTranslation();
+  const name = useDevelop((s) => s.lensName);
+  const lens = useDevelop((s) => s.settings?.lens);
+  const setLens = useDevelop((s) => s.setLens);
+  const value = { ...LENS_DEFAULTS, ...lens };
+  return (
+    <PanelSection id="develop.lens" title={t("develop.lens.title")} defaultCollapsed>
+      {name === null ? (
+        <p className="panel-note">{t("develop.lens.unknown")}</p>
+      ) : (
+        <>
+          <p className="develop-lens-name">{name}</p>
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={value.enabled}
+              onChange={(e) => setLens("enabled", e.currentTarget.checked)}
+            />
+            {t("develop.lens.enabled")}
+          </label>
+          {(["distortion", "vignetting"] as const).map((key) => (
+            <Slider
+              key={key}
+              label={t(`develop.lens.${key}`)}
+              display={t("develop.lens.percent", { value: value[key] })}
+              value={value[key]}
+              min={0}
+              max={200}
+              step={1}
+              disabled={!value.enabled}
+              onChange={(v) => setLens(key, v)}
+              onReset={() => setLens(key, LENS_DEFAULTS[key])}
+            />
+          ))}
+        </>
+      )}
     </PanelSection>
   );
 }

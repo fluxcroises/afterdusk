@@ -316,3 +316,13 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Corrigé au passage : la touche Z (zoom) suivait la position QWERTY de la touche ; les raccourcis du Retoucher suivent désormais la lettre tapée, comme les menus. Une case cochée gardait le clavier pour elle et bloquait les raccourcis.
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : petit nuage effacé dans un ciel sans raccord visible, à l'aperçu comme au zoom 100 % ; source déplacée, correction retirée, historique en clair, visualisation des poussières, XMP, originaux identiques.
 - Reste pour ce critère : copier les corrections d'une photo à l'autre (les poussières d'une série). Les corrections étant des réglages ordinaires, elles passeront par le copier-coller et la synchronisation des réglages (étape des presets).
+
+### 2026-10-20 (suite) : V0.2, corrections d'objectifs
+
+- Barre d'outils et correcteur de défauts verts sur Windows et macOS.
+- Décision 0006 : crate `lensfun` 0.7.0 (portage Rust de lensfun, LGPL 3, base CC BY-SA 3.0 incluse), choisie par l'utilisateur ; elle remplace la reprise de `lensdb` prévue par la décision 0004. Crédits ajoutés dans « À propos ».
+- Objectif reconnu d'après les EXIF : Canon RF 70-200, Fujifilm XF35, Nikon Z 24-70 et Sony FE 16-35 parmi les échantillons. Sans nom d'objectif, seul l'objectif d'un compact est retenu, sans complément optique, et une focale hors de l'objectif écarte le profil : le Panasonic (pas de nom d'objectif) et le Ricoh GR III (la base n'a que son profil avec complément GW-4) restent sans correction plutôt qu'avec un profil faux.
+- Vignetage corrigé sur l'image linéaire décodée, distorsion et aberrations chromatiques en un seul rééchantillonnage par canal, agrandissement automatique sans bord vide ; 25 ms à 2048 px. Région zoomée identique à l'image entière (test). Les corrections de défauts, l'horizon automatique et la géométrie travaillent sur l'image corrigée.
+- Section Objectif dans Réglages (repliée) : objectif reconnu, case « Corriger l'objectif », Distorsion et Vignetage de 0 à 200 %. Actives par défaut (section `lens` absente du JSON).
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : objectif reconnu, coins éclaircis, correction désactivée puis réactivée (historique en clair), zoom 100 % dans un coin sans bord vide, originaux identiques. L'affichage « Objectif non reconnu » n'a pas été vu à l'écran (contrôle interrompu : une autre fenêtre était passée devant l'application) ; il est couvert par les tests.
+- Reste : les corrections enregistrées par le boîtier (DNG, Sony, Fujifilm, Panasonic) pour les objectifs absents de lensfun, et le choix manuel de l'objectif.

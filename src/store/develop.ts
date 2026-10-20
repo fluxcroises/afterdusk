@@ -110,6 +110,15 @@ function sparseGeometry(g: Geometry): Geometry | undefined {
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+/** Corrections d'objectif, miroir de `develop::settings::LensSettings`. */
+export interface LensSettings {
+  enabled: boolean;
+  distortion: number;
+  vignetting: number;
+}
+
+export const LENS_DEFAULTS: LensSettings = { enabled: true, distortion: 100, vignetting: 100 };
+
 export type SpotMode = "heal" | "clone";
 
 /**
@@ -173,6 +182,8 @@ export interface DevelopSettings {
     grain?: Partial<Record<EffectKey<"grain">, number>>;
   };
   geometry?: Geometry;
+  /** Corrections d'objectif ; absentes : actives, à 100 % du profil. */
+  lens?: Partial<LensSettings>;
   spots?: Spot[];
   detail?: {
     sharpening?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["sharpening"], number>>;
@@ -223,6 +234,7 @@ interface DevelopOpened {
   height: number;
   sourceWidth: number;
   sourceHeight: number;
+  lens: string | null;
   settings: DevelopSettings;
   asShot: WhitePoint;
   presets: WhitePreset[];
@@ -366,6 +378,8 @@ interface DevelopState {
   compare: CompareMode;
   /** Rendu de l'original (réglages neutres), pour l'avant/après. */
   beforeFrame: DevelopFrame | null;
+  /** Objectif reconnu dans la base lensfun, ou rien. */
+  lensName: string | null;
   /** Outil choisi dans la barre de droite. */
   tool: DevelopTool;
   /** Image avant géométrie (aperçu), repère des corrections de défauts. */
@@ -406,6 +420,8 @@ interface DevelopState {
   setEffect: <G extends EffectGroup>(group: G, key: EffectKey<G>, value: number) => void;
   /** Netteté ou réduction du bruit ; le rayon garde une décimale. */
   setDetail: (group: DetailGroup, key: string, value: number) => void;
+  /** Corrections d'objectif : activation, distorsion et vignetage (%). */
+  setLens: <K extends keyof LensSettings>(key: K, value: LensSettings[K]) => void;
   /** Auto de la section Lumière, ou d'un seul curseur. */
   autoLight: (key?: LightKey) => Promise<void>;
   autoWhite: () => Promise<void>;
@@ -746,6 +762,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     cropping: false,
     cropStart: null,
     tool: "adjust",
+    lensName: null,
     sourceSize: null,
     spotBrush: { radius: 0.01, feather: SPOT_FEATHER_DEFAULT, mode: "heal" },
     selectedSpot: null,
@@ -788,6 +805,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           adapter: opened.adapter,
           decodeMs: opened.decodeMs,
           sourceSize: { width: opened.sourceWidth, height: opened.sourceHeight },
+          lensName: opened.lens,
         });
         await Promise.all([render(), loadState(mediaId)]);
         // Après un moment sur la même photo, le zoom se prépare sans bloquer.
@@ -835,6 +853,18 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       const set = prune(withValue(settings.hsl?.[kind], hue, Math.round(value)));
       const hsl = put(settings.hsl ?? {}, kind, set);
       change(put(settings, "hsl", prune(hsl)), `hsl.${kind}.${hue}`);
+    },
+
+    setLens: (key, value) => {
+      const { settings } = get();
+      if (!settings) return;
+      const v = typeof value === "number" ? Math.round(value) : value;
+      const section = put(
+        { ...settings.lens } as Record<string, unknown>,
+        key,
+        v === LENS_DEFAULTS[key] ? undefined : v,
+      ) as Partial<LensSettings>;
+      change(put(settings, "lens", prune(section)), `lens.${key}`);
     },
 
     setDetail: (group, key, value) => {

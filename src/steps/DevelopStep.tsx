@@ -14,6 +14,7 @@ import {
   DetailSection,
   EffectsSection,
   HslSection,
+  LensSection,
 } from "../components/DevelopAdvanced";
 import { type Box, CropOverlay, CropSection } from "../components/DevelopCrop";
 import { SpotOverlay, SpotsSection, type View } from "../components/DevelopSpots";
@@ -211,6 +212,7 @@ function SettingsPanel() {
           <HslSection />
           <DetailSection />
           <EffectsSection />
+          <LensSection />
         </>
       )}
       {tool === "crop" && <CropSection />}
