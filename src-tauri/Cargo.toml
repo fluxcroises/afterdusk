@@ -25,6 +25,13 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "tiff"] }
 jpeg-decoder = "0.3"
 kamadak-exif = "0.6"
+# Export (formats, profils ICC) : JPEG, PNG, TIFF, AVIF (sans assembleur :
+# aucun outil à installer pour compiler).
+jpeg-encoder = "0.7"
+moxcms = "0.8"
+png = "0.18"
+ravif = { version = "0.13", default-features = false, features = ["threading"] }
+tiff = "0.11"
 # Portage Rust de lensfun et sa base (décision 0006), version figée.
 lensfun = "=0.7.0"
 rusqlite = { version = "0.40", features = ["bundled"] }

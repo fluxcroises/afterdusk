@@ -393,6 +393,14 @@ impl WorkingImage {
         let k = (f64::from(max_side.max(1)) / w.max(h).max(1) as f64).min(1.0);
         let ow = ((w as f64 * k).round() as usize).clamp(1, w.max(1));
         let oh = ((h as f64 * k).round() as usize).clamp(1, h.max(1));
+        self.resized(ow as u32, oh as u32)
+    }
+
+    /// Copie à la taille exacte `ow` × `oh` (moyenne de surface), image
+    /// entière ; le grain garde sa taille apparente.
+    pub fn resized(&self, ow: u32, oh: u32) -> Self {
+        let (w, h) = (self.width as usize, self.height as usize);
+        let (ow, oh) = (ow.max(1) as usize, oh.max(1) as usize);
         let (cols, rows) = (area_weights(w, ow), area_weights(h, oh));
         let mut tmp = vec![0.0f32; ow * h * 3];
         for y in 0..h {
@@ -979,6 +987,47 @@ pub fn render(image: &WorkingImage, params: &RenderParams) -> Rendered {
     }
 }
 
+/// Rendu en valeurs sRGB codées (0 à 1), en virgule flottante et sans
+/// quantification : pour l'export (16 bits, autres espaces colorimétriques).
+/// Mêmes calculs que [`render`], quantifiés près.
+pub fn render_encoded(image: &WorkingImage, params: &RenderParams) -> Vec<f32> {
+    let (ox, oy, fw, fh) = image.frame();
+    let w = image.width as usize;
+    let mut enc = if params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0 {
+        staged_display(image, params)
+    } else {
+        image.rgb.clone()
+    };
+    let staged = params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0;
+    let rows = (image.height as usize).div_ceil(workers()).max(1);
+    thread::scope(|s| {
+        for (k, chunk) in enc.chunks_mut(rows * w * 3).enumerate() {
+            s.spawn(move || {
+                for (i, px) in chunk.as_chunks_mut::<3>().0.iter_mut().enumerate() {
+                    let index = k * rows * w + i;
+                    let at = At {
+                        x: ox + (index % w) as u32,
+                        y: oy + (index / w) as u32,
+                        width: fw,
+                        height: fh,
+                        scale: image.scale,
+                    };
+                    *px = if staged {
+                        if params.flags & FLAG_GRAIN != 0 {
+                            apply_grain(*px, &params.grain, &at)
+                        } else {
+                            *px
+                        }
+                    } else {
+                        render_pixel_at(*px, params, &at)
+                    };
+                }
+            });
+        }
+    });
+    enc
+}
+
 /// Rendu RGBA sans avertissements, pour les tests et l'export.
 pub fn render_rgba(image: &WorkingImage, settings: &DevelopSettings) -> Vec<u8> {
     let params = RenderParams::from_settings(settings, image.as_shot_white, Clipping::default());
@@ -992,6 +1041,43 @@ mod tests {
 
     fn neutral() -> RenderParams {
         RenderParams::from_settings(&DevelopSettings::default(), D65_WHITE, Clipping::default())
+    }
+
+    #[test]
+    fn rendu_en_flottants_identique_au_rendu_8_bits() {
+        let (w, h) = (40u32, 30u32);
+        let xyz: Vec<u16> = (0..w * h)
+            .flat_map(|i| {
+                let v = ((i * 37) % 60000) as u16;
+                [v, v / 2, v / 3]
+            })
+            .collect();
+        let raw = DevelopedRaw {
+            width: w,
+            height: h,
+            xyz,
+            as_shot_white: D65_WHITE,
+            full_long_side: w,
+        };
+        let image = WorkingImage::from_raw(&raw, 40);
+        for detail in [false, true] {
+            let mut s = DevelopSettings::default();
+            s.light.contrast = 30.0;
+            s.effects.grain.amount = 40.0;
+            s.effects.vignette.amount = -30.0;
+            if detail {
+                s.detail.sharpening.amount = 80.0;
+                s.detail.noise.luminance = 40.0;
+            }
+            let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
+            let rgba = render(&image, &p).rgba;
+            let enc = render_encoded(&image, &p);
+            for (q, e) in rgba.chunks(4).zip(enc.chunks(3)) {
+                for c in 0..3 {
+                    assert_eq!(q[c], quantize(e[c]));
+                }
+            }
+        }
     }
 
     #[test]

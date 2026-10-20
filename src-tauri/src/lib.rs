@@ -2,6 +2,7 @@ pub mod commands;
 pub mod db;
 pub mod develop;
 pub mod devices;
+pub mod export;
 pub mod import;
 pub mod library;
 pub mod metadata;
