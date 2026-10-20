@@ -188,3 +188,41 @@ pub async fn library_offline_info(
     })
     .await
 }
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RescanProgress {
+    done: usize,
+    total: usize,
+}
+
+/// Réanalyse la bibliothèque : fichiers absents de la base inscrits avec
+/// leurs marques et leurs retouches reprises du XMP (base reconstruite).
+#[tauri::command]
+pub async fn library_rescan(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    library_id: i64,
+) -> CommandResult<crate::import::rescan::RescanReport> {
+    use tauri::{Emitter, Manager};
+    let mut conn = state.connect()?;
+    let progress_app = app.clone();
+    let report = super::blocking(move || {
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        Ok(crate::import::rescan::rescan(
+            &mut conn,
+            library_id,
+            &cancel,
+            |done, total| {
+                let _ = progress_app.emit("rescan-progress", RescanProgress { done, total });
+            },
+        )?)
+    })
+    .await?;
+    let queue = app.state::<super::previews::PreviewQueue>();
+    for id in &report.media_ids {
+        queue.push(*id);
+    }
+    let _ = app.emit("library-status", ());
+    Ok(report)
+}

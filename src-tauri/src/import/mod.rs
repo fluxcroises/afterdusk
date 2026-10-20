@@ -7,6 +7,7 @@
 //! là où il s'était arrêté. La source n'est jamais ouverte en écriture.
 
 pub mod copy;
+pub mod rescan;
 pub mod scan;
 
 use std::collections::{BTreeSet, HashMap, HashSet};
@@ -744,7 +745,6 @@ fn record_media(
     hash: &str,
     backup_error: Option<String>,
 ) -> Result<i64, ItemError> {
-    let m: &MediaMetadata = &file.metadata;
     let (folder, file_name) = item.target.rsplit_once('/').unwrap_or(("", &item.target));
     let sidecar = xmp::sidecar_path(Path::new(&item.target), sidecar_naming(file.format))
         .to_string_lossy()
@@ -767,11 +767,71 @@ fn record_media(
     )?;
 
     let tx = conn.transaction()?;
+    let media_id = insert_media(
+        &tx,
+        lib,
+        &NewMedia {
+            album_name: &album_name,
+            folder,
+            file_name,
+            target: &item.target,
+            sidecar: &sidecar,
+            original_name: &original_name,
+            fingerprint: &fingerprint,
+            hash,
+            import_id: Some(import_id),
+            file,
+            marks,
+        },
+    )?;
+    let now = now_utc();
+    tx.execute(
+        "UPDATE import_items SET status = 'done', media_id = ?2, error = ?3, updated_at = ?4
+         WHERE id = ?1",
+        params![item.id, media_id, backup_error, now],
+    )?;
+    tx.execute(
+        "UPDATE imports SET files_done = files_done + 1 WHERE id = ?1",
+        [import_id],
+    )?;
+    tx.commit()?;
+    item.status = "done".into();
+    Ok(media_id)
+}
+
+/// Un média à inscrire en base : fichier déjà dans la bibliothèque.
+pub(crate) struct NewMedia<'a> {
+    pub album_name: &'a str,
+    /// Dossier relatif de l'album.
+    pub folder: &'a str,
+    pub file_name: &'a str,
+    /// Chemin relatif du fichier.
+    pub target: &'a str,
+    /// Chemin relatif du XMP.
+    pub sidecar: &'a str,
+    pub original_name: &'a str,
+    pub fingerprint: &'a str,
+    pub hash: &'a str,
+    pub import_id: Option<i64>,
+    pub file: &'a SourceFile,
+    /// Le XMP fait foi pour la note, le drapeau, la couleur et les mots-clés.
+    pub marks: &'a SidecarData,
+}
+
+/// Inscrit un média (album, matériel, EXIF, mots-clés, recherche) ;
+/// renvoie son identifiant. Un média déjà inscrit à ce chemin est gardé.
+pub(crate) fn insert_media(
+    tx: &rusqlite::Transaction,
+    lib: &Library,
+    new: &NewMedia,
+) -> Result<i64, LibraryError> {
+    let (file, marks) = (new.file, new.marks);
+    let m: &MediaMetadata = &file.metadata;
     let album_id =
-        library::find_or_create_album(&tx, lib.id, &album_name, folder, Some(file.day()))?;
+        library::find_or_create_album(tx, lib.id, new.album_name, new.folder, Some(file.day()))?;
     let camera_id = match (&m.make, &m.model) {
         (Some(make), Some(model)) => Some(library::find_or_create_gear(
-            &tx,
+            tx,
             GearKind::Body,
             make,
             model,
@@ -781,7 +841,7 @@ fn record_media(
     };
     let lens_id = match &m.lens {
         Some(lens) => Some(library::find_or_create_gear(
-            &tx,
+            tx,
             GearKind::Lens,
             "",
             lens,
@@ -802,12 +862,12 @@ fn record_media(
         params![
             lib.id,
             album_id,
-            item.target,
-            sidecar,
-            original_name,
+            new.target,
+            new.sidecar,
+            new.original_name,
             file.size as i64,
-            fingerprint,
-            hash,
+            new.fingerprint,
+            new.hash,
             file.captured_at,
             m.utc_offset,
             m.width,
@@ -818,7 +878,7 @@ fn record_media(
             m.gps.as_ref().map(|_| "exif"),
             camera_id,
             lens_id,
-            import_id,
+            new.import_id,
             now,
             marks.rating,
             marks.flag.as_db(),
@@ -827,7 +887,7 @@ fn record_media(
     )?;
     let media_id: i64 = tx.query_row(
         "SELECT id FROM media WHERE library_id = ?1 AND path = ?2",
-        params![lib.id, item.target],
+        params![lib.id, new.target],
         |r| r.get(0),
     )?;
     tx.execute(
@@ -864,23 +924,12 @@ fn record_media(
          VALUES (?1, ?2, ?3, ?4, ?5, '')",
         params![
             media_id,
-            album_name,
-            file_name,
-            original_name,
+            new.album_name,
+            new.file_name,
+            new.original_name,
             marks.keywords.join(" ")
         ],
     )?;
-    tx.execute(
-        "UPDATE import_items SET status = 'done', media_id = ?2, error = ?3, updated_at = ?4
-         WHERE id = ?1",
-        params![item.id, media_id, backup_error, now],
-    )?;
-    tx.execute(
-        "UPDATE imports SET files_done = files_done + 1 WHERE id = ?1",
-        [import_id],
-    )?;
-    tx.commit()?;
-    item.status = "done".into();
     Ok(media_id)
 }
 

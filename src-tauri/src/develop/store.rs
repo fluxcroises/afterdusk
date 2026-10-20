@@ -523,6 +523,106 @@ fn snapshots_value(list: &[Snapshot]) -> Value {
     )
 }
 
+/// Une étape d'historique, et les instantanés, d'une version reprise du XMP.
+fn restore_version(
+    tx: &Transaction,
+    media_id: i64,
+    name: &str,
+    settings: &DevelopSettings,
+    snapshots: Option<&Value>,
+    now: &str,
+) -> Result<(), StoreError> {
+    let json = settings.to_json();
+    tx.execute(
+        "INSERT INTO edits (media_id, name, settings, history_position, created_at, updated_at)
+         VALUES (?1, ?2, ?3, 1, ?4, ?4)",
+        params![media_id, name, json, now],
+    )?;
+    let edit_id = tx.last_insert_rowid();
+    tx.execute(
+        "INSERT INTO edit_history (edit_id, position, settings, label, created_at)
+         VALUES (?1, 1, ?2, 'xmp.restore', ?3)",
+        params![edit_id, json, now],
+    )?;
+    for snap in snapshots.and_then(Value::as_array).into_iter().flatten() {
+        let (Some(snap_name), Some(snap_settings)) = (
+            snap.get("name").and_then(Value::as_str),
+            snap.get("settings"),
+        ) else {
+            continue;
+        };
+        let Ok(snap_settings) = DevelopSettings::from_json(&snap_settings.to_string()) else {
+            continue;
+        };
+        let Ok(snap_name) = clean_name(snap_name) else {
+            continue;
+        };
+        tx.execute(
+            "INSERT OR IGNORE INTO snapshots (edit_id, name, settings, created_at)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![edit_id, snap_name, snap_settings.to_json(), now],
+        )?;
+    }
+    Ok(())
+}
+
+/// Retouches d'une photo reprises de son XMP (`afterdusk:Develop`,
+/// `afterdusk:Snapshots`, `afterdusk:Versions`), après reconstruction de la
+/// base. Le XMP n'est pas réécrit. Une photo qui a déjà des retouches en base
+/// n'est pas touchée ; une partie illisible est ignorée. Renvoie vrai si
+/// quelque chose a été repris.
+pub fn restore_from_xmp(
+    conn: &mut Connection,
+    media_id: i64,
+    develop: Option<&str>,
+    snapshots: Option<&str>,
+    versions: Option<&str>,
+) -> Result<bool, StoreError> {
+    if develop.is_none() && snapshots.is_none() && versions.is_none() {
+        return Ok(false);
+    }
+    let exists: bool = conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM edits WHERE media_id = ?1)",
+        [media_id],
+        |r| r.get(0),
+    )?;
+    if exists {
+        return Ok(false);
+    }
+    let parse = |text: Option<&str>| text.and_then(|t| serde_json::from_str::<Value>(t).ok());
+    let settings = develop
+        .and_then(|d| DevelopSettings::from_json(d).ok())
+        .unwrap_or_default();
+    let snaps = parse(snapshots);
+    let copies = parse(versions);
+    let now = now_utc();
+    let tx = conn.transaction()?;
+    restore_version(&tx, media_id, ORIGINAL, &settings, snaps.as_ref(), &now)?;
+    for copy in copies
+        .as_ref()
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let Some(name) = copy.get("name").and_then(Value::as_str) else {
+            continue;
+        };
+        let (Ok(name), Some(Ok(settings))) = (
+            clean_name(name),
+            copy.get("settings")
+                .map(|v| DevelopSettings::from_json(&v.to_string())),
+        ) else {
+            continue;
+        };
+        if name == ORIGINAL {
+            continue;
+        }
+        restore_version(&tx, media_id, &name, &settings, copy.get("snapshots"), &now)?;
+    }
+    tx.commit()?;
+    Ok(true)
+}
+
 /// Ce que le XMP de la photo doit contenir : réglages de l'originale,
 /// instantanés et copies virtuelles. Rien pour une photo jamais retouchée.
 pub fn xmp_data(conn: &Connection, media_id: i64) -> Result<DevelopXmp, StoreError> {
