@@ -1,4 +1,5 @@
 import { isTauri } from "@tauri-apps/api/core";
+import { type ExportFinished, type ExportProgress, useDeliver } from "./store/deliver";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useEffect } from "react";
@@ -74,6 +75,12 @@ export function useAppEvents(label: WindowLabel): void {
           .then(() => useLibrary.getState().load(useImport.getState().libraryId));
       }),
       events.onImportProgress(imp.onProgress),
+      listen<ExportProgress>("export://progress", (e) =>
+        useDeliver.getState().onProgress(e.payload),
+      ),
+      listen<ExportFinished>("export://finished", (e) =>
+        useDeliver.getState().onFinished(e.payload),
+      ),
       events.onImportFinished(imp.onFinished),
       listen<{ mediaId: number }>("preview-ready", (e) =>
         useLibrary.getState().previewReady(e.payload.mediaId),

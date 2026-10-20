@@ -308,7 +308,10 @@
     "versionMissing": "Cette version n'existe plus.",
     "snapshotMissing": "Cet instantané n'existe plus.",
     "nameTaken": "Ce nom est déjà pris.",
-    "invalidName": "Le nom ne peut pas être vide (64 caractères au plus)."
+    "invalidName": "Le nom ne peut pas être vide (64 caractères au plus).",
+    "copyFailed": "La copie de l'original a échoué.",
+    "writeFailed": "Écriture impossible dans le dossier de destination.",
+    "exportRunning": "Un export est déjà en cours."
   },
   "home": {
     "morning": "Bonjour",
@@ -796,5 +799,124 @@
       "done_one": "Réglages collés",
       "done_other": "Réglages collés sur {{count}} photos"
     }
+  },
+  "deliver": {
+    "presetsTitle": "Presets d'export",
+    "presets": {
+      "originals": "Originaux",
+      "full": "Pleine qualité",
+      "web": "Web",
+      "instagram": "Instagram",
+      "print": "Impression"
+    },
+    "options": "Options de « {{name}} »",
+    "subfolders": "Plusieurs presets : chacun dans un sous-dossier à son nom.",
+    "name": "Nom",
+    "format": "Format",
+    "quality": "Qualité",
+    "bits": "bits",
+    "sixteen": "16 bits par canal",
+    "output": {
+      "original": "Fichier d'origine",
+      "jpeg": "JPEG",
+      "png": "PNG",
+      "tiff": "TIFF",
+      "avif": "AVIF"
+    },
+    "originalHint": "Le fichier d'origine, sans retouche, copié et vérifié avec son XMP.",
+    "size": "Taille",
+    "resize": {
+      "full": "Pleine résolution",
+      "fullShort": "pleine résolution",
+      "longSide": "Côté long",
+      "width": "Largeur",
+      "height": "Hauteur",
+      "percent": "Pourcentage",
+      "fit": "Dans un cadre"
+    },
+    "pixels": "Pixels",
+    "percent": "Pourcentage",
+    "width": "Largeur",
+    "height": "Hauteur",
+    "colorSpace": "Espace colorimétrique",
+    "color": {
+      "srgb": "sRGB",
+      "displayP3": "Display P3",
+      "adobeRgb": "Adobe RGB"
+    },
+    "sharpen": "Accentuation",
+    "sharpening": {
+      "none": "Aucune",
+      "screen": "Pour écran",
+      "paper": "Pour papier"
+    },
+    "metadata": "Métadonnées",
+    "metadataPolicy": {
+      "all": "Tout garder",
+      "noGps": "Sans GPS",
+      "noGpsSerial": "Sans GPS ni numéro de série",
+      "copyrightOnly": "Copyright seulement",
+      "none": "Aucune"
+    },
+    "useWatermark": "Poser le filigrane",
+    "naming": "Nom des fichiers",
+    "namingHint": "{name} : nom actuel · {original} : nom sur la carte · {date} : date de prise de vue · {seq} : numéro (001, 002…)",
+    "duplicate": "Dupliquer",
+    "delete": "Supprimer",
+    "restore": "Rétablir",
+    "copyName": "{{name}} (copie)",
+    "watermark": "Filigrane",
+    "watermarkHint": "Un texte ou un logo posé sur les photos des presets qui le demandent.",
+    "addWatermark": "Ajouter un filigrane",
+    "removeWatermark": "Retirer le filigrane",
+    "watermarkKind": {
+      "text": "Texte",
+      "image": "Logo PNG"
+    },
+    "watermarkText": "Texte",
+    "watermarkDark": "Texte sombre",
+    "noLogo": "Aucun logo choisi",
+    "choose": "Choisir…",
+    "position": "Position",
+    "anchors": {
+      "topLeft": "En haut à gauche",
+      "top": "En haut",
+      "topRight": "En haut à droite",
+      "left": "À gauche",
+      "center": "Au centre",
+      "right": "À droite",
+      "bottomLeft": "En bas à gauche",
+      "bottom": "En bas",
+      "bottomRight": "En bas à droite"
+    },
+    "watermarkSize": "Taille (largeur de l'image)",
+    "opacity": "Opacité",
+    "margin": "Marge",
+    "watermarkPerPreset": "Cochez « Poser le filigrane » dans les options de chaque preset concerné.",
+    "destination": "Destination",
+    "noDestination": "Aucun dossier choisi",
+    "chooseDestination": "Dossier de livraison",
+    "openFolder": "Ouvrir le dossier à la fin",
+    "needDestination": "Choisissez un dossier de destination.",
+    "needPreset": "Cochez au moins un preset d'export.",
+    "needSelection": "Sélectionnez les photos à livrer.",
+    "export_one": "Exporter {{count}} photo",
+    "export_other": "Exporter {{count}} photos",
+    "selection_zero": "Aucune photo sélectionnée",
+    "selection_one": "{{count}} photo sélectionnée",
+    "selection_other": "{{count}} photos sélectionnées",
+    "selectHint": "Sélectionnez les photos à livrer : clic, Ctrl+clic, Maj+clic.",
+    "progress": "{{done}} / {{total}}",
+    "stop": "Arrêter",
+    "done_one": "{{count}} fichier exporté",
+    "done_other": "{{count}} fichiers exportés",
+    "cancelled_one": "Export arrêté : {{count}} fichier exporté",
+    "cancelled_other": "Export arrêté : {{count}} fichiers exportés",
+    "failures_one": "{{count}} échec",
+    "failures_other": "{{count}} échecs",
+    "reveal": "Ouvrir le dossier",
+    "dismiss": "Fermer",
+    "emptyTitle": "Aucune photo à livrer",
+    "emptyText": "Importez des photos, retouchez-les, puis revenez ici pour les exporter."
   }
 }

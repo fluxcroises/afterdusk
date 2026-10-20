@@ -308,7 +308,10 @@
     "versionMissing": "This version no longer exists.",
     "snapshotMissing": "This snapshot no longer exists.",
     "nameTaken": "This name is already taken.",
-    "invalidName": "The name can't be empty (64 characters at most)."
+    "invalidName": "The name can't be empty (64 characters at most).",
+    "copyFailed": "Copying the original failed.",
+    "writeFailed": "Cannot write to the destination folder.",
+    "exportRunning": "An export is already running."
   },
   "home": {
     "morning": "Hello",
@@ -796,5 +799,124 @@
       "done_one": "Settings pasted",
       "done_other": "Settings pasted to {{count}} photos"
     }
+  },
+  "deliver": {
+    "presetsTitle": "Export presets",
+    "presets": {
+      "originals": "Originals",
+      "full": "Full quality",
+      "web": "Web",
+      "instagram": "Instagram",
+      "print": "Print"
+    },
+    "options": "Options for “{{name}}”",
+    "subfolders": "Several presets: each goes into a subfolder named after it.",
+    "name": "Name",
+    "format": "Format",
+    "quality": "Quality",
+    "bits": "bits",
+    "sixteen": "16 bits per channel",
+    "output": {
+      "original": "Original file",
+      "jpeg": "JPEG",
+      "png": "PNG",
+      "tiff": "TIFF",
+      "avif": "AVIF"
+    },
+    "originalHint": "The original file, unedited, copied and verified along with its XMP.",
+    "size": "Size",
+    "resize": {
+      "full": "Full resolution",
+      "fullShort": "full resolution",
+      "longSide": "Long side",
+      "width": "Width",
+      "height": "Height",
+      "percent": "Percentage",
+      "fit": "Fit within"
+    },
+    "pixels": "Pixels",
+    "percent": "Percentage",
+    "width": "Width",
+    "height": "Height",
+    "colorSpace": "Color space",
+    "color": {
+      "srgb": "sRGB",
+      "displayP3": "Display P3",
+      "adobeRgb": "Adobe RGB"
+    },
+    "sharpen": "Output sharpening",
+    "sharpening": {
+      "none": "None",
+      "screen": "For screen",
+      "paper": "For paper"
+    },
+    "metadata": "Metadata",
+    "metadataPolicy": {
+      "all": "Keep all",
+      "noGps": "No GPS",
+      "noGpsSerial": "No GPS or serial number",
+      "copyrightOnly": "Copyright only",
+      "none": "None"
+    },
+    "useWatermark": "Add the watermark",
+    "naming": "File names",
+    "namingHint": "{name}: current name · {original}: card name · {date}: capture date · {seq}: number (001, 002…)",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "restore": "Restore",
+    "copyName": "{{name}} (copy)",
+    "watermark": "Watermark",
+    "watermarkHint": "A text or logo placed on photos of the presets that ask for it.",
+    "addWatermark": "Add a watermark",
+    "removeWatermark": "Remove the watermark",
+    "watermarkKind": {
+      "text": "Text",
+      "image": "PNG logo"
+    },
+    "watermarkText": "Text",
+    "watermarkDark": "Dark text",
+    "noLogo": "No logo chosen",
+    "choose": "Choose…",
+    "position": "Position",
+    "anchors": {
+      "topLeft": "Top left",
+      "top": "Top",
+      "topRight": "Top right",
+      "left": "Left",
+      "center": "Center",
+      "right": "Right",
+      "bottomLeft": "Bottom left",
+      "bottom": "Bottom",
+      "bottomRight": "Bottom right"
+    },
+    "watermarkSize": "Size (image width)",
+    "opacity": "Opacity",
+    "margin": "Margin",
+    "watermarkPerPreset": "Tick “Add the watermark” in the options of each preset concerned.",
+    "destination": "Destination",
+    "noDestination": "No folder chosen",
+    "chooseDestination": "Delivery folder",
+    "openFolder": "Open the folder when done",
+    "needDestination": "Choose a destination folder.",
+    "needPreset": "Tick at least one export preset.",
+    "needSelection": "Select the photos to deliver.",
+    "export_one": "Export {{count}} photo",
+    "export_other": "Export {{count}} photos",
+    "selection_zero": "No photo selected",
+    "selection_one": "{{count}} photo selected",
+    "selection_other": "{{count}} photos selected",
+    "selectHint": "Select the photos to deliver: click, Ctrl+click, Shift+click.",
+    "progress": "{{done}} / {{total}}",
+    "stop": "Stop",
+    "done_one": "{{count}} file exported",
+    "done_other": "{{count}} files exported",
+    "cancelled_one": "Export stopped: {{count}} file exported",
+    "cancelled_other": "Export stopped: {{count}} files exported",
+    "failures_one": "{{count}} failure",
+    "failures_other": "{{count}} failures",
+    "reveal": "Open the folder",
+    "dismiss": "Close",
+    "emptyTitle": "No photos to deliver",
+    "emptyText": "Import photos, edit them, then come back here to export them."
   }
 }
