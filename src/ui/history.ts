@@ -63,6 +63,7 @@ export function describeStep(
       cut >= 0 ? rest.slice(cut + 1) : t(`develop.presets.items.${rest}`, { defaultValue: rest });
     return t("develop.history.look", { name });
   }
+  if (step.label === "paste") return t("develop.history.paste");
   if (step.label === "look.remove") return t("develop.history.lookRemoved");
   if (step.label === "look.amount") {
     return t("develop.history.lookAmount", { value: step.settings.look?.amount ?? 100 });

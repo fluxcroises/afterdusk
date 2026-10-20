@@ -126,6 +126,11 @@ beforeEach(() => {
       if (id === null) return { version: 1, process: 1 };
       return { ...base, color: { vibrance: 35 }, look: { id, amount: a.amount } };
     }
+    if (cmd === "develop_paste_apply") {
+      const from = a.from as Record<string, unknown>;
+      return { ...(a.settings as object), light: from.light };
+    }
+    if (cmd === "develop_paste") return (a.mediaIds as number[]).length;
     if (cmd === "develop_preset_previews") {
       // Deux vignettes de 1 × 1 : l'original et « vivid ».
       const buffer = new ArrayBuffer(4 + 2 * (8 + 4));
@@ -157,6 +162,8 @@ afterEach(async () => {
     showDust: false,
     presetGroups: null,
     presetThumbs: {},
+    clipboard: null,
+    notice: null,
   });
   vi.useRealTimers();
 });
@@ -622,6 +629,23 @@ describe("Retoucher", () => {
       "look.amount",
       "look.remove",
     ]);
+  });
+
+  it("copier-coller : la photo ouverte localement, les autres par le cœur", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setLight("exposure", 0.8);
+    useDevelop.getState().copySettings(["light.exposure"]);
+    expect(useDevelop.getState().clipboard?.controls).toEqual(["light.exposure"]);
+    await useDevelop.getState().open(8);
+    await useDevelop.getState().pasteSettings([8, 9, 10]);
+    expect(useDevelop.getState().settings?.light).toEqual({ exposure: 0.8 });
+    expect(calls("develop_paste")[0]?.[1]).toMatchObject({
+      mediaIds: [9, 10],
+      controls: ["light.exposure"],
+    });
+    expect(saves()[saves().length - 1]).toMatchObject({ mediaId: 8, label: "paste" });
+    // Message traduit, selon la langue des tests.
+    expect(useDevelop.getState().notice).toContain("3");
   });
 
   it("visualisation des poussières : demandée au rendu dans l'outil seulement", async () => {

@@ -17,6 +17,7 @@ import {
   LensSection,
 } from "../components/DevelopAdvanced";
 import { type Box, CropOverlay, CropSection } from "../components/DevelopCrop";
+import { CopyDialog, CopyPasteControls } from "../components/DevelopCopy";
 import { FiltersPanel } from "../components/DevelopFilters";
 import { SpotOverlay, SpotsSection, type View } from "../components/DevelopSpots";
 import { DevelopToolRail } from "../components/DevelopTools";
@@ -235,6 +236,8 @@ function RenderStatus() {
   const zoom = useDevelop((s) => s.zoom);
   const zoomFrame = useDevelop((s) => s.zoomFrame);
   const zoomLoading = useDevelop((s) => s.zoomLoading);
+  const notice = useDevelop((s) => s.notice);
+  if (notice) return <span className="toolbar-status">{notice}</span>;
   if (picking) return <span className="toolbar-status">{t("develop.pickHint")}</span>;
   if (zoomLoading) return <span className="toolbar-status">{t("develop.zoom.loading")}</span>;
   if (zoom && zoomFrame) {
@@ -400,6 +403,7 @@ export function DevelopStep() {
       toolbar={
         <>
           <CompareControls />
+          <CopyPasteControls />
           <span className="toolbar-spacer" />
           <RenderStatus />
         </>
@@ -424,6 +428,7 @@ export function DevelopStep() {
           <DevelopCanvas />
         </div>
       )}
+      <CopyDialog />
     </ScreenLayout>
   );
 }

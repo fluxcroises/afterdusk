@@ -266,7 +266,9 @@
     "stackToggle": "Déplier ou replier la pile",
     "stackTop": "Mettre en haut de la pile",
     "trashJpeg": "Envoyer le JPEG dans la corbeille",
-    "trashRaw": "Envoyer le RAW dans la corbeille"
+    "trashRaw": "Envoyer le RAW dans la corbeille",
+    "copySettings": "Copier les réglages…",
+    "pasteSettings": "Coller les réglages"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -564,7 +566,8 @@
       },
       "look": "Filtre : {{name}}",
       "lookRemoved": "Filtre retiré",
-      "lookAmount": "Intensité du filtre {{value}} %"
+      "lookAmount": "Intensité du filtre {{value}} %",
+      "paste": "Réglages collés"
     },
     "compare": {
       "hold": "Avant (maintenir pour voir l'original)",
@@ -779,6 +782,19 @@
       "lens": "Corrections d'objectif",
       "geometry": "Recadrage et redressement",
       "spots": "Corrections de défauts"
+    },
+    "copy": {
+      "open": "Copier les réglages…",
+      "title": "Copier les réglages",
+      "hint": "Choisissez ce qui sera collé sur d'autres photos. Le recadrage et les corrections de défauts sont propres à chaque photo : cochez-les pour une série prise à l'identique.",
+      "confirm": "Copier",
+      "modifiers": "Ctrl+Maj+"
+    },
+    "paste": {
+      "label_one": "Coller les réglages",
+      "label_other": "Coller les réglages sur {{count}} photos",
+      "done_one": "Réglages collés",
+      "done_other": "Réglages collés sur {{count}} photos"
     }
   }
 }

@@ -15,6 +15,7 @@ import { useAbout } from "./store/about";
 import { purgeSelection, trashRejected } from "./trash";
 import { focusSearch } from "./search";
 import { useLayout } from "./store/layout";
+import { pasteTargets } from "./ui/paste";
 import { canRedo, canUndo, useDevelop } from "./store/develop";
 import { useLibrary } from "./store/library";
 import { COLOR_LABELS } from "./ui/labels";
@@ -140,6 +141,27 @@ export function buildMenuItems(t: TFunction): Item[] {
         enabled: isMac || (inDevelop() && canRedo(useDevelop.getState())),
         action: () => {
           if (inDevelop()) void useDevelop.getState().redo();
+        },
+      },
+      separator,
+      {
+        id: "copy-settings",
+        text: t("menu.copySettings"),
+        accelerator: "CmdOrCtrl+Shift+C",
+        enabled: isMac || inDevelop(),
+        action: () => {
+          if (inDevelop() && useDevelop.getState().settings) {
+            useDevelop.getState().setCopyOpen(true);
+          }
+        },
+      },
+      {
+        id: "paste-settings",
+        text: t("menu.pasteSettings"),
+        accelerator: "CmdOrCtrl+Shift+V",
+        enabled: isMac || inDevelop(),
+        action: () => {
+          if (inDevelop()) void useDevelop.getState().pasteSettings(pasteTargets());
         },
       },
       separator,

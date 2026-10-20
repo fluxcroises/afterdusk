@@ -46,3 +46,13 @@ export const PRESET_DEFAULT_KEYS = [
 export function pathsOf(options: SectionOption[], keys: string[]): string[] {
   return options.filter((o) => keys.includes(o.key)).flatMap((o) => o.paths);
 }
+
+/** Familles du copier-coller : celles d'un preset, plus la géométrie et les défauts. */
+export const COPY_SECTIONS: SectionOption[] = [
+  ...PRESET_SECTIONS,
+  { key: "geometry", paths: ["geometry"] },
+  { key: "spots", paths: ["spots"] },
+];
+
+/** Cochées par défaut : tout, sauf le recadrage et les défauts, propres à chaque photo. */
+export const COPY_DEFAULT_KEYS = PRESET_SECTIONS.map((o) => o.key);

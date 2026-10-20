@@ -266,7 +266,9 @@
     "stackToggle": "Expand or Collapse Stack",
     "stackTop": "Move to Top of Stack",
     "trashJpeg": "Move JPEG to Trash",
-    "trashRaw": "Move RAW to Trash"
+    "trashRaw": "Move RAW to Trash",
+    "copySettings": "Copy Settings…",
+    "pasteSettings": "Paste Settings"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -564,7 +566,8 @@
       },
       "look": "Filter: {{name}}",
       "lookRemoved": "Filter removed",
-      "lookAmount": "Filter amount {{value}}%"
+      "lookAmount": "Filter amount {{value}}%",
+      "paste": "Settings pasted"
     },
     "compare": {
       "hold": "Before (hold to see the original)",
@@ -779,6 +782,19 @@
       "lens": "Lens corrections",
       "geometry": "Crop and straighten",
       "spots": "Spot healing"
+    },
+    "copy": {
+      "open": "Copy settings…",
+      "title": "Copy settings",
+      "hint": "Choose what will be pasted onto other photos. Crop and spot healing belong to each photo: tick them for a series shot the same way.",
+      "confirm": "Copy",
+      "modifiers": "Ctrl+Shift+"
+    },
+    "paste": {
+      "label_one": "Paste settings",
+      "label_other": "Paste settings to {{count}} photos",
+      "done_one": "Settings pasted",
+      "done_other": "Settings pasted to {{count}} photos"
     }
   }
 }

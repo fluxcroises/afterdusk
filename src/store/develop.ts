@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { type CommandError, toCommandError } from "../api/core";
@@ -429,6 +430,12 @@ interface DevelopState {
   compare: CompareMode;
   /** Rendu de l'original (réglages neutres), pour l'avant/après. */
   beforeFrame: DevelopFrame | null;
+  /** Réglages copiés (copier-coller) et réglages à transmettre. */
+  clipboard: { settings: DevelopSettings; controls: string[] } | null;
+  /** Boîte « Copier les réglages » ouverte. */
+  copyOpen: boolean;
+  /** Message bref de la barre d'outils (« Réglages collés sur 3 photos »). */
+  notice: string | null;
   /** Presets de la galerie, chargés à la première ouverture. */
   presetGroups: PresetGroup[] | null;
   /** Vignettes par identifiant de preset (« » : l'original). */
@@ -487,6 +494,11 @@ interface DevelopState {
   setCompare: (mode: CompareMode) => void;
   setTool: (tool: DevelopTool) => Promise<void>;
   loadPresets: () => Promise<void>;
+  setCopyOpen: (open: boolean) => void;
+  /** Copie les réglages affichés, pour les familles `controls`. */
+  copySettings: (controls: string[]) => void;
+  /** Colle les réglages copiés sur ces photos (la photo ouverte comprise ou non). */
+  pasteSettings: (mediaIds: number[]) => Promise<void>;
   /** Applique un preset (`null` : l'original) ; l'intensité par défaut est 100 %. */
   applyPreset: (id: string | null, amount?: number) => Promise<void>;
   /** Intensité du preset appliqué, de 0 à 100 %. */
@@ -557,6 +569,9 @@ function withValue<T extends object>(section: T | undefined, key: string, value:
 }
 
 let openToken = 0;
+let noticeTimer: ReturnType<typeof setTimeout> | null = null;
+/** Durée d'affichage d'un message de la barre d'outils. */
+const NOTICE_MS = 4000;
 let rendering = false;
 let renderAgain = false;
 let zoomRendering = false;
@@ -877,6 +892,9 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     cropping: false,
     cropStart: null,
     tool: "adjust",
+    clipboard: null,
+    copyOpen: false,
+    notice: null,
     presetGroups: null,
     presetThumbs: {},
     lensName: null,
@@ -1133,6 +1151,47 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       if (tool === "filters") {
         await get().loadPresets();
         void refreshThumbs();
+      }
+    },
+
+    setCopyOpen: (open) => set({ copyOpen: open }),
+
+    copySettings: (controls) => {
+      const { settings } = get();
+      if (!settings || controls.length === 0) return;
+      set({ clipboard: { settings, controls }, copyOpen: false });
+    },
+
+    pasteSettings: async (mediaIds) => {
+      const { clipboard, mediaId, settings } = get();
+      if (!clipboard) return;
+      const others = mediaIds.filter((id) => id !== mediaId);
+      try {
+        if (mediaId !== null && settings && mediaIds.includes(mediaId)) {
+          await get().flush();
+          const next = await invoke<DevelopSettings>("develop_paste_apply", {
+            settings: get().settings ?? settings,
+            from: clipboard.settings,
+            controls: clipboard.controls,
+          });
+          if (get().mediaId === mediaId) {
+            set({ zoom: null, zoomFrame: null, fullSize: null });
+            change(next, "paste");
+            await get().flush();
+          }
+        }
+        if (others.length > 0) {
+          await invoke<number>("develop_paste", {
+            mediaIds: others,
+            from: clipboard.settings,
+            controls: clipboard.controls,
+          });
+        }
+        set({ notice: i18next.t("develop.paste.done", { count: mediaIds.length }) });
+        if (noticeTimer) clearTimeout(noticeTimer);
+        noticeTimer = setTimeout(() => set({ notice: null }), NOTICE_MS);
+      } catch (e) {
+        set({ error: toCommandError(e) });
       }
     },
 

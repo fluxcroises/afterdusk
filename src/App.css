@@ -3366,3 +3366,21 @@ input[type="radio"] {
   gap: var(--ad-space-1);
   margin-bottom: 4px;
 }
+
+/* Boîte « Copier les réglages ». */
+.copy-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  width: min(360px, calc(100vw - 32px));
+  padding: var(--ad-space-4, 16px);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-md, 8px);
+  background: var(--ad-panel);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
+}
+
+.copy-title {
+  margin: 0;
+  font: var(--ad-font-panel-title);
+}
