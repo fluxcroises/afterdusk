@@ -6,6 +6,7 @@ pub mod curve;
 pub mod detail;
 pub mod geometry;
 pub mod gpu;
+pub mod lens;
 pub mod pipeline;
 pub mod settings;
 pub mod source;

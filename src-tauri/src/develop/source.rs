@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use rusqlite::{Connection, OptionalExtension};
 
+use super::lens::Shot;
 use super::pipeline::WorkingImage;
 use crate::library::paths::{self, PathError};
 use crate::library::{LibraryError, get_library};
@@ -66,6 +67,12 @@ pub fn working_image(
     let half = u32::from(info.width.max(info.height)) / 2 >= max_side;
     let developed = raw.develop(half)?;
     Ok(WorkingImage::from_raw(&developed, max_side))
+}
+
+/// Boîtier, objectif, focale et ouverture de la prise de vue, pour les
+/// corrections d'objectif.
+pub fn shot(conn: &Connection, media_id: i64) -> Result<Shot, SourceError> {
+    Ok(Shot::from(&open_raw(conn, media_id)?.info()))
 }
 
 /// Original développé en pleine définition, pour le zoom 100 %. Le X-Trans

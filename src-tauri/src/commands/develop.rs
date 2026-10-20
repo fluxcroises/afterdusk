@@ -17,8 +17,9 @@ use super::{AppState, blocking};
 use crate::develop::auto;
 use crate::develop::geometry;
 use crate::develop::gpu::{GpuImage, GpuRenderer};
+use crate::develop::lens::{self, LensCorrection, LensProfile};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
-use crate::develop::settings::{DevelopSettings, Geometry, Spot, WhiteBalance};
+use crate::develop::settings::{DevelopSettings, Geometry, LensSettings, Spot, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
 use crate::develop::spots;
 use crate::develop::store::{self, History, ORIGINAL, Snapshot, StoreError, Version};
@@ -61,8 +62,14 @@ impl From<StoreError> for CommandError {
 
 struct Session {
     media_id: i64,
-    /// Image de travail avant géométrie (orientation du boîtier seulement).
+    /// Image de travail décodée (orientation du boîtier seulement).
     base: WorkingImage,
+    /// Objectif reconnu dans la base lensfun.
+    profile: Option<LensProfile>,
+    lens: LensSettings,
+    /// `base` corrigée de l'objectif selon `lens` : repère des corrections de
+    /// défauts et de la géométrie.
+    corrected: WorkingImage,
     /// Image de travail corrigée par `spots` puis transformée par
     /// `geometry`, celle qui est rendue.
     image: WorkingImage,
@@ -116,6 +123,8 @@ pub struct DevelopOpened {
     /// Image avant géométrie, repère des corrections de défauts.
     pub source_width: u32,
     pub source_height: u32,
+    /// Objectif reconnu (corrections d'objectif possibles), ou rien.
+    pub lens: Option<String>,
     pub settings: DevelopSettings,
     /// Balance du boîtier, en kelvins et en teinte, pour les curseurs.
     pub as_shot: AsShot,
@@ -155,9 +164,12 @@ pub async fn develop_open(
         let base = source::working_image(&conn, media_id, PREVIEW_SIDE)?;
         let decode_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
         let settings = store::load(&conn, media_id, ORIGINAL)?;
+        let profile = lens::find_profile(&source::shot(&conn, media_id)?);
+        let corrected = lens_corrected(&base, profile.as_ref(), &settings.lens);
+        let lens_settings = settings.lens.clone();
         let geometry = settings.geometry.clone();
         let spot_list = settings.spots.clone();
-        let image = geometry::transform(&spots::healed(&base, &spot_list), &geometry);
+        let image = geometry::transform(&spots::healed(&corrected, &spot_list), &geometry);
         let renderer = engine.gpu();
         let gpu = renderer.and_then(|r| {
             r.upload(&image)
@@ -171,6 +183,7 @@ pub async fn develop_open(
             height: image.height,
             source_width: base.width,
             source_height: base.height,
+            lens: profile.as_ref().map(|p| p.name.clone()),
             settings,
             as_shot: AsShot {
                 temperature: temperature.round(),
@@ -197,6 +210,9 @@ pub async fn develop_open(
         *session = Some(Session {
             media_id,
             base,
+            profile,
+            lens: lens_settings,
+            corrected,
             image,
             geometry,
             spots: spot_list,
@@ -206,6 +222,30 @@ pub async fn develop_open(
         Ok(opened)
     })
     .await
+}
+
+/// Corrections d'objectif d'une image décodée de w × h pixels, ou rien.
+fn lens_correction(
+    profile: Option<&LensProfile>,
+    settings: &LensSettings,
+    w: u32,
+    h: u32,
+) -> Option<LensCorrection> {
+    profile
+        .and_then(|p| LensCorrection::new(p, settings))
+        .map(|c| c.for_image(w, h))
+}
+
+/// L'image décodée corrigée de l'objectif (aperçu).
+fn lens_corrected(
+    base: &WorkingImage,
+    profile: Option<&LensProfile>,
+    settings: &LensSettings,
+) -> WorkingImage {
+    match lens_correction(profile, settings, base.width, base.height) {
+        Some(c) => c.whole(base),
+        None => base.clone(),
+    }
 }
 
 /// Rendu au GPU si possible, au processeur sinon, puis mis en forme pour
@@ -267,11 +307,21 @@ pub async fn develop_render(
             .as_mut()
             .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
         let settings = settings.sanitized();
+        // Nouvelles corrections d'objectif : l'image corrigée est refaite.
+        let lens_changed = settings.lens != session.lens;
+        if lens_changed {
+            session.corrected =
+                lens_corrected(&session.base, session.profile.as_ref(), &settings.lens);
+            session.lens = settings.lens.clone();
+        }
         // Nouvelle géométrie ou nouvelles corrections : l'image de travail est
         // refaite, une fois.
-        if !settings.geometry.same_image(&session.geometry) || settings.spots != session.spots {
+        if lens_changed
+            || !settings.geometry.same_image(&session.geometry)
+            || settings.spots != session.spots
+        {
             session.image = geometry::transform(
-                &spots::healed(&session.base, &settings.spots),
+                &spots::healed(&session.corrected, &settings.spots),
                 &settings.geometry,
             );
             session.gpu = engine.gpu().and_then(|r| {
@@ -376,23 +426,33 @@ pub async fn develop_zoom_render(
 ) -> CommandResult<Response> {
     let bytes = blocking(move || {
         let engine = app.state::<DevelopEngine>();
-        let full = {
+        let (full, profile) = {
             let session = engine
                 .session
                 .lock()
                 .map_err(|e| CommandError::new("internal", e))?;
-            session
+            let session = session
                 .as_ref()
-                .and_then(|s| s.full.clone())
-                .ok_or_else(|| CommandError::new("internal", "zoom non préparé"))?
+                .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
+            let full = session
+                .full
+                .clone()
+                .ok_or_else(|| CommandError::new("internal", "zoom non préparé"))?;
+            (full, session.profile.clone())
         };
         let settings = settings.sanitized();
         let clipping = clipping.unwrap_or_default();
         let params = RenderParams::from_settings(&settings, full.as_shot_white, clipping);
         // Réduction du bruit et netteté regardent les voisins : la région est
         // rendue avec une marge, puis rognée, pour des bords justes.
-        let (region, cut) =
-            WorkingImage::region_with_margin(&full, &params, &settings, left, top, width, height);
+        let correction = lens_correction(profile.as_ref(), &settings.lens, full.width, full.height);
+        let (region, cut) = WorkingImage::region_with_margin(
+            &full,
+            &params,
+            &settings,
+            correction.as_ref(),
+            (left, top, width, height),
+        );
         let uploaded = engine.gpu().and_then(|r| r.upload(&region).ok());
         Ok(render_frame_cut(
             &engine,
@@ -728,7 +788,7 @@ pub async fn develop_auto_straighten(app: AppHandle, geometry: Geometry) -> Comm
         let base = &session
             .as_ref()
             .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
-            .base;
+            .corrected;
         let oriented = Geometry {
             quarter: geometry.quarter,
             flip_h: geometry.flip_h,
@@ -759,11 +819,11 @@ pub async fn develop_spot_source(
             .session
             .lock()
             .map_err(|e| CommandError::new("internal", e))?;
-        let base = &session
+        let corrected = &session
             .as_ref()
             .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
-            .base;
-        let (sx, sy) = spots::find_source(base, x, y, radius, &others);
+            .corrected;
+        let (sx, sy) = spots::find_source(corrected, x, y, radius, &others);
         Ok([sx, sy])
     })
     .await

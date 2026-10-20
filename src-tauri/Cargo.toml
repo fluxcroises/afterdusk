@@ -25,6 +25,8 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "tiff"] }
 jpeg-decoder = "0.3"
 kamadak-exif = "0.6"
+# Portage Rust de lensfun et sa base (décision 0006), version figée.
+lensfun = "=0.7.0"
 rusqlite = { version = "0.40", features = ["bundled"] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }

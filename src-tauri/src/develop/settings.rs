@@ -453,6 +453,48 @@ impl Geometry {
     }
 }
 
+fn is_true(v: &bool) -> bool {
+    *v
+}
+
+fn hundred() -> f64 {
+    100.0
+}
+
+fn is_hundred(v: &f64) -> bool {
+    *v == 100.0
+}
+
+/// Corrections d'objectifs (décision 0006) : actives par défaut quand
+/// l'objectif est reconnu, distorsion et vignetage dosés de 0 à 200 % du
+/// profil ; les aberrations chromatiques suivent `enabled`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LensSettings {
+    #[serde(skip_serializing_if = "is_true")]
+    pub enabled: bool,
+    #[serde(default = "hundred", skip_serializing_if = "is_hundred")]
+    pub distortion: f64,
+    #[serde(default = "hundred", skip_serializing_if = "is_hundred")]
+    pub vignetting: f64,
+}
+
+impl Default for LensSettings {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            distortion: 100.0,
+            vignetting: 100.0,
+        }
+    }
+}
+
+impl LensSettings {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
 /// Mode d'une correction de défaut.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -535,6 +577,8 @@ pub struct DevelopSettings {
     pub effects: Effects,
     #[serde(default, skip_serializing_if = "Geometry::is_default")]
     pub geometry: Geometry,
+    #[serde(default, skip_serializing_if = "LensSettings::is_default")]
+    pub lens: LensSettings,
     /// Corrections de défauts, dans l'ordre où elles sont appliquées.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub spots: Vec<Spot>,
@@ -553,6 +597,7 @@ impl Default for DevelopSettings {
             detail: Detail::default(),
             geometry: Geometry::default(),
             effects: Effects::default(),
+            lens: LensSettings::default(),
             spots: Vec::new(),
         }
     }
@@ -689,6 +734,17 @@ impl DevelopSettings {
         g.amount = clamp(g.amount, 0.0, 100.0);
         g.size = clamp(g.size, 0.0, 100.0);
         g.roughness = clamp(g.roughness, 0.0, 100.0);
+        let l = &mut self.lens;
+        l.distortion = if l.distortion.is_finite() {
+            l.distortion.clamp(0.0, 200.0)
+        } else {
+            100.0
+        };
+        l.vignetting = if l.vignetting.is_finite() {
+            l.vignetting.clamp(0.0, 200.0)
+        } else {
+            100.0
+        };
         self.spots.retain(|s| {
             [s.x, s.y, s.radius, s.source_x, s.source_y]
                 .iter()
@@ -713,6 +769,7 @@ impl DevelopSettings {
             && self.detail.is_default()
             && self.geometry.is_identity()
             && self.effects.is_default()
+            && self.lens.is_default()
             && self.spots.is_empty()
     }
 }

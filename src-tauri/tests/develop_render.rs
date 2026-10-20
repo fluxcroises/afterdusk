@@ -5,8 +5,9 @@ mod common;
 
 use std::time::Instant;
 
+use afterdusk_lib::develop::lens::{self, LensCorrection, Shot};
 use afterdusk_lib::develop::pipeline::{WorkingImage, render_rgba};
-use afterdusk_lib::develop::settings::DevelopSettings;
+use afterdusk_lib::develop::settings::{DevelopSettings, LensSettings};
 use afterdusk_lib::develop::white;
 use afterdusk_lib::raw::RawFile;
 use afterdusk_lib::raw::preview::{decode_jpeg_scaled, orient};
@@ -160,4 +161,50 @@ fn horizon_automatique_sur_photos_inclinees() {
     }
     // Les photos avec des lignes (bâti, mobilier) sont redressées.
     assert!(corrected >= 6, "{corrected} redressements");
+}
+
+/// Corrections d'objectif sur les six échantillons : objectifs reconnus,
+/// coins éclaircis par le vignetage, aucun bord vide, durée à 2048 px.
+#[test]
+fn corrections_d_objectif_sur_les_echantillons() {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../test-assets");
+    let mut recognized = Vec::new();
+    for (file, expected) in [
+        ("canon_eos_r6.CR3", true),
+        ("fujifilm_x-t3.RAF", true),
+        ("nikon_z6.NEF", true),
+        ("panasonic_dc-g9.RW2", false),
+        ("ricoh_gr-iii.DNG", false),
+        ("sony_ilce-7m3.ARW", true),
+    ] {
+        let mut raw = RawFile::open(&dir.join(file)).unwrap();
+        let profile = lens::find_profile(&Shot::from(&raw.info()));
+        assert_eq!(profile.is_some(), expected, "{file}");
+        let Some(profile) = profile else { continue };
+        let image = WorkingImage::from_raw(&raw.develop(true).unwrap(), 2048);
+        let correction = LensCorrection::new(&profile, &LensSettings::default())
+            .unwrap()
+            .for_image(image.width, image.height);
+        let started = Instant::now();
+        let corrected = correction.whole(&image);
+        let ms = started.elapsed().as_millis();
+        assert_eq!(
+            (corrected.width, corrected.height),
+            (image.width, image.height)
+        );
+        // Aucun coin noir : la moyenne d'un coin reste proche de l'original.
+        let corner = |img: &WorkingImage| {
+            let mut acc = 0.0f64;
+            for y in 0..16 {
+                for x in 0..16 {
+                    acc += f64::from(img.rgb[((y * img.width + x) * 3 + 1) as usize]);
+                }
+            }
+            acc / 256.0
+        };
+        let (before, after) = (corner(&image), corner(&corrected));
+        assert!(after > before * 0.5, "{file} : coin {before} puis {after}");
+        recognized.push(format!("{} : {ms} ms", profile.name));
+    }
+    eprintln!("{}", recognized.join(" · "));
 }

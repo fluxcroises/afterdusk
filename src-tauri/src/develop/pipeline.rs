@@ -15,6 +15,7 @@ use serde::Deserialize;
 use super::curve;
 use super::detail::{self, DetailParams, Radii};
 use super::geometry;
+use super::lens::LensCorrection;
 use super::settings::DevelopSettings;
 use super::spots;
 use super::white;
@@ -200,7 +201,7 @@ fn area_weights(src: usize, dst: usize) -> Vec<(usize, Vec<f32>)> {
         .collect()
 }
 
-fn workers() -> usize {
+pub(crate) fn workers() -> usize {
     thread::available_parallelism().map_or(4, |n| n.get())
 }
 
@@ -333,19 +334,19 @@ impl WorkingImage {
         }
     }
 
-    /// Région (left, top, width, height) de l'image *rendue* (après géométrie)
-    /// en pleine définition, pour le zoom : agrandie de la portée des passes de
-    /// voisinage, avec la partie à garder de son rendu (gauche, haut, largeur,
-    /// hauteur). Seul le rectangle utile de l'original est converti.
+    /// Région `rect` (left, top, width, height) de l'image *rendue* (après
+    /// corrections d'objectif, de défauts et géométrie) en pleine définition,
+    /// pour le zoom : agrandie de la portée des passes de voisinage, avec la
+    /// partie à garder de son rendu (gauche, haut, largeur, hauteur). Seul le
+    /// rectangle utile de l'original est converti.
     pub fn region_with_margin(
         raw: &DevelopedRaw,
         params: &RenderParams,
         settings: &DevelopSettings,
-        left: u32,
-        top: u32,
-        width: u32,
-        height: u32,
+        lens: Option<&LensCorrection>,
+        rect: (u32, u32, u32, u32),
     ) -> (Self, (u32, u32, u32, u32)) {
+        let (left, top, width, height) = rect;
         let (geometry, spot_list) = (&settings.geometry, settings.spots.as_slice());
         let margin = if params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0 {
             Radii::at(&params.detail, 1.0).margin()
@@ -360,22 +361,26 @@ impl WorkingImage {
         let (l0, t0) = (left.saturating_sub(margin), top.saturating_sub(margin));
         let w0 = (width + (left - l0) + margin).min(out.width - l0);
         let h0 = (height + (top - t0) + margin).min(out.height - t0);
-        // Corrections de défauts sur la partie utile de l'original, les
-        // sources lues dans l'original entier.
+        // Original corrigé de l'objectif, lu par régions.
+        let read = |l, t, w, h| Self::crop_from_raw(raw, l, t, w, h);
+        let fetch = |l, t, w, h| match lens {
+            Some(c) => c.region(raw.width, raw.height, (l, t, w, h), &read),
+            None => read(l, t, w, h),
+        };
+        // Corrections de défauts sur la partie utile, les sources lues dans
+        // l'image entière.
         let heal = |mut img: Self| {
             if !spot_list.is_empty() {
-                spots::heal(&mut img, spot_list, &|l, t, w, h| {
-                    Self::crop_from_raw(raw, l, t, w, h)
-                });
+                spots::heal(&mut img, spot_list, &fetch);
             }
             img
         };
         let region = if geometry.is_identity() {
-            heal(Self::crop_from_raw(raw, l0, t0, w0, h0))
+            heal(fetch(l0, t0, w0, h0))
         } else {
             let (x0, y0, x1, y1) =
                 geometry::source_bounds(geometry, raw.width, raw.height, l0, t0, w0, h0);
-            let source = heal(Self::crop_from_raw(raw, x0, y0, x1 - x0, y1 - y0));
+            let source = heal(fetch(x0, y0, x1 - x0, y1 - y0));
             geometry::transform_region(&source, geometry, l0, t0, w0, h0)
         };
         (region, (left - l0, top - t0, width, height))
@@ -1313,8 +1318,13 @@ mod tests {
         s.detail.sharpening.masking = 20.0;
         let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
         let whole = render(&WorkingImage::from_raw(&raw, w), &p).rgba;
-        let (region, (cx, cy, cw, ch)) =
-            WorkingImage::region_with_margin(&raw, &p, &DevelopSettings::default(), 25, 20, 12, 9);
+        let (region, (cx, cy, cw, ch)) = WorkingImage::region_with_margin(
+            &raw,
+            &p,
+            &DevelopSettings::default(),
+            None,
+            (25, 20, 12, 9),
+        );
         let part = render(&region, &p).rgba;
         assert_eq!((cw, ch), (12, 9));
         for y in 0..ch {
@@ -1358,7 +1368,7 @@ mod tests {
         let whole = geometry::transform(&whole_src, &s.geometry);
         let full = render(&whole, &p).rgba;
         let (region, (cx, cy, cw, ch)) =
-            WorkingImage::region_with_margin(&raw, &p, &s, 14, 9, 10, 8);
+            WorkingImage::region_with_margin(&raw, &p, &s, None, (14, 9, 10, 8));
         let part = render(&region, &p).rgba;
         for y in 0..ch {
             for x in 0..cw {
