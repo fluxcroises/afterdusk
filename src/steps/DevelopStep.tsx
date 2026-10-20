@@ -15,6 +15,7 @@ import {
   EffectsSection,
   HslSection,
 } from "../components/DevelopAdvanced";
+import { type Box, CropOverlay, CropSection } from "../components/DevelopCrop";
 import { SnapshotsSection, VersionsSection } from "../components/DevelopVersions";
 import { EmptyState } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
@@ -50,8 +51,27 @@ function DevelopCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
   const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const cropping = useDevelop((s) => s.cropping);
   const zoomed = zoom !== null && zoomFrame !== null;
   const dpr = window.devicePixelRatio || 1;
+  const [box, setBox] = useState<Box | null>(null);
+
+  // Boîte de l'image affichée, pour y poser le cadre de recadrage.
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas || !cropping) return;
+    const measure = () =>
+      setBox({
+        left: canvas.offsetLeft,
+        top: canvas.offsetTop,
+        width: canvas.offsetWidth,
+        height: canvas.offsetHeight,
+      });
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [cropping, frame]);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -87,6 +107,7 @@ function DevelopCanvas() {
   }, [frame, before, compare, zoomed, zoomFrame, dpr]);
 
   const onDown = (e: PointerEvent<HTMLCanvasElement>) => {
+    if (cropping) return;
     press.current = { x: e.clientX, y: e.clientY, moved: false };
     if (zoomed && !picking) {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -133,22 +154,25 @@ function DevelopCanvas() {
 
   if (!frame) return null;
   return (
-    <canvas
-      ref={ref}
-      className="develop-canvas"
-      data-picking={picking || undefined}
-      data-zoom={zoomed || undefined}
-      data-dragging={dragging || undefined}
-      aria-label={t("develop.image")}
-      title={t(zoomed ? "develop.zoom.exitHint" : "develop.zoom.hint")}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerCancel={() => {
-        press.current = null;
-        setDragging(false);
-      }}
-    />
+    <>
+      <canvas
+        ref={ref}
+        className="develop-canvas"
+        data-picking={picking || undefined}
+        data-zoom={zoomed || undefined}
+        data-dragging={dragging || undefined}
+        aria-label={t("develop.image")}
+        title={t(zoomed ? "develop.zoom.exitHint" : "develop.zoom.hint")}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={() => {
+          press.current = null;
+          setDragging(false);
+        }}
+      />
+      {cropping && box && <CropOverlay box={box} />}
+    </>
   );
 }
 
@@ -156,6 +180,7 @@ function SettingsPanel() {
   return (
     <>
       <HistogramSection />
+      <CropSection />
       <LightSection />
       <ColorSection />
       <CurveSection />
@@ -253,6 +278,34 @@ export function DevelopStep() {
       const state = useDevelop.getState();
       if (e.key === "\\") {
         state.setCompare(state.compare === "before" ? "off" : "before");
+        e.preventDefault();
+        return;
+      }
+      const letter = (k: string) =>
+        e.code === `Key${k.toUpperCase()}` || (e.code === "" && e.key.toLowerCase() === k);
+      const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+      // R : outil de recadrage ; Entrée l'applique, Échap l'annule ; X change
+      // l'orientation du ratio.
+      if (plain && letter("r")) {
+        if (state.cropping) state.finishCrop();
+        else void state.startCrop();
+        e.preventDefault();
+        return;
+      }
+      if (state.cropping && e.key === "Enter") {
+        state.finishCrop();
+        e.preventDefault();
+        return;
+      }
+      if (state.cropping && e.key === "Escape") {
+        void state.cancelCrop();
+        e.preventDefault();
+        return;
+      }
+      const aspect = state.settings?.geometry?.aspect;
+      if (state.cropping && plain && letter("x") && aspect && aspect !== "free") {
+        const c = state.settings?.geometry?.crop ?? { left: 0, top: 0, right: 1, bottom: 1 };
+        void state.setAspect(aspect, !(c.bottom - c.top > c.right - c.left));
         e.preventDefault();
         return;
       }

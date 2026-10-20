@@ -99,6 +99,20 @@ describe("libellés de l'historique", () => {
     expect(describeStep(step("effects.grain.size", {}), t, "fr")).toBe("Grain : taille 25");
   });
 
+  it("géométrie", () => {
+    const t = i18next.getFixedT("fr");
+    expect(describeStep(step("geometry.angle", { geometry: { angle: -2.4 } }), t, "fr")).toBe(
+      "Redressement -2,4°",
+    );
+    expect(describeStep(step("geometry.auto", { geometry: { angle: 3 } }), t, "fr")).toBe(
+      "Redressement automatique +3,0°",
+    );
+    expect(describeStep(step("geometry.aspect", { geometry: { aspect: "3:2" } }), t, "fr")).toBe(
+      "Ratio 3:2",
+    );
+    expect(describeStep(step("geometry.crop", {}), t, "fr")).toBe("Recadrage");
+  });
+
   it("en anglais", () => {
     const t = i18next.getFixedT("en");
     expect(describeStep(step("light.exposure", { light: { exposure: -1.5 } }), t, "en")).toBe(

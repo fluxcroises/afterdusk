@@ -69,6 +69,22 @@ export function describeStep(
       ? t("develop.history.autoValue", { name, value })
       : t("develop.history.value", { name, value });
   }
+  if (section === "geometry" && key) {
+    const angle = new Intl.NumberFormat(language, {
+      signDisplay: "exceptZero",
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(s.geometry?.angle ?? 0);
+    const aspect = s.geometry?.aspect ?? "free";
+    return t(`develop.history.geometry.${key}`, {
+      value:
+        key === "aspect"
+          ? aspect.includes(":")
+            ? aspect
+            : t(`develop.crop.aspects.${aspect}`)
+          : angle,
+    });
+  }
   if (section === "curve" && key) {
     return t("develop.history.curve", { channel: t(`develop.curve.${key}`) });
   }

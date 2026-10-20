@@ -55,6 +55,61 @@ export const DETAIL_DEFAULTS = {
 export type DetailGroup = keyof typeof DETAIL_DEFAULTS;
 export type EffectKey<G extends EffectGroup> = keyof (typeof EFFECT_DEFAULTS)[G];
 
+/** Rectangle de recadrage, en fractions de l'image orientée et redressée. */
+export interface CropRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+export const FULL_CROP: CropRect = { left: 0, top: 0, right: 1, bottom: 1 };
+
+/** Géométrie, miroir de `develop::settings::Geometry` (JSON creux). */
+export interface Geometry {
+  crop?: CropRect;
+  angle?: number;
+  quarter?: number;
+  flipH?: boolean;
+  flipV?: boolean;
+  aspect?: string;
+}
+
+/** Ratios proposés par l'outil de recadrage (largeur:hauteur, en paysage). */
+export const ASPECTS = ["free", "original", "1:1", "4:5", "3:2", "16:9"] as const;
+export type Aspect = (typeof ASPECTS)[number];
+
+/** Rapport largeur / hauteur d'un ratio, `original` étant celui du canevas. */
+export function aspectRatio(aspect: string | undefined, canvas: number): number | null {
+  if (!aspect || aspect === "free") return null;
+  if (aspect === "original") return canvas;
+  const [a, b] = aspect.split(":").map(Number);
+  return a && b ? a / b : null;
+}
+
+/** Cadre arrondi à 1/10 000, borné à l'image : pas de dérive après des allers-retours. */
+function roundCrop(c: CropRect): CropRect {
+  const r = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 10000) / 10000;
+  return { left: r(c.left), top: r(c.top), right: r(c.right), bottom: r(c.bottom) };
+}
+
+function isFullCrop(c: CropRect | undefined): boolean {
+  return !c || (c.left === 0 && c.top === 0 && c.right === 1 && c.bottom === 1);
+}
+
+/** Géométrie creuse : les valeurs par défaut disparaissent. */
+function sparseGeometry(g: Geometry): Geometry | undefined {
+  const out: Geometry = {};
+  const crop = g.crop && roundCrop(g.crop);
+  if (!isFullCrop(crop) && crop) out.crop = crop;
+  if (g.angle) out.angle = g.angle;
+  if (g.quarter) out.quarter = g.quarter;
+  if (g.flipH) out.flipH = true;
+  if (g.flipV) out.flipV = true;
+  if (g.aspect && g.aspect !== "free") out.aspect = g.aspect;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 /** Réglages de retouche, miroir de `develop::settings::DevelopSettings` (JSON creux). */
 export interface DevelopSettings {
   version: number;
@@ -67,6 +122,7 @@ export interface DevelopSettings {
     vignette?: Partial<Record<EffectKey<"vignette">, number>>;
     grain?: Partial<Record<EffectKey<"grain">, number>>;
   };
+  geometry?: Geometry;
   detail?: {
     sharpening?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["sharpening"], number>>;
     noise?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["noise"], number>>;
@@ -257,6 +313,10 @@ interface DevelopState {
   compare: CompareMode;
   /** Rendu de l'original (réglages neutres), pour l'avant/après. */
   beforeFrame: DevelopFrame | null;
+  /** Outil de recadrage ouvert : l'image entière redressée est affichée. */
+  cropping: boolean;
+  /** Position de l'historique à l'ouverture de l'outil, pour l'annuler. */
+  cropStart: number | null;
   /** Zoom 100 % en cours, ou rien (photo ajustée à l'écran). */
   zoom: ZoomView | null;
   /** Dimensions de l'original en pleine définition, une fois décodé. */
@@ -292,6 +352,17 @@ interface DevelopState {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   setCompare: (mode: CompareMode) => void;
+  startCrop: () => Promise<void>;
+  finishCrop: () => void;
+  cancelCrop: () => Promise<void>;
+  setCrop: (crop: CropRect) => Promise<void>;
+  setAngle: (angle: number, label?: string) => Promise<void>;
+  autoStraighten: () => Promise<void>;
+  /** Quart de tour : +1 dans le sens horaire, -1 dans l'autre. */
+  rotateQuarter: (direction: 1 | -1) => void;
+  flip: (axis: "h" | "v") => void;
+  setAspect: (aspect: string, portrait?: boolean) => Promise<void>;
+  resetGeometry: () => void;
   /** Zoom 100 % centré sur un point de la photo (fractions de 0 à 1). */
   zoomAt: (fx: number, fy: number) => Promise<void>;
   /** Déplace la région zoomée, en pixels de l'écran. */
@@ -348,11 +419,42 @@ let pendingLabel: string | null = null;
 
 export const useDevelop = create<DevelopState>()((set, get) => {
   /** Un seul rendu à la fois ; les gestes reçus entre-temps n'en déclenchent qu'un. */
+  /** Réglages rendus : dans l'outil de recadrage, l'image entière redressée. */
+  function renderedSettings(): DevelopSettings | null {
+    const { settings, cropping } = get();
+    if (!settings || !cropping || !settings.geometry?.crop) return settings;
+    return put(settings, "geometry", sparseGeometry({ ...settings.geometry, crop: FULL_CROP }));
+  }
+
+  /** Nouvelle géométrie : le zoom et ses dimensions sont à refaire. */
+  function changeGeometry(geometry: Geometry, label: string) {
+    const { settings } = get();
+    if (!settings) return;
+    set({ zoom: null, zoomFrame: null, fullSize: null });
+    change(put(settings, "geometry", sparseGeometry(geometry)), label);
+  }
+
+  /** Recadrage ramené dans l'image redressée, par le cœur. */
+  async function constrained(geometry: Geometry): Promise<Geometry> {
+    if (!geometry.angle) return geometry;
+    try {
+      const g = await invoke<Geometry>("develop_geometry_constrain", {
+        geometry: { ...geometry, crop: geometry.crop ?? FULL_CROP },
+      });
+      return { ...geometry, crop: g.crop };
+    } catch (e) {
+      set({ error: toCommandError(e) });
+      return geometry;
+    }
+  }
+
   /** Décode l'original en pleine définition (une fois par photo). */
   function ensureFull(mediaId: number): Promise<boolean> {
     if (get().fullSize) return Promise.resolve(true);
     if (fullDecode?.mediaId === mediaId) return fullDecode.promise;
-    const promise = invoke<{ width: number; height: number }>("develop_zoom_open")
+    const promise = invoke<{ width: number; height: number }>("develop_zoom_open", {
+      geometry: get().settings?.geometry ?? null,
+    })
       .then((opened) => {
         if (get().mediaId !== mediaId) return false;
         set({ fullSize: { width: opened.width, height: opened.height } });
@@ -425,7 +527,10 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         const { settings, mediaId, clipping } = get();
         if (!settings || mediaId === null) return;
         const started = performance.now();
-        const buffer = await invoke<ArrayBuffer>("develop_render", { settings, clipping });
+        const buffer = await invoke<ArrayBuffer>("develop_render", {
+          settings: renderedSettings(),
+          clipping,
+        });
         if (get().mediaId !== mediaId) return;
         set({ frame: parseFrame(buffer), roundTripMs: performance.now() - started });
       } while (renderAgain);
@@ -550,6 +655,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     zoomLoading: false,
     zoomFrame: null,
     viewport: { width: 1, height: 1 },
+    cropping: false,
+    cropStart: null,
 
     open: async (mediaId) => {
       if (get().mediaId === mediaId && get().settings) return;
@@ -571,6 +678,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         fullSize: null,
         zoomLoading: false,
         zoomFrame: null,
+        cropping: false,
+        cropStart: null,
       });
       try {
         const opened = await invoke<DevelopOpened>("develop_open", { mediaId });
@@ -765,9 +874,133 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       if (mode !== "off") void loadBefore();
     },
 
+    startCrop: async () => {
+      if (!get().settings || get().cropping) return;
+      await get().flush();
+      set({
+        cropping: true,
+        cropStart: get().history?.current ?? 0,
+        zoom: null,
+        zoomFrame: null,
+        compare: "off",
+      });
+      void render();
+    },
+
+    finishCrop: () => {
+      if (!get().cropping) return;
+      set({ cropping: false, cropStart: null });
+      void render();
+    },
+
+    cancelCrop: async () => {
+      const { cropStart, history } = get();
+      set({ cropping: false, cropStart: null });
+      await get().flush();
+      if (cropStart !== null && history && get().history?.current !== cropStart) {
+        await get().goTo(cropStart);
+      } else {
+        void render();
+      }
+    },
+
+    setCrop: async (crop) => {
+      const geometry = get().settings?.geometry ?? {};
+      const r = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 10000) / 10000;
+      const next = await constrained({
+        ...geometry,
+        crop: {
+          left: r(crop.left),
+          top: r(crop.top),
+          right: r(crop.right),
+          bottom: r(crop.bottom),
+        },
+      });
+      changeGeometry(next, "geometry.crop");
+    },
+
+    setAngle: async (angle, label = "geometry.angle") => {
+      const geometry = get().settings?.geometry ?? {};
+      const a = Math.round(Math.min(45, Math.max(-45, angle)) * 10) / 10;
+      // Le cadre part de l'image entière (ou du recadrage actuel) puis rétrécit.
+      const next = await constrained({ ...geometry, angle: a });
+      changeGeometry(next, label);
+    },
+
+    autoStraighten: async () => {
+      const { settings } = get();
+      if (!settings) return;
+      const angle = await computeAuto<number>("develop_auto_straighten", {
+        geometry: settings.geometry ?? {},
+      });
+      if (angle !== null) await get().setAngle(angle, "geometry.auto");
+    },
+
+    rotateQuarter: (direction) => {
+      const g = get().settings?.geometry ?? {};
+      const c = g.crop ?? FULL_CROP;
+      // Le cadre tourne avec l'image.
+      const crop =
+        direction === 1
+          ? { left: 1 - c.bottom, top: c.left, right: 1 - c.top, bottom: c.right }
+          : { left: c.top, top: 1 - c.right, right: c.bottom, bottom: 1 - c.left };
+      const quarter = ((((g.quarter ?? 0) + direction) % 4) + 4) % 4;
+      changeGeometry({ ...g, quarter, crop }, "geometry.quarter");
+    },
+
+    flip: (axis) => {
+      const g = get().settings?.geometry ?? {};
+      const c = g.crop ?? FULL_CROP;
+      const next =
+        axis === "h"
+          ? { ...g, flipH: !g.flipH, crop: { ...c, left: 1 - c.right, right: 1 - c.left } }
+          : { ...g, flipV: !g.flipV, crop: { ...c, top: 1 - c.bottom, bottom: 1 - c.top } };
+      // Un miroir change le sens du redressement.
+      next.angle = -(g.angle ?? 0);
+      changeGeometry(next, "geometry.flip");
+    },
+
+    setAspect: async (aspect, portrait) => {
+      const { settings, frame } = get();
+      if (!settings || !frame) return;
+      const g = settings.geometry ?? {};
+      const c = g.crop ?? FULL_CROP;
+      // Proportions du canevas (l'outil l'affiche en entier).
+      const canvas = frame.width / frame.height;
+      const base = aspectRatio(aspect, canvas);
+      let crop = c;
+      if (base !== null) {
+        const tall = portrait ?? (c.bottom - c.top) * (1 / canvas) > c.right - c.left;
+        const want = tall ? 1 / base : base;
+        // Plus grand cadre de ce ratio centré sur l'actuel, dans le canevas.
+        const cx = (c.left + c.right) / 2;
+        const cy = (c.top + c.bottom) / 2;
+        let w = c.right - c.left;
+        let h = (w * canvas) / want;
+        if (h > c.bottom - c.top) {
+          h = c.bottom - c.top;
+          w = (h * want) / canvas;
+        }
+        const half = (v: number, lo: number) => Math.min(v / 2, lo, 1 - lo);
+        const hw = half(w, cx);
+        const hh = half(h, cy);
+        const k = Math.min(hw / (w / 2), hh / (h / 2));
+        crop = {
+          left: cx - (w / 2) * k,
+          right: cx + (w / 2) * k,
+          top: cy - (h / 2) * k,
+          bottom: cy + (h / 2) * k,
+        };
+      }
+      const next = await constrained({ ...g, aspect, crop });
+      changeGeometry(next, "geometry.aspect");
+    },
+
+    resetGeometry: () => changeGeometry({}, "geometry.reset"),
+
     zoomAt: async (fx, fy) => {
       const { mediaId } = get();
-      if (mediaId === null || get().zoomLoading) return;
+      if (mediaId === null || get().zoomLoading || get().cropping) return;
       if (!get().fullSize) {
         set({ zoomLoading: true });
         const ready = await ensureFull(mediaId);
@@ -908,6 +1141,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         zoom: null,
         fullSize: null,
         zoomFrame: null,
+        cropping: false,
+        cropStart: null,
       });
       await invoke("develop_close").catch(() => undefined);
     },

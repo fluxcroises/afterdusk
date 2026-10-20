@@ -99,6 +99,14 @@ beforeEach(() => {
       };
     if (cmd === "develop_render" || cmd === "develop_zoom_render") return frame(true);
     if (cmd === "develop_zoom_open") return { width: 6000, height: 4000, decodeMs: 900 };
+    if (cmd === "develop_geometry_constrain") {
+      // Le cœur rétrécit le cadre de 10 % quand l'image est redressée.
+      const g = a.geometry as {
+        crop: { left: number; top: number; right: number; bottom: number };
+      };
+      return { ...g, crop: { left: 0.05, top: 0.05, right: 0.95, bottom: 0.95 } };
+    }
+    if (cmd === "develop_auto_straighten") return -2.4;
     if (cmd === "develop_pick_white") return { mode: "custom", temperature: 3900, tint: 6 };
     if (cmd === "develop_auto_light")
       return {
@@ -475,6 +483,80 @@ describe("Retoucher", () => {
     useDevelop.getState().setViewport(1000, 800);
     await useDevelop.getState().zoomAt(0.5, 0.5);
     await useDevelop.getState().open(8);
+    expect(useDevelop.getState().zoom).toBeNull();
+    expect(useDevelop.getState().fullSize).toBeNull();
+  });
+
+  it("outil de recadrage : l'image entière rendue, le cadre enregistré à part", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().setCrop({ left: 0.1, top: 0.2, right: 0.7, bottom: 0.9 });
+    await useDevelop.getState().flush();
+    const lastRender = () => {
+      const all = calls("develop_render");
+      return all[all.length - 1]?.[1] as { settings: { geometry?: object } } | undefined;
+    };
+    await useDevelop.getState().startCrop();
+    await vi.waitFor(() => expect(useDevelop.getState().cropping).toBe(true));
+    // Dans l'outil : rendu sans recadrage.
+    await vi.waitFor(() => expect(lastRender()?.settings.geometry).toBeUndefined());
+    useDevelop.getState().finishCrop();
+    await vi.waitFor(() =>
+      expect(lastRender()?.settings.geometry).toEqual({
+        crop: { left: 0.1, top: 0.2, right: 0.7, bottom: 0.9 },
+      }),
+    );
+  });
+
+  it("quart de tour et miroir font suivre le cadre ; le redressement le contraint", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().setCrop({ left: 0.1, top: 0.2, right: 0.5, bottom: 0.6 });
+    useDevelop.getState().rotateQuarter(1);
+    expect(useDevelop.getState().settings?.geometry).toEqual({
+      quarter: 1,
+      crop: { left: 0.4, top: 0.1, right: 0.8, bottom: 0.5 },
+    });
+    useDevelop.getState().rotateQuarter(-1);
+    expect(useDevelop.getState().settings?.geometry?.crop).toEqual({
+      left: 0.1,
+      top: 0.2,
+      right: 0.5,
+      bottom: 0.6,
+    });
+    expect(useDevelop.getState().settings?.geometry?.quarter).toBeUndefined();
+    useDevelop.getState().flip("h");
+    expect(useDevelop.getState().settings?.geometry).toMatchObject({
+      flipH: true,
+      crop: { left: 0.5, right: 0.9 },
+    });
+    await useDevelop.getState().autoStraighten();
+    expect(useDevelop.getState().settings?.geometry).toMatchObject({
+      angle: -2.4,
+      crop: { left: 0.05, right: 0.95 },
+    });
+    await useDevelop.getState().flush();
+    expect(saves()[saves().length - 1]).toMatchObject({ label: "geometry.auto" });
+  });
+
+  it("annuler le recadrage revient à l'état d'avant l'outil", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setLight("exposure", 0.5);
+    await useDevelop.getState().startCrop();
+    await useDevelop.getState().setCrop({ left: 0.2, top: 0.2, right: 0.8, bottom: 0.8 });
+    useDevelop.getState().rotateQuarter(1);
+    await useDevelop.getState().cancelCrop();
+    expect(useDevelop.getState().cropping).toBe(false);
+    expect(useDevelop.getState().settings).toEqual({
+      version: 1,
+      process: 1,
+      light: { exposure: 0.5 },
+    });
+  });
+
+  it("une nouvelle géométrie quitte le zoom", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setViewport(1000, 800);
+    await useDevelop.getState().zoomAt(0.5, 0.5);
+    useDevelop.getState().flip("v");
     expect(useDevelop.getState().zoom).toBeNull();
     expect(useDevelop.getState().fullSize).toBeNull();
   });

@@ -536,7 +536,16 @@
       "versionCreated": "Copie virtuelle créée",
       "curve": "Courbe : {{channel}}",
       "hsl": "{{kind}} : {{hue}} {{value}}",
-      "effect": "{{group}} : {{name}} {{value}}"
+      "effect": "{{group}} : {{name}} {{value}}",
+      "geometry": {
+        "crop": "Recadrage",
+        "angle": "Redressement {{value}}°",
+        "auto": "Redressement automatique {{value}}°",
+        "quarter": "Quart de tour",
+        "flip": "Miroir",
+        "aspect": "Ratio {{value}}",
+        "reset": "Géométrie réinitialisée"
+      }
     },
     "compare": {
       "hold": "Avant (maintenir pour voir l'original)",
@@ -618,6 +627,28 @@
       "noise_luminance": "Luminance",
       "noise_luminanceDetail": "Détail de luminance",
       "noise_color": "Couleur"
+    },
+    "crop": {
+      "title": "Recadrage et redressement",
+      "open": "Recadrer (R)",
+      "frame": "Cadre de recadrage",
+      "aspect": "Ratio",
+      "aspects": {
+        "free": "Libre",
+        "original": "Original"
+      },
+      "swap": "Portrait ou paysage",
+      "rotateLeft": "Quart de tour à gauche",
+      "rotateRight": "Quart de tour à droite",
+      "flipH": "Miroir horizontal",
+      "flipV": "Miroir vertical",
+      "straighten": "Redresser",
+      "degrees": "{{value}}°",
+      "autoHint": "Redresser d'après les lignes de la photo",
+      "hint": "Glissez les coins ou les côtés, ou le cadre pour le déplacer. Entrée applique, Échap annule.",
+      "reset": "Réinitialiser",
+      "cancel": "Annuler",
+      "done": "Terminé"
     }
   }
 }

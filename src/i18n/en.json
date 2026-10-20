@@ -536,7 +536,16 @@
       "versionCreated": "Virtual copy created",
       "curve": "Curve: {{channel}}",
       "hsl": "{{kind}}: {{hue}} {{value}}",
-      "effect": "{{group}}: {{name}} {{value}}"
+      "effect": "{{group}}: {{name}} {{value}}",
+      "geometry": {
+        "crop": "Crop",
+        "angle": "Straighten {{value}}°",
+        "auto": "Auto straighten {{value}}°",
+        "quarter": "Quarter turn",
+        "flip": "Flip",
+        "aspect": "Aspect {{value}}",
+        "reset": "Geometry reset"
+      }
     },
     "compare": {
       "hold": "Before (hold to see the original)",
@@ -618,6 +627,28 @@
       "noise_luminance": "Luminance",
       "noise_luminanceDetail": "Luminance detail",
       "noise_color": "Color"
+    },
+    "crop": {
+      "title": "Crop and straighten",
+      "open": "Crop (R)",
+      "frame": "Crop frame",
+      "aspect": "Aspect",
+      "aspects": {
+        "free": "Free",
+        "original": "Original"
+      },
+      "swap": "Portrait or landscape",
+      "rotateLeft": "Rotate left",
+      "rotateRight": "Rotate right",
+      "flipH": "Flip horizontal",
+      "flipV": "Flip vertical",
+      "straighten": "Straighten",
+      "degrees": "{{value}}°",
+      "autoHint": "Straighten from the lines in the photo",
+      "hint": "Drag the corners or edges, or the frame to move it. Enter applies, Esc cancels.",
+      "reset": "Reset",
+      "cancel": "Cancel",
+      "done": "Done"
     }
   }
 }
