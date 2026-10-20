@@ -18,9 +18,9 @@ use crate::develop::auto;
 use crate::develop::geometry;
 use crate::develop::gpu::{GpuImage, GpuRenderer};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
-use crate::develop::settings::Geometry;
-use crate::develop::settings::{DevelopSettings, WhiteBalance};
+use crate::develop::settings::{DevelopSettings, Geometry, Spot, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
+use crate::develop::spots;
 use crate::develop::store::{self, History, ORIGINAL, Snapshot, StoreError, Version};
 use crate::develop::white;
 use crate::raw::DevelopedRaw;
@@ -63,9 +63,11 @@ struct Session {
     media_id: i64,
     /// Image de travail avant géométrie (orientation du boîtier seulement).
     base: WorkingImage,
-    /// Image de travail transformée par `geometry`, celle qui est rendue.
+    /// Image de travail corrigée par `spots` puis transformée par
+    /// `geometry`, celle qui est rendue.
     image: WorkingImage,
     geometry: Geometry,
+    spots: Vec<Spot>,
     gpu: Option<GpuImage>,
     /// Original en pleine définition, décodé au premier zoom 100 %.
     full: Option<Arc<DevelopedRaw>>,
@@ -111,6 +113,9 @@ pub struct DevelopOpened {
     pub media_id: i64,
     pub width: u32,
     pub height: u32,
+    /// Image avant géométrie, repère des corrections de défauts.
+    pub source_width: u32,
+    pub source_height: u32,
     pub settings: DevelopSettings,
     /// Balance du boîtier, en kelvins et en teinte, pour les curseurs.
     pub as_shot: AsShot,
@@ -151,7 +156,8 @@ pub async fn develop_open(
         let decode_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
         let settings = store::load(&conn, media_id, ORIGINAL)?;
         let geometry = settings.geometry.clone();
-        let image = geometry::transform(&base, &geometry);
+        let spot_list = settings.spots.clone();
+        let image = geometry::transform(&spots::healed(&base, &spot_list), &geometry);
         let renderer = engine.gpu();
         let gpu = renderer.and_then(|r| {
             r.upload(&image)
@@ -163,6 +169,8 @@ pub async fn develop_open(
             media_id,
             width: image.width,
             height: image.height,
+            source_width: base.width,
+            source_height: base.height,
             settings,
             as_shot: AsShot {
                 temperature: temperature.round(),
@@ -191,6 +199,7 @@ pub async fn develop_open(
             base,
             image,
             geometry,
+            spots: spot_list,
             gpu,
             full: None,
         });
@@ -200,24 +209,17 @@ pub async fn develop_open(
 }
 
 /// Rendu au GPU si possible, au processeur sinon, puis mis en forme pour
-/// l'interface : en-tête, histogramme, pixels.
-fn render_frame(
-    engine: &DevelopEngine,
-    image: &WorkingImage,
-    uploaded: Option<&GpuImage>,
-    params: &RenderParams,
-) -> Vec<u8> {
-    render_frame_cut(engine, image, uploaded, params, None)
-}
-
-/// Comme [`render_frame`], en ne gardant que la partie `cut` (gauche, haut,
-/// largeur, hauteur) de l'image rendue : la marge autour d'une région zoomée.
+/// l'interface : en-tête, histogramme, pixels. `cut` (gauche, haut, largeur,
+/// hauteur) ne garde qu'une partie de l'image rendue : sans la marge autour
+/// d'une région zoomée. `dust` : visualisation des poussières, peinte après
+/// l'histogramme.
 fn render_frame_cut(
     engine: &DevelopEngine,
     image: &WorkingImage,
     uploaded: Option<&GpuImage>,
     params: &RenderParams,
     cut: Option<(u32, u32, u32, u32)>,
+    dust: bool,
 ) -> Vec<u8> {
     let started = Instant::now();
     let gpu = engine.gpu().zip(uploaded).and_then(|(r, img)| {
@@ -226,7 +228,11 @@ fn render_frame_cut(
             .ok()
     });
     let on_gpu = gpu.is_some();
-    let rendered = gpu.unwrap_or_else(|| render(image, params));
+    let mut rendered = gpu.unwrap_or_else(|| render(image, params));
+    if dust {
+        let (_, _, fw, fh) = image.frame();
+        spots::paint_dust(&mut rendered.rgba, image.width, image.height, fw.max(fh));
+    }
     let micros = u32::try_from(started.elapsed().as_micros()).unwrap_or(u32::MAX);
     let (cx, cy, cw, ch) = cut.unwrap_or((0, 0, image.width, image.height));
     let mut out =
@@ -261,26 +267,30 @@ pub async fn develop_render(
             .as_mut()
             .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
         let settings = settings.sanitized();
-        // Nouvelle géométrie : l'image de travail est rééchantillonnée, une fois.
-        if !settings.geometry.same_image(&session.geometry) {
-            session.image = geometry::transform(&session.base, &settings.geometry);
+        // Nouvelle géométrie ou nouvelles corrections : l'image de travail est
+        // refaite, une fois.
+        if !settings.geometry.same_image(&session.geometry) || settings.spots != session.spots {
+            session.image = geometry::transform(
+                &spots::healed(&session.base, &settings.spots),
+                &settings.geometry,
+            );
             session.gpu = engine.gpu().and_then(|r| {
                 r.upload(&session.image)
                     .inspect_err(|e| eprintln!("rendu au processeur : {e}"))
                     .ok()
             });
             session.geometry = settings.geometry.clone();
+            session.spots = settings.spots.clone();
         }
-        let params = RenderParams::from_settings(
-            &settings,
-            session.image.as_shot_white,
-            clipping.unwrap_or_default(),
-        );
-        Ok(render_frame(
+        let clipping = clipping.unwrap_or_default();
+        let params = RenderParams::from_settings(&settings, session.image.as_shot_white, clipping);
+        Ok(render_frame_cut(
             &engine,
             &session.image,
             session.gpu.as_ref(),
             &params,
+            None,
+            clipping.dust,
         ))
     })
     .await?;
@@ -377,22 +387,12 @@ pub async fn develop_zoom_render(
                 .ok_or_else(|| CommandError::new("internal", "zoom non préparé"))?
         };
         let settings = settings.sanitized();
-        let params = RenderParams::from_settings(
-            &settings,
-            full.as_shot_white,
-            clipping.unwrap_or_default(),
-        );
+        let clipping = clipping.unwrap_or_default();
+        let params = RenderParams::from_settings(&settings, full.as_shot_white, clipping);
         // Réduction du bruit et netteté regardent les voisins : la région est
         // rendue avec une marge, puis rognée, pour des bords justes.
-        let (region, cut) = WorkingImage::region_with_margin(
-            &full,
-            &params,
-            &settings.geometry,
-            left,
-            top,
-            width,
-            height,
-        );
+        let (region, cut) =
+            WorkingImage::region_with_margin(&full, &params, &settings, left, top, width, height);
         let uploaded = engine.gpu().and_then(|r| r.upload(&region).ok());
         Ok(render_frame_cut(
             &engine,
@@ -400,6 +400,7 @@ pub async fn develop_zoom_render(
             uploaded.as_ref(),
             &params,
             Some(cut),
+            clipping.dust,
         ))
     })
     .await?;
@@ -737,6 +738,33 @@ pub async fn develop_auto_straighten(app: AppHandle, geometry: Geometry) -> Comm
         Ok(geometry::auto_straighten(&geometry::transform(
             base, &oriented,
         )))
+    })
+    .await
+}
+
+/// Source proposée pour une nouvelle correction de défaut en (x, y), de rayon
+/// `radius` (fractions de l'image avant géométrie), loin des autres
+/// corrections.
+#[tauri::command]
+pub async fn develop_spot_source(
+    app: AppHandle,
+    x: f64,
+    y: f64,
+    radius: f64,
+    others: Vec<Spot>,
+) -> CommandResult<[f64; 2]> {
+    blocking(move || {
+        let engine = app.state::<DevelopEngine>();
+        let session = engine
+            .session
+            .lock()
+            .map_err(|e| CommandError::new("internal", e))?;
+        let base = &session
+            .as_ref()
+            .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
+            .base;
+        let (sx, sy) = spots::find_source(base, x, y, radius, &others);
+        Ok([sx, sy])
     })
     .await
 }

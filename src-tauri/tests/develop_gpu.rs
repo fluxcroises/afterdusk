@@ -149,6 +149,7 @@ fn cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
     let both = Clipping {
         highlights: true,
         shadows: true,
+        dust: false,
     };
     vec![
         ("neutre", DevelopSettings::default(), Clipping::default()),

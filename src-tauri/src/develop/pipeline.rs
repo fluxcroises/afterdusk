@@ -16,7 +16,7 @@ use super::curve;
 use super::detail::{self, DetailParams, Radii};
 use super::geometry;
 use super::settings::DevelopSettings;
-use super::settings::Geometry;
+use super::spots;
 use super::white;
 #[cfg(test)]
 use crate::raw::D65_WHITE;
@@ -305,6 +305,34 @@ impl WorkingImage {
         }
     }
 
+    /// Région (left, top, width, height) de cette image (sa place dans
+    /// l'image entière, voir [`Self::frame`]), bornée à l'image entière.
+    pub fn sub(&self, left: u32, top: u32, width: u32, height: u32) -> Self {
+        let (ox, oy, fw, fh) = self.frame();
+        let l = left.clamp(ox, ox + self.width - 1);
+        let t = top.clamp(oy, oy + self.height - 1);
+        let w = width.clamp(1, ox + self.width - l);
+        let h = height.clamp(1, oy + self.height - t);
+        let mut rgb = Vec::with_capacity((w * h * 3) as usize);
+        for y in t - oy..t - oy + h {
+            let row = ((y * self.width + (l - ox)) * 3) as usize;
+            rgb.extend_from_slice(&self.rgb[row..row + (w * 3) as usize]);
+        }
+        Self {
+            width: w,
+            height: h,
+            rgb,
+            as_shot_white: self.as_shot_white,
+            scale: self.scale,
+            crop: Some(Crop {
+                left: l,
+                top: t,
+                full_width: fw,
+                full_height: fh,
+            }),
+        }
+    }
+
     /// Région (left, top, width, height) de l'image *rendue* (après géométrie)
     /// en pleine définition, pour le zoom : agrandie de la portée des passes de
     /// voisinage, avec la partie à garder de son rendu (gauche, haut, largeur,
@@ -312,12 +340,13 @@ impl WorkingImage {
     pub fn region_with_margin(
         raw: &DevelopedRaw,
         params: &RenderParams,
-        geometry: &Geometry,
+        settings: &DevelopSettings,
         left: u32,
         top: u32,
         width: u32,
         height: u32,
     ) -> (Self, (u32, u32, u32, u32)) {
+        let (geometry, spot_list) = (&settings.geometry, settings.spots.as_slice());
         let margin = if params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0 {
             Radii::at(&params.detail, 1.0).margin()
         } else {
@@ -331,12 +360,22 @@ impl WorkingImage {
         let (l0, t0) = (left.saturating_sub(margin), top.saturating_sub(margin));
         let w0 = (width + (left - l0) + margin).min(out.width - l0);
         let h0 = (height + (top - t0) + margin).min(out.height - t0);
+        // Corrections de défauts sur la partie utile de l'original, les
+        // sources lues dans l'original entier.
+        let heal = |mut img: Self| {
+            if !spot_list.is_empty() {
+                spots::heal(&mut img, spot_list, &|l, t, w, h| {
+                    Self::crop_from_raw(raw, l, t, w, h)
+                });
+            }
+            img
+        };
         let region = if geometry.is_identity() {
-            Self::crop_from_raw(raw, l0, t0, w0, h0)
+            heal(Self::crop_from_raw(raw, l0, t0, w0, h0))
         } else {
             let (x0, y0, x1, y1) =
                 geometry::source_bounds(geometry, raw.width, raw.height, l0, t0, w0, h0);
-            let source = Self::crop_from_raw(raw, x0, y0, x1 - x0, y1 - y0);
+            let source = heal(Self::crop_from_raw(raw, x0, y0, x1 - x0, y1 - y0));
             geometry::transform_region(&source, geometry, l0, t0, w0, h0)
         };
         (region, (left - l0, top - t0, width, height))
@@ -378,12 +417,14 @@ fn rec2020_to_xyz() -> white::Matrix {
     white::invert(&to_f64(&XYZ_TO_REC2020))
 }
 
-/// Avertissements d'écrêtage demandés par l'interface.
+/// Avertissements d'écrêtage demandés par l'interface, et visualisation des
+/// poussières (correcteur de défauts).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Clipping {
     pub highlights: bool,
     pub shadows: bool,
+    pub dust: bool,
 }
 
 /// Paramètres de rendu dérivés des réglages, communs au processeur et au GPU.
@@ -1273,7 +1314,7 @@ mod tests {
         let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
         let whole = render(&WorkingImage::from_raw(&raw, w), &p).rgba;
         let (region, (cx, cy, cw, ch)) =
-            WorkingImage::region_with_margin(&raw, &p, &Geometry::default(), 25, 20, 12, 9);
+            WorkingImage::region_with_margin(&raw, &p, &DevelopSettings::default(), 25, 20, 12, 9);
         let part = render(&region, &p).rgba;
         assert_eq!((cw, ch), (12, 9));
         for y in 0..ch {
@@ -1317,7 +1358,7 @@ mod tests {
         let whole = geometry::transform(&whole_src, &s.geometry);
         let full = render(&whole, &p).rgba;
         let (region, (cx, cy, cw, ch)) =
-            WorkingImage::region_with_margin(&raw, &p, &s.geometry, 14, 9, 10, 8);
+            WorkingImage::region_with_margin(&raw, &p, &s, 14, 9, 10, 8);
         let part = render(&region, &p).rgba;
         for y in 0..ch {
             for x in 0..cw {

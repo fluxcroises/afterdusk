@@ -453,6 +453,48 @@ impl Geometry {
     }
 }
 
+/// Mode d'une correction de défaut.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SpotMode {
+    /// La source, raccordée aux bords de la destination.
+    #[default]
+    Heal,
+    /// La source copiée telle quelle.
+    Clone,
+}
+
+impl SpotMode {
+    fn is_heal(&self) -> bool {
+        *self == Self::Heal
+    }
+}
+
+/// Correction de défaut (poussière, petite imperfection) : un disque remplacé
+/// par un disque voisin. Positions en fractions de la largeur et de la hauteur
+/// de l'image avant géométrie (orientation du boîtier appliquée), rayon en
+/// fraction de son côté long.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Spot {
+    pub x: f64,
+    pub y: f64,
+    pub radius: f64,
+    pub source_x: f64,
+    pub source_y: f64,
+    /// Adoucissement du bord, de 0 à 100.
+    #[serde(default = "fifty", skip_serializing_if = "is_fifty")]
+    pub feather: f64,
+    #[serde(default, skip_serializing_if = "SpotMode::is_heal")]
+    pub mode: SpotMode,
+}
+
+/// Rayon d'une correction, en fraction du côté long.
+pub const SPOT_RADIUS_MIN: f64 = 0.001;
+pub const SPOT_RADIUS_MAX: f64 = 0.1;
+/// Nombre de corrections au plus par photo.
+pub const SPOTS_MAX: usize = 1000;
+
 /// Plus petit côté d'un recadrage, en fraction de l'image.
 pub const CROP_MIN: f64 = 0.01;
 
@@ -493,6 +535,9 @@ pub struct DevelopSettings {
     pub effects: Effects,
     #[serde(default, skip_serializing_if = "Geometry::is_default")]
     pub geometry: Geometry,
+    /// Corrections de défauts, dans l'ordre où elles sont appliquées.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spots: Vec<Spot>,
 }
 
 impl Default for DevelopSettings {
@@ -508,6 +553,7 @@ impl Default for DevelopSettings {
             detail: Detail::default(),
             geometry: Geometry::default(),
             effects: Effects::default(),
+            spots: Vec::new(),
         }
     }
 }
@@ -643,6 +689,19 @@ impl DevelopSettings {
         g.amount = clamp(g.amount, 0.0, 100.0);
         g.size = clamp(g.size, 0.0, 100.0);
         g.roughness = clamp(g.roughness, 0.0, 100.0);
+        self.spots.retain(|s| {
+            [s.x, s.y, s.radius, s.source_x, s.source_y]
+                .iter()
+                .all(|v| v.is_finite())
+        });
+        self.spots.truncate(SPOTS_MAX);
+        for s in &mut self.spots {
+            for v in [&mut s.x, &mut s.y, &mut s.source_x, &mut s.source_y] {
+                *v = v.clamp(0.0, 1.0);
+            }
+            s.radius = s.radius.clamp(SPOT_RADIUS_MIN, SPOT_RADIUS_MAX);
+            s.feather = clamp(s.feather, 0.0, 100.0);
+        }
         self
     }
 
@@ -654,6 +713,7 @@ impl DevelopSettings {
             && self.detail.is_default()
             && self.geometry.is_identity()
             && self.effects.is_default()
+            && self.spots.is_empty()
     }
 }
 
@@ -765,5 +825,24 @@ mod tests {
         // Sans processus noté : le plus récent ; sections inconnues ignorées.
         let s = DevelopSettings::from_json(r#"{"version":1,"light":{"shadows":20}}"#).unwrap();
         assert_eq!((s.process, s.light.shadows), (LATEST_PROCESS, 20.0));
+    }
+
+    #[test]
+    fn corrections_de_defauts_creuses_et_bornees() {
+        let s = DevelopSettings::from_json(
+            r#"{"version":1,"spots":[{"x":0.5,"y":0.25,"radius":0.01,"sourceX":0.6,"sourceY":0.25},{"x":1.5,"y":-1,"radius":2,"sourceX":0.1,"sourceY":0.2,"feather":20,"mode":"clone"}]}"#,
+        )
+        .unwrap();
+        assert_eq!(s.spots.len(), 2);
+        assert_eq!((s.spots[0].feather, s.spots[0].mode), (50.0, SpotMode::Heal));
+        let b = &s.spots[1];
+        assert_eq!((b.x, b.y, b.radius), (1.0, 0.0, SPOT_RADIUS_MAX));
+        assert_eq!(b.mode, SpotMode::Clone);
+        assert!(!s.is_neutral());
+        // Valeurs par défaut absentes du JSON.
+        assert_eq!(
+            s.to_json(),
+            r#"{"version":1,"process":1,"spots":[{"x":0.5,"y":0.25,"radius":0.01,"sourceX":0.6,"sourceY":0.25},{"x":1.0,"y":0.0,"radius":0.1,"sourceX":0.1,"sourceY":0.2,"feather":20.0,"mode":"clone"}]}"#
+        );
     }
 }
