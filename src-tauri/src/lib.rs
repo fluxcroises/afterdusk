@@ -158,6 +158,8 @@ pub fn run() {
             commands::develop::develop_pick_white,
             commands::develop::develop_zoom_open,
             commands::develop::develop_zoom_render,
+            commands::develop::develop_geometry_constrain,
+            commands::develop::develop_auto_straighten,
             commands::develop::develop_auto_light,
             commands::develop::develop_auto_white,
             commands::develop::develop_save,

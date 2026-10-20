@@ -14,7 +14,9 @@ use serde::Deserialize;
 
 use super::curve;
 use super::detail::{self, DetailParams, Radii};
+use super::geometry;
 use super::settings::DevelopSettings;
+use super::settings::Geometry;
 use super::white;
 #[cfg(test)]
 use crate::raw::D65_WHITE;
@@ -303,12 +305,14 @@ impl WorkingImage {
         }
     }
 
-    /// Région à rendre pour afficher (left, top, width, height) de l'original :
-    /// agrandie de la portée des passes de voisinage, et la partie à garder
-    /// de son rendu (gauche, haut, largeur, hauteur).
+    /// Région (left, top, width, height) de l'image *rendue* (après géométrie)
+    /// en pleine définition, pour le zoom : agrandie de la portée des passes de
+    /// voisinage, avec la partie à garder de son rendu (gauche, haut, largeur,
+    /// hauteur). Seul le rectangle utile de l'original est converti.
     pub fn region_with_margin(
         raw: &DevelopedRaw,
         params: &RenderParams,
+        geometry: &Geometry,
         left: u32,
         top: u32,
         width: u32,
@@ -319,18 +323,22 @@ impl WorkingImage {
         } else {
             0
         };
-        let left = left.min(raw.width.saturating_sub(1));
-        let top = top.min(raw.height.saturating_sub(1));
-        let width = width.clamp(1, raw.width - left);
-        let height = height.clamp(1, raw.height - top);
+        let out = geometry::plan(geometry, f64::from(raw.width), f64::from(raw.height));
+        let left = left.min(out.width.saturating_sub(1));
+        let top = top.min(out.height.saturating_sub(1));
+        let width = width.clamp(1, out.width - left);
+        let height = height.clamp(1, out.height - top);
         let (l0, t0) = (left.saturating_sub(margin), top.saturating_sub(margin));
-        let region = Self::crop_from_raw(
-            raw,
-            l0,
-            t0,
-            width + (left - l0) + margin,
-            height + (top - t0) + margin,
-        );
+        let w0 = (width + (left - l0) + margin).min(out.width - l0);
+        let h0 = (height + (top - t0) + margin).min(out.height - t0);
+        let region = if geometry.is_identity() {
+            Self::crop_from_raw(raw, l0, t0, w0, h0)
+        } else {
+            let (x0, y0, x1, y1) =
+                geometry::source_bounds(geometry, raw.width, raw.height, l0, t0, w0, h0);
+            let source = Self::crop_from_raw(raw, x0, y0, x1 - x0, y1 - y0);
+            geometry::transform_region(&source, geometry, l0, t0, w0, h0)
+        };
         (region, (left - l0, top - t0, width, height))
     }
 
@@ -894,7 +902,7 @@ pub fn render_rgba(image: &WorkingImage, settings: &DevelopSettings) -> Vec<u8> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::develop::settings::WhiteBalance;
+    use crate::develop::settings::{CropRect, WhiteBalance};
 
     fn neutral() -> RenderParams {
         RenderParams::from_settings(&DevelopSettings::default(), D65_WHITE, Clipping::default())
@@ -1264,7 +1272,8 @@ mod tests {
         s.detail.sharpening.masking = 20.0;
         let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
         let whole = render(&WorkingImage::from_raw(&raw, w), &p).rgba;
-        let (region, (cx, cy, cw, ch)) = WorkingImage::region_with_margin(&raw, &p, 25, 20, 12, 9);
+        let (region, (cx, cy, cw, ch)) =
+            WorkingImage::region_with_margin(&raw, &p, &Geometry::default(), 25, 20, 12, 9);
         let part = render(&region, &p).rgba;
         assert_eq!((cw, ch), (12, 9));
         for y in 0..ch {
@@ -1272,6 +1281,49 @@ mod tests {
                 let i = (((y + cy) * region.width + x + cx) * 4) as usize;
                 let j = (((y + 20) * w + x + 25) * 4) as usize;
                 assert_eq!(part[i..i + 3], whole[j..j + 3], "({x}, {y})");
+            }
+        }
+    }
+
+    #[test]
+    fn region_du_zoom_avec_geometrie_identique_a_l_image_entiere() {
+        let (w, h) = (90u32, 70u32);
+        let xyz: Vec<u16> = (0..w * h)
+            .flat_map(|i| {
+                let (x, y) = (i % w, i / w);
+                let v = (6000 + (x * 300 + y * 170) % 40000) as u16;
+                [v, v / 2, v / 3]
+            })
+            .collect();
+        let raw = DevelopedRaw {
+            width: w,
+            height: h,
+            xyz,
+            as_shot_white: D65_WHITE,
+            full_long_side: w,
+        };
+        let mut s = DevelopSettings::default();
+        s.geometry.angle = 6.0;
+        s.geometry.quarter = 3;
+        s.geometry.crop = CropRect {
+            left: 0.1,
+            top: 0.1,
+            right: 0.9,
+            bottom: 0.85,
+        };
+        s.detail.sharpening.amount = 100.0;
+        let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
+        let whole_src = WorkingImage::from_raw(&raw, w);
+        let whole = geometry::transform(&whole_src, &s.geometry);
+        let full = render(&whole, &p).rgba;
+        let (region, (cx, cy, cw, ch)) =
+            WorkingImage::region_with_margin(&raw, &p, &s.geometry, 14, 9, 10, 8);
+        let part = render(&region, &p).rgba;
+        for y in 0..ch {
+            for x in 0..cw {
+                let i = (((y + cy) * region.width + x + cx) * 4) as usize;
+                let j = (((y + 9) * whole.width + x + 14) * 4) as usize;
+                assert_eq!(part[i..i + 3], full[j..j + 3], "({x}, {y})");
             }
         }
     }

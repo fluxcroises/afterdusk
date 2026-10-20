@@ -375,6 +375,87 @@ impl Detail {
     }
 }
 
+/// Rectangle de recadrage en fractions de l'image orientée et redressée
+/// (0 à 1), indépendant de la définition.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CropRect {
+    pub left: f64,
+    pub top: f64,
+    pub right: f64,
+    pub bottom: f64,
+}
+
+impl CropRect {
+    pub const FULL: Self = Self {
+        left: 0.0,
+        top: 0.0,
+        right: 1.0,
+        bottom: 1.0,
+    };
+
+    pub fn is_full(&self) -> bool {
+        *self == Self::FULL
+    }
+}
+
+impl Default for CropRect {
+    fn default() -> Self {
+        Self::FULL
+    }
+}
+
+fn is_false(v: &bool) -> bool {
+    !*v
+}
+
+fn is_zero_u8(v: &u8) -> bool {
+    *v == 0
+}
+
+/// Géométrie : quarts de tour (sens horaire) et miroirs, puis redressement
+/// (degrés, positif dans le sens horaire), puis recadrage. `aspect` retient le
+/// ratio choisi dans l'outil (« 3:2 », « original »…), pour le rouvrir.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Geometry {
+    #[serde(skip_serializing_if = "CropRect::is_full")]
+    pub crop: CropRect,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub angle: f64,
+    #[serde(skip_serializing_if = "is_zero_u8")]
+    pub quarter: u8,
+    #[serde(skip_serializing_if = "is_false")]
+    pub flip_h: bool,
+    #[serde(skip_serializing_if = "is_false")]
+    pub flip_v: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aspect: Option<String>,
+}
+
+impl Geometry {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+
+    /// Même image rendue (le ratio retenu n'en change rien).
+    pub fn same_image(&self, other: &Self) -> bool {
+        self.crop == other.crop
+            && self.angle == other.angle
+            && self.quarter == other.quarter
+            && self.flip_h == other.flip_h
+            && self.flip_v == other.flip_v
+    }
+
+    /// Ni rotation, ni miroir, ni recadrage.
+    pub fn is_identity(&self) -> bool {
+        self.same_image(&Self::default())
+    }
+}
+
+/// Plus petit côté d'un recadrage, en fraction de l'image.
+pub const CROP_MIN: f64 = 0.01;
+
 /// Points d'une courbe ramenés dans [0, 255], triés, une seule sortie par
 /// entrée ; moins de deux points : l'identité.
 fn sanitize_curve(points: &mut Vec<CurvePoint>) {
@@ -410,6 +491,8 @@ pub struct DevelopSettings {
     pub detail: Detail,
     #[serde(default, skip_serializing_if = "Effects::is_default")]
     pub effects: Effects,
+    #[serde(default, skip_serializing_if = "Geometry::is_default")]
+    pub geometry: Geometry,
 }
 
 impl Default for DevelopSettings {
@@ -423,6 +506,7 @@ impl Default for DevelopSettings {
             curve: Curve::default(),
             hsl: Hsl::default(),
             detail: Detail::default(),
+            geometry: Geometry::default(),
             effects: Effects::default(),
         }
     }
@@ -523,6 +607,34 @@ impl DevelopSettings {
         nr.luminance = clamp(nr.luminance, 0.0, 100.0);
         nr.luminance_detail = clamp(nr.luminance_detail, 0.0, 100.0);
         nr.color = clamp(nr.color, 0.0, 100.0);
+        let g = &mut self.geometry;
+        g.angle = if g.angle.is_finite() {
+            g.angle.clamp(-45.0, 45.0)
+        } else {
+            0.0
+        };
+        g.quarter %= 4;
+        let c = &mut g.crop;
+        let fix = |v: f64, fallback: f64| {
+            if v.is_finite() {
+                v.clamp(0.0, 1.0)
+            } else {
+                fallback
+            }
+        };
+        c.left = fix(c.left, 0.0);
+        c.top = fix(c.top, 0.0);
+        c.right = fix(c.right, 1.0);
+        c.bottom = fix(c.bottom, 1.0);
+        if c.right - c.left < CROP_MIN || c.bottom - c.top < CROP_MIN {
+            *c = CropRect::FULL;
+        }
+        if g.aspect
+            .as_ref()
+            .is_some_and(|a| a.is_empty() || a.len() > 16)
+        {
+            g.aspect = None;
+        }
         let v = &mut self.effects.vignette;
         v.amount = clamp(v.amount, -100.0, 100.0);
         v.midpoint = clamp(v.midpoint, 0.0, 100.0);
@@ -540,6 +652,7 @@ impl DevelopSettings {
             && self.curve.is_default()
             && self.hsl.is_default()
             && self.detail.is_default()
+            && self.geometry.is_identity()
             && self.effects.is_default()
     }
 }
@@ -617,6 +730,19 @@ mod tests {
             d.to_json(),
             r#"{"version":1,"process":1,"detail":{"sharpening":{"amount":150.0,"radius":3.0},"noise":{"color":25.0}}}"#
         );
+        let g = DevelopSettings::from_json(
+            r#"{"version":1,"geometry":{"crop":{"left":0.1,"top":0.2,"right":0.9,"bottom":0.8},"angle":-70,"quarter":5,"flipH":true,"aspect":"3:2"}}"#,
+        )
+        .unwrap();
+        assert_eq!((g.geometry.angle, g.geometry.quarter), (-45.0, 1));
+        assert_eq!(g.geometry.aspect.as_deref(), Some("3:2"));
+        assert!(!g.is_neutral());
+        // Recadrage dégénéré : l'image entière.
+        let d = DevelopSettings::from_json(
+            r#"{"version":1,"geometry":{"crop":{"left":0.5,"top":0.2,"right":0.5,"bottom":0.8}}}"#,
+        )
+        .unwrap();
+        assert!(d.geometry.crop.is_full());
         // Une courbe identité ou d'un seul point n'est pas enregistrée.
         let id = DevelopSettings::from_json(
             r#"{"version":1,"curve":{"rgb":[[0,0],[255,255]],"red":[[10,20]]}}"#,

@@ -132,3 +132,32 @@ fn auto_sur_les_six_formats() {
         );
     }
 }
+
+#[test]
+fn horizon_automatique_sur_photos_inclinees() {
+    use afterdusk_lib::develop::geometry;
+    use afterdusk_lib::develop::settings::Geometry;
+
+    // Chaque photo inclinée exprès : l'horizon automatique doit soit retrouver
+    // l'inclinaison (à 1° près), soit ne rien proposer ; jamais un angle faux.
+    let mut corrected = 0;
+    for name in common::RAW_SAMPLES {
+        let mut raw = RawFile::open(&common::sample(name)).unwrap();
+        let img = WorkingImage::from_raw(&raw.develop(true).unwrap(), 2048);
+        for tilt in [3.0, -5.0] {
+            let mut g = Geometry {
+                angle: tilt,
+                ..Default::default()
+            };
+            g.crop = geometry::constrain(&g, f64::from(img.width), f64::from(img.height));
+            let found = geometry::auto_straighten(&geometry::transform(&img, &g));
+            println!("{name:22} incliné de {tilt:+} : {found:+.1}°");
+            if found != 0.0 {
+                assert!((found + tilt).abs() < 1.0, "{name} : {found} pour {tilt}");
+                corrected += 1;
+            }
+        }
+    }
+    // Les photos avec des lignes (bâti, mobilier) sont redressées.
+    assert!(corrected >= 6, "{corrected} redressements");
+}

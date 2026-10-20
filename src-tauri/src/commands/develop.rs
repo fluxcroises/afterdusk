@@ -15,8 +15,10 @@ use super::error::{CommandError, CommandResult};
 use super::marks::XmpWriter;
 use super::{AppState, blocking};
 use crate::develop::auto;
+use crate::develop::geometry;
 use crate::develop::gpu::{GpuImage, GpuRenderer};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
+use crate::develop::settings::Geometry;
 use crate::develop::settings::{DevelopSettings, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
 use crate::develop::store::{self, History, ORIGINAL, Snapshot, StoreError, Version};
@@ -59,7 +61,11 @@ impl From<StoreError> for CommandError {
 
 struct Session {
     media_id: i64,
+    /// Image de travail avant géométrie (orientation du boîtier seulement).
+    base: WorkingImage,
+    /// Image de travail transformée par `geometry`, celle qui est rendue.
     image: WorkingImage,
+    geometry: Geometry,
     gpu: Option<GpuImage>,
     /// Original en pleine définition, décodé au premier zoom 100 %.
     full: Option<Arc<DevelopedRaw>>,
@@ -141,9 +147,11 @@ pub async fn develop_open(
     blocking(move || {
         let engine = app.state::<DevelopEngine>();
         let started = Instant::now();
-        let image = source::working_image(&conn, media_id, PREVIEW_SIDE)?;
+        let base = source::working_image(&conn, media_id, PREVIEW_SIDE)?;
         let decode_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
         let settings = store::load(&conn, media_id, ORIGINAL)?;
+        let geometry = settings.geometry.clone();
+        let image = geometry::transform(&base, &geometry);
         let renderer = engine.gpu();
         let gpu = renderer.and_then(|r| {
             r.upload(&image)
@@ -180,7 +188,9 @@ pub async fn develop_open(
             .map_err(|e| CommandError::new("internal", e))?;
         *session = Some(Session {
             media_id,
+            base,
             image,
+            geometry,
             gpu,
             full: None,
         });
@@ -243,15 +253,26 @@ pub async fn develop_render(
 ) -> CommandResult<Response> {
     let bytes = blocking(move || {
         let engine = app.state::<DevelopEngine>();
-        let session = engine
+        let mut guard = engine
             .session
             .lock()
             .map_err(|e| CommandError::new("internal", e))?;
-        let session = session
-            .as_ref()
+        let session = guard
+            .as_mut()
             .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
+        let settings = settings.sanitized();
+        // Nouvelle géométrie : l'image de travail est rééchantillonnée, une fois.
+        if !settings.geometry.same_image(&session.geometry) {
+            session.image = geometry::transform(&session.base, &settings.geometry);
+            session.gpu = engine.gpu().and_then(|r| {
+                r.upload(&session.image)
+                    .inspect_err(|e| eprintln!("rendu au processeur : {e}"))
+                    .ok()
+            });
+            session.geometry = settings.geometry.clone();
+        }
         let params = RenderParams::from_settings(
-            &settings.sanitized(),
+            &settings,
             session.image.as_shot_white,
             clipping.unwrap_or_default(),
         );
@@ -269,7 +290,7 @@ pub async fn develop_render(
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ZoomOpened {
-    /// Dimensions de l'original en pleine définition.
+    /// Dimensions de l'image rendue en pleine définition (après géométrie).
     pub width: u32,
     pub height: u32,
     pub decode_ms: u64,
@@ -281,7 +302,9 @@ pub struct ZoomOpened {
 pub async fn develop_zoom_open(
     app: AppHandle,
     state: State<'_, AppState>,
+    geometry: Option<Geometry>,
 ) -> CommandResult<ZoomOpened> {
+    let geometry = geometry.unwrap_or_default();
     let conn = state.connect()?;
     blocking(move || {
         let engine = app.state::<DevelopEngine>();
@@ -295,12 +318,16 @@ pub async fn develop_zoom_open(
                 .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
             (session.media_id, session.full.clone())
         };
+        let opened = |full: &DevelopedRaw, decode_ms| {
+            let out = geometry::plan(&geometry, f64::from(full.width), f64::from(full.height));
+            ZoomOpened {
+                width: out.width,
+                height: out.height,
+                decode_ms,
+            }
+        };
         if let Some(full) = ready {
-            return Ok(ZoomOpened {
-                width: full.width,
-                height: full.height,
-                decode_ms: 0,
-            });
+            return Ok(opened(&full, 0));
         }
         // Décodage hors du verrou : le rendu de l'aperçu continue pendant ce temps.
         let started = Instant::now();
@@ -320,11 +347,7 @@ pub async fn develop_zoom_open(
                 ));
             }
         }
-        Ok(ZoomOpened {
-            width: full.width,
-            height: full.height,
-            decode_ms,
-        })
+        Ok(opened(&full, decode_ms))
     })
     .await
 }
@@ -353,15 +376,23 @@ pub async fn develop_zoom_render(
                 .and_then(|s| s.full.clone())
                 .ok_or_else(|| CommandError::new("internal", "zoom non préparé"))?
         };
+        let settings = settings.sanitized();
         let params = RenderParams::from_settings(
-            &settings.sanitized(),
+            &settings,
             full.as_shot_white,
             clipping.unwrap_or_default(),
         );
         // Réduction du bruit et netteté regardent les voisins : la région est
         // rendue avec une marge, puis rognée, pour des bords justes.
-        let (region, cut) =
-            WorkingImage::region_with_margin(&full, &params, left, top, width, height);
+        let (region, cut) = WorkingImage::region_with_margin(
+            &full,
+            &params,
+            &settings.geometry,
+            left,
+            top,
+            width,
+            height,
+        );
         let uploaded = engine.gpu().and_then(|r| r.upload(&region).ok());
         Ok(render_frame_cut(
             &engine,
@@ -659,6 +690,53 @@ pub async fn develop_snapshot_delete(
     let version = version_name(version);
     mutate(&state, &writer, move |c| {
         store::delete_snapshot(c, media_id, &version, &name)
+    })
+    .await
+}
+
+/// Recadrage ramené dans l'image redressée, sans coin vide (voir
+/// `geometry::constrain`), aux proportions de la photo ouverte.
+#[tauri::command]
+pub fn develop_geometry_constrain(
+    engine: State<'_, DevelopEngine>,
+    geometry: Geometry,
+) -> CommandResult<Geometry> {
+    let session = engine
+        .session
+        .lock()
+        .map_err(|e| CommandError::new("internal", e))?;
+    let base = &session
+        .as_ref()
+        .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
+        .base;
+    let mut g = geometry;
+    g.crop = geometry::constrain(&g, f64::from(base.width), f64::from(base.height));
+    Ok(g)
+}
+
+/// Horizon automatique : angle de redressement, en degrés, pour les quarts de
+/// tour et miroirs donnés.
+#[tauri::command]
+pub async fn develop_auto_straighten(app: AppHandle, geometry: Geometry) -> CommandResult<f64> {
+    blocking(move || {
+        let engine = app.state::<DevelopEngine>();
+        let session = engine
+            .session
+            .lock()
+            .map_err(|e| CommandError::new("internal", e))?;
+        let base = &session
+            .as_ref()
+            .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?
+            .base;
+        let oriented = Geometry {
+            quarter: geometry.quarter,
+            flip_h: geometry.flip_h,
+            flip_v: geometry.flip_v,
+            ..Geometry::default()
+        };
+        Ok(geometry::auto_straighten(&geometry::transform(
+            base, &oriented,
+        )))
     })
     .await
 }
