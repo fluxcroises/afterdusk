@@ -12,7 +12,8 @@ interface LayoutState {
   dropping: boolean;
   setDropping: (dropping: boolean) => void;
   togglePanel: (panel: Panel) => void;
-  toggleSection: (id: string) => void;
+  /** Ouvre ou replie une section ; `collapsed` : son état affiché. */
+  toggleSection: (id: string, collapsed: boolean) => void;
   /**
    * Plein écran de la visionneuse (F) : panneaux, barres et pellicule masqués,
    * fenêtre en plein écran. Échap en sort.
@@ -54,5 +55,6 @@ export const useLayout = create<LayoutState>((set) => ({
     }
   },
   togglePanel: (panel) => set((s) => ({ visible: { ...s.visible, [panel]: !s.visible[panel] } })),
-  toggleSection: (id) => set((s) => ({ collapsed: { ...s.collapsed, [id]: !s.collapsed[id] } })),
+  toggleSection: (id, collapsed) =>
+    set((s) => ({ collapsed: { ...s.collapsed, [id]: !collapsed } })),
 }));

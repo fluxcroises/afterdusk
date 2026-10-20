@@ -280,7 +280,7 @@ L'interface s'organise autour d'une barre d'étapes toujours visible en haut (Im
 | --- | --- |
 | Importer | Support détecté, grille groupée par jour, panneau de destination (album, rangement, renommage, sauvegarde, mots-clés) |
 | Trier | Grille ou visionneuse plein écran, bandeau de miniatures, filtres rapides (non notées, retenues, rejetées, ratés probables), mode comparaison |
-| Retoucher | Image au centre, bandeau de miniatures en bas, réglages à droite (essentiels ouverts, avancés repliés), presets et historique à gauche |
+| Retoucher | Image au centre, bandeau de miniatures en bas, réglages à droite (essentiels ouverts, avancés repliés), presets et historique à gauche ; barre d'outils verticale au bord droit, comme Lightroom (demandée par l'utilisateur le 2026-10-20, pour ne pas noyer l'utilisateur sous les réglages) : Réglages, Recadrer, Corriger, puis Filtres avec la galerie, un seul outil à la fois dans le panneau |
 | Livrer | Sélection, choix des presets, options (filigrane, métadonnées), aperçu du résultat, destination |
 | Bibliothèque | Albums en grille ou en liste, filtres, recherche, collections |
 | Carte | Carte du monde plein écran, albums en points groupés, panneau d'aperçu de l'album sélectionné |

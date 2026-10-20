@@ -85,6 +85,9 @@ export function describeStep(
           : angle,
     });
   }
+  if (section === "spots" && key) {
+    return t(`develop.history.spots.${key}`);
+  }
   if (section === "curve" && key) {
     return t("develop.history.curve", { channel: t(`develop.curve.${key}`) });
   }

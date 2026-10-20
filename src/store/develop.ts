@@ -110,6 +110,56 @@ function sparseGeometry(g: Geometry): Geometry | undefined {
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+export type SpotMode = "heal" | "clone";
+
+/**
+ * Correction de défaut, miroir de `develop::settings::Spot` : positions en
+ * fractions de la source (image avant géométrie), rayon en fraction de son
+ * côté long.
+ */
+export interface Spot {
+  x: number;
+  y: number;
+  radius: number;
+  sourceX: number;
+  sourceY: number;
+  /** Adoucissement de 0 à 100 ; absent : 50. */
+  feather?: number;
+  /** Absent : correction. */
+  mode?: SpotMode;
+}
+
+export const SPOT_RADIUS = { min: 0.001, max: 0.1 } as const;
+export const SPOT_FEATHER_DEFAULT = 50;
+
+/** Pinceau du correcteur : réglages de la prochaine correction. */
+export interface SpotBrush {
+  radius: number;
+  feather: number;
+  mode: SpotMode;
+}
+
+/** Outil de la barre de droite. */
+export type DevelopTool = "adjust" | "crop" | "spots";
+
+const r5 = (v: number) => Math.round(v * 100000) / 100000;
+
+/** Correction creuse : les valeurs par défaut disparaissent. */
+function sparseSpot(spot: Spot): Spot {
+  const out: Spot = {
+    x: r5(spot.x),
+    y: r5(spot.y),
+    radius: r5(spot.radius),
+    sourceX: r5(spot.sourceX),
+    sourceY: r5(spot.sourceY),
+  };
+  if (spot.feather !== undefined && spot.feather !== SPOT_FEATHER_DEFAULT) {
+    out.feather = spot.feather;
+  }
+  if (spot.mode === "clone") out.mode = "clone";
+  return out;
+}
+
 /** Réglages de retouche, miroir de `develop::settings::DevelopSettings` (JSON creux). */
 export interface DevelopSettings {
   version: number;
@@ -123,6 +173,7 @@ export interface DevelopSettings {
     grain?: Partial<Record<EffectKey<"grain">, number>>;
   };
   geometry?: Geometry;
+  spots?: Spot[];
   detail?: {
     sharpening?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["sharpening"], number>>;
     noise?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["noise"], number>>;
@@ -170,6 +221,8 @@ interface DevelopOpened {
   mediaId: number;
   width: number;
   height: number;
+  sourceWidth: number;
+  sourceHeight: number;
   settings: DevelopSettings;
   asShot: WhitePoint;
   presets: WhitePreset[];
@@ -313,6 +366,15 @@ interface DevelopState {
   compare: CompareMode;
   /** Rendu de l'original (réglages neutres), pour l'avant/après. */
   beforeFrame: DevelopFrame | null;
+  /** Outil choisi dans la barre de droite. */
+  tool: DevelopTool;
+  /** Image avant géométrie (aperçu), repère des corrections de défauts. */
+  sourceSize: { width: number; height: number } | null;
+  spotBrush: SpotBrush;
+  /** Correction choisie (indice dans `settings.spots`). */
+  selectedSpot: number | null;
+  /** Visualisation des poussières, dans l'outil de correction. */
+  showDust: boolean;
   /** Outil de recadrage ouvert : l'image entière redressée est affichée. */
   cropping: boolean;
   /** Position de l'historique à l'ouverture de l'outil, pour l'annuler. */
@@ -352,6 +414,18 @@ interface DevelopState {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   setCompare: (mode: CompareMode) => void;
+  setTool: (tool: DevelopTool) => Promise<void>;
+  /** Nouvelle correction en (x, y), fractions de la source ; sa source est
+   * choisie par le cœur. */
+  addSpot: (x: number, y: number) => Promise<void>;
+  /** Déplace une correction (`target`) ou sa source. */
+  moveSpot: (index: number, part: "target" | "source", x: number, y: number) => Promise<void>;
+  /** Règle le pinceau, et la correction choisie s'il y en a une. */
+  setSpotBrush: (patch: Partial<SpotBrush>) => void;
+  selectSpot: (index: number | null) => void;
+  removeSpot: (index: number) => Promise<void>;
+  clearSpots: () => Promise<void>;
+  setShowDust: (show: boolean) => void;
   startCrop: () => Promise<void>;
   finishCrop: () => void;
   cancelCrop: () => Promise<void>;
@@ -426,6 +500,20 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     return put(settings, "geometry", sparseGeometry({ ...settings.geometry, crop: FULL_CROP }));
   }
 
+  /** Avertissements demandés, et visualisation des poussières dans l'outil. */
+  function displayClipping() {
+    const { clipping, tool, showDust } = get();
+    return { ...clipping, dust: tool === "spots" && showDust };
+  }
+
+  /** Nouvelle liste de corrections, en une étape d'historique à part. */
+  async function changeSpots(spots: Spot[], label: string) {
+    await get().flush();
+    const { settings } = get();
+    if (!settings) return;
+    change(put(settings, "spots", spots.length > 0 ? spots : undefined), label);
+  }
+
   /** Nouvelle géométrie : le zoom et ses dimensions sont à refaire. */
   function changeGeometry(geometry: Geometry, label: string) {
     const { settings } = get();
@@ -493,11 +581,11 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     try {
       do {
         zoomAgain = false;
-        const { settings, mediaId, clipping, zoom, viewport } = get();
+        const { settings, mediaId, zoom, viewport } = get();
         if (!settings || mediaId === null || !zoom) return;
         const buffer = await invoke<ArrayBuffer>("develop_zoom_render", {
           settings,
-          clipping,
+          clipping: displayClipping(),
           left: zoom.left,
           top: zoom.top,
           width: Math.max(1, Math.round(viewport.width)),
@@ -524,12 +612,12 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     try {
       do {
         renderAgain = false;
-        const { settings, mediaId, clipping } = get();
+        const { settings, mediaId } = get();
         if (!settings || mediaId === null) return;
         const started = performance.now();
         const buffer = await invoke<ArrayBuffer>("develop_render", {
           settings: renderedSettings(),
-          clipping,
+          clipping: displayClipping(),
         });
         if (get().mediaId !== mediaId) return;
         set({ frame: parseFrame(buffer), roundTripMs: performance.now() - started });
@@ -657,6 +745,11 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     viewport: { width: 1, height: 1 },
     cropping: false,
     cropStart: null,
+    tool: "adjust",
+    sourceSize: null,
+    spotBrush: { radius: 0.01, feather: SPOT_FEATHER_DEFAULT, mode: "heal" },
+    selectedSpot: null,
+    showDust: false,
 
     open: async (mediaId) => {
       if (get().mediaId === mediaId && get().settings) return;
@@ -680,6 +773,9 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         zoomFrame: null,
         cropping: false,
         cropStart: null,
+        tool: get().tool === "crop" ? "adjust" : get().tool,
+        selectedSpot: null,
+        sourceSize: null,
       });
       try {
         const opened = await invoke<DevelopOpened>("develop_open", { mediaId });
@@ -691,6 +787,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           presets: opened.presets,
           adapter: opened.adapter,
           decodeMs: opened.decodeMs,
+          sourceSize: { width: opened.sourceWidth, height: opened.sourceHeight },
         });
         await Promise.all([render(), loadState(mediaId)]);
         // Après un moment sur la même photo, le zoom se prépare sans bloquer.
@@ -874,10 +971,106 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       if (mode !== "off") void loadBefore();
     },
 
+    setTool: async (tool) => {
+      const current = get().tool;
+      if (tool === current) return;
+      if (current === "crop") get().finishCrop();
+      if (tool === "crop") {
+        await get().startCrop();
+        return;
+      }
+      set({ tool, selectedSpot: null, picking: false });
+      void render();
+    },
+
+    addSpot: async (x, y) => {
+      const { settings, spotBrush } = get();
+      if (!settings) return;
+      const source = await computeAuto<[number, number]>("develop_spot_source", {
+        x,
+        y,
+        radius: spotBrush.radius,
+        others: settings.spots ?? [],
+      });
+      const now = get().settings;
+      if (!source || !now) return;
+      const spot = sparseSpot({
+        x,
+        y,
+        radius: spotBrush.radius,
+        sourceX: source[0],
+        sourceY: source[1],
+        feather: spotBrush.feather,
+        mode: spotBrush.mode,
+      });
+      const spots = [...(now.spots ?? []), spot];
+      await changeSpots(spots, "spots.add");
+      set({ selectedSpot: spots.length - 1 });
+    },
+
+    moveSpot: async (index, part, x, y) => {
+      const spots = [...(get().settings?.spots ?? [])];
+      const spot = spots[index];
+      if (!spot) return;
+      const [cx, cy] = [Math.min(1, Math.max(0, x)), Math.min(1, Math.max(0, y))];
+      spots[index] = sparseSpot(
+        part === "target" ? { ...spot, x: cx, y: cy } : { ...spot, sourceX: cx, sourceY: cy },
+      );
+      await changeSpots(spots, part === "target" ? "spots.move" : "spots.source");
+    },
+
+    setSpotBrush: (patch) => {
+      const { spotBrush, selectedSpot, settings } = get();
+      set({ spotBrush: { ...spotBrush, ...patch } });
+      const spots = settings?.spots ?? [];
+      const spot = selectedSpot === null ? undefined : spots[selectedSpot];
+      if (!settings || !spot || selectedSpot === null) return;
+      const next = [...spots];
+      next[selectedSpot] = sparseSpot({ ...spot, ...patch });
+      const key = Object.keys(patch)[0] ?? "radius";
+      change(put(settings, "spots", next), `spots.${key}`);
+    },
+
+    selectSpot: (index) => {
+      const spot = index === null ? undefined : get().settings?.spots?.[index];
+      // Le pinceau reprend les réglages de la correction choisie.
+      if (spot && index !== null) {
+        set({
+          selectedSpot: index,
+          spotBrush: {
+            radius: spot.radius,
+            feather: spot.feather ?? SPOT_FEATHER_DEFAULT,
+            mode: spot.mode ?? "heal",
+          },
+        });
+      } else {
+        set({ selectedSpot: null });
+      }
+    },
+
+    removeSpot: async (index) => {
+      const spots = (get().settings?.spots ?? []).filter((_, i) => i !== index);
+      set({ selectedSpot: null });
+      await changeSpots(spots, "spots.remove");
+    },
+
+    clearSpots: async () => {
+      set({ selectedSpot: null });
+      await changeSpots([], "spots.clear");
+    },
+
+    setShowDust: (show) => {
+      set({ showDust: show });
+      void render();
+    },
+
     startCrop: async () => {
       if (!get().settings || get().cropping) return;
       await get().flush();
       set({
+        tool: "crop",
+        selectedSpot: null,
+        picking: false,
         cropping: true,
         cropStart: get().history?.current ?? 0,
         zoom: null,
@@ -889,13 +1082,13 @@ export const useDevelop = create<DevelopState>()((set, get) => {
 
     finishCrop: () => {
       if (!get().cropping) return;
-      set({ cropping: false, cropStart: null });
+      set({ cropping: false, cropStart: null, tool: "adjust" });
       void render();
     },
 
     cancelCrop: async () => {
       const { cropStart, history } = get();
-      set({ cropping: false, cropStart: null });
+      set({ cropping: false, cropStart: null, tool: "adjust" });
       await get().flush();
       if (cropStart !== null && history && get().history?.current !== cropStart) {
         await get().goTo(cropStart);
@@ -1143,6 +1336,9 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         zoomFrame: null,
         cropping: false,
         cropStart: null,
+        tool: get().tool === "crop" ? "adjust" : get().tool,
+        selectedSpot: null,
+        sourceSize: null,
       });
       await invoke("develop_close").catch(() => undefined);
     },

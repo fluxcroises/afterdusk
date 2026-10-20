@@ -8,12 +8,20 @@ interface PanelSectionProps {
   title: string;
   /** Contenu discret à droite du titre (compteur, bouton). */
   aside?: ReactNode;
+  /** Repliée tant que l'utilisateur ne l'a pas ouverte (réglages avancés). */
+  defaultCollapsed?: boolean;
   children: ReactNode;
 }
 
 /** Section repliable d'un panneau latéral. */
-export function PanelSection({ id, title, aside, children }: PanelSectionProps) {
-  const collapsed = useLayout((s) => s.collapsed[id] ?? false);
+export function PanelSection({
+  id,
+  title,
+  aside,
+  defaultCollapsed = false,
+  children,
+}: PanelSectionProps) {
+  const collapsed = useLayout((s) => s.collapsed[id] ?? defaultCollapsed);
   const toggle = useLayout((s) => s.toggleSection);
   const bodyId = `section-${id}`;
 
@@ -24,7 +32,7 @@ export function PanelSection({ id, title, aside, children }: PanelSectionProps) 
           type="button"
           aria-expanded={!collapsed}
           aria-controls={bodyId}
-          onClick={() => toggle(id)}
+          onClick={() => toggle(id, collapsed)}
         >
           <ChevronDown className="chevron" aria-hidden="true" strokeWidth={2} />
           {title}

@@ -113,6 +113,13 @@ describe("libellés de l'historique", () => {
     expect(describeStep(step("geometry.crop", {}), t, "fr")).toBe("Recadrage");
   });
 
+  it("correcteur de défauts", () => {
+    const t = i18next.getFixedT("fr");
+    expect(describeStep(step("spots.add", {}), t, "fr")).toBe("Correction de défaut");
+    expect(describeStep(step("spots.source", {}), t, "fr")).toBe("Source de correction déplacée");
+    expect(describeStep(step("spots.clear", {}), t, "fr")).toBe("Corrections effacées");
+  });
+
   it("en anglais", () => {
     const t = i18next.getFixedT("en");
     expect(describeStep(step("light.exposure", { light: { exposure: -1.5 } }), t, "en")).toBe(

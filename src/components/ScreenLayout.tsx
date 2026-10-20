@@ -11,6 +11,8 @@ interface ScreenLayoutProps {
   header?: ReactNode;
   /** Pied du panneau droit (bouton d'action principale). */
   rightFooter?: ReactNode;
+  /** Barre d'outils verticale au bord droit, à côté du panneau droit. */
+  rail?: ReactNode;
   filmstrip?: ReactNode;
   children: ReactNode;
 }
@@ -22,6 +24,7 @@ export function ScreenLayout({
   toolbar,
   header,
   rightFooter,
+  rail,
   filmstrip,
   children,
 }: ScreenLayoutProps) {
@@ -49,6 +52,7 @@ export function ScreenLayout({
             {rightFooter && <div className="side-panel-footer">{rightFooter}</div>}
           </aside>
         )}
+        {rail && !immersive && rail}
       </div>
       {filmstrip && visible.filmstrip && !immersive && <div className="filmstrip">{filmstrip}</div>}
     </div>

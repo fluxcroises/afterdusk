@@ -545,6 +545,16 @@
         "flip": "Miroir",
         "aspect": "Ratio {{value}}",
         "reset": "Géométrie réinitialisée"
+      },
+      "spots": {
+        "add": "Correction de défaut",
+        "move": "Correction déplacée",
+        "source": "Source de correction déplacée",
+        "remove": "Correction retirée",
+        "clear": "Corrections effacées",
+        "radius": "Taille de correction",
+        "feather": "Adoucissement de correction",
+        "mode": "Mode de correction"
       }
     },
     "compare": {
@@ -649,6 +659,30 @@
       "reset": "Réinitialiser",
       "cancel": "Annuler",
       "done": "Terminé"
+    },
+    "tools": {
+      "label": "Outils de retouche",
+      "adjust": "Réglages",
+      "crop": "Recadrer",
+      "spots": "Corriger les défauts"
+    },
+    "spots": {
+      "title": "Correcteur de défauts",
+      "mode": "Mode",
+      "modes": {
+        "heal": "Correction",
+        "clone": "Clonage"
+      },
+      "size": "Taille",
+      "feather": "Adoucissement",
+      "visualize": "Visualiser les poussières",
+      "hint": "Cliquez sur une poussière ou une imperfection : elle est remplacée par une zone voisine. La molette (ou [ et ]) change la taille.",
+      "selectedHint": "Glissez le cercle ou sa source pour les déplacer. Suppr retire la correction, Échap la quitte.",
+      "count_zero": "Aucune correction",
+      "count_one": "{{count}} correction",
+      "count_other": "{{count}} corrections",
+      "remove": "Retirer",
+      "clear": "Tout effacer"
     }
   }
 }

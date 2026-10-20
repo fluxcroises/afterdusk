@@ -91,6 +91,8 @@ beforeEach(() => {
         mediaId: 7,
         width: 2,
         height: 1,
+        sourceWidth: 2,
+        sourceHeight: 1,
         settings: { version: 1, process: 1 },
         asShot: { temperature: 4550, tint: -12 },
         presets,
@@ -107,6 +109,7 @@ beforeEach(() => {
       return { ...g, crop: { left: 0.05, top: 0.05, right: 0.95, bottom: 0.95 } };
     }
     if (cmd === "develop_auto_straighten") return -2.4;
+    if (cmd === "develop_spot_source") return [0.123456789, 0.4];
     if (cmd === "develop_pick_white") return { mode: "custom", temperature: 3900, tint: 6 };
     if (cmd === "develop_auto_light")
       return {
@@ -121,7 +124,11 @@ beforeEach(() => {
 
 afterEach(async () => {
   await useDevelop.getState().close();
-  useDevelop.setState({ clipping: { highlights: false, shadows: false } });
+  useDevelop.setState({
+    clipping: { highlights: false, shadows: false },
+    tool: "adjust",
+    showDust: false,
+  });
   vi.useRealTimers();
 });
 
@@ -145,7 +152,7 @@ describe("Retoucher", () => {
     expect(s.frame?.gpu).toBe(true);
     expect(calls("develop_render")[0]?.[1]).toEqual({
       settings: { version: 1, process: 1 },
-      clipping: { highlights: false, shadows: false },
+      clipping: { highlights: false, shadows: false, dust: false },
     });
   });
 
@@ -505,6 +512,64 @@ describe("Retoucher", () => {
         crop: { left: 0.1, top: 0.2, right: 0.7, bottom: 0.9 },
       }),
     );
+  });
+
+  it("barre d'outils : recadrer ouvre l'outil, un autre outil l'applique", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().setTool("crop");
+    expect(useDevelop.getState()).toMatchObject({ tool: "crop", cropping: true });
+    await useDevelop.getState().setTool("spots");
+    expect(useDevelop.getState()).toMatchObject({ tool: "spots", cropping: false });
+    // Changer de photo garde l'outil de correction, pas celui de recadrage.
+    await useDevelop.getState().open(8);
+    expect(useDevelop.getState().tool).toBe("spots");
+  });
+
+  it("correcteur : source choisie par le cœur, une étape par correction", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().setTool("spots");
+    await useDevelop.getState().addSpot(0.5, 0.25);
+    expect(calls("develop_spot_source")[0]?.[1]).toEqual({
+      x: 0.5,
+      y: 0.25,
+      radius: 0.01,
+      others: [],
+    });
+    expect(useDevelop.getState().settings?.spots).toEqual([
+      { x: 0.5, y: 0.25, radius: 0.01, sourceX: 0.12346, sourceY: 0.4 },
+    ]);
+    expect(useDevelop.getState().selectedSpot).toBe(0);
+    // La correction choisie suit le pinceau.
+    useDevelop.getState().setSpotBrush({ mode: "clone" });
+    await useDevelop.getState().moveSpot(0, "source", 0.7, 0.3);
+    await useDevelop.getState().addSpot(0.1, 0.1);
+    await useDevelop.getState().flush();
+    expect(saves().map((a) => (a as { label: string }).label)).toEqual([
+      "spots.add",
+      "spots.mode",
+      "spots.source",
+      "spots.add",
+    ]);
+    expect(useDevelop.getState().settings?.spots?.[0]).toMatchObject({
+      mode: "clone",
+      sourceX: 0.7,
+    });
+    await useDevelop.getState().removeSpot(0);
+    expect(useDevelop.getState().settings?.spots).toHaveLength(1);
+    await useDevelop.getState().clearSpots();
+    expect(useDevelop.getState().settings?.spots).toBeUndefined();
+  });
+
+  it("visualisation des poussières : demandée au rendu dans l'outil seulement", async () => {
+    await useDevelop.getState().open(7);
+    useDevelop.getState().setShowDust(true);
+    const lastClipping = () => {
+      const all = calls("develop_render");
+      return (all[all.length - 1]?.[1] as { clipping: { dust: boolean } }).clipping.dust;
+    };
+    await vi.waitFor(() => expect(lastClipping()).toBe(false));
+    await useDevelop.getState().setTool("spots");
+    await vi.waitFor(() => expect(lastClipping()).toBe(true));
   });
 
   it("quart de tour et miroir font suivre le cadre ; le redressement le contraint", async () => {

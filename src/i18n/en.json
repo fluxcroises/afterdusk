@@ -545,6 +545,16 @@
         "flip": "Flip",
         "aspect": "Aspect {{value}}",
         "reset": "Geometry reset"
+      },
+      "spots": {
+        "add": "Spot healed",
+        "move": "Spot moved",
+        "source": "Spot source moved",
+        "remove": "Spot removed",
+        "clear": "Spots cleared",
+        "radius": "Spot size",
+        "feather": "Spot feather",
+        "mode": "Spot mode"
       }
     },
     "compare": {
@@ -649,6 +659,30 @@
       "reset": "Reset",
       "cancel": "Cancel",
       "done": "Done"
+    },
+    "tools": {
+      "label": "Editing tools",
+      "adjust": "Adjust",
+      "crop": "Crop",
+      "spots": "Heal spots"
+    },
+    "spots": {
+      "title": "Spot healing",
+      "mode": "Mode",
+      "modes": {
+        "heal": "Heal",
+        "clone": "Clone"
+      },
+      "size": "Size",
+      "feather": "Feather",
+      "visualize": "Visualize spots",
+      "hint": "Click a dust spot or blemish: it is replaced by a nearby area. The mouse wheel (or [ and ]) changes the size.",
+      "selectedHint": "Drag the circle or its source to move them. Delete removes the spot, Esc deselects it.",
+      "count_zero": "No spots",
+      "count_one": "{{count}} spot",
+      "count_other": "{{count}} spots",
+      "remove": "Remove",
+      "clear": "Clear all"
     }
   }
 }

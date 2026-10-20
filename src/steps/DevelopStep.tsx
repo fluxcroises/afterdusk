@@ -16,16 +16,21 @@ import {
   HslSection,
 } from "../components/DevelopAdvanced";
 import { type Box, CropOverlay, CropSection } from "../components/DevelopCrop";
+import { SpotOverlay, SpotsSection, type View } from "../components/DevelopSpots";
+import { DevelopToolRail } from "../components/DevelopTools";
 import { SnapshotsSection, VersionsSection } from "../components/DevelopVersions";
 import { EmptyState } from "../components/EmptyState";
 import { Filmstrip } from "../components/Filmstrip";
 import { ScreenLayout } from "../components/ScreenLayout";
-import { type DevelopFrame, useDevelop } from "../store/develop";
+import { type DevelopFrame, SPOT_RADIUS, useDevelop } from "../store/develop";
 import { useLibrary } from "../store/library";
 
-/** Saisie de texte en cours (un curseur de réglage n'en est pas une). */
+/** Champs qui ne prennent pas de texte : curseurs, cases à cocher, boutons. */
+const NOT_TEXT = ["range", "checkbox", "radio", "button"];
+
+/** Saisie de texte en cours (un curseur ou une case cochée n'en est pas une). */
 function isTyping(target: EventTarget | null): boolean {
-  if (target instanceof HTMLInputElement) return target.type !== "range";
+  if (target instanceof HTMLInputElement) return !NOT_TEXT.includes(target.type);
   return (
     target instanceof HTMLElement &&
     (target.isContentEditable || ["TEXTAREA", "SELECT"].includes(target.tagName))
@@ -52,14 +57,18 @@ function DevelopCanvas() {
   const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const [dragging, setDragging] = useState(false);
   const cropping = useDevelop((s) => s.cropping);
+  const spotting = useDevelop((s) => s.tool === "spots");
+  const fullSize = useDevelop((s) => s.fullSize);
   const zoomed = zoom !== null && zoomFrame !== null;
   const dpr = window.devicePixelRatio || 1;
   const [box, setBox] = useState<Box | null>(null);
+  const overlay = cropping || spotting;
 
-  // Boîte de l'image affichée, pour y poser le cadre de recadrage.
+  // Boîte de l'image affichée, pour y poser le cadre de recadrage ou les
+  // corrections.
   useEffect(() => {
     const canvas = ref.current;
-    if (!canvas || !cropping) return;
+    if (!canvas || !overlay) return;
     const measure = () =>
       setBox({
         left: canvas.offsetLeft,
@@ -71,7 +80,18 @@ function DevelopCanvas() {
     const observer = new ResizeObserver(measure);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [cropping, frame]);
+  }, [overlay, frame, zoomFrame]);
+
+  // Partie de l'image rendue visible : l'image entière, ou la région zoomée.
+  const view: View =
+    zoomed && fullSize
+      ? {
+          x0: zoom.left / fullSize.width,
+          y0: zoom.top / fullSize.height,
+          x1: (zoom.left + zoomFrame.width) / fullSize.width,
+          y1: (zoom.top + zoomFrame.height) / fullSize.height,
+        }
+      : { x0: 0, y0: 0, x1: 1, y1: 1 };
 
   useEffect(() => {
     const canvas = ref.current;
@@ -172,21 +192,29 @@ function DevelopCanvas() {
         }}
       />
       {cropping && box && <CropOverlay box={box} />}
+      {spotting && box && <SpotOverlay box={box} view={view} />}
     </>
   );
 }
 
+/** Panneau droit : l'histogramme, puis l'outil choisi dans la barre. */
 function SettingsPanel() {
+  const tool = useDevelop((s) => s.tool);
   return (
     <>
       <HistogramSection />
-      <CropSection />
-      <LightSection />
-      <ColorSection />
-      <CurveSection />
-      <HslSection />
-      <DetailSection />
-      <EffectsSection />
+      {tool === "adjust" && (
+        <>
+          <LightSection />
+          <ColorSection />
+          <CurveSection />
+          <HslSection />
+          <DetailSection />
+          <EffectsSection />
+        </>
+      )}
+      {tool === "crop" && <CropSection />}
+      {tool === "spots" && <SpotsSection />}
     </>
   );
 }
@@ -281,16 +309,49 @@ export function DevelopStep() {
         e.preventDefault();
         return;
       }
+      // La lettre tapée (Z en AZERTY est la touche KeyW) ; la position de la
+      // touche pour les claviers non latins.
       const letter = (k: string) =>
-        e.code === `Key${k.toUpperCase()}` || (e.code === "" && e.key.toLowerCase() === k);
+        /^[a-z]$/i.test(e.key) ? e.key.toLowerCase() === k : e.code === `Key${k.toUpperCase()}`;
       const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
       // R : outil de recadrage ; Entrée l'applique, Échap l'annule ; X change
       // l'orientation du ratio.
       if (plain && letter("r")) {
         if (state.cropping) state.finishCrop();
-        else void state.startCrop();
+        else void state.setTool("crop");
         e.preventDefault();
         return;
+      }
+      // Q : correcteur de défauts. Suppr retire la correction choisie, [ et ]
+      // changent la taille du pinceau, Échap quitte la correction choisie
+      // puis l'outil.
+      if (plain && letter("q")) {
+        void state.setTool(state.tool === "spots" ? "adjust" : "spots");
+        e.preventDefault();
+        return;
+      }
+      if (state.tool === "spots") {
+        if ((e.key === "Delete" || e.key === "Backspace") && state.selectedSpot !== null) {
+          void state.removeSpot(state.selectedSpot);
+          e.preventDefault();
+          return;
+        }
+        if (e.key === "Escape") {
+          if (state.selectedSpot !== null) state.selectSpot(null);
+          else void state.setTool("adjust");
+          e.preventDefault();
+          return;
+        }
+        if (e.key === "[" || e.key === "]") {
+          const factor = e.key === "]" ? 1.2 : 1 / 1.2;
+          const radius = Math.min(
+            SPOT_RADIUS.max,
+            Math.max(SPOT_RADIUS.min, state.spotBrush.radius * factor),
+          );
+          state.setSpotBrush({ radius: Math.round(radius * 1000) / 1000 });
+          e.preventDefault();
+          return;
+        }
       }
       if (state.cropping && e.key === "Enter") {
         state.finishCrop();
@@ -310,8 +371,7 @@ export function DevelopStep() {
         return;
       }
       // Z : zoom 100 % au centre, ou retour à l'image entière.
-      const z = e.code === "KeyZ" || (e.code === "" && e.key.toLowerCase() === "z");
-      if (z && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (plain && letter("z")) {
         if (state.zoom) state.exitZoom();
         else void state.zoomAt(0.5, 0.5);
         e.preventDefault();
@@ -332,6 +392,7 @@ export function DevelopStep() {
         </>
       }
       right={<SettingsPanel />}
+      rail={<DevelopToolRail />}
       toolbar={
         <>
           <CompareControls />

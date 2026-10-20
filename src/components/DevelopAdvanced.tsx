@@ -22,7 +22,7 @@ import { IconButton } from "./IconButton";
 import { PanelSection } from "./PanelSection";
 
 /** Boutons à choix unique (canal de la courbe, onglet TSL). */
-function Segmented<T extends string>({
+export function Segmented<T extends string>({
   label,
   options,
   value,
@@ -193,6 +193,7 @@ export function CurveSection() {
     <PanelSection
       id="develop.curve"
       title={t("develop.curve.title")}
+      defaultCollapsed
       aside={
         <span className="panel-section-aside develop-history-actions">
           <IconButton
@@ -236,7 +237,7 @@ export function HslSection() {
   const setHsl = useDevelop((s) => s.setHsl);
   const plain = new Intl.NumberFormat(i18n.language, { signDisplay: "exceptZero" });
   return (
-    <PanelSection id="develop.hsl" title={t("develop.hsl.title")}>
+    <PanelSection id="develop.hsl" title={t("develop.hsl.title")} defaultCollapsed>
       <Segmented
         label={t("develop.hsl.title")}
         options={HSL_KINDS}
@@ -344,7 +345,7 @@ function DetailSliders({ group }: { group: DetailGroup }) {
 export function DetailSection() {
   const { t } = useTranslation();
   return (
-    <PanelSection id="develop.detail" title={t("develop.detail.title")}>
+    <PanelSection id="develop.detail" title={t("develop.detail.title")} defaultCollapsed>
       <p className="panel-note">{t("develop.detail.hint")}</p>
       <DetailSliders group="sharpening" />
       <DetailSliders group="noise" />
@@ -355,7 +356,7 @@ export function DetailSection() {
 export function EffectsSection() {
   const { t } = useTranslation();
   return (
-    <PanelSection id="develop.effects" title={t("develop.effects.title")}>
+    <PanelSection id="develop.effects" title={t("develop.effects.title")} defaultCollapsed>
       <EffectSliders group="vignette" />
       <EffectSliders group="grain" />
     </PanelSection>
