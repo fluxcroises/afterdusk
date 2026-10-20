@@ -8,6 +8,7 @@ pub mod geometry;
 pub mod gpu;
 pub mod lens;
 pub mod pipeline;
+pub mod presets;
 pub mod settings;
 pub mod source;
 pub mod spots;

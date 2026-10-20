@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "looks": [
+    "light.contrast",
+    "light.highlights",
+    "light.shadows",
+    "light.whites",
+    "light.blacks",
+    "color.vibrance",
+    "color.saturation",
+    "curve",
+    "hsl",
+    "effects.grain"
+  ],
+  "groups": [
+    {
+      "id": "essentials",
+      "controls": "looks",
+      "presets": [
+        { "id": "natural", "settings": { "light": { "contrast": 5 }, "color": { "vibrance": 15 } } },
+        {
+          "id": "vivid",
+          "settings": { "light": { "contrast": 15 }, "color": { "vibrance": 35, "saturation": 10 } }
+        },
+        {
+          "id": "punchy",
+          "settings": {
+            "light": { "contrast": 35, "whites": 10, "blacks": -15 },
+            "color": { "vibrance": 15 }
+          }
+        },
+        {
+          "id": "soft",
+          "settings": {
+            "light": { "contrast": -20, "highlights": -20, "shadows": 15 },
+            "color": { "vibrance": -10 }
+          }
+        },
+        {
+          "id": "matte",
+          "settings": {
+            "light": { "contrast": -5 },
+            "color": { "saturation": -10 },
+            "curve": { "rgb": [[0, 30], [64, 72], [192, 190], [255, 240]] }
+          }
+        },
+        {
+          "id": "warm",
+          "settings": {
+            "color": { "vibrance": 10 },
+            "curve": {
+              "red": [[0, 0], [128, 138], [255, 255]],
+              "blue": [[0, 0], [128, 116], [255, 250]]
+            }
+          }
+        },
+        {
+          "id": "cool",
+          "settings": {
+            "curve": {
+              "red": [[0, 0], [128, 120], [255, 252]],
+              "blue": [[0, 0], [128, 138], [255, 255]]
+            }
+          }
+        },
+        {
+          "id": "portrait",
+          "settings": {
+            "light": { "contrast": -10, "shadows": 10 },
+            "color": { "vibrance": 5 },
+            "hsl": { "saturation": { "orange": -10 }, "luminance": { "orange": 10 } }
+          }
+        },
+        {
+          "id": "landscape",
+          "settings": {
+            "light": { "contrast": 15, "highlights": -20 },
+            "color": { "vibrance": 25 },
+            "hsl": {
+              "saturation": { "green": 10, "blue": 15 },
+              "luminance": { "blue": -10 }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bw",
+      "controls": "looks",
+      "presets": [
+        { "id": "bwNeutral", "settings": { "color": { "saturation": -100 } } },
+        {
+          "id": "bwContrast",
+          "settings": {
+            "light": { "contrast": 40, "whites": 10, "blacks": -20 },
+            "color": { "saturation": -100 }
+          }
+        },
+        {
+          "id": "bwSoft",
+          "settings": {
+            "light": { "contrast": -15 },
+            "color": { "saturation": -100 },
+            "curve": { "rgb": [[0, 24], [128, 132], [255, 245]] }
+          }
+        }
+      ]
+    },
+    {
+      "id": "film",
+      "controls": "looks",
+      "presets": [
+        {
+          "id": "filmWarmNegative",
+          "film": { "kind": "negative", "iso": 400, "colors": ["#e3a23b", "#6a3a1d"] },
+          "settings": {
+            "light": { "contrast": -10, "highlights": -15 },
+            "color": { "vibrance": -5, "saturation": -8 },
+            "curve": {
+              "rgb": [[0, 12], [128, 132], [255, 250]],
+              "red": [[0, 0], [128, 134], [255, 255]],
+              "blue": [[0, 6], [128, 124], [255, 248]]
+            },
+            "hsl": { "saturation": { "orange": -5 }, "luminance": { "orange": 5 } },
+            "effects": { "grain": { "amount": 15 } }
+          }
+        },
+        {
+          "id": "filmGoldNegative",
+          "film": { "kind": "negative", "iso": 200, "colors": ["#f2c230", "#c0392b"] },
+          "settings": {
+            "light": { "contrast": 5 },
+            "color": { "vibrance": 15, "saturation": 5 },
+            "curve": {
+              "rgb": [[0, 8], [128, 130], [255, 252]],
+              "red": [[0, 0], [128, 136], [255, 255]],
+              "green": [[0, 0], [128, 131], [255, 255]],
+              "blue": [[0, 0], [128, 114], [255, 245]]
+            },
+            "effects": { "grain": { "amount": 20 } }
+          }
+        },
+        {
+          "id": "filmVividSlide",
+          "film": { "kind": "slide", "iso": 50, "colors": ["#2f8a45", "#cfe04a"] },
+          "settings": {
+            "light": { "contrast": 30, "blacks": -15 },
+            "color": { "vibrance": 15, "saturation": 25 },
+            "hsl": { "saturation": { "green": 15, "blue": 15 } },
+            "effects": { "grain": { "amount": 5, "size": 15 } }
+          }
+        },
+        {
+          "id": "filmNeutralSlide",
+          "film": { "kind": "slide", "iso": 100, "colors": ["#3b6fb6", "#d7e3f0"] },
+          "settings": {
+            "light": { "contrast": 15 },
+            "color": { "saturation": 8 },
+            "effects": { "grain": { "amount": 5, "size": 15 } }
+          }
+        },
+        {
+          "id": "filmClassicSlide",
+          "film": { "kind": "slide", "iso": 64, "colors": ["#f5c518", "#b3221c"] },
+          "settings": {
+            "light": { "contrast": 25, "blacks": -10 },
+            "color": { "saturation": 10 },
+            "curve": {
+              "red": [[0, 0], [128, 132], [255, 255]],
+              "blue": [[0, 0], [128, 120], [255, 248]]
+            },
+            "hsl": { "saturation": { "red": 15, "yellow": 10 }, "hue": { "blue": -5 } },
+            "effects": { "grain": { "amount": 8, "size": 18 } }
+          }
+        },
+        {
+          "id": "filmTungstenCine",
+          "film": { "kind": "negative", "iso": 800, "colors": ["#b3302a", "#1c2a46"] },
+          "settings": {
+            "light": { "contrast": 10, "highlights": -10 },
+            "color": { "saturation": -5 },
+            "curve": {
+              "red": [[0, 0], [128, 126], [255, 255]],
+              "blue": [[0, 14], [128, 136], [255, 245]]
+            },
+            "hsl": { "hue": { "orange": -5 }, "saturation": { "aqua": 15 } },
+            "effects": { "grain": { "amount": 30, "size": 30 } }
+          }
+        },
+        {
+          "id": "filmBw100",
+          "film": { "kind": "bw", "iso": 100, "colors": ["#f0f0f0", "#2b2b2b"] },
+          "settings": {
+            "light": { "contrast": 15 },
+            "color": { "saturation": -100 },
+            "effects": { "grain": { "amount": 12, "size": 15 } }
+          }
+        },
+        {
+          "id": "filmBw400",
+          "film": { "kind": "bw", "iso": 400, "colors": ["#ffffff", "#141414"] },
+          "settings": {
+            "light": { "contrast": 25, "blacks": -10 },
+            "color": { "saturation": -100 },
+            "effects": { "grain": { "amount": 35, "size": 35, "roughness": 60 } }
+          }
+        },
+        {
+          "id": "filmBw3200",
+          "film": { "kind": "bw", "iso": 3200, "colors": ["#e8e8e8", "#000000"] },
+          "settings": {
+            "light": { "contrast": 45, "blacks": -20 },
+            "color": { "saturation": -100 },
+            "effects": { "grain": { "amount": 60, "size": 50, "roughness": 70 } }
+          }
+        }
+      ]
+    },
+    {
+      "id": "exposure",
+      "controls": ["light.exposure"],
+      "presets": [
+        { "id": "exposureMinus1", "settings": { "light": { "exposure": -1 } } },
+        { "id": "exposureMinusHalf", "settings": { "light": { "exposure": -0.5 } } },
+        { "id": "exposurePlusHalf", "settings": { "light": { "exposure": 0.5 } } },
+        { "id": "exposurePlus1", "settings": { "light": { "exposure": 1 } } }
+      ]
+    },
+    {
+      "id": "vignette",
+      "controls": ["effects.vignette"],
+      "presets": [
+        { "id": "vignetteLight", "settings": { "effects": { "vignette": { "amount": -20 } } } },
+        { "id": "vignetteStrong", "settings": { "effects": { "vignette": { "amount": -45 } } } }
+      ]
+    }
+  ]
+}

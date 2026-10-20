@@ -386,6 +386,46 @@ impl WorkingImage {
         (region, (left - l0, top - t0, width, height))
     }
 
+    /// Copie réduite (moyenne de surface) dont le côté long ne dépasse pas
+    /// `max_side`, pour les vignettes des presets ; jamais agrandie.
+    pub fn downscaled(&self, max_side: u32) -> Self {
+        let (w, h) = (self.width as usize, self.height as usize);
+        let k = (f64::from(max_side.max(1)) / w.max(h).max(1) as f64).min(1.0);
+        let ow = ((w as f64 * k).round() as usize).clamp(1, w.max(1));
+        let oh = ((h as f64 * k).round() as usize).clamp(1, h.max(1));
+        let (cols, rows) = (area_weights(w, ow), area_weights(h, oh));
+        let mut tmp = vec![0.0f32; ow * h * 3];
+        for y in 0..h {
+            for (ox, (first, weights)) in cols.iter().enumerate() {
+                for (j, wt) in weights.iter().enumerate() {
+                    let i = (y * w + first + j) * 3;
+                    for c in 0..3 {
+                        tmp[(y * ow + ox) * 3 + c] += self.rgb[i + c] * wt;
+                    }
+                }
+            }
+        }
+        let mut rgb = vec![0.0f32; ow * oh * 3];
+        for (oy, (first, weights)) in rows.iter().enumerate() {
+            for (j, wt) in weights.iter().enumerate() {
+                for ox in 0..ow {
+                    let i = ((first + j) * ow + ox) * 3;
+                    for c in 0..3 {
+                        rgb[(oy * ow + ox) * 3 + c] += tmp[i + c] * wt;
+                    }
+                }
+            }
+        }
+        Self {
+            width: ow as u32,
+            height: oh as u32,
+            rgb,
+            as_shot_white: self.as_shot_white,
+            scale: self.scale * ow.max(oh) as f32 / w.max(h).max(1) as f32,
+            crop: None,
+        }
+    }
+
     /// Origine de l'image dans l'image entière, et taille de celle-ci.
     pub fn frame(&self) -> (u32, u32, u32, u32) {
         self.crop.map_or((0, 0, self.width, self.height), |c| {

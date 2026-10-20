@@ -7,6 +7,7 @@ use std::time::Instant;
 
 use afterdusk_lib::develop::lens::{self, LensCorrection, Shot};
 use afterdusk_lib::develop::pipeline::{WorkingImage, render_rgba};
+use afterdusk_lib::develop::presets;
 use afterdusk_lib::develop::settings::{DevelopSettings, LensSettings};
 use afterdusk_lib::develop::white;
 use afterdusk_lib::raw::RawFile;
@@ -207,4 +208,39 @@ fn corrections_d_objectif_sur_les_echantillons() {
         recognized.push(format!("{} : {ms} ms", profile.name));
     }
     eprintln!("{}", recognized.join(" · "));
+}
+
+/// Vignettes de la galerie : chaque preset fourni rendu sur une photo
+/// réduite ; les noirs et blancs sont gris, les autres différents de
+/// l'original. Durée pour tout le catalogue.
+#[test]
+fn vignettes_des_presets_fournis() {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../test-assets");
+    let mut raw = RawFile::open(&dir.join("sony_ilce-7m3.ARW")).unwrap();
+    let image = WorkingImage::from_raw(&raw.develop(true).unwrap(), 2048);
+    let small = image.downscaled(240);
+    assert_eq!(small.width.max(small.height), 240);
+    let none = std::path::Path::new("absent.json");
+    let base = DevelopSettings::default();
+    let original = render_rgba(&small, &base);
+    let groups = presets::list(none).unwrap();
+    let started = Instant::now();
+    let mut count = 0;
+    for group in groups.iter().filter(|g| !g.user) {
+        for p in &group.presets {
+            let preset = presets::find(none, &p.id).unwrap();
+            let rgba = render_rgba(&small, &presets::apply(&base, &preset, 100.0));
+            count += 1;
+            assert_ne!(rgba, original, "{}", p.id);
+            if preset.settings.color.saturation == -100.0 {
+                assert!(
+                    rgba.chunks(4)
+                        .all(|px| px[0].abs_diff(px[1]) <= 2 && px[1].abs_diff(px[2]) <= 2),
+                    "{} pas en gris",
+                    p.id
+                );
+            }
+        }
+    }
+    eprintln!("{count} vignettes en {} ms", started.elapsed().as_millis());
 }

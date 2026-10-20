@@ -171,7 +171,7 @@ impl HueSet {
         ]
     }
 
-    fn values_mut(&mut self) -> [&mut f64; 8] {
+    pub fn values_mut(&mut self) -> [&mut f64; 8] {
         [
             &mut self.red,
             &mut self.orange,
@@ -495,6 +495,15 @@ impl LensSettings {
     }
 }
 
+/// Preset appliqué en dernier (galerie de filtres) et son intensité, de 0 à
+/// 100 % : il se règle de nouveau sans perdre le reste de la photo.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Look {
+    pub id: String,
+    pub amount: f64,
+}
+
 /// Mode d'une correction de défaut.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -579,6 +588,8 @@ pub struct DevelopSettings {
     pub geometry: Geometry,
     #[serde(default, skip_serializing_if = "LensSettings::is_default")]
     pub lens: LensSettings,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub look: Option<Look>,
     /// Corrections de défauts, dans l'ordre où elles sont appliquées.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub spots: Vec<Spot>,
@@ -598,6 +609,7 @@ impl Default for DevelopSettings {
             geometry: Geometry::default(),
             effects: Effects::default(),
             lens: LensSettings::default(),
+            look: None,
             spots: Vec::new(),
         }
     }
@@ -745,6 +757,12 @@ impl DevelopSettings {
         } else {
             100.0
         };
+        if let Some(look) = &mut self.look {
+            look.amount = clamp(look.amount, 0.0, 100.0);
+            if look.id.is_empty() || look.id.len() > 64 {
+                self.look = None;
+            }
+        }
         self.spots.retain(|s| {
             [s.x, s.y, s.radius, s.source_x, s.source_y]
                 .iter()

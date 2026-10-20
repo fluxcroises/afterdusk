@@ -19,6 +19,7 @@ use crate::develop::geometry;
 use crate::develop::gpu::{GpuImage, GpuRenderer};
 use crate::develop::lens::{self, LensCorrection, LensProfile};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
+use crate::develop::presets;
 use crate::develop::settings::{DevelopSettings, Geometry, LensSettings, Spot, WhiteBalance};
 use crate::develop::source::{self, PREVIEW_SIDE, SourceError};
 use crate::develop::spots;
@@ -76,6 +77,8 @@ struct Session {
     geometry: Geometry,
     spots: Vec<Spot>,
     gpu: Option<GpuImage>,
+    /// `image` réduite pour les vignettes des presets, faite au premier besoin.
+    thumb: Option<WorkingImage>,
     /// Original en pleine définition, décodé au premier zoom 100 %.
     full: Option<Arc<DevelopedRaw>>,
 }
@@ -217,6 +220,7 @@ pub async fn develop_open(
             geometry,
             spots: spot_list,
             gpu,
+            thumb: None,
             full: None,
         });
         Ok(opened)
@@ -331,6 +335,7 @@ pub async fn develop_render(
             });
             session.geometry = settings.geometry.clone();
             session.spots = settings.spots.clone();
+            session.thumb = None;
         }
         let clipping = clipping.unwrap_or_default();
         let params = RenderParams::from_settings(&settings, session.image.as_shot_white, clipping);
@@ -827,4 +832,91 @@ pub async fn develop_spot_source(
         Ok([sx, sy])
     })
     .await
+}
+
+/// Côté long des vignettes de la galerie de filtres, au plus.
+const PRESET_THUMB_MAX: u32 = 480;
+
+/// Réglages affichés avec le preset `id` appliqué à `amount` (0 à 100 %) ;
+/// `id` absent : « Original », l'aspect appliqué est retiré.
+#[tauri::command]
+pub async fn develop_preset_apply(
+    state: State<'_, AppState>,
+    settings: DevelopSettings,
+    id: Option<String>,
+    amount: f64,
+) -> CommandResult<DevelopSettings> {
+    let path = super::presets::user_file(&state);
+    blocking(move || {
+        let settings = settings.sanitized();
+        Ok(match id {
+            Some(id) => presets::apply(&settings, &presets::find(&path, &id)?, amount),
+            None => {
+                let current = settings
+                    .look
+                    .as_ref()
+                    .and_then(|l| presets::find(&path, &l.id).ok());
+                presets::remove(&settings, current.as_ref())
+            }
+        })
+    })
+    .await
+}
+
+/// Vignettes de la photo ouverte avec chacun des presets `ids` (chaîne
+/// vide : « Original ») à `amount` : nombre (u32 LE), puis pour chacune
+/// largeur, hauteur et pixels RGBA.
+#[tauri::command]
+pub async fn develop_preset_previews(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    settings: DevelopSettings,
+    ids: Vec<String>,
+    amount: f64,
+    size: u32,
+) -> CommandResult<Response> {
+    let path = super::presets::user_file(&state);
+    let bytes = blocking(move || {
+        let engine = app.state::<DevelopEngine>();
+        let small = {
+            let mut guard = engine
+                .session
+                .lock()
+                .map_err(|e| CommandError::new("internal", e))?;
+            let session = guard
+                .as_mut()
+                .ok_or_else(|| CommandError::new("internal", "aucune photo ouverte"))?;
+            let side = size.clamp(32, PRESET_THUMB_MAX);
+            if session.thumb.as_ref().is_none_or(|t| {
+                t.width.max(t.height) != side.min(session.image.width.max(session.image.height))
+            }) {
+                session.thumb = Some(session.image.downscaled(side));
+            }
+            session.thumb.clone()
+        }
+        .ok_or_else(|| CommandError::new("internal", "vignette absente"))?;
+        let settings = settings.sanitized();
+        let current = settings
+            .look
+            .as_ref()
+            .and_then(|l| presets::find(&path, &l.id).ok());
+        let mut out = Vec::new();
+        out.extend_from_slice(&(ids.len() as u32).to_le_bytes());
+        for id in &ids {
+            let applied = if id.is_empty() {
+                presets::remove(&settings, current.as_ref())
+            } else {
+                presets::apply(&settings, &presets::find(&path, id)?, amount)
+            };
+            let params =
+                RenderParams::from_settings(&applied, small.as_shot_white, Clipping::default());
+            let rendered = render(&small, &params);
+            out.extend_from_slice(&small.width.to_le_bytes());
+            out.extend_from_slice(&small.height.to_le_bytes());
+            out.extend_from_slice(&rendered.rgba);
+        }
+        Ok(out)
+    })
+    .await?;
+    Ok(Response::new(bytes))
 }
