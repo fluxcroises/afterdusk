@@ -49,7 +49,7 @@ fn jpeg_web_des_six_echantillons() {
         let started = Instant::now();
         let mut raw = RawFile::open(&dir.join(file)).unwrap();
         let profile = lens::find_profile(&Shot::from(&raw.info()));
-        let img = render_photo(&mut raw, &settings, profile.as_ref(), options).unwrap();
+        let img = render_photo(&mut raw, &settings, profile.as_ref(), options, None).unwrap();
         assert_eq!(img.width.max(img.height), 2048, "{file}");
         let path = out.path().join(format!("{file}.jpg"));
         encode::write(
@@ -81,7 +81,7 @@ fn tiff_16_bits_pleine_resolution() {
         color: ColorSpace::AdobeRgb,
     };
     let started = Instant::now();
-    let img = render_photo(&mut raw, &DevelopSettings::default(), None, options).unwrap();
+    let img = render_photo(&mut raw, &DevelopSettings::default(), None, options, None).unwrap();
     let long = img.width.max(img.height);
     assert!(
         long + 64 >= u32::from(info.width.max(info.height)),
@@ -106,4 +106,60 @@ fn tiff_16_bits_pleine_resolution() {
     );
     let decoded = image::open(&path).unwrap();
     assert_eq!(decoded.color(), image::ColorType::Rgb16);
+}
+
+/// Filigrane texte et métadonnées sur une vraie photo : le JPEG garde son
+/// EXIF (sans GPS ni numéro de série) ; copie pour contrôle à l'œil dans
+/// `AFTERDUSK_EXPORT_SAMPLE` si la variable est posée.
+#[test]
+fn filigrane_et_metadonnees() {
+    use afterdusk_lib::export::metadata::{self, MetadataPolicy, PhotoMeta};
+    use afterdusk_lib::export::watermark::{Anchor, Watermark, WatermarkContent};
+    use afterdusk_lib::metadata::media::{MediaFormat, read_metadata};
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../test-assets");
+    let src = dir.join("sony_ilce-7m3.ARW");
+    let out = tempfile::tempdir().unwrap();
+    let mut raw = RawFile::open(&src).unwrap();
+    let mark = Watermark {
+        content: WatermarkContent::Text {
+            text: "© Lewis Bedar".into(),
+            dark: false,
+        },
+        anchor: Anchor::BottomRight,
+        size: 25.0,
+        opacity: 70.0,
+        margin: 3.0,
+    };
+    let options = RenderOptions {
+        resize: Resize::LongSide(1600),
+        sharpen: Sharpen::Screen,
+        color: ColorSpace::Srgb,
+    };
+    let img = render_photo(
+        &mut raw,
+        &DevelopSettings::default(),
+        None,
+        options,
+        Some(&mark),
+    )
+    .unwrap();
+    let meta = PhotoMeta {
+        camera: read_metadata(&src, MediaFormat::Raw),
+        sidecar: None,
+    };
+    let embedded = metadata::embedded(&meta, MetadataPolicy::NoGpsSerial).unwrap();
+    let path = out.path().join("web.jpg");
+    let icc = ColorSpace::Srgb.icc().unwrap();
+    encode::write(&img, Format::Jpeg { quality: 85 }, &icc, &embedded, &path).unwrap();
+    let file = std::fs::File::open(&path).unwrap();
+    let exif = exif::Reader::new()
+        .read_from_container(&mut std::io::BufReader::new(file))
+        .unwrap();
+    use exif::{In, Tag};
+    assert!(exif.get_field(Tag::Model, In::PRIMARY).is_some());
+    assert!(exif.get_field(Tag::BodySerialNumber, In::PRIMARY).is_none());
+    assert!(exif.get_field(Tag::GPSLatitude, In::PRIMARY).is_none());
+    if let Some(dest) = std::env::var_os("AFTERDUSK_EXPORT_SAMPLE") {
+        std::fs::copy(&path, dest).unwrap();
+    }
 }

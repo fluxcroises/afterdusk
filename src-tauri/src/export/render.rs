@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use super::ExportError;
 use super::color::ColorSpace;
+use super::watermark::{self, Watermark};
 use crate::develop::geometry;
 use crate::develop::lens::{LensCorrection, LensProfile};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render_encoded};
@@ -108,12 +109,13 @@ fn oriented_size(raw: &RawFile) -> (u32, u32) {
     }
 }
 
-/// Rend une photo avec ses réglages.
+/// Rend une photo avec ses réglages, et le filigrane s'il y en a un.
 pub fn render_photo(
     raw: &mut RawFile,
     settings: &DevelopSettings,
     profile: Option<&LensProfile>,
     options: RenderOptions,
+    mark: Option<&Watermark>,
 ) -> Result<Rendered, ExportError> {
     let g = &settings.geometry;
     // Demi-définition quand la sortie n'en demande pas plus.
@@ -149,12 +151,16 @@ pub fn render_photo(
     let params = RenderParams::from_settings(settings, sized.as_shot_white, Clipping::default());
     let mut rgb = render_encoded(&sized, &params);
     sharpen(&mut rgb, tw as usize, th as usize, options.sharpen);
-    options.color.convert(&mut rgb)?;
-    Ok(Rendered {
+    let mut out = Rendered {
         width: tw,
         height: th,
         rgb,
-    })
+    };
+    if let Some(mark) = mark {
+        watermark::apply(&mut out, mark)?;
+    }
+    options.color.convert(&mut out.rgb)?;
+    Ok(out)
 }
 
 /// Flou gaussien séparable d'un plan, bords répétés.

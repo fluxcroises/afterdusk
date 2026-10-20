@@ -3,7 +3,9 @@
 
 pub mod color;
 pub mod encode;
+pub mod metadata;
 pub mod render;
+pub mod watermark;
 
 use std::path::PathBuf;
 
@@ -15,6 +17,10 @@ pub enum ExportError {
     TooLarge,
     #[error("conversion de couleurs impossible : {0}")]
     Color(String),
+    #[error("métadonnées impossibles à écrire : {0}")]
+    Metadata(String),
+    #[error("filigrane impossible : {0}")]
+    Watermark(String),
     #[error("encodage impossible : {0}")]
     Encode(String),
     #[error(transparent)]
