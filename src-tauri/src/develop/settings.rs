@@ -834,7 +834,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(s.spots.len(), 2);
-        assert_eq!((s.spots[0].feather, s.spots[0].mode), (50.0, SpotMode::Heal));
+        assert_eq!(
+            (s.spots[0].feather, s.spots[0].mode),
+            (50.0, SpotMode::Heal)
+        );
         let b = &s.spots[1];
         assert_eq!((b.x, b.y, b.radius), (1.0, 0.0, SPOT_RADIUS_MAX));
         assert_eq!(b.mode, SpotMode::Clone);
