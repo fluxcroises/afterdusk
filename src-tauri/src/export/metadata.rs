@@ -173,35 +173,35 @@ fn exif_fields(meta: &PhotoMeta, policy: MetadataPolicy) -> Vec<Field> {
             }]),
         });
     }
-    if policy == MetadataPolicy::All || policy == MetadataPolicy::NoGps {
-        if let Some(v) = &c.body_serial {
-            fields.push(ascii(Tag::BodySerialNumber, v));
-        }
+    if let Some(v) = &c.body_serial
+        && (policy == MetadataPolicy::All || policy == MetadataPolicy::NoGps)
+    {
+        fields.push(ascii(Tag::BodySerialNumber, v));
     }
-    if policy == MetadataPolicy::All {
-        if let Some(g) = &c.gps {
-            let gps = |tag, value| Field {
-                tag,
-                ifd_num: In::PRIMARY,
-                value,
-            };
-            fields.push(gps(Tag::GPSVersionID, Value::Byte(vec![2, 3, 0, 0])));
-            let lat_ref = if g.latitude < 0.0 { "S" } else { "N" };
-            let lon_ref = if g.longitude < 0.0 { "W" } else { "E" };
-            fields.push(ascii(Tag::GPSLatitudeRef, lat_ref));
-            fields.push(gps(Tag::GPSLatitude, Value::Rational(dms(g.latitude))));
-            fields.push(ascii(Tag::GPSLongitudeRef, lon_ref));
-            fields.push(gps(Tag::GPSLongitude, Value::Rational(dms(g.longitude))));
-            if let Some(alt) = g.altitude {
-                fields.push(gps(
-                    Tag::GPSAltitudeRef,
-                    Value::Byte(vec![u8::from(alt < 0.0)]),
-                ));
-                fields.push(gps(
-                    Tag::GPSAltitude,
-                    Value::Rational(vec![rational(alt.abs())]),
-                ));
-            }
+    if policy == MetadataPolicy::All
+        && let Some(g) = &c.gps
+    {
+        let gps = |tag, value| Field {
+            tag,
+            ifd_num: In::PRIMARY,
+            value,
+        };
+        fields.push(gps(Tag::GPSVersionID, Value::Byte(vec![2, 3, 0, 0])));
+        let lat_ref = if g.latitude < 0.0 { "S" } else { "N" };
+        let lon_ref = if g.longitude < 0.0 { "W" } else { "E" };
+        fields.push(ascii(Tag::GPSLatitudeRef, lat_ref));
+        fields.push(gps(Tag::GPSLatitude, Value::Rational(dms(g.latitude))));
+        fields.push(ascii(Tag::GPSLongitudeRef, lon_ref));
+        fields.push(gps(Tag::GPSLongitude, Value::Rational(dms(g.longitude))));
+        if let Some(alt) = g.altitude {
+            fields.push(gps(
+                Tag::GPSAltitudeRef,
+                Value::Byte(vec![u8::from(alt < 0.0)]),
+            ));
+            fields.push(gps(
+                Tag::GPSAltitude,
+                Value::Rational(vec![rational(alt.abs())]),
+            ));
         }
     }
     fields

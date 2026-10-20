@@ -283,8 +283,8 @@ mod tests {
         // 30 % de 400 px de large, marge de 5 % de 300 px.
         let w = x1 - x0 + 1;
         assert!((105..=122).contains(&w), "largeur {w}");
-        assert!(x1 <= 400 - 15 && x1 >= 400 - 20, "{x1}");
-        assert!(y1 <= 300 - 15 && y1 >= 300 - 30, "{y1}");
+        assert!((380..=385).contains(&x1), "{x1}");
+        assert!((270..=285).contains(&y1), "{y1}");
         assert!(y0 > 200);
         // Blanc à 80 % : plus clair.
         assert!(img.rgb.iter().copied().fold(0.0f32, f32::max) > 0.85);
@@ -295,7 +295,10 @@ mod tests {
         let mut tl = gray(400, 300);
         apply(&mut tl, &text(Anchor::TopLeft)).unwrap();
         let (x0, y0, _, _) = changed(&tl).unwrap();
-        assert!(x0 >= 15 && x0 < 25 && y0 >= 15 && y0 < 40, "{x0} {y0}");
+        assert!(
+            (15..25).contains(&x0) && (15..40).contains(&y0),
+            "{x0} {y0}"
+        );
         let mut c = gray(400, 300);
         apply(&mut c, &text(Anchor::Center)).unwrap();
         let (x0, y0, x1, y1) = changed(&c).unwrap();
