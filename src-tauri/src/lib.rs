@@ -89,6 +89,7 @@ pub fn run() {
             purge_expired_trash(db_path.clone(), cache_root.clone());
             app.manage(XmpWriter::start(db_path.clone()));
             app.manage(commands::develop::DevelopEngine::new());
+            app.manage(commands::export::ExportState::default());
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
             commands::library::watch_libraries(
@@ -166,6 +167,11 @@ pub fn run() {
             commands::develop::develop_preset_previews,
             commands::develop::develop_paste_apply,
             commands::develop::develop_paste,
+            commands::export::export_settings,
+            commands::export::export_settings_save,
+            commands::export::export_start,
+            commands::export::export_cancel,
+            commands::export::export_reveal,
             commands::presets::presets_list,
             commands::presets::presets_create,
             commands::presets::presets_rename,

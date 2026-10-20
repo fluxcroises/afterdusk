@@ -3,7 +3,9 @@
 
 pub mod color;
 pub mod encode;
+pub mod job;
 pub mod metadata;
+pub mod presets;
 pub mod render;
 pub mod watermark;
 
@@ -23,6 +25,12 @@ pub enum ExportError {
     Watermark(String),
     #[error("encodage impossible : {0}")]
     Encode(String),
+    #[error("réglages d'export illisibles : {0}")]
+    Settings(String),
+    #[error("copie de l'original impossible : {0}")]
+    Copy(String),
+    #[error("export rendu réservé aux RAW pour l'instant : {0}")]
+    Unsupported(String),
     #[error(transparent)]
     Raw(#[from] crate::raw::RawError),
     #[error(transparent)]

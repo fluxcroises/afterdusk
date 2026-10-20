@@ -1,0 +1,174 @@
+//! Export de bout en bout : import de vraies photos, puis export avec deux
+//! presets (Web et Originaux) dans des sous-dossiers. Règles absolues :
+//! aucun original modifié, copies d'originaux identiques.
+
+mod common;
+
+use std::fs;
+use std::sync::Mutex;
+use std::sync::atomic::AtomicBool;
+
+use afterdusk_lib::develop::settings::DevelopSettings;
+use afterdusk_lib::develop::store;
+use afterdusk_lib::export::job::{self, ExportRequest, Target};
+use afterdusk_lib::export::presets::ExportSettings;
+use afterdusk_lib::export::watermark::{Anchor, Watermark, WatermarkContent};
+use afterdusk_lib::import::{self, ImportOptions};
+use afterdusk_lib::{db, library};
+
+#[test]
+fn web_et_originaux_dans_des_sous_dossiers() {
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("carte");
+    fs::create_dir_all(&card).unwrap();
+    for name in ["nikon_z6.NEF", "sony_ilce-7m3.ARW"] {
+        fs::copy(common::sample(name), card.join(name)).unwrap();
+    }
+    fs::write(card.join("note.JPG"), b"pas une vraie image").unwrap();
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let db_path = dir.path().join("afterdusk.db");
+    let mut conn = db::open(&db_path).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let mut files: Vec<_> = fs::read_dir(&card)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .collect();
+    files.sort();
+    let id = import::plan(
+        &mut conn,
+        &ImportOptions {
+            library_id: lib.id,
+            source_path: card.clone(),
+            source_label: "Carte".into(),
+            files,
+            album_name: "Export".into(),
+            album_per_day: false,
+            rename: false,
+            backup: false,
+            keywords: vec!["client".into()],
+            creator: Some("Lewis Bedar".into()),
+            rights: Some("© 2026 Lewis Bedar".into()),
+            skip_pair_jpegs: false,
+        },
+    )
+    .unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+    let ids: Vec<i64> = conn
+        .prepare("SELECT id FROM media ORDER BY path")
+        .unwrap()
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(ids.len(), 3);
+    // Une retouche sur la première photo.
+    let mut s = DevelopSettings::default();
+    s.light.exposure = 0.5;
+    store::save(&mut conn, ids[0], store::ORIGINAL, s, "light.exposure").unwrap();
+
+    let originals: Vec<_> = fs::read_dir(&root)
+        .unwrap()
+        .flat_map(|e| walk(&e.unwrap().path()))
+        .filter(|p| p.extension().is_some_and(|e| e != "xmp"))
+        .map(|p| (p.clone(), common::sha256(&p)))
+        .collect();
+
+    let out = dir.path().join("Livraison");
+    let mut settings = ExportSettings {
+        watermark: Some(Watermark {
+            content: WatermarkContent::Text {
+                text: "© Lewis Bedar".into(),
+                dark: false,
+            },
+            anchor: Anchor::BottomRight,
+            size: 20.0,
+            opacity: 60.0,
+            margin: 3.0,
+        }),
+        ..ExportSettings::default()
+    };
+    settings
+        .presets
+        .iter_mut()
+        .find(|p| p.id == "web")
+        .unwrap()
+        .watermark = true;
+    let request = ExportRequest {
+        media_ids: ids.clone(),
+        targets: vec![
+            Target {
+                preset: "web".into(),
+                folder: Some("Web".into()),
+            },
+            Target {
+                preset: "originals".into(),
+                folder: Some("Originaux".into()),
+            },
+        ],
+        destination: out.clone(),
+    };
+    let reports = Mutex::new(Vec::new());
+    let done = job::run(
+        &db_path,
+        &settings,
+        &request,
+        &AtomicBool::new(false),
+        &|p| {
+            reports.lock().unwrap().push(p.done);
+        },
+    )
+    .unwrap();
+    assert_eq!(done.total, 6);
+    assert_eq!(done.done, 6);
+    assert_eq!(reports.lock().unwrap().len(), 3);
+    // Le faux JPEG ne se rend pas (Web) ; il se copie (Originaux).
+    assert_eq!(done.failures.len(), 1, "{:?}", done.failures);
+    assert_eq!(done.failures[0].preset, "web");
+
+    let web: Vec<_> = walk(&out.join("Web"));
+    assert_eq!(web.len(), 2, "{web:?}");
+    for p in &web {
+        let img = image::open(p).unwrap();
+        assert_eq!(img.width().max(img.height()), 2048);
+    }
+    // Originaux : copies identiques, XMP compris.
+    let copies = walk(&out.join("Originaux"));
+    assert_eq!(
+        copies
+            .iter()
+            .filter(|p| p.extension().unwrap() == "xmp")
+            .count(),
+        3
+    );
+    for (orig, hash) in &originals {
+        let copy = out.join("Originaux").join(orig.file_name().unwrap());
+        assert_eq!(&common::sha256(&copy), hash);
+        // Règle absolue : l'original n'a pas bougé.
+        assert_eq!(&common::sha256(orig), hash);
+    }
+    // Deuxième export : rien n'est écrasé.
+    job::run(
+        &db_path,
+        &settings,
+        &request,
+        &AtomicBool::new(false),
+        &|_| {},
+    )
+    .unwrap();
+    assert_eq!(walk(&out.join("Web")).len(), 4);
+}
+
+fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    if dir.is_file() {
+        return vec![dir.to_path_buf()];
+    }
+    let mut out = Vec::new();
+    if let Ok(entries) = fs::read_dir(dir) {
+        for e in entries.flatten() {
+            out.extend(walk(&e.path()));
+        }
+    }
+    out.sort();
+    out
+}
