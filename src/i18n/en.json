@@ -268,7 +268,8 @@
     "trashJpeg": "Move JPEG to Trash",
     "trashRaw": "Move RAW to Trash",
     "copySettings": "Copy Settings…",
-    "pasteSettings": "Paste Settings"
+    "pasteSettings": "Paste Settings",
+    "rescanLibrary": "Rescan Library"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -328,7 +329,10 @@
     "cullThem": "Cull them",
     "allAlbums": "All albums ({{count}})",
     "fewerAlbums": "Show less",
-    "defaultPhotoCredit": "Cabourg · photo © Lewis Bedar"
+    "defaultPhotoCredit": "Cabourg · photo © Lewis Bedar",
+    "rescanHint": "Your photos are already in this folder (lost database, new computer)?",
+    "rescan": "Find the library's photos",
+    "rescanning": "Searching…"
   },
   "keys": {
     "ctrl": "Ctrl",
@@ -571,7 +575,8 @@
       "look": "Filter: {{name}}",
       "lookRemoved": "Filter removed",
       "lookAmount": "Filter amount {{value}}%",
-      "paste": "Settings pasted"
+      "paste": "Settings pasted",
+      "xmpRestore": "Edits restored from XMP"
     },
     "compare": {
       "hold": "Before (hold to see the original)",
@@ -924,5 +929,17 @@
     "previewLoading": "Computing the preview…",
     "previewFailed": "No preview for this photo.",
     "previewSize": "File of {{width}} × {{height}} px"
+  },
+  "rescan": {
+    "title": "Library rescan",
+    "added_zero": "No new photos: the database already knows every file.",
+    "added_one": "{{count}} photo added.",
+    "added_other": "{{count}} photos added.",
+    "restored_zero": "No edits restored from XMP.",
+    "restored_one": "Edits of {{count}} photo restored from XMP.",
+    "restored_other": "Edits of {{count}} photos restored from XMP.",
+    "failed_one": "{{count}} unreadable file:",
+    "failed_other": "{{count}} unreadable files:",
+    "progress": "Rescan: {{done}} / {{total}}"
   }
 }

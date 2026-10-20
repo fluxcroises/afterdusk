@@ -17,7 +17,9 @@ import { focusSearch } from "./search";
 import { useLayout } from "./store/layout";
 import { pasteTargets } from "./ui/paste";
 import { canRedo, canUndo, useDevelop } from "./store/develop";
+import { useImport } from "./store/import";
 import { useLibrary } from "./store/library";
+import { useRescan } from "./store/rescan";
 import { COLOR_LABELS } from "./ui/labels";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
 
@@ -110,6 +112,14 @@ export function buildMenuItems(t: TFunction): Item[] {
       },
       separator,
       { id: "new-library", text: t("menu.newLibrary"), enabled: false },
+      {
+        id: "rescan-library",
+        text: t("menu.rescanLibrary"),
+        action: () => {
+          const id = useImport.getState().libraryId;
+          if (id !== null) void useRescan.getState().run(id);
+        },
+      },
       separator,
       { item: "CloseWindow", text: t("menu.closeWindow") },
       ...(isMac ? [] : [{ item: "Quit", text: t("menu.quit") } as PredefinedMenuItemOptions]),

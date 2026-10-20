@@ -268,7 +268,8 @@
     "trashJpeg": "Envoyer le JPEG dans la corbeille",
     "trashRaw": "Envoyer le RAW dans la corbeille",
     "copySettings": "Copier les réglages…",
-    "pasteSettings": "Coller les réglages"
+    "pasteSettings": "Coller les réglages",
+    "rescanLibrary": "Réanalyser la bibliothèque"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -328,7 +329,10 @@
     "cullThem": "Les trier",
     "allAlbums": "Tous les albums ({{count}})",
     "fewerAlbums": "Réduire",
-    "defaultPhotoCredit": "Cabourg · photo © Lewis Bedar"
+    "defaultPhotoCredit": "Cabourg · photo © Lewis Bedar",
+    "rescanHint": "Vos photos sont déjà rangées dans ce dossier (base perdue, nouvel ordinateur) ?",
+    "rescan": "Retrouver les photos de la bibliothèque",
+    "rescanning": "Recherche en cours…"
   },
   "keys": {
     "ctrl": "Ctrl",
@@ -571,7 +575,8 @@
       "look": "Filtre : {{name}}",
       "lookRemoved": "Filtre retiré",
       "lookAmount": "Intensité du filtre {{value}} %",
-      "paste": "Réglages collés"
+      "paste": "Réglages collés",
+      "xmpRestore": "Retouche reprise du XMP"
     },
     "compare": {
       "hold": "Avant (maintenir pour voir l'original)",
@@ -924,5 +929,17 @@
     "previewLoading": "Calcul de l'aperçu…",
     "previewFailed": "Aperçu impossible pour cette photo.",
     "previewSize": "Fichier de {{width}} × {{height}} px"
+  },
+  "rescan": {
+    "title": "Réanalyse de la bibliothèque",
+    "added_zero": "Aucune photo nouvelle : la base connaît déjà tous les fichiers.",
+    "added_one": "{{count}} photo ajoutée.",
+    "added_other": "{{count}} photos ajoutées.",
+    "restored_zero": "Aucune retouche reprise du XMP.",
+    "restored_one": "Retouches de {{count}} photo reprises du XMP.",
+    "restored_other": "Retouches de {{count}} photos reprises du XMP.",
+    "failed_one": "{{count}} fichier illisible :",
+    "failed_other": "{{count}} fichiers illisibles :",
+    "progress": "Réanalyse : {{done}} / {{total}}"
   }
 }

@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { isFiltering, useLibrary } from "../store/library";
+import { useRescan } from "../store/rescan";
 
 /** Barre d'état en bas de la fenêtre. */
 export function StatusBar() {
@@ -21,6 +22,10 @@ export function StatusBar() {
   );
   const filtering = useLibrary((s) => isFiltering(s.filter));
   const albums = useLibrary((s) => (s.showAlbums ? s.albums.length : null));
+  // Valeurs simples : un objet recréé à chaque lecture relancerait le rendu sans fin.
+  const rescanning = useRescan((s) => s.running);
+  const rescanDone = useRescan((s) => s.progress?.done ?? 0);
+  const rescanTotal = useRescan((s) => s.progress?.total ?? 0);
   return (
     <footer className="status-bar">
       <span>
@@ -31,6 +36,7 @@ export function StatusBar() {
             : t("status.selection", { count, selected })}
       </span>
       <span className="status-bar-spacer" />
+      {rescanning && <span>{t("rescan.progress", { done: rescanDone, total: rescanTotal })}</span>}
       <span title={t("status.safetyHint")}>{t("status.safety")}</span>
     </footer>
   );

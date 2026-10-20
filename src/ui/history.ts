@@ -64,6 +64,7 @@ export function describeStep(
     return t("develop.history.look", { name });
   }
   if (step.label === "paste") return t("develop.history.paste");
+  if (step.label === "xmp.restore") return t("develop.history.xmpRestore");
   if (step.label === "look.remove") return t("develop.history.lookRemoved");
   if (step.label === "look.amount") {
     return t("develop.history.lookAmount", { value: step.settings.look?.amount ?? 100 });

@@ -368,3 +368,11 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Section « Aperçu du résultat » en tête du panneau de Livrer : la photo active telle que le preset choisi l'exportera (retouche, recadrage, objectif, défauts, accentuation, filigrane), réduite à 900 px, et la taille du fichier (« Fichier de 1080 × 721 px ») ; choix du preset quand plusieurs sont cochés ; refait peu après chaque changement de photo, de preset ou de filigrane. Pour « Originaux », l'aperçu en cache et la mention du fichier tel quel.
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : preset Instagram avec filigrane, changement de photo, originaux identiques.
 
+### 2026-10-21 : V0.2, base reconstruite depuis les dossiers et les XMP
+
+- Il n'existait aucun moyen de reconstruire la base. Nouvelle réanalyse de la bibliothèque (Fichier > Réanalyser la bibliothèque, et sur l'accueil d'une bibliothèque vide : « Retrouver les photos de la bibliothèque ») : les fichiers présents dans les dossiers mais absents de la base sont inscrits, avec leur album (le dossier), leurs marques et mots-clés, et leurs retouches, instantanés et copies virtuelles repris du XMP (`afterdusk:Develop`, `afterdusk:Snapshots`, `afterdusk:Versions`) ; piles RAW + JPEG reformées ; aperçus refaits (rendus d'après la retouche). Rien n'est écrit sur le disque, ni original ni XMP (test). Bilan à la fin, progression dans la barre d'état.
+- Inscription d'un média commune à l'import et à la réanalyse. Historique : « Retouche reprise du XMP ».
+- Corrigé avant livraison : la barre d'état lisait la progression par un objet recréé à chaque lecture, ce qui relançait le rendu sans fin et laissait la fenêtre noire pendant la réanalyse (vu à l'écran, test ajouté).
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : bibliothèque importée et retouchée, base supprimée puis recréée vide, réanalyse : « 6 photos ajoutées, retouches de 1 photo reprises du XMP », note de 5 étoiles et vignette noir et blanc retrouvées, originaux identiques. Le bouton de l'accueil n'a pas été vu à l'écran (même commande).
+- Limites : l'album prend le nom de son dossier (« 2018-03-13 Six boîtiers ») ; la couverture choisie et les collections, qui ne sont qu'en base, ne sont pas retrouvées.
+

@@ -1,4 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { useRescan } from "../store/rescan";
 import { Check, ChevronDown, FolderOpen, HardDriveDownload, Images } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -325,6 +326,30 @@ function AlbumList() {
 }
 
 /** Fenêtre d'accueil, ouverte au démarrage. */
+/**
+ * Photos déjà rangées dans la bibliothèque mais inconnues de la base (base
+ * perdue, nouvel ordinateur) : la réanalyse les retrouve, retouches comprises.
+ */
+function RescanHint() {
+  const { t } = useTranslation();
+  const libraryId = useImport((s) => s.libraryId);
+  const running = useRescan((s) => s.running);
+  if (libraryId === null) return null;
+  return (
+    <p className="welcome-hint">
+      {t("home.rescanHint")}{" "}
+      <button
+        type="button"
+        className="button button-small"
+        disabled={running}
+        onClick={() => void useRescan.getState().run(libraryId)}
+      >
+        {t(running ? "home.rescanning" : "home.rescan")}
+      </button>
+    </p>
+  );
+}
+
 export function WelcomeApp() {
   const { t } = useTranslation();
   useAppEvents("welcome");
@@ -367,6 +392,7 @@ export function WelcomeApp() {
                   <h2>{t("home.addPhotos")}</h2>
                 </header>
                 <p className="welcome-hint">{t("home.dropHint")}</p>
+                <RescanHint />
               </section>
             )}
             <AlbumList />
