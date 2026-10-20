@@ -12,7 +12,8 @@ use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
 use crate::export::ExportError;
 use crate::export::job::{self, ExportRequest, Progress};
-use crate::export::presets::{self, ExportSettings, FILE};
+use crate::export::presets::{self, ExportPreset, ExportSettings, FILE};
+use crate::export::watermark::Watermark;
 
 pub const EVENT_PROGRESS: &str = "export://progress";
 pub const EVENT_FINISHED: &str = "export://finished";
@@ -149,4 +150,32 @@ pub fn export_reveal(destination: PathBuf) -> CommandResult<()> {
         reveal(&destination);
     }
     Ok(())
+}
+
+/// Côté long de l'aperçu du résultat, au plus.
+const PREVIEW_SIDE: u32 = 900;
+
+/// Aperçu du résultat d'un preset sur une photo : largeur et hauteur du
+/// fichier exporté (u32 LE, 0 pour les originaux), puis un JPEG réduit
+/// (absent pour les originaux).
+#[tauri::command]
+pub async fn export_preview(
+    state: State<'_, AppState>,
+    item: i64,
+    preset: ExportPreset,
+    watermark: Option<Watermark>,
+) -> CommandResult<tauri::ipc::Response> {
+    let conn = state.connect()?;
+    let bytes = blocking(move || {
+        let ((w, h), jpeg) = job::preview(&conn, item, &preset, watermark.as_ref(), PREVIEW_SIDE)?;
+        let mut out = Vec::new();
+        out.extend_from_slice(&w.to_le_bytes());
+        out.extend_from_slice(&h.to_le_bytes());
+        if let Some(jpeg) = jpeg {
+            out.extend_from_slice(&jpeg);
+        }
+        Ok(out)
+    })
+    .await?;
+    Ok(tauri::ipc::Response::new(bytes))
 }

@@ -109,6 +109,14 @@ fn oriented_size(raw: &RawFile) -> (u32, u32) {
     }
 }
 
+/// Taille du fichier exporté (approximative avant décodage : dimensions
+/// déclarées par le boîtier).
+pub fn output_size(raw: &RawFile, settings: &DevelopSettings, resize: Resize) -> (u32, u32) {
+    let (fw, fh) = oriented_size(raw);
+    let full = geometry::plan(&settings.geometry, f64::from(fw), f64::from(fh));
+    target_size(full.width, full.height, resize)
+}
+
 /// Rend une photo avec ses réglages, et le filigrane s'il y en a un.
 pub fn render_photo(
     raw: &mut RawFile,

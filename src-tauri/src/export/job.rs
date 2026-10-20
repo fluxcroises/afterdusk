@@ -314,3 +314,45 @@ pub fn run(
     done.current = None;
     Ok(done)
 }
+
+/// Taille du fichier exporté, et JPEG réduit (absent pour les originaux).
+pub type Preview = ((u32, u32), Option<Vec<u8>>);
+
+/// Aperçu du résultat d'un preset sur une photo (écran Livrer) : taille du
+/// fichier exporté, et l'image réduite à `max_side`, filigrane compris.
+/// `None` pour l'image : le preset des originaux (le fichier tel quel).
+pub fn preview(
+    conn: &Connection,
+    item: i64,
+    preset: &ExportPreset,
+    watermark: Option<&super::watermark::Watermark>,
+    max_side: u32,
+) -> Result<Preview, ExportError> {
+    let p = photo(conn, item)
+        .map_err(|(_, code, detail)| ExportError::Settings(format!("{code} {detail}")))?;
+    if preset.output.format().is_none() || format_of(&p.path) != Some(MediaFormat::Raw) {
+        return Ok(((0, 0), None));
+    }
+    let develop = store::load(conn, p.media_id, &p.version)
+        .map_err(|e| ExportError::Settings(e.to_string()))?;
+    let mut raw = RawFile::open(&p.path)?;
+    let size = super::render::output_size(&raw, &develop, preset.resize);
+    let profile = lens::find_profile(&Shot::from(&raw.info()));
+    let options = RenderOptions {
+        resize: Resize::LongSide(size.0.max(size.1).min(max_side)),
+        sharpen: preset.sharpen,
+        color: ColorSpace::Srgb,
+    };
+    let mark = watermark.filter(|_| preset.watermark);
+    let img = render_photo(&mut raw, &develop, profile.as_ref(), options, mark)?;
+    let mut jpeg = Vec::new();
+    let enc = |e: jpeg_encoder::EncodingError| ExportError::Encode(e.to_string());
+    let (w, h) = (
+        u16::try_from(img.width).map_err(|_| ExportError::TooLarge)?,
+        u16::try_from(img.height).map_err(|_| ExportError::TooLarge)?,
+    );
+    jpeg_encoder::Encoder::new(&mut jpeg, 88)
+        .encode(&img.to_u8(), w, h, jpeg_encoder::ColorType::Rgb)
+        .map_err(enc)?;
+    Ok((size, Some(jpeg)))
+}

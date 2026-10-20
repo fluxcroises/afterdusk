@@ -918,6 +918,11 @@
     "reveal": "Open the folder",
     "dismiss": "Close",
     "emptyTitle": "No photos to deliver",
-    "emptyText": "Import photos, edit them, then come back here to export them."
+    "emptyText": "Import photos, edit them, then come back here to export them.",
+    "preview": "Result preview",
+    "previewPreset": "Preset",
+    "previewLoading": "Computing the preview…",
+    "previewFailed": "No preview for this photo.",
+    "previewSize": "File of {{width}} × {{height}} px"
   }
 }

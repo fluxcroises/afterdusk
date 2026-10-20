@@ -9,6 +9,7 @@ import {
   ExportStatus,
   WatermarkSection,
 } from "../components/DeliverPanels";
+import { ResultPreview } from "../components/DeliverPreview";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { MediaGrid } from "../components/MediaGrid";
@@ -38,6 +39,7 @@ export function DeliverStep() {
       left={<CatalogPanel scope="deliver" />}
       right={
         <>
+          <ResultPreview />
           <ExportPresetsSection />
           <WatermarkSection />
           <DestinationSection />

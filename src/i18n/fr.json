@@ -918,6 +918,11 @@
     "reveal": "Ouvrir le dossier",
     "dismiss": "Fermer",
     "emptyTitle": "Aucune photo à livrer",
-    "emptyText": "Importez des photos, retouchez-les, puis revenez ici pour les exporter."
+    "emptyText": "Importez des photos, retouchez-les, puis revenez ici pour les exporter.",
+    "preview": "Aperçu du résultat",
+    "previewPreset": "Preset",
+    "previewLoading": "Calcul de l'aperçu…",
+    "previewFailed": "Aperçu impossible pour cette photo.",
+    "previewSize": "Fichier de {{width}} × {{height}} px"
   }
 }

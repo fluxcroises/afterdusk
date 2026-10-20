@@ -88,6 +88,8 @@ fn copie_listee_rendue_et_exportee() {
         copies::stale_copies(&conn, &cache, None).unwrap(),
         vec![copy.id]
     );
+    // Dates à la seconde : l'aperçu doit être d'une seconde plus récente.
+    std::thread::sleep(std::time::Duration::from_millis(1100));
     let out = generate_previews(&conn, &cache, copy.id).unwrap();
     assert_eq!(out[2].width.max(out[2].height), 2048);
     assert!(copies::has_previews(&cache, copy.id));
@@ -153,4 +155,21 @@ fn copie_listee_rendue_et_exportee() {
         })
         .count();
     assert_eq!(originals, 1);
+
+    // Aperçu du résultat dans Livrer : taille du fichier, image réduite.
+    let settings = ExportSettings::default();
+    let web = settings.presets.iter().find(|p| p.id == "web").unwrap();
+    let ((w, h), jpeg) = job::preview(&conn, copy.id, web, None, 900).unwrap();
+    assert_eq!(w.max(h), 2048);
+    let img = image::load_from_memory(&jpeg.unwrap()).unwrap();
+    assert_eq!(img.width().max(img.height()), 900);
+    let originals = settings
+        .presets
+        .iter()
+        .find(|p| p.id == "originals")
+        .unwrap();
+    assert_eq!(
+        job::preview(&conn, photo, originals, None, 900).unwrap(),
+        ((0, 0), None)
+    );
 }
