@@ -39,9 +39,9 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] Géocodage inverse hors ligne (pays, ville)
 - [x] Carte du monde des albums avec grappes, aperçu et filtre par zone
 - [x] Fond de carte simplifié hors ligne
-- [ ] Inventaire alimenté automatiquement, fusion des doublons, masquage
-- [ ] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
-- [ ] Journal d'entretien et rappels
+- [x] Inventaire alimenté automatiquement, fusion des doublons, masquage
+- [x] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
+- [x] Journal d'entretien et rappels
 - [ ] Export d'inventaire PDF et CSV
 - [ ] Albums intelligents
 
@@ -503,3 +503,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Deux boutons dans la barre d'outils du Matériel, « Exporter en PDF… » et « Exporter en CSV… », avec la boîte « Enregistrer sous » (permission `dialog:allow-save` ajoutée). Le matériel masqué n'est pas exporté.
 - Tests : CSV (BOM, guillemets, séparateur), PDF de plusieurs pages relu par printpdf, écriture sans fichier `.part` restant, photo déposée retrouvée pour le PDF de bout en bout, contenu traduit et bouton dans l'interface. Rendu d'un PDF d'essai contrôlé à l'œil (accents, tableau, fiches avec et sans photo, pied de page). Pas encore vérifié dans l'application compilée. Ajouté au passage : les messages des erreurs « intervention introuvable » et « date invalide », oubliés avec l'entretien.
 - Idée de l'utilisateur, à inscrire au cahier des charges : des planches contact en PDF, qui réutiliseraient cette mise en page. Leur place logique est l'étape Livrer, en V0.4.
+- Critères de l'inventaire, des fiches avec statistiques et du journal d'entretien cochés : CI verte sous Windows et macOS (run 39636780190, commit f709996).
