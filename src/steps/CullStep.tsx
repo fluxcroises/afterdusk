@@ -32,12 +32,9 @@ export function CullStep() {
       <TrashNotice />
       <TrashBar />
       {trash && count === 0 ? (
-        <EmptyState icon={Trash2} title={t("trash.emptyTitle")}>
-          {t("trash.emptyText")}
-        </EmptyState>
+        <EmptyState icon={Trash2} title={t("trash.emptyTitle")} />
       ) : count === 0 && filtering ? (
         <EmptyState icon={SearchX} title={t("filter.noMatchTitle")}>
-          <p>{t("filter.noMatchText")}</p>
           <button
             type="button"
             className="button button-small"
@@ -56,7 +53,6 @@ export function CullStep() {
         )
       ) : (
         <EmptyState icon={Images} title={t("cull.emptyTitle")}>
-          <p>{t("cull.emptyText")}</p>
           <p className="shortcut-hint">
             <Kbd>P</Kbd> {t("cull.pick")} · <Kbd>X</Kbd> {t("cull.reject")} · <Kbd>1</Kbd>–
             <Kbd>5</Kbd> {t("cull.stars")} · <Kbd>6</Kbd>–<Kbd>9</Kbd> {t("cull.colors")}

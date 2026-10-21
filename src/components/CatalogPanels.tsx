@@ -104,33 +104,38 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
         <ExifLine exposure={d} />
       </PanelSection>
       <PanelSection id={`${scope}.metadata`} title={t("info.metadata")}>
-        <FieldRow label={t("info.fileName")} value={d?.fileName} />
-        {d && d.stackFiles.length > 1 && (
-          <FieldRow label={t("info.stackFiles")} value={d.stackFiles.join(" + ")} />
-        )}
-        <FieldRow label={t("info.originalName")} value={d?.originalName} />
-        <FieldRow
-          label={t("info.captureTime")}
-          value={formatCaptureTime(d?.capturedAt ?? null, lng)}
-        />
-        <FieldRow
-          label={t("info.dimensions")}
-          value={d?.width && d.height ? `${d.width} × ${d.height}` : undefined}
-        />
-        <FieldRow label={t("info.camera")} value={d?.camera} />
-        <FieldRow label={t("info.lens")} value={d?.lens} />
-        <FieldRow
-          label={t("info.exposureCompensation")}
-          value={formatCompensation(d?.exposureCompensation ?? null, lng)}
-        />
-      </PanelSection>
-      <PanelSection id={`${scope}.keywords`} title={t("info.keywords")}>
-        {d && d.keywords.length > 0 ? (
-          <p className="keyword-list">{d.keywords.join(", ")}</p>
+        {d ? (
+          <>
+            <FieldRow label={t("info.fileName")} value={d.fileName} />
+            {d.stackFiles.length > 1 && (
+              <FieldRow label={t("info.stackFiles")} value={d.stackFiles.join(" + ")} />
+            )}
+            <FieldRow label={t("info.originalName")} value={d.originalName} />
+            <FieldRow label={t("info.captureTime")} value={formatCaptureTime(d.capturedAt, lng)} />
+            <FieldRow
+              label={t("info.dimensions")}
+              value={d.width && d.height ? `${d.width} × ${d.height}` : undefined}
+            />
+            <FieldRow label={t("info.camera")} value={d.camera} />
+            <FieldRow label={t("info.lens")} value={d.lens} />
+            <FieldRow
+              label={t("info.exposureCompensation")}
+              value={formatCompensation(d.exposureCompensation, lng)}
+            />
+          </>
         ) : (
-          <PanelNote>{d ? t("info.noKeywords") : t("info.noSelection")}</PanelNote>
+          <PanelNote>{t("info.noSelection")}</PanelNote>
         )}
       </PanelSection>
+      {d && (
+        <PanelSection id={`${scope}.keywords`} title={t("info.keywords")}>
+          {d.keywords.length > 0 ? (
+            <p className="keyword-list">{d.keywords.join(", ")}</p>
+          ) : (
+            <PanelNote>{t("info.noKeywords")}</PanelNote>
+          )}
+        </PanelSection>
+      )}
     </>
   );
 }

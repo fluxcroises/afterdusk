@@ -32,7 +32,7 @@ describe("bibliothèque débranchée", () => {
     const banner = screen.getByRole("status");
     expect(banner).toHaveTextContent("« Photos » est hors ligne.");
     expect(banner).toHaveTextContent("Rebranchez le disque (E:\\Photos)");
-    expect(banner).toHaveTextContent("Vous pouvez parcourir et noter vos photos.");
+    expect(banner).toHaveTextContent("pour importer, supprimer ou zoomer à 100 %.");
 
     act(() => useImport.setState({ libraries: [library(true)] }));
     expect(screen.getByRole("status")).toHaveTextContent("« Photos » est de nouveau disponible.");

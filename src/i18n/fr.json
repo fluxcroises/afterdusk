@@ -76,7 +76,6 @@
     "copyright": "Copyright",
     "keywords": "Mots-clés",
     "emptyTitle": "Insérez une carte mémoire ou branchez un boîtier",
-    "emptyText": "Les photos et vidéos apparaîtront ici, groupées par jour. Celles déjà importées seront grisées.",
     "chooseFolder": "Choisir un dossier…",
     "rescan": "Analyser à nouveau",
     "interrupted": "Imports interrompus",
@@ -114,7 +113,7 @@
     "dayImported_other": "{{count}} déjà importées",
     "pairs": "Paires RAW + JPEG",
     "pairJpegs": "Importer aussi le JPEG des paires",
-    "pairJpegsHint": "Les deux fichiers d'un déclenchement forment une pile. Sans le JPEG, seul le RAW est copié ; il reste sur la carte."
+    "pairJpegsHint": "Décoché : seul le RAW est copié."
   },
   "catalog": {
     "title": "Catalogue",
@@ -143,20 +142,16 @@
   },
   "cull": {
     "emptyTitle": "Aucune photo à trier",
-    "emptyText": "Importez une carte pour commencer. Le tri se fait au clavier :",
     "pick": "retenue",
     "reject": "rejetée",
     "stars": "étoiles",
     "colors": "couleurs"
   },
   "library": {
-    "emptyTitle": "La bibliothèque est vide",
-    "emptyText": "Les albums créés à l'import apparaîtront ici."
+    "emptyTitle": "La bibliothèque est vide"
   },
   "upcoming": {
     "title": "{{module}} arrive en version {{version}}",
-    "develop": "Retouche non destructive des photos retenues, réglages enregistrés dans le XMP.",
-    "deliver": "Export avec presets, filigrane et nettoyage des métadonnées.",
     "map": "Carte du monde de vos albums.",
     "gear": "Inventaire, statistiques et entretien de votre matériel."
   },
@@ -176,7 +171,7 @@
     "trashRetention": "Supprimer définitivement après",
     "days_one": "jour",
     "days_other": "jours",
-    "trashNote": "Les photos envoyées dans la corbeille restent dans le dossier de la bibliothèque et se restaurent à l'identique. Passé ce délai, elles sont supprimées au démarrage d'Afterdusk. La sauvegarde n'est jamais touchée.",
+    "trashNote": "Passé ce délai, les photos sont supprimées au démarrage. La sauvegarde n'est pas touchée.",
     "none": "Aucun",
     "choose": "Choisir…",
     "remove": "Retirer",
@@ -200,7 +195,6 @@
     "identityName": "Nom",
     "identityCopyright": "Copyright",
     "identityWebsite": "Site",
-    "identityHint": "Le nom et le copyright sont écrits dans les XMP de chaque import ; le site servira au filigrane.",
     "libraryName": "Nom",
     "libraryLocation": "Emplacement",
     "backupFolder": "Sauvegarde",
@@ -215,7 +209,7 @@
       "nothing": "Ne rien faire"
     },
     "cloudFolders": "Dossiers cloud",
-    "cloudBackup": "Copie envoyée en ligne par {{service}}. Afterdusk vérifie la copie sur l'ordinateur ; l'envoi et l'espace disponible dépendent de votre abonnement."
+    "cloudBackup": "Dossier synchronisé par {{service}} : Afterdusk vérifie la copie locale, pas l'envoi en ligne."
   },
   "menu": {
     "app": "Afterdusk",
@@ -247,7 +241,6 @@
     "toggleLeft": "Panneau de gauche",
     "toggleRight": "Panneau de droite",
     "toggleFilmstrip": "Pellicule",
-    "toggleSides": "Panneaux latéraux",
     "fullscreen": "Plein écran",
     "window": "Fenêtre",
     "minimize": "Réduire",
@@ -275,8 +268,6 @@
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
     "selection_other": "{{count}} photos · {{selected}} sélectionnée(s)",
-    "safety": "Originaux en lecture seule · XMP",
-    "safetyHint": "Afterdusk ne modifie jamais vos originaux : notes et réglages sont écrits dans la base et dans un fichier XMP à côté.",
     "filtered_one": "{{count}} sur {{total}} photos · {{selected}} sélectionnée",
     "filtered_other": "{{count}} sur {{total}} photos · {{selected}} sélectionnée(s)",
     "albums_one": "{{count}} album",
@@ -311,7 +302,7 @@
     "noRejected": "Aucune photo rejetée dans cette vue.",
     "mediaNotFound": "Cette photo n'existe plus dans la bibliothèque.",
     "fileMoveFailed": "Un fichier n'a pas pu être déplacé ; rien n'a été modifié.",
-    "developUnsupported": "La retouche est réservée aux fichiers RAW pour l'instant ; les JPEG, HEIF et TIFF suivront.",
+    "developUnsupported": "Seuls les fichiers RAW se retouchent.",
     "historyStepMissing": "Cette étape n'existe plus dans l'historique.",
     "versionMissing": "Cette version n'existe plus.",
     "snapshotMissing": "Cet instantané n'existe plus.",
@@ -325,9 +316,7 @@
     "morning": "Bonjour",
     "evening": "Bonsoir",
     "addPhotos": "Ajouter des photos",
-    "dropHint": "Insérez une carte mémoire, glissez un dossier dans la fenêtre, ou utilisez Importer et Dossier… ci-dessus.",
-    "firstStepsTitle": "Pour commencer",
-    "firstSteps": "Choisissez le dossier où Afterdusk rangera vos photos : disque interne, disque externe ou NAS. Vos fichiers y resteront lisibles sans Afterdusk.",
+    "dropHint": "Carte mémoire, ou dossier glissé dans la fenêtre.",
     "interrupted_one": "Un import depuis « {{source}} » a été interrompu : {{count}} fichier reste à copier.",
     "interrupted_other": "Un import depuis « {{source}} » a été interrompu : {{count}} fichiers restent à copier.",
     "showOnStartup": "Afficher l'accueil au démarrage",
@@ -337,7 +326,6 @@
     "allAlbums": "Tous les albums ({{count}})",
     "fewerAlbums": "Réduire",
     "defaultPhotoCredit": "Cabourg · photo © Lewis Bedar",
-    "rescanHint": "Vos photos sont déjà rangées dans ce dossier (base perdue, nouvel ordinateur) ?",
     "rescan": "Retrouver les photos de la bibliothèque",
     "rescanning": "Recherche en cours…"
   },
@@ -396,8 +384,7 @@
     "retentionNote_other": "Les photos sont supprimées définitivement après {{count}} jours.",
     "daysLeft_one": "{{count}} jour restant",
     "daysLeft_other": "{{count}} jours restants",
-    "emptyTitle": "La corbeille est vide",
-    "emptyText": "Les photos supprimées arrivent ici et peuvent être restaurées."
+    "emptyTitle": "La corbeille est vide"
   },
   "filter": {
     "search": "Rechercher",
@@ -421,7 +408,6 @@
     "anyLens": "Tous les objectifs",
     "reset": "Réinitialiser",
     "noMatchTitle": "Aucune photo ne correspond",
-    "noMatchText": "Élargissez la période, la note ou la recherche.",
     "noAlbum": "Aucun album ne correspond.",
     "searchHint": "Albums, noms de fichiers, mots-clés et lieux"
   },
@@ -441,23 +427,23 @@
     },
     "library": {
       "title": "Où ranger vos photos ?",
-      "text": "Vos photos y sont copiées, rangées par date et par album ; les originaux de la carte ne sont jamais modifiés.",
+      "text": "Les originaux de la carte ne sont jamais modifiés.",
       "folder": "Dossier de la bibliothèque",
       "name": "Nom"
     },
     "backup": {
       "title": "Une seconde copie à chaque import",
-      "text": "Chaque import peut aussi être copié sur un autre disque, vérifié ; rien n'y est jamais supprimé.",
+      "text": "Copie vérifiée ; rien n'y est jamais supprimé.",
       "folder": "Dossier de sauvegarde",
       "none": "Pas de sauvegarde pour l'instant"
     },
     "folders": {
       "title": "Comment ranger les imports ?",
-      "text": "Un dossier daté par sortie est le choix le plus courant ; les noms du boîtier peuvent rester tels quels."
+      "text": ""
     },
     "identity": {
       "title": "Qui signe ces photos ?",
-      "text": "Votre nom et votre copyright sont écrits dans les XMP de chaque import. Tout est facultatif."
+      "text": "Facultatif."
     },
     "back": "Précédent",
     "next": "Suivant",
@@ -471,7 +457,7 @@
   },
   "offline": {
     "title": "« {{name}} » est hors ligne.",
-    "text": "Rebranchez le disque ({{root}}) pour importer, supprimer ou zoomer à 100 %. Vous pouvez parcourir et noter vos photos.",
+    "text": "Rebranchez le disque ({{root}}) pour importer, supprimer ou zoomer à 100 %.",
     "pending_one": "{{count}} note sera écrite dans son XMP au retour du disque.",
     "pending_other": "{{count}} notes seront écrites dans leurs XMP au retour du disque.",
     "lastSeen": "Vu pour la dernière fois le {{date}}.",
@@ -496,15 +482,13 @@
     "light": "Lumière",
     "exposure": "Exposition",
     "ev": "{{value}} IL",
-    "resetHint": "Double-cliquez pour revenir à zéro.",
+    "resetHint": "Double-clic : zéro",
     "color": "Couleur",
     "whiteBalance": "Balance des blancs",
     "cpu": "processeur",
     "status": "{{width}} × {{height}} · rendu {{render}} ms ({{engine}}) · affiché en {{total}} ms · original décodé en {{decode}} ms",
     "emptyTitle": "Aucune photo à retoucher",
-    "emptyText": "Importez des photos ou choisissez un album dans le panneau de gauche.",
     "chooseTitle": "Choisissez une photo",
-    "chooseText": "Sélectionnez une photo dans la pellicule pour la retoucher.",
     "errorTitle": "Cette photo ne peut pas être ouverte",
     "loading": "Développement de l'original…",
     "brightness": "Luminosité",
@@ -519,7 +503,7 @@
     "tint": "Teinte",
     "kelvin": "{{value}} K",
     "pick": "Pipette de balance des blancs",
-    "pickHint": "Cliquez sur un gris ou un blanc de la photo pour neutraliser la dominante.",
+    "pickHint": "Cliquez sur un gris neutre",
     "wb": {
       "asShot": "Telle que prise",
       "auto": "Automatique",
@@ -537,7 +521,7 @@
     },
     "auto": "Auto",
     "autoHint": "Régler la lumière automatiquement d'après la photo",
-    "resetAutoHint": "Double-clic : zéro. Maj + double-clic : automatique.",
+    "resetAutoHint": "Double-clic : zéro · Maj + double-clic : automatique",
     "history": {
       "title": "Historique",
       "original": "Original",
@@ -591,7 +575,7 @@
       "before": "Avant",
       "after": "Après"
     },
-    "renameHint": "Double-cliquez pour renommer.",
+    "renameHint": "Double-clic : renommer",
     "versions": {
       "title": "Versions",
       "original": "Originale",
@@ -605,8 +589,8 @@
       "create": "Garder les réglages affichés",
       "defaultName": "Instantané {{n}}",
       "delete": "Supprimer l'instantané",
-      "empty": "Aucun instantané. Le bouton + garde les réglages affichés sous un nom.",
-      "hint": "Cliquez pour appliquer, double-cliquez pour renommer.",
+      "empty": "Aucun instantané.",
+      "hint": "Double-clic : renommer",
       "confirmDelete": "Supprimer l'instantané « {{name}} » ?"
     },
     "curve": {
@@ -618,7 +602,7 @@
       "green": "Vert",
       "blue": "Bleu",
       "reset": "Réinitialiser la courbe du canal",
-      "hint": "Cliquez pour ajouter un point, glissez pour le déplacer, double-cliquez pour le retirer."
+      "hint": "Double-clic : retirer un point"
     },
     "hsl": {
       "title": "Couleurs (TSL)",
@@ -648,14 +632,13 @@
       "grain_roughness": "Irrégularité"
     },
     "zoom": {
-      "hint": "Cliquez pour zoomer à 100 % (Z).",
-      "exitHint": "Glissez pour vous déplacer, cliquez pour revenir à l'image entière (Z).",
+      "hint": "Zoom 100 % (Z)",
+      "exitHint": "Image entière (Z)",
       "loading": "Développement de l'original en pleine définition…",
       "status": "100 % · rendu {{render}} ms ({{engine}})"
     },
     "detail": {
       "title": "Détail",
-      "hint": "La netteté et le bruit se jugent au zoom 100 % : cliquez sur la photo.",
       "sharpening": "Netteté",
       "noise": "Réduction du bruit",
       "sharpening_amount": "Quantité",
@@ -683,7 +666,7 @@
       "straighten": "Redresser",
       "degrees": "{{value}}°",
       "autoHint": "Redresser d'après les lignes de la photo",
-      "hint": "Glissez les coins ou les côtés, ou le cadre pour le déplacer. Entrée applique, Échap annule.",
+      "hint": "Entrée : appliquer · Échap : annuler",
       "reset": "Réinitialiser",
       "cancel": "Annuler",
       "done": "Terminé"
@@ -705,8 +688,8 @@
       "size": "Taille",
       "feather": "Adoucissement",
       "visualize": "Visualiser les poussières",
-      "hint": "Cliquez sur une poussière ou une imperfection : elle est remplacée par une zone voisine. La molette (ou [ et ]) change la taille.",
-      "selectedHint": "Glissez le cercle ou sa source pour les déplacer. Suppr retire la correction, Échap la quitte.",
+      "hint": "[ ] ou molette : taille",
+      "selectedHint": "Suppr : retirer · Échap : quitter",
       "count_zero": "Aucune correction",
       "count_one": "{{count}} correction",
       "count_other": "{{count}} corrections",
@@ -715,7 +698,7 @@
     },
     "lens": {
       "title": "Objectif",
-      "unknown": "Objectif non reconnu : aucune correction. La base lensfun ne le connaît pas, ou le fichier ne le nomme pas.",
+      "unknown": "Objectif non reconnu : aucune correction.",
       "enabled": "Corriger l'objectif (distorsion, aberrations, vignetage)",
       "distortion": "Distorsion",
       "vignetting": "Vignetage",
@@ -730,9 +713,9 @@
       "name": "Nom du preset",
       "save": "Enregistrer",
       "delete": "Supprimer le preset",
-      "renameHint": "Double-clic pour renommer",
+      "renameHint": "Double-clic : renommer",
       "confirmDelete": "Supprimer le preset « {{name}} » ? Les photos qui l'utilisent gardent leurs réglages.",
-      "userEmpty": "Vos presets apparaîtront ici. Réglez une photo, puis créez-en un.",
+      "userEmpty": "Aucun preset personnel.",
       "groups": {
         "essentials": "Essentiels",
         "bw": "Noir et blanc",
@@ -802,7 +785,7 @@
     "copy": {
       "open": "Copier les réglages…",
       "title": "Copier les réglages",
-      "hint": "Choisissez ce qui sera collé sur d'autres photos. Le recadrage et les corrections de défauts sont propres à chaque photo : cochez-les pour une série prise à l'identique.",
+      "hint": "Recadrage et défauts : décochés par défaut, propres à chaque photo.",
       "confirm": "Copier",
       "modifiers": "Ctrl+Maj+"
     },
@@ -836,7 +819,7 @@
       "tiff": "TIFF",
       "avif": "AVIF"
     },
-    "originalHint": "Le fichier d'origine, sans retouche, copié et vérifié avec son XMP.",
+    "originalHint": "Sans retouche, copié et vérifié avec son XMP.",
     "size": "Taille",
     "resize": {
       "full": "Pleine résolution",
@@ -879,7 +862,6 @@
     "restore": "Rétablir",
     "copyName": "{{name}} (copie)",
     "watermark": "Filigrane",
-    "watermarkHint": "Un texte ou un logo posé sur les photos des presets qui le demandent.",
     "addWatermark": "Ajouter un filigrane",
     "removeWatermark": "Retirer le filigrane",
     "watermarkKind": {
@@ -905,7 +887,7 @@
     "watermarkSize": "Taille (largeur de l'image)",
     "opacity": "Opacité",
     "margin": "Marge",
-    "watermarkPerPreset": "Cochez « Poser le filigrane » dans les options de chaque preset concerné.",
+    "watermarkPerPreset": "Posé par les presets où il est coché.",
     "destination": "Destination",
     "noDestination": "Aucun dossier choisi",
     "chooseDestination": "Dossier de livraison",
@@ -918,7 +900,6 @@
     "selection_zero": "Aucune photo sélectionnée",
     "selection_one": "{{count}} photo sélectionnée",
     "selection_other": "{{count}} photos sélectionnées",
-    "selectHint": "Sélectionnez les photos à livrer : clic, Ctrl+clic, Maj+clic.",
     "progress": "{{done}} / {{total}}",
     "stop": "Arrêter",
     "done_one": "{{count}} fichier exporté",
@@ -930,7 +911,6 @@
     "reveal": "Ouvrir le dossier",
     "dismiss": "Fermer",
     "emptyTitle": "Aucune photo à livrer",
-    "emptyText": "Importez des photos, retouchez-les, puis revenez ici pour les exporter.",
     "preview": "Aperçu du résultat",
     "previewPreset": "Preset",
     "previewLoading": "Calcul de l'aperçu…",

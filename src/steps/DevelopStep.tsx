@@ -415,13 +415,9 @@ export function DevelopStep() {
       filmstrip={<Filmstrip />}
     >
       {count === 0 ? (
-        <EmptyState icon={Images} title={t("develop.emptyTitle")}>
-          {t("develop.emptyText")}
-        </EmptyState>
+        <EmptyState icon={Images} title={t("develop.emptyTitle")} />
       ) : selectedId === null ? (
-        <EmptyState icon={SlidersHorizontal} title={t("develop.chooseTitle")}>
-          {t("develop.chooseText")}
-        </EmptyState>
+        <EmptyState icon={SlidersHorizontal} title={t("develop.chooseTitle")} />
       ) : error ? (
         <EmptyState icon={ImageOff} title={t("develop.errorTitle")}>
           {t(`errors.${error.code}`, { defaultValue: t("errors.internal") })}

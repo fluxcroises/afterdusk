@@ -346,11 +346,7 @@ export function ImportStep() {
   } else if (source) {
     content = <EmptyState icon={HardDriveDownload} title={t("import.sourceEmpty")} />;
   } else {
-    content = (
-      <EmptyState icon={HardDriveDownload} title={t("import.emptyTitle")}>
-        {t("import.emptyText")}
-      </EmptyState>
-    );
+    content = <EmptyState icon={HardDriveDownload} title={t("import.emptyTitle")} />;
   }
 
   return (

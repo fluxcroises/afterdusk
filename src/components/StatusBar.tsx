@@ -55,7 +55,7 @@ export function StatusBar() {
           {t("status.previewFailed", { count: previewFailed })}
         </button>
       )}
-      {xmpFailed > 0 ? (
+      {xmpFailed > 0 && (
         <span
           role="status"
           className="status-warning"
@@ -64,8 +64,6 @@ export function StatusBar() {
           <TriangleAlert aria-hidden="true" />
           {t("status.xmpFailed", { count: xmpFailed })}
         </span>
-      ) : (
-        <span title={t("status.safetyHint")}>{t("status.safety")}</span>
       )}
     </footer>
   );

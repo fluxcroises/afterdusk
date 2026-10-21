@@ -34,12 +34,9 @@ export function LibraryView() {
       {showAlbums ? (
         <AlbumGrid />
       ) : trash && count === 0 ? (
-        <EmptyState icon={Trash2} title={t("trash.emptyTitle")}>
-          {t("trash.emptyText")}
-        </EmptyState>
+        <EmptyState icon={Trash2} title={t("trash.emptyTitle")} />
       ) : count === 0 && filtering ? (
         <EmptyState icon={SearchX} title={t("filter.noMatchTitle")}>
-          <p>{t("filter.noMatchText")}</p>
           <button
             type="button"
             className="button button-small"
@@ -57,9 +54,7 @@ export function LibraryView() {
           <MediaGrid />
         )
       ) : (
-        <EmptyState icon={Library} title={t("library.emptyTitle")}>
-          {t("library.emptyText")}
-        </EmptyState>
+        <EmptyState icon={Library} title={t("library.emptyTitle")} />
       )}
     </ScreenLayout>
   );

@@ -337,7 +337,6 @@ function RescanHint() {
   if (libraryId === null) return null;
   return (
     <p className="welcome-hint">
-      {t("home.rescanHint")}{" "}
       <button
         type="button"
         className="button button-small"
@@ -411,8 +410,6 @@ export function WelcomeApp() {
           />
           {t("home.showOnStartup")}
         </label>
-        <span className="toolbar-spacer" />
-        <span>{t("status.safety")}</span>
       </footer>
     </div>
   );

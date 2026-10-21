@@ -3544,27 +3544,6 @@ input[type="radio"] {
   accent-color: var(--ad-accent);
 }
 
-.deliver-hint {
-  position: absolute;
-  left: 50%;
-  bottom: var(--ad-space-3);
-  display: flex;
-  align-items: center;
-  gap: var(--ad-space-2);
-  margin: 0;
-  padding: var(--ad-space-2) var(--ad-space-3);
-  transform: translateX(-50%);
-  border-radius: var(--ad-radius-md);
-  background: var(--ad-panel);
-  color: var(--ad-text-secondary);
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
-}
-
-.deliver-hint svg {
-  width: 16px;
-  height: 16px;
-}
-
 /* Copie virtuelle dans les grilles : pastille « Copie » en haut à gauche. */
 .copy-badge {
   position: absolute;

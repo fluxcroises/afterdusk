@@ -360,7 +360,6 @@ export function WatermarkSection() {
     <PanelSection id="deliver.watermark" title={t("deliver.watermark")} defaultCollapsed>
       {!wm ? (
         <>
-          <p className="panel-note">{t("deliver.watermarkHint")}</p>
           <button
             type="button"
             className="button button-small"

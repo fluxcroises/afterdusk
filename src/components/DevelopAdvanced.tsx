@@ -347,7 +347,6 @@ export function DetailSection() {
   const { t } = useTranslation();
   return (
     <PanelSection id="develop.detail" title={t("develop.detail.title")} defaultCollapsed>
-      <p className="panel-note">{t("develop.detail.hint")}</p>
       <DetailSliders group="sharpening" />
       <DetailSliders group="noise" />
     </PanelSection>

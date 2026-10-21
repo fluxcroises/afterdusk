@@ -41,6 +41,8 @@ function StepIllustration({ step }: { step: Step }) {
 export function Onboarding() {
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>("library");
+  // Une étape sans texte n'affiche que son titre et ses champs.
+  const text = t(`onboarding.${step}.text`);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ReturnType<typeof toCommandError> | null>(null);
   const [c, setChoices] = useState<OnboardingChoices>({
@@ -100,7 +102,7 @@ export function Onboarding() {
         <ErrorBanner error={error} onDismiss={() => setError(null)} />
         <div className="onboarding-body">
           <h2 id="onboarding-title">{t(`onboarding.${step}.title`)}</h2>
-          <p className="onboarding-text">{t(`onboarding.${step}.text`)}</p>
+          {text && <p className="onboarding-text">{text}</p>}
           {step === "library" && (
             <div className="settings-form">
               <FolderField
@@ -141,11 +143,7 @@ export function Onboarding() {
             />
           )}
           {step === "identity" && (
-            <IdentityFields
-              identity={c.identity}
-              hint={false}
-              onChange={(identity) => update({ identity })}
-            />
+            <IdentityFields identity={c.identity} onChange={(identity) => update({ identity })} />
           )}
         </div>
         <footer className="onboarding-footer">

@@ -28,11 +28,10 @@ describe("barre d'état", () => {
     expect(
       screen.getByText("XMP non écrits pour 3 photos, notes gardées dans la base"),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Originaux en lecture seule · XMP")).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("2 aperçus n'ont pas pu être créés"));
     warnings.onWarning({ kind: "xmpRecovered", count: 0, detail: "" });
     rerender(<StatusBar />);
     expect(screen.queryByText(/aperçus n'ont pas pu/)).not.toBeInTheDocument();
-    expect(screen.getByText("Originaux en lecture seule · XMP")).toBeInTheDocument();
+    expect(screen.queryByText(/XMP non écrits/)).not.toBeInTheDocument();
   });
 });

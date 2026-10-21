@@ -216,12 +216,9 @@ export function TemplateChoice({
 export function IdentityFields({
   identity,
   onChange,
-  hint = true,
 }: {
   identity: Identity;
   onChange: (identity: Identity) => void;
-  /** Note sur l'usage de l'identité ; l'assistant l'explique déjà. */
-  hint?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -263,7 +260,6 @@ export function IdentityFields({
           onChange={(e) => onChange({ ...identity, website: e.target.value })}
         />
       </label>
-      {hint && <p className="panel-note">{t("settings.identityHint")}</p>}
     </div>
   );
 }

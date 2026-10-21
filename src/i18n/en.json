@@ -76,7 +76,6 @@
     "copyright": "Copyright",
     "keywords": "Keywords",
     "emptyTitle": "Insert a memory card or connect a camera",
-    "emptyText": "Photos and videos will appear here, grouped by day. Those already imported will be dimmed.",
     "chooseFolder": "Choose Folder…",
     "rescan": "Rescan",
     "interrupted": "Interrupted imports",
@@ -114,7 +113,7 @@
     "dayImported_other": "{{count}} already imported",
     "pairs": "RAW + JPEG pairs",
     "pairJpegs": "Also import the JPEG of each pair",
-    "pairJpegsHint": "Both files of a shot form a stack. Without the JPEG, only the RAW is copied; the JPEG stays on the card."
+    "pairJpegsHint": "Unticked: only the RAW is copied."
   },
   "catalog": {
     "title": "Catalog",
@@ -143,20 +142,16 @@
   },
   "cull": {
     "emptyTitle": "No photos to cull",
-    "emptyText": "Import a card to get started. Culling is done with the keyboard:",
     "pick": "pick",
     "reject": "reject",
     "stars": "stars",
     "colors": "colors"
   },
   "library": {
-    "emptyTitle": "The library is empty",
-    "emptyText": "Albums created during import will appear here."
+    "emptyTitle": "The library is empty"
   },
   "upcoming": {
     "title": "{{module}} is coming in version {{version}}",
-    "develop": "Non-destructive editing of your picks, with settings saved to XMP.",
-    "deliver": "Export with presets, watermark and metadata cleanup.",
     "map": "A world map of your albums.",
     "gear": "Inventory, statistics and maintenance of your gear."
   },
@@ -176,7 +171,7 @@
     "trashRetention": "Delete permanently after",
     "days_one": "day",
     "days_other": "days",
-    "trashNote": "Photos moved to the trash stay in the library folder and are restored exactly as they were. After this period, they are deleted when Afterdusk starts. The backup is never touched.",
+    "trashNote": "After this period, photos are deleted at startup. The backup is not touched.",
     "none": "None",
     "choose": "Choose…",
     "remove": "Remove",
@@ -200,7 +195,6 @@
     "identityName": "Name",
     "identityCopyright": "Copyright",
     "identityWebsite": "Website",
-    "identityHint": "Your name and copyright are written to the XMP of every import; the website will be used for watermarks.",
     "libraryName": "Name",
     "libraryLocation": "Location",
     "backupFolder": "Backup",
@@ -215,7 +209,7 @@
       "nothing": "Do nothing"
     },
     "cloudFolders": "Cloud folders",
-    "cloudBackup": "Copied online by {{service}}. Afterdusk verifies the copy on this computer; uploading and storage space depend on your subscription."
+    "cloudBackup": "Folder synced by {{service}}: Afterdusk verifies the local copy, not the upload."
   },
   "menu": {
     "app": "Afterdusk",
@@ -247,7 +241,6 @@
     "toggleLeft": "Left Panel",
     "toggleRight": "Right Panel",
     "toggleFilmstrip": "Filmstrip",
-    "toggleSides": "Side Panels",
     "fullscreen": "Full Screen",
     "window": "Window",
     "minimize": "Minimize",
@@ -275,8 +268,6 @@
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
     "selection_other": "{{count}} photos · {{selected}} selected",
-    "safety": "Originals read-only · XMP",
-    "safetyHint": "Afterdusk never modifies your originals: ratings and settings are written to the database and to an XMP sidecar file.",
     "filtered_one": "{{count}} of {{total}} photos · {{selected}} selected",
     "filtered_other": "{{count}} of {{total}} photos · {{selected}} selected",
     "albums_one": "{{count}} album",
@@ -311,7 +302,7 @@
     "noRejected": "No rejected photos in this view.",
     "mediaNotFound": "This photo no longer exists in the library.",
     "fileMoveFailed": "A file could not be moved; nothing was changed.",
-    "developUnsupported": "Editing is limited to RAW files for now; JPEG, HEIF and TIFF will follow.",
+    "developUnsupported": "Only RAW files can be edited.",
     "historyStepMissing": "This step is no longer in the history.",
     "versionMissing": "This version no longer exists.",
     "snapshotMissing": "This snapshot no longer exists.",
@@ -325,9 +316,7 @@
     "morning": "Hello",
     "evening": "Good evening",
     "addPhotos": "Add photos",
-    "dropHint": "Insert a memory card, drop a folder onto the window, or use Import and Folder… above.",
-    "firstStepsTitle": "Getting started",
-    "firstSteps": "Choose the folder where Afterdusk will store your photos: internal drive, external drive or NAS. Your files stay readable without Afterdusk.",
+    "dropHint": "Memory card, or a folder dropped onto the window.",
     "interrupted_one": "An import from “{{source}}” was interrupted: {{count}} file left to copy.",
     "interrupted_other": "An import from “{{source}}” was interrupted: {{count}} files left to copy.",
     "showOnStartup": "Show at startup",
@@ -337,7 +326,6 @@
     "allAlbums": "All albums ({{count}})",
     "fewerAlbums": "Show less",
     "defaultPhotoCredit": "Cabourg · photo © Lewis Bedar",
-    "rescanHint": "Your photos are already in this folder (lost database, new computer)?",
     "rescan": "Find the library's photos",
     "rescanning": "Searching…"
   },
@@ -396,8 +384,7 @@
     "retentionNote_other": "Photos are permanently deleted after {{count}} days.",
     "daysLeft_one": "{{count}} day left",
     "daysLeft_other": "{{count}} days left",
-    "emptyTitle": "The trash is empty",
-    "emptyText": "Deleted photos land here and can be restored."
+    "emptyTitle": "The trash is empty"
   },
   "filter": {
     "search": "Search",
@@ -421,7 +408,6 @@
     "anyLens": "All lenses",
     "reset": "Reset",
     "noMatchTitle": "No matching photos",
-    "noMatchText": "Widen the dates, rating or search.",
     "noAlbum": "No matching albums.",
     "searchHint": "Albums, file names, keywords and places"
   },
@@ -441,23 +427,23 @@
     },
     "library": {
       "title": "Where should your photos go?",
-      "text": "Your photos are copied here, organised by date and album; the originals on the card are never modified.",
+      "text": "The originals on the card are never modified.",
       "folder": "Library folder",
       "name": "Name"
     },
     "backup": {
       "title": "A second copy with every import",
-      "text": "Each import can also be copied to another disk and verified; nothing is ever deleted from it.",
+      "text": "Verified copy; nothing is ever deleted from it.",
       "folder": "Backup folder",
       "none": "No backup for now"
     },
     "folders": {
       "title": "How should imports be organised?",
-      "text": "One dated folder per outing is the most common choice; the camera's file names can stay as they are."
+      "text": ""
     },
     "identity": {
       "title": "Who signs these photos?",
-      "text": "Your name and copyright are written to the XMP of every import. Everything is optional."
+      "text": "Optional."
     },
     "back": "Back",
     "next": "Next",
@@ -471,7 +457,7 @@
   },
   "offline": {
     "title": "“{{name}}” is offline.",
-    "text": "Reconnect the disk ({{root}}) to import, delete or zoom to 100%. You can still browse and rate your photos.",
+    "text": "Reconnect the disk ({{root}}) to import, delete or zoom to 100%.",
     "pending_one": "{{count}} rating will be written to its XMP when the disk is back.",
     "pending_other": "{{count}} ratings will be written to their XMP when the disk is back.",
     "lastSeen": "Last seen on {{date}}.",
@@ -496,15 +482,13 @@
     "light": "Light",
     "exposure": "Exposure",
     "ev": "{{value}} EV",
-    "resetHint": "Double-click to reset.",
+    "resetHint": "Double-click: reset",
     "color": "Color",
     "whiteBalance": "White balance",
     "cpu": "CPU",
     "status": "{{width}} × {{height}} · rendered in {{render}} ms ({{engine}}) · shown in {{total}} ms · original decoded in {{decode}} ms",
     "emptyTitle": "No photos to edit",
-    "emptyText": "Import photos or pick an album in the left panel.",
     "chooseTitle": "Choose a photo",
-    "chooseText": "Select a photo in the filmstrip to edit it.",
     "errorTitle": "This photo can't be opened",
     "loading": "Developing the original…",
     "brightness": "Brightness",
@@ -519,7 +503,7 @@
     "tint": "Tint",
     "kelvin": "{{value}} K",
     "pick": "White balance eyedropper",
-    "pickHint": "Click a grey or white area of the photo to remove the color cast.",
+    "pickHint": "Click a neutral grey",
     "wb": {
       "asShot": "As shot",
       "auto": "Auto",
@@ -537,7 +521,7 @@
     },
     "auto": "Auto",
     "autoHint": "Set the light automatically from the photo",
-    "resetAutoHint": "Double-click: reset. Shift + double-click: automatic.",
+    "resetAutoHint": "Double-click: reset · Shift + double-click: automatic",
     "history": {
       "title": "History",
       "original": "Original",
@@ -591,7 +575,7 @@
       "before": "Before",
       "after": "After"
     },
-    "renameHint": "Double-click to rename.",
+    "renameHint": "Double-click: rename",
     "versions": {
       "title": "Versions",
       "original": "Original",
@@ -605,8 +589,8 @@
       "create": "Keep the current settings",
       "defaultName": "Snapshot {{n}}",
       "delete": "Delete the snapshot",
-      "empty": "No snapshots. The + button keeps the current settings under a name.",
-      "hint": "Click to apply, double-click to rename.",
+      "empty": "No snapshots.",
+      "hint": "Double-click: rename",
       "confirmDelete": "Delete the snapshot \"{{name}}\"?"
     },
     "curve": {
@@ -618,7 +602,7 @@
       "green": "Green",
       "blue": "Blue",
       "reset": "Reset the channel's curve",
-      "hint": "Click to add a point, drag to move it, double-click to remove it."
+      "hint": "Double-click: remove a point"
     },
     "hsl": {
       "title": "Color (HSL)",
@@ -648,14 +632,13 @@
       "grain_roughness": "Roughness"
     },
     "zoom": {
-      "hint": "Click to zoom to 100% (Z).",
-      "exitHint": "Drag to move around, click to fit the whole image (Z).",
+      "hint": "Zoom 100% (Z)",
+      "exitHint": "Whole image (Z)",
       "loading": "Developing the original at full resolution…",
       "status": "100% · rendered in {{render}} ms ({{engine}})"
     },
     "detail": {
       "title": "Detail",
-      "hint": "Judge sharpening and noise at 100% zoom: click the photo.",
       "sharpening": "Sharpening",
       "noise": "Noise reduction",
       "sharpening_amount": "Amount",
@@ -683,7 +666,7 @@
       "straighten": "Straighten",
       "degrees": "{{value}}°",
       "autoHint": "Straighten from the lines in the photo",
-      "hint": "Drag the corners or edges, or the frame to move it. Enter applies, Esc cancels.",
+      "hint": "Enter: apply · Esc: cancel",
       "reset": "Reset",
       "cancel": "Cancel",
       "done": "Done"
@@ -705,8 +688,8 @@
       "size": "Size",
       "feather": "Feather",
       "visualize": "Visualize spots",
-      "hint": "Click a dust spot or blemish: it is replaced by a nearby area. The mouse wheel (or [ and ]) changes the size.",
-      "selectedHint": "Drag the circle or its source to move them. Delete removes the spot, Esc deselects it.",
+      "hint": "[ ] or mouse wheel: size",
+      "selectedHint": "Delete: remove · Esc: deselect",
       "count_zero": "No spots",
       "count_one": "{{count}} spot",
       "count_other": "{{count}} spots",
@@ -715,7 +698,7 @@
     },
     "lens": {
       "title": "Lens",
-      "unknown": "Lens not recognized: no correction. The lensfun database does not know it, or the file does not name it.",
+      "unknown": "Lens not recognized: no correction.",
       "enabled": "Correct the lens (distortion, aberrations, vignetting)",
       "distortion": "Distortion",
       "vignetting": "Vignetting",
@@ -730,9 +713,9 @@
       "name": "Preset name",
       "save": "Save",
       "delete": "Delete preset",
-      "renameHint": "Double-click to rename",
+      "renameHint": "Double-click: rename",
       "confirmDelete": "Delete the preset “{{name}}”? Photos using it keep their settings.",
-      "userEmpty": "Your presets will appear here. Edit a photo, then create one.",
+      "userEmpty": "No presets of your own.",
       "groups": {
         "essentials": "Essentials",
         "bw": "Black and white",
@@ -802,7 +785,7 @@
     "copy": {
       "open": "Copy settings…",
       "title": "Copy settings",
-      "hint": "Choose what will be pasted onto other photos. Crop and spot healing belong to each photo: tick them for a series shot the same way.",
+      "hint": "Crop and spots: unticked by default, specific to each photo.",
       "confirm": "Copy",
       "modifiers": "Ctrl+Shift+"
     },
@@ -836,7 +819,7 @@
       "tiff": "TIFF",
       "avif": "AVIF"
     },
-    "originalHint": "The original file, unedited, copied and verified along with its XMP.",
+    "originalHint": "Unedited, copied and verified with its XMP.",
     "size": "Size",
     "resize": {
       "full": "Full resolution",
@@ -879,7 +862,6 @@
     "restore": "Restore",
     "copyName": "{{name}} (copy)",
     "watermark": "Watermark",
-    "watermarkHint": "A text or logo placed on photos of the presets that ask for it.",
     "addWatermark": "Add a watermark",
     "removeWatermark": "Remove the watermark",
     "watermarkKind": {
@@ -905,7 +887,7 @@
     "watermarkSize": "Size (image width)",
     "opacity": "Opacity",
     "margin": "Margin",
-    "watermarkPerPreset": "Tick “Add the watermark” in the options of each preset concerned.",
+    "watermarkPerPreset": "Added by the presets where it is ticked.",
     "destination": "Destination",
     "noDestination": "No folder chosen",
     "chooseDestination": "Delivery folder",
@@ -918,7 +900,6 @@
     "selection_zero": "No photo selected",
     "selection_one": "{{count}} photo selected",
     "selection_other": "{{count}} photos selected",
-    "selectHint": "Select the photos to deliver: click, Ctrl+click, Shift+click.",
     "progress": "{{done}} / {{total}}",
     "stop": "Stop",
     "done_one": "{{count}} file exported",
@@ -930,7 +911,6 @@
     "reveal": "Open the folder",
     "dismiss": "Close",
     "emptyTitle": "No photos to deliver",
-    "emptyText": "Import photos, edit them, then come back here to export them.",
     "preview": "Result preview",
     "previewPreset": "Preset",
     "previewLoading": "Computing the preview…",

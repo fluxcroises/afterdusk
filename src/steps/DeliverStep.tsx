@@ -1,4 +1,4 @@
-import { Images, Share } from "lucide-react";
+import { Images } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { CatalogPanel } from "../components/CatalogPanels";
@@ -55,19 +55,7 @@ export function DeliverStep() {
       }
     >
       <ErrorBanner error={error} onDismiss={() => useDeliver.setState({ error: null })} />
-      {count > 0 ? (
-        <MediaGrid />
-      ) : (
-        <EmptyState icon={Images} title={t("deliver.emptyTitle")}>
-          <p>{t("deliver.emptyText")}</p>
-        </EmptyState>
-      )}
-      {count > 0 && selected === 0 && (
-        <p className="deliver-hint">
-          <Share aria-hidden="true" strokeWidth={1.75} />
-          {t("deliver.selectHint")}
-        </p>
-      )}
+      {count > 0 ? <MediaGrid /> : <EmptyState icon={Images} title={t("deliver.emptyTitle")} />}
     </ScreenLayout>
   );
 }
