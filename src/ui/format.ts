@@ -40,6 +40,20 @@ export function formatCaptureTime(value: string | null, language: string): strin
   );
 }
 
+/** `AAAA-MM-JJ` en date lisible, midi pour rester sur le même jour. */
+export function formatDay(value: string, language: string): string {
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(date);
+}
+
+/** Montant en centimes dans sa devise. */
+export function formatMoney(cents: number, currency: string | null, language: string): string {
+  return new Intl.NumberFormat(language, { style: "currency", currency: currency ?? "EUR" }).format(
+    cents / 100,
+  );
+}
+
 /** Dates d'un album : un jour, ou du premier au dernier. */
 export function albumDates(
   album: Pick<AlbumSummary, "startDate" | "endDate">,

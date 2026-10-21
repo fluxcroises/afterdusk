@@ -16,6 +16,8 @@ import { useImport } from "../store/import";
 import { Onboarding } from "./Onboarding";
 import { useLayout } from "../store/layout";
 import { type AlbumSummary, useLibrary } from "../store/library";
+import { useReminders } from "../store/maintenance";
+import { formatDay } from "../ui/format";
 import { greetingKey } from "../ui/greeting";
 import { openMain, setWelcomeOnStartup, welcomeOnStartup } from "../windows";
 import defaultPhoto from "../assets/accueil-cabourg.jpg";
@@ -325,6 +327,40 @@ function AlbumList() {
   );
 }
 
+/** Entretien à prévoir : une ligne par rappel échu, qui ouvre la fiche. */
+function MaintenanceBanners() {
+  const { t, i18n } = useTranslation();
+  const reminders = useReminders((s) => s.reminders);
+  const libraries = useImport((s) => s.libraries);
+  useEffect(() => {
+    void useReminders.getState().load();
+  }, [libraries]);
+  return reminders
+    .filter((r) => r.due)
+    .map((r) => (
+      <div
+        key={`${r.gearId}-${r.kind}`}
+        className="banner banner-info welcome-banner"
+        role="status"
+      >
+        <span>
+          {t("maintenance.homeDue", {
+            name: r.gearName,
+            kind: t(`maintenance.kinds.${r.kind}`),
+            date: formatDay(r.dueDate, i18n.language),
+          })}
+        </span>
+        <button
+          type="button"
+          className="button button-small"
+          onClick={() => void openMain({ screen: "gear", gearId: r.gearId })}
+        >
+          {t("maintenance.open")}
+        </button>
+      </div>
+    ));
+}
+
 /** Fenêtre d'accueil, ouverte au démarrage. */
 /**
  * Photos déjà rangées dans la bibliothèque mais inconnues de la base (base
@@ -366,6 +402,7 @@ export function WelcomeApp() {
       <main className="welcome-scroll">
         <DeviceBanner label="welcome" />
         <OfflineBanner />
+        <MaintenanceBanners />
         {resumable.map((r) => (
           <div key={r.id} className="banner banner-info welcome-banner" role="status">
             <span>{t("home.interrupted", { source: r.sourceLabel, count: r.remaining })}</span>

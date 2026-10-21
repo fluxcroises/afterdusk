@@ -3958,3 +3958,77 @@ input.locate-offset {
 .gear-stats-table td {
   padding: 2px var(--ad-space-3) 2px 0;
 }
+
+/* Entretien. */
+.maintenance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+}
+
+.maintenance-reminder {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+  margin: 0;
+  font: var(--ad-font-ui);
+  color: var(--ad-text-secondary);
+}
+
+.maintenance-reminder.is-due {
+  color: var(--ad-warning);
+}
+
+.maintenance-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maintenance-list li {
+  display: flex;
+  flex-direction: column;
+}
+
+.maintenance-line {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+  font: var(--ad-font-ui);
+  color: var(--ad-text);
+}
+
+.maintenance-date {
+  color: var(--ad-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Le type prend la place libre : coût et corbeille restent à droite. */
+.maintenance-line > span:nth-child(2) {
+  flex: 1;
+}
+
+.maintenance-cost {
+  font-variant-numeric: tabular-nums;
+}
+
+.maintenance-detail {
+  font: var(--ad-font-meta);
+  color: var(--ad-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.maintenance-form .field-row input,
+.maintenance-form .field-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.maintenance-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ad-space-2);
+}

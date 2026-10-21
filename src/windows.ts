@@ -17,6 +17,8 @@ export interface MainAction {
   mediaId?: number;
   scanPath?: string;
   resumeImportId?: number;
+  /** Fiche du matériel à ouvrir (rappel d'entretien de l'accueil). */
+  gearId?: number;
 }
 
 /** Fenêtre courante ; dans un navigateur (développement), `?window=welcome`. */

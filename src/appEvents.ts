@@ -6,6 +6,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useEffect } from "react";
 import { events } from "./api/core";
 import { type Device, useDevices } from "./store/devices";
+import { useGear } from "./store/gear";
 import { useImport } from "./store/import";
 import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
@@ -27,6 +28,8 @@ async function applyMainAction(action: MainAction): Promise<void> {
   const library = useLibrary.getState();
   // L'accueil a pu créer une bibliothèque.
   await imp.loadLibraries();
+  // Retenue avant l'ouverture de l'écran Matériel, qui la garde au chargement.
+  if (action.gearId !== undefined) await useGear.getState().select(action.gearId);
   useNavigation.getState().goTo(action.screen);
   await showSelf();
   if (action.albumId !== undefined) await library.showAlbum(action.albumId);

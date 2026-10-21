@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../i18n";
 import { useImport } from "../store/import";
 import { useLibrary } from "../store/library";
+import { useReminders } from "../store/maintenance";
 
 const openMain = vi.fn();
 vi.mock("../windows", async (original) => ({
@@ -112,5 +113,38 @@ describe("fenêtre d'accueil", () => {
     render(<WelcomeApp />);
     fireEvent.click(screen.getByRole("button", { name: "Reprendre" }));
     expect(openMain).toHaveBeenCalledWith({ screen: "import", resumeImportId: 4 });
+  });
+
+  it("un entretien échu s'annonce et ouvre la fiche du matériel", () => {
+    useImport.setState({ libraries: [library(1, "Photos")], libraryId: 1 });
+    useReminders.setState({
+      // Pas de cœur dans les tests : les rappels sont posés tels quels.
+      load: () => Promise.resolve(),
+      reminders: [
+        {
+          gearId: 4,
+          gearName: "Nikon Z 6",
+          kind: "sensor",
+          lastDate: "2026-01-10",
+          dueDate: "2026-07-10",
+          due: true,
+        },
+        {
+          gearId: 5,
+          gearName: "NIKKOR Z 24-70mm f/4 S",
+          kind: "service",
+          lastDate: "2026-01-10",
+          dueDate: "2027-01-10",
+          due: false,
+        },
+      ],
+    });
+    render(<WelcomeApp />);
+    expect(
+      screen.getByText("Nikon Z 6 : Nettoyage du capteur, à faire depuis le 10 juil. 2026."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/NIKKOR/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir la fiche" }));
+    expect(openMain).toHaveBeenCalledWith({ screen: "gear", gearId: 4 });
   });
 });

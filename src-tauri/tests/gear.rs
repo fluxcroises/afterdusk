@@ -7,6 +7,7 @@ mod common;
 use std::fs;
 use std::sync::atomic::AtomicBool;
 
+use afterdusk_lib::gear::maintenance::{self, MaintenanceInput, MaintenanceKind};
 use afterdusk_lib::gear::{self, GearError, GearKind, GearUpdate};
 use afterdusk_lib::import::{self, ImportOptions};
 use afterdusk_lib::{db, library};
@@ -92,7 +93,20 @@ fn inventaire_fusion_masquage_accessoires_et_fiche() {
     assert_eq!(lens_stats.partners[0].id, nikon);
 
     // Fusion : les photos et les noms EXIF du Sony passent au Nikon.
+    // Le journal d'entretien suit la fiche fusionnée.
+    let cleaning = MaintenanceInput {
+        date: "2026-03-01".into(),
+        kind: MaintenanceKind::Sensor,
+        cost_cents: Some(4500),
+        currency: Some("EUR".into()),
+        notes: None,
+        reminder_months: Some(6),
+    };
+    maintenance::add(&conn, sony, &cleaning).unwrap();
     let merged = gear::merge(&mut conn, sony, nikon).unwrap();
+    let journal = maintenance::list(&conn, nikon).unwrap();
+    assert_eq!(journal.len(), 1);
+    assert_eq!(journal[0].input, cleaning);
     assert_eq!(merged.item.photo_count, 2);
     assert_eq!(merged.aliases.len(), 2, "{:?}", merged.aliases);
     assert!(matches!(

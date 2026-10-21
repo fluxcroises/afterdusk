@@ -7,6 +7,7 @@ use tauri::ipc::Response;
 
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
+use crate::gear::maintenance::{self, MaintenanceEntry, MaintenanceInput, Reminder};
 use crate::gear::stats::GearStats;
 use crate::gear::{self, GearError, GearItem, GearKind, GearRecord, GearUpdate};
 
@@ -17,6 +18,8 @@ impl From<GearError> for CommandError {
             GearError::KindMismatch => "gearKindMismatch",
             GearError::Detected => "gearDetected",
             GearError::Photo(_) => "gearPhoto",
+            GearError::MaintenanceNotFound(_) => "maintenanceNotFound",
+            GearError::InvalidDate(_) => "invalidDate",
             GearError::Sqlite(_) => "internal",
         };
         Self::new(code, e)
@@ -140,4 +143,50 @@ pub async fn gear_photo_file(state: State<'_, AppState>, id: i64) -> CommandResu
     let dir = data_dir(&state);
     let bytes = blocking(move || Ok(gear::photo_file(&conn, &dir, id)?)).await?;
     Ok(Response::new(bytes.unwrap_or_default()))
+}
+
+#[tauri::command]
+pub async fn maintenance_list(
+    state: State<'_, AppState>,
+    gear_id: i64,
+) -> CommandResult<Vec<MaintenanceEntry>> {
+    let conn = state.connect()?;
+    blocking(move || Ok(maintenance::list(&conn, gear_id)?)).await
+}
+
+#[tauri::command]
+pub async fn maintenance_add(
+    state: State<'_, AppState>,
+    gear_id: i64,
+    input: MaintenanceInput,
+) -> CommandResult<i64> {
+    let conn = state.connect()?;
+    blocking(move || Ok(maintenance::add(&conn, gear_id, &input)?)).await
+}
+
+#[tauri::command]
+pub async fn maintenance_update(
+    state: State<'_, AppState>,
+    id: i64,
+    input: MaintenanceInput,
+) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || Ok(maintenance::update(&conn, id, &input)?)).await
+}
+
+#[tauri::command]
+pub async fn maintenance_delete(state: State<'_, AppState>, id: i64) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || Ok(maintenance::delete(&conn, id)?)).await
+}
+
+/// Rappels d'un appareil, ou de tout le matériel visible, à la date du jour.
+#[tauri::command]
+pub async fn maintenance_reminders(
+    state: State<'_, AppState>,
+    gear_id: Option<i64>,
+) -> CommandResult<Vec<Reminder>> {
+    let conn = state.connect()?;
+    let today = chrono::Local::now().date_naive();
+    blocking(move || Ok(maintenance::reminders(&conn, gear_id, today)?)).await
 }

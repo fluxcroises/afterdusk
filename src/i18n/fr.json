@@ -1150,5 +1150,34 @@
       "shutterRead_other": "{{n}} lus dans la photo du {{date}}, plus {{count}} photos prises depuis.",
       "shutterReadLatest": "{{n}} lus dans la photo du {{date}}."
     }
+  },
+  "maintenance": {
+    "title": "Entretien",
+    "kinds": {
+      "sensor": "Nettoyage du capteur",
+      "service": "Révision",
+      "repair": "Réparation",
+      "firmware": "Mise à jour du firmware",
+      "other": "Autre intervention"
+    },
+    "date": "Date",
+    "kind": "Intervention",
+    "cost": "Coût",
+    "reminder": "Rappel",
+    "noReminder": "Aucun",
+    "every_one": "tous les {{count}} mois",
+    "every_other": "tous les {{count}} mois",
+    "add": "Ajouter une intervention…",
+    "save": "Ajouter",
+    "delete": "Supprimer l'intervention",
+    "confirmDelete": "Supprimer « {{kind}} » du {{date}} ?",
+    "empty": "Aucune intervention.",
+    "dueOn": "{{kind}} : prévu le {{date}}",
+    "dueSince": "{{kind}} : à faire depuis le {{date}}",
+    "dueHint": "entretien",
+    "dueCount_one": "{{count}} entretien à faire",
+    "dueCount_other": "{{count}} entretiens à faire",
+    "homeDue": "{{name}} : {{kind}}, à faire depuis le {{date}}.",
+    "open": "Ouvrir la fiche"
   }
 }

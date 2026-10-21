@@ -5,6 +5,7 @@ import { previewUrl } from "../api/previews";
 import { BarChart } from "../components/BarChart";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorBanner } from "../components/ErrorBanner";
+import { GearMaintenance } from "../components/GearMaintenance";
 import { GearSilhouette } from "../components/GearSilhouette";
 import { FieldRow, ListRow, PanelNote, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
@@ -17,6 +18,7 @@ import {
   useGear,
 } from "../store/gear";
 import { useLibrary } from "../store/library";
+import { useReminders } from "../store/maintenance";
 import { confirmWarning } from "../ui/confirm";
 import { formatCaptureTime } from "../ui/format";
 import { apertureBars, focalBars, isoBars, monthBars } from "../ui/gearStats";
@@ -44,6 +46,8 @@ function GearList() {
   const selected = useGear((s) => s.selectedId);
   const showHidden = useGear((s) => s.showHidden);
   const nameOf = useGearName();
+  const reminders = useReminders((s) => s.reminders);
+  const due = new Set(reminders.filter((r) => r.due).map((r) => r.gearId));
   const st = useGear.getState();
   return (
     <>
@@ -58,7 +62,13 @@ function GearList() {
                 <ListRow
                   key={i.id}
                   label={nameOf(i)}
-                  hint={i.hidden ? t("gear.hiddenHint") : undefined}
+                  hint={
+                    i.hidden
+                      ? t("gear.hiddenHint")
+                      : due.has(i.id)
+                        ? t("maintenance.dueHint")
+                        : undefined
+                  }
                   count={i.autoDetected ? i.photoCount : undefined}
                   selected={i.id === selected}
                   onClick={() => void st.select(i.id)}
@@ -528,6 +538,7 @@ export function GearView() {
           <div className="gear-card gear-form-card">
             <GearForm key={record.id} record={record} />
           </div>
+          <GearMaintenance record={record} />
           <GearStatsView record={record} />
         </div>
       ) : (

@@ -7,9 +7,13 @@ vi.mock("@tauri-apps/api/core", async (original) => ({
   invoke: (cmd: string, args?: Record<string, unknown>) => invoke(cmd, args),
 }));
 
+const confirmWarning = vi.fn(() => Promise.resolve(true));
+vi.mock("../ui/confirm", () => ({ confirmWarning: () => confirmWarning() }));
+
 const { default: i18n } = await import("../i18n");
 await i18n.changeLanguage("fr");
 const { useGear } = await import("../store/gear");
+const { useReminders } = await import("../store/maintenance");
 const { GearView } = await import("./GearView");
 
 const item = (id: number, kind: string, make: string, model: string, extra = {}) => ({
@@ -51,6 +55,29 @@ const record = (id: number) => ({
   aliases: id === 1 ? ["NIKON CORPORATION NIKON Z 6 (6012345)"] : [],
 });
 
+const journal = [
+  {
+    id: 7,
+    gearId: 1,
+    date: "2026-01-10",
+    kind: "sensor",
+    costCents: 4500,
+    currency: "EUR",
+    notes: "Chez le réparateur",
+    reminderMonths: 6,
+  },
+];
+const reminders = [
+  {
+    gearId: 1,
+    gearName: "Nikon Z 6",
+    kind: "sensor",
+    lastDate: "2026-01-10",
+    dueDate: "2026-07-10",
+    due: true,
+  },
+];
+
 const stats = {
   photos: 12,
   focal: [
@@ -84,9 +111,13 @@ describe("écran Matériel", () => {
       if (cmd === "gear_get") return Promise.resolve(record(args?.id as number));
       if (cmd === "gear_create") return Promise.resolve(4);
       if (cmd === "gear_stats") return Promise.resolve(stats);
+      if (cmd === "maintenance_list") return Promise.resolve(journal);
+      if (cmd === "maintenance_reminders")
+        return Promise.resolve(args?.gearId === null || args?.gearId === 1 ? reminders : []);
       return Promise.resolve(null);
     });
     useGear.setState({ items: [], selectedId: null, record: null, showHidden: false });
+    useReminders.setState({ reminders: [] });
   });
 
   it("inventaire par type, fiche et silhouette du premier boîtier", async () => {
@@ -166,5 +197,43 @@ describe("écran Matériel", () => {
       ),
     );
     expect(invoke).toHaveBeenCalledWith("gear_get", { id: 3 });
+  });
+
+  it("journal d'entretien, rappel échu, ajout et suppression", async () => {
+    await act(async () => render(<GearView />));
+    await act(async () => useReminders.getState().load());
+    const card = closest("Entretien", "section");
+    expect(
+      within(card).getByText("Nettoyage du capteur : à faire depuis le 10 juil. 2026"),
+    ).toBeInTheDocument();
+    expect(within(card).getByText(/45,00/)).toBeInTheDocument();
+    expect(within(card).getByText("tous les 6 mois · Chez le réparateur")).toBeInTheDocument();
+    // Repère dans la liste.
+    expect(screen.getByRole("button", { name: /Nikon Z 6\s*entretien/ })).toBeInTheDocument();
+
+    fireEvent.click(within(card).getByRole("button", { name: "Ajouter une intervention…" }));
+    fireEvent.change(within(card).getByLabelText("Date"), { target: { value: "2026-10-20" } });
+    fireEvent.change(within(card).getByLabelText("Intervention"), {
+      target: { value: "firmware" },
+    });
+    fireEvent.change(within(card).getByLabelText("Rappel"), { target: { value: "12" } });
+    await act(async () => fireEvent.click(within(card).getByRole("button", { name: "Ajouter" })));
+    expect(invoke).toHaveBeenCalledWith("maintenance_add", {
+      gearId: 1,
+      input: {
+        date: "2026-10-20",
+        kind: "firmware",
+        costCents: null,
+        currency: null,
+        notes: null,
+        reminderMonths: 12,
+      },
+    });
+
+    await act(async () =>
+      fireEvent.click(within(card).getByRole("button", { name: "Supprimer l'intervention" })),
+    );
+    expect(confirmWarning).toHaveBeenCalled();
+    expect(invoke).toHaveBeenCalledWith("maintenance_delete", { id: 7 });
   });
 });

@@ -1150,5 +1150,34 @@
       "shutterRead_other": "{{n}} read from the photo of {{date}}, plus {{count}} photos taken since.",
       "shutterReadLatest": "{{n}} read from the photo of {{date}}."
     }
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "kinds": {
+      "sensor": "Sensor cleaning",
+      "service": "Service",
+      "repair": "Repair",
+      "firmware": "Firmware update",
+      "other": "Other"
+    },
+    "date": "Date",
+    "kind": "Work",
+    "cost": "Cost",
+    "reminder": "Reminder",
+    "noReminder": "None",
+    "every_one": "every month",
+    "every_other": "every {{count}} months",
+    "add": "Add work…",
+    "save": "Add",
+    "delete": "Delete this entry",
+    "confirmDelete": "Delete “{{kind}}” of {{date}}?",
+    "empty": "No maintenance yet.",
+    "dueOn": "{{kind}}: due {{date}}",
+    "dueSince": "{{kind}}: overdue since {{date}}",
+    "dueHint": "maintenance",
+    "dueCount_one": "{{count}} maintenance due",
+    "dueCount_other": "{{count}} maintenance items due",
+    "homeDue": "{{name}}: {{kind}}, overdue since {{date}}.",
+    "open": "Open record"
   }
 }

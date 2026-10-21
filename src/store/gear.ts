@@ -1,6 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { type CommandError, toCommandError } from "../api/core";
+import {
+  type MaintenanceEntry,
+  type MaintenanceInput,
+  type Reminder,
+  useReminders,
+} from "./maintenance";
 
 export type GearKind =
   "body" | "lens" | "flash" | "filter" | "tripod" | "bag" | "battery" | "other";
@@ -94,6 +100,9 @@ interface GearState {
   selectedId: number | null;
   record: GearRecord | null;
   stats: GearStats | null;
+  /** Journal d'entretien et rappels de l'appareil affiché. */
+  journal: MaintenanceEntry[];
+  reminders: Reminder[];
   /** Image déposée sur la fiche, en adresse locale (`blob:`). */
   photoUrl: string | null;
   error: CommandError | null;
@@ -108,6 +117,8 @@ interface GearState {
   merge: (target: number) => Promise<void>;
   setPhotoMedia: (mediaId: number | null) => Promise<void>;
   setPhotoFile: (path: string) => Promise<void>;
+  addMaintenance: (input: MaintenanceInput) => Promise<void>;
+  deleteMaintenance: (id: number) => Promise<void>;
 }
 
 export const useGear = create<GearState>()((set, get) => {
@@ -138,12 +149,26 @@ export const useGear = create<GearState>()((set, get) => {
     set({ stats });
   }
 
+  async function loadMaintenance(record: GearRecord | null) {
+    if (!record) {
+      set({ journal: [], reminders: [] });
+      return;
+    }
+    const [journal, reminders] = await Promise.all([
+      invoke<MaintenanceEntry[] | null>("maintenance_list", { gearId: record.id }),
+      invoke<Reminder[] | null>("maintenance_reminders", { gearId: record.id }),
+    ]);
+    set({ journal: journal ?? [], reminders: reminders ?? [] });
+  }
+
   async function refresh(id: number | null) {
+    // Fusion, masquage, suppression : les rappels de tout le matériel changent aussi.
+    void useReminders.getState().load();
     const items = await invoke<GearItem[]>("gear_list", { includeHidden: get().showHidden });
     const keep = id !== null && items.some((g) => g.id === id) ? id : (items[0]?.id ?? null);
     const record = keep === null ? null : await invoke<GearRecord>("gear_get", { id: keep });
     set({ items, selectedId: keep, record });
-    await Promise.all([loadPhoto(record), loadStats(record)]);
+    await Promise.all([loadPhoto(record), loadStats(record), loadMaintenance(record)]);
   }
 
   return {
@@ -152,6 +177,8 @@ export const useGear = create<GearState>()((set, get) => {
     selectedId: null,
     record: null,
     stats: null,
+    journal: [],
+    reminders: [],
     photoUrl: null,
     error: null,
 
@@ -168,7 +195,7 @@ export const useGear = create<GearState>()((set, get) => {
         set({ selectedId: id });
         const record = id === null ? null : await invoke<GearRecord>("gear_get", { id });
         set({ record });
-        await Promise.all([loadPhoto(record), loadStats(record)]);
+        await Promise.all([loadPhoto(record), loadStats(record), loadMaintenance(record)]);
       }),
 
     save: (update) =>
@@ -232,6 +259,22 @@ export const useGear = create<GearState>()((set, get) => {
         if (id === null) return;
         await invoke("gear_set_photo_file", { id, path });
         await refresh(id);
+      }),
+
+    addMaintenance: (input) =>
+      guard(async () => {
+        const gearId = get().selectedId;
+        if (gearId === null) return;
+        await invoke("maintenance_add", { gearId, input });
+        await loadMaintenance(get().record);
+        await useReminders.getState().load();
+      }),
+
+    deleteMaintenance: (id) =>
+      guard(async () => {
+        await invoke("maintenance_delete", { id });
+        await loadMaintenance(get().record);
+        await useReminders.getState().load();
       }),
   };
 });

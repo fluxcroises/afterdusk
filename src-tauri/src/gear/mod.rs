@@ -2,6 +2,7 @@
 //! fiches complètes, accessoires saisis à la main, fusion des doublons et
 //! masquage des appareils d'autrui.
 
+pub mod maintenance;
 pub mod stats;
 
 use std::path::Path;
@@ -24,6 +25,10 @@ pub enum GearError {
     Detected,
     #[error("photo du matériel : {0}")]
     Photo(String),
+    #[error("intervention {0} introuvable")]
+    MaintenanceNotFound(i64),
+    #[error("date invalide : {0}")]
+    InvalidDate(String),
 }
 
 /// Type d'appareil ou d'accessoire.
@@ -407,6 +412,10 @@ pub fn merge(conn: &mut Connection, source: i64, target: i64) -> Result<GearReco
     let tx = conn.transaction()?;
     tx.execute(
         "UPDATE OR IGNORE gear_aliases SET gear_id = ?2 WHERE gear_id = ?1",
+        params![source, target],
+    )?;
+    tx.execute(
+        "UPDATE maintenance SET gear_id = ?2 WHERE gear_id = ?1",
         params![source, target],
     )?;
     tx.execute(
