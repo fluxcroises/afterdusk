@@ -35,8 +35,8 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 
 ## V0.3 : Carte et matériel
 
-- [ ] Les quatre sources de localisation de la section 4.7, avec correction du fuseau horaire
-- [ ] Géocodage inverse hors ligne (pays, ville)
+- [x] Les quatre sources de localisation de la section 4.7, avec correction du fuseau horaire
+- [x] Géocodage inverse hors ligne (pays, ville)
 - [ ] Carte du monde des albums avec grappes, aperçu et filtre par zone
 - [ ] Fond de carte simplifié hors ligne
 - [ ] Inventaire alimenté automatiquement, fusion des doublons, masquage
@@ -458,3 +458,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 
 - Dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises), quatre photos de test : Ctrl+A et Édition > Tout sélectionner sélectionnent les photos de la grille, Ctrl+A dans la recherche n'en sélectionne que le texte ; onglet « Saisie » : « New York City, États-Unis » trouvé, deux photos localisées ; Corriger l'heure… : −5 h pour mars 2018 (heure d'été américaine déjà en vigueur) et −6 h pour novembre 2019, puis « 2 photos corrigées », fiche « Prise de vue 11:38 » et « Heure du boîtier 16:38 » ; fin d'import de deux RAW sans GPS : « Localiser les 2 photos sans lieu… », qui disparaît une fois les photos placées à Paris. XMP écrits (coordonnées, heure corrigée avec son fuseau), originaux et carte inchangés. Cas réel au passage : le Panasonic écrit +01:00 en mai à Paris, la boîte propose +1 h.
 - Corrigé à cette occasion : valeurs longues de la fiche coupées (elles passent désormais à la ligne, l'hémisphère reste avec son nombre), champ de décalage trop large et groupes en gras dans les boîtes, fuseau écrit non relu après une correction, barre d'Importer serrée sur deux lignes (boutons sur une ligne, état abrégé avec infobulle). La barre d'Importer corrigée n'a pas été revue à l'écran.
+- Deux premiers critères de la V0.3 cochés : CI verte sous Windows et macOS (run 39618722090). Le clic sur la carte, cinquième façon de saisir un lieu, viendra avec la carte.
