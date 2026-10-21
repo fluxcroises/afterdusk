@@ -127,6 +127,7 @@
   },
   "info": {
     "histogram": "Histogramme",
+    "notSet": "Non renseigné",
     "metadata": "Informations",
     "fileName": "Fichier",
     "captureTime": "Prise de vue",
@@ -279,7 +280,13 @@
     "filtered_one": "{{count}} sur {{total}} photos · {{selected}} sélectionnée",
     "filtered_other": "{{count}} sur {{total}} photos · {{selected}} sélectionnée(s)",
     "albums_one": "{{count}} album",
-    "albums_other": "{{count}} albums"
+    "albums_other": "{{count}} albums",
+    "xmpFailed_one": "XMP non écrit pour {{count}} photo, notes gardées dans la base",
+    "xmpFailed_other": "XMP non écrits pour {{count}} photos, notes gardées dans la base",
+    "xmpFailedHint": "Afterdusk réessaie chaque minute. Vérifiez que le dossier de la bibliothèque est branché et modifiable.",
+    "previewFailed_one": "{{count}} aperçu n'a pas pu être créé",
+    "previewFailed_other": "{{count}} aperçus n'ont pas pu être créés",
+    "previewFailedHint": "Le fichier est peut-être endommagé ou dans un format non pris en charge. Cliquez pour masquer."
   },
   "navigator": {
     "title": "Navigateur",

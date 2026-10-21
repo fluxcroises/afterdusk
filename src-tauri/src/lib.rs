@@ -87,7 +87,7 @@ pub fn run() {
                 workers,
             );
             purge_expired_trash(db_path.clone(), cache_root.clone());
-            app.manage(XmpWriter::start(db_path.clone()));
+            app.manage(XmpWriter::start(app.handle().clone(), db_path.clone()));
             app.manage(commands::develop::DevelopEngine::new());
             app.manage(commands::export::ExportState::default());
             app.manage(AppState::new(db_path, cache_root));

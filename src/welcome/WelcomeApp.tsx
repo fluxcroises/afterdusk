@@ -288,7 +288,7 @@ function AlbumRow({ album }: { album: AlbumSummary }) {
       </span>
       <span className="album-row-text">
         <span className="album-row-name">{album.name}</span>
-        <span className="album-row-meta">{formatDate(album.startDate, i18n.language) ?? "—"}</span>
+        <span className="album-row-meta">{formatDate(album.startDate, i18n.language)}</span>
       </span>
       <span className="album-row-count">{t("toolbar.photoCount", { count: album.count })}</span>
     </button>

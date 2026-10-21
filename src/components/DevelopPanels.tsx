@@ -20,7 +20,7 @@ import {
 import { isMac } from "../platform";
 import { useLibrary } from "../store/library";
 import { describeStep } from "../ui/history";
-import { formatAperture, formatFocal, formatIso, formatShutter } from "../ui/format";
+import { ExifLine } from "./ExifLine";
 import { IconButton } from "./IconButton";
 import { PanelSection } from "./PanelSection";
 
@@ -154,10 +154,9 @@ function ClipButton({ which, lit }: { which: keyof ClippingWarnings; lit: boolea
 }
 
 export function HistogramSection() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const histogram = useDevelop((s) => s.frame?.histogram ?? null);
   const d = useLibrary((s) => s.details);
-  const lng = i18n.language;
   const shadows = histogram ? clippedShare(histogram, 0) > CLIP_SHARE : false;
   const highlights = histogram ? clippedShare(histogram, 255) > CLIP_SHARE : false;
   return (
@@ -167,12 +166,7 @@ export function HistogramSection() {
         <ClipButton which="shadows" lit={shadows} />
         <ClipButton which="highlights" lit={highlights} />
       </div>
-      <div className="histogram-exif">
-        <span>{formatIso(d?.iso ?? null) ?? "ISO —"}</span>
-        <span>{formatFocal(d?.focalLength ?? null, lng) ?? "— mm"}</span>
-        <span>{formatAperture(d?.aperture ?? null, lng) ?? "f / —"}</span>
-        <span>{formatShutter(d?.shutter ?? null) ?? "— s"}</span>
-      </div>
+      <ExifLine exposure={d} />
     </PanelSection>
   );
 }
@@ -281,7 +275,7 @@ export function ColorSection() {
       </div>
       <Slider
         label={t("develop.temperature")}
-        display={point ? t("develop.kelvin", { value: kelvin.format(point.temperature) }) : "—"}
+        display={point ? t("develop.kelvin", { value: kelvin.format(point.temperature) }) : ""}
         value={point ? Math.round(positionFromTemperature(point.temperature) * 1000) : 500}
         min={0}
         max={1000}
@@ -293,7 +287,7 @@ export function ColorSection() {
       />
       <Slider
         label={t("develop.tint")}
-        display={point ? plain.format(point.tint) : "—"}
+        display={point ? plain.format(point.tint) : ""}
         value={point?.tint ?? 0}
         {...TINT_RANGE}
         disabled={disabled}

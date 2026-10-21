@@ -5,9 +5,10 @@ use std::sync::Mutex;
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::time::Duration;
 
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use super::error::{CommandError, CommandResult};
+use super::warnings::{WarningKind, warn};
 use super::{AppState, blocking};
 use crate::db;
 use crate::library::LibraryError;
@@ -38,12 +39,14 @@ pub struct XmpWriter {
 }
 
 impl XmpWriter {
-    pub fn start(db_path: PathBuf) -> Self {
+    pub fn start(app: AppHandle, db_path: PathBuf) -> Self {
         let (sender, receiver) = mpsc::channel::<()>();
         std::thread::spawn(move || {
             let Ok(conn) = db::connect(&db_path) else {
                 return;
             };
+            // L'interface est prévenue au premier échec, puis au retour à la normale.
+            let mut failing = false;
             loop {
                 match receiver.recv_timeout(RETRY) {
                     Ok(()) | Err(RecvTimeoutError::Timeout) => {}
@@ -51,16 +54,30 @@ impl XmpWriter {
                 }
                 std::thread::sleep(DEBOUNCE);
                 while receiver.try_recv().is_ok() {}
+                let mut failed = 0;
+                let mut cause = String::new();
                 loop {
                     match marks::flush_pending_xmp(&conn, BATCH) {
-                        Ok(report) if report.written == BATCH => continue,
-                        Ok(_) => break,
+                        Ok(report) => {
+                            failed += report.failed;
+                            // Les échecs restent en file : on ne repasse que sur un lot plein.
+                            if report.written < BATCH {
+                                break;
+                            }
+                        }
                         Err(error) => {
-                            eprintln!("écriture des XMP : {error}");
+                            failed = failed.max(1);
+                            cause = error.to_string();
                             break;
                         }
                     }
                 }
+                if failed > 0 && !failing {
+                    warn(&app, WarningKind::Xmp, failed, cause);
+                } else if failed == 0 && failing {
+                    warn(&app, WarningKind::XmpRecovered, 0, "");
+                }
+                failing = failed > 0;
             }
         });
         let writer = Self {

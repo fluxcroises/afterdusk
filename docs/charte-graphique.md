@@ -34,7 +34,8 @@ Utiliser les couleurs suivantes pour les différents éléments de l'interface.
 | Bordures et séparateurs | `#383D44` |
 | Texte principal | `#F0F2F5` |
 | Texte secondaire | `#AAB0B9` |
-| Texte désactivé | `#737983` |
+| Texte discret et désactivé | `#959BA5` |
+| Contour des champs et boutons | `#6D737C` |
 | Accent principal | `#7598E8` |
 | Accent au survol | `#92ACF0` |
 | Succès | `#6EBC94` |
@@ -335,10 +336,11 @@ Exemple de variables à intégrer :
   --ad-hover: #383D44;
 
   --ad-border: #383D44;
+  --ad-field-border: #6D737C;
 
   --ad-text: #F0F2F5;
   --ad-text-secondary: #AAB0B9;
-  --ad-text-muted: #737983;
+  --ad-text-muted: #959BA5;
 
   --ad-accent: #7598E8;
   --ad-accent-hover: #92ACF0;

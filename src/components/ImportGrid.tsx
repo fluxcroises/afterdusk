@@ -65,7 +65,9 @@ function Tile({ file }: { file: SourceEntry }) {
         {[file.fileName, ...file.companions.map((c) => extension(c.fileName))].join(" + ")}
       </span>
       <span className="import-tile-meta">
-        {file.alreadyImported ? t("import.alreadyImported") : `${time} · ${file.camera || "—"}`}
+        {file.alreadyImported
+          ? t("import.alreadyImported")
+          : [time, file.camera].filter(Boolean).join(" · ")}
       </span>
     </button>
   );

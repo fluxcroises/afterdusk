@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useLayout } from "../store/layout";
 
 interface PanelSectionProps {
@@ -82,10 +83,11 @@ interface FieldRowProps {
 
 /** Libellé à gauche, valeur à droite (fiche d'informations, options d'import). */
 export function FieldRow({ label, value }: FieldRowProps) {
+  const { t } = useTranslation();
   return (
     <div className="field-row">
       <span className="field-row-label">{label}</span>
-      <span className="field-row-value">{value ?? "—"}</span>
+      <span className="field-row-value">{value ?? t("info.notSet")}</span>
     </div>
   );
 }

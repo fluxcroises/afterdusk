@@ -2,14 +2,8 @@ import { ImageOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { useLibrary } from "../store/library";
-import {
-  formatAperture,
-  formatCaptureTime,
-  formatCompensation,
-  formatFocal,
-  formatIso,
-  formatShutter,
-} from "../ui/format";
+import { formatCaptureTime, formatCompensation } from "../ui/format";
+import { ExifLine } from "./ExifLine";
 import { FieldRow, ListRow, PanelNote, PanelSection } from "./PanelSection";
 import { Thumbnail } from "./Thumbnail";
 
@@ -107,12 +101,7 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
     <>
       <PanelSection id={`${scope}.histogram`} title={t("info.histogram")}>
         <div className="histogram" aria-hidden="true" />
-        <div className="histogram-exif">
-          <span>{formatIso(d?.iso ?? null) ?? "ISO —"}</span>
-          <span>{formatFocal(d?.focalLength ?? null, lng) ?? "— mm"}</span>
-          <span>{formatAperture(d?.aperture ?? null, lng) ?? "f / —"}</span>
-          <span>{formatShutter(d?.shutter ?? null) ?? "— s"}</span>
-        </div>
+        <ExifLine exposure={d} />
       </PanelSection>
       <PanelSection id={`${scope}.metadata`} title={t("info.metadata")}>
         <FieldRow label={t("info.fileName")} value={d?.fileName} />

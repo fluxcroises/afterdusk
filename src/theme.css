@@ -11,10 +11,13 @@
   --ad-border: #383d44;
   /* Séparation entre panneaux, plus sombre que le fond des panneaux. */
   --ad-border-strong: #0d0e10;
+  /* Contour des champs et boutons : 3:1 sur le panneau, pour repérer la zone de saisie. */
+  --ad-field-border: #6d737c;
 
   --ad-text: #f0f2f5;
   --ad-text-secondary: #aab0b9;
-  --ad-text-muted: #737983;
+  /* Texte discret (indices, raccourcis, méta) : 4,5:1 sur les panneaux et surfaces. */
+  --ad-text-muted: #959ba5;
 
   --ad-accent: #7598e8;
   --ad-accent-hover: #92acf0;

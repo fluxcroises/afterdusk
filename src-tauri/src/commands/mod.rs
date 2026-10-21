@@ -11,6 +11,7 @@ pub mod media;
 pub mod presets;
 pub mod previews;
 pub mod trash;
+pub mod warnings;
 pub mod windows;
 
 use std::path::PathBuf;

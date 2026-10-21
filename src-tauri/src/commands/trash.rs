@@ -1,10 +1,11 @@
 //! Corbeille interne : envoi, restauration, vidage et délai de conservation.
 
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use super::error::CommandResult;
 use super::marks::XmpWriter;
+use super::warnings::{WarningKind, warn};
 use super::{AppState, blocking};
 use crate::library::trash::{self, TrashReport};
 use crate::library::{marks, pairs};
@@ -14,6 +15,7 @@ use crate::metadata::media::MediaFormat;
 /// seulement les fichiers désignés (`whole_piles` faux, pile dépliée).
 #[tauri::command]
 pub async fn media_trash(
+    app: AppHandle,
     state: State<'_, AppState>,
     ids: Vec<i64>,
     whole_piles: Option<bool>,
@@ -27,19 +29,27 @@ pub async fn media_trash(
         } else {
             ids
         };
-        Ok(trash_files(&mut conn, &ids)?)
+        Ok(trash_files(&app, &mut conn, &ids)?)
     })
     .await
 }
 
 fn trash_files(
+    app: &AppHandle,
     conn: &mut rusqlite::Connection,
     ids: &[i64],
 ) -> Result<TrashReport, trash::TrashError> {
     // Les notes en attente partent dans le XMP avant que le fichier ne bouge :
     // la photo restaurée retrouve ses marques.
-    if let Err(err) = marks::flush_pending_xmp(conn, usize::MAX) {
-        eprintln!("XMP avant corbeille : {err}");
+    match marks::flush_pending_xmp(conn, usize::MAX) {
+        Ok(report) if report.failed > 0 => warn(app, WarningKind::Xmp, report.failed, ""),
+        Ok(_) => {}
+        Err(err) => warn(
+            app,
+            WarningKind::Xmp,
+            1,
+            format!("XMP avant corbeille : {err}"),
+        ),
     }
     trash::move_to_trash(conn, ids)
 }
@@ -49,6 +59,7 @@ fn trash_files(
 /// pile dont tous les fichiers ont ce format, n'est pas touchée.
 #[tauri::command]
 pub async fn media_trash_format(
+    app: AppHandle,
     state: State<'_, AppState>,
     ids: Vec<i64>,
     format: MediaFormat,
@@ -57,7 +68,7 @@ pub async fn media_trash_format(
     let ids: Vec<i64> = ids.into_iter().filter(|id| *id > 0).collect();
     blocking(move || {
         let chosen = pairs::files_of_format(&conn, &ids, format)?;
-        Ok(trash_files(&mut conn, &chosen)?)
+        Ok(trash_files(&app, &mut conn, &chosen)?)
     })
     .await
 }

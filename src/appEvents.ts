@@ -11,6 +11,7 @@ import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
 import { startSecondarySync } from "./secondary/sync";
 import { useNavigation } from "./store/navigation";
+import { type BackgroundWarning, useWarnings } from "./store/warnings";
 import {
   EVENT_OPEN_MAIN,
   EVENT_WELCOME_REFRESH,
@@ -88,6 +89,10 @@ export function useAppEvents(label: WindowLabel): void {
       events.onImportFinished(imp.onFinished),
       listen<{ mediaId: number }>("preview-ready", (e) =>
         useLibrary.getState().previewReady(e.payload.mediaId),
+      ),
+      // XMP non écrits, aperçus impossibles : affichés dans la barre d'état.
+      listen<BackgroundWarning>("background-warning", (e) =>
+        useWarnings.getState().onWarning(e.payload),
       ),
       getCurrentWebview().onDragDropEvent((e) => {
         const layout = useLayout.getState();

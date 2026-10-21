@@ -16,6 +16,7 @@ use tauri::http::{Request, Response, StatusCode, header};
 use tauri::{AppHandle, Emitter, Manager, UriSchemeContext, Wry};
 
 use super::AppState;
+use super::warnings::{WarningKind, warn};
 use crate::db;
 use crate::library::media::{
     cached_preview, full_size_jpeg, generate_previews, missing_previews, stale_previews,
@@ -81,7 +82,12 @@ fn worker(app: &AppHandle, db_path: &Path, cache_root: &Path, receiver: &Mutex<R
             Ok(_) => {
                 let _ = app.emit(EVENT_READY, Ready { media_id });
             }
-            Err(error) => eprintln!("aperçu du média {media_id} : {error}"),
+            Err(error) => warn(
+                app,
+                WarningKind::Preview,
+                1,
+                format!("aperçu du média {media_id} : {error}"),
+            ),
         }
     }
 }

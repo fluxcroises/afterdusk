@@ -77,7 +77,7 @@ select {
   font: inherit;
   color: var(--ad-text);
   background: var(--ad-surface);
-  border: 1px solid var(--ad-border);
+  border: 1px solid var(--ad-field-border);
   border-radius: var(--ad-radius-sm);
 }
 
@@ -762,6 +762,19 @@ button.color-chip:disabled {
   flex: 1;
 }
 
+/* Échec d'une tâche de fond : icône et texte, pas seulement la couleur. */
+.status-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+  color: var(--ad-danger);
+}
+
+.status-warning svg {
+  width: 12px;
+  height: 12px;
+}
+
 @media (max-width: 1200px) {
   :root {
     --ad-sidebar-width: 240px;
@@ -802,7 +815,7 @@ input[type="number"] {
   font: inherit;
   color: var(--ad-text);
   background: var(--ad-surface);
-  border: 1px solid var(--ad-border);
+  border: 1px solid var(--ad-field-border);
   border-radius: var(--ad-radius-sm);
 }
 
@@ -859,7 +872,7 @@ input[type="checkbox"] {
   height: 28px;
   margin-top: var(--ad-space-1);
   font-weight: 400;
-  border: 1px solid var(--ad-border);
+  border: 1px solid var(--ad-field-border);
 }
 
 .button-secondary svg {
@@ -1183,6 +1196,13 @@ input[type="checkbox"] {
   color: var(--ad-text-muted);
 }
 
+/* Sur le fond de survol, le texte discret remonte d'un cran pour garder 4,5:1. */
+.list-row:hover .list-row-hint,
+.album-card:hover .album-card-meta,
+.media-cell[aria-pressed="true"] .media-cell-days {
+  color: var(--ad-text-secondary);
+}
+
 .keyword-list {
   padding: var(--ad-space-1) 0;
   color: var(--ad-text-secondary);
@@ -1293,7 +1313,19 @@ input[type="checkbox"] {
 .menu-row:focus-visible,
 .menu-row[aria-expanded="true"] {
   background: var(--ad-hover);
-  outline: none;
+}
+
+/* Le focus clavier se distingue du survol par le contour d'accent (3,86:1 sur le survol). */
+.menu-row:focus-visible {
+  outline: 1px solid var(--ad-accent);
+  outline-offset: -1px;
+}
+
+/* Le texte discret passe sous 4,5:1 sur le fond de survol : il remonte d'un cran. */
+.menu-row:hover:not(:disabled) .menu-accelerator,
+.menu-row:focus-visible .menu-accelerator,
+.menu-row[aria-expanded="true"] .menu-accelerator {
+  color: var(--ad-text-secondary);
 }
 
 .menu-row:disabled {
@@ -2021,7 +2053,7 @@ button.color-chip[aria-pressed="true"] {
   height: var(--ad-field-height);
   padding: 0 var(--ad-space-2);
   background: var(--ad-inset);
-  border: 1px solid var(--ad-border);
+  border: 1px solid var(--ad-field-border);
   border-radius: var(--ad-radius-sm);
 }
 
@@ -2052,7 +2084,7 @@ button.color-chip[aria-pressed="true"] {
   color: var(--ad-text);
   color-scheme: dark;
   background: var(--ad-surface);
-  border: 1px solid var(--ad-border);
+  border: 1px solid var(--ad-field-border);
   border-radius: var(--ad-radius-sm);
 }
 

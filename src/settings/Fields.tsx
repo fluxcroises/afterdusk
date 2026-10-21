@@ -205,7 +205,7 @@ export function TemplateChoice({
         {error ? (
           <span className="settings-error">{t(`errors.${error}`)}</span>
         ) : (
-          <code>{path ?? "—"}</code>
+          path !== null && <code>{path}</code>
         )}
       </p>
     </div>

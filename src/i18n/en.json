@@ -127,6 +127,7 @@
   },
   "info": {
     "histogram": "Histogram",
+    "notSet": "Not set",
     "metadata": "Metadata",
     "fileName": "File",
     "captureTime": "Capture time",
@@ -279,7 +280,13 @@
     "filtered_one": "{{count}} of {{total}} photos · {{selected}} selected",
     "filtered_other": "{{count}} of {{total}} photos · {{selected}} selected",
     "albums_one": "{{count}} album",
-    "albums_other": "{{count}} albums"
+    "albums_other": "{{count}} albums",
+    "xmpFailed_one": "XMP not written for {{count}} photo, ratings kept in the database",
+    "xmpFailed_other": "XMP not written for {{count}} photos, ratings kept in the database",
+    "xmpFailedHint": "Afterdusk retries every minute. Check that the library folder is connected and writable.",
+    "previewFailed_one": "{{count}} preview could not be created",
+    "previewFailed_other": "{{count}} previews could not be created",
+    "previewFailedHint": "The file may be damaged or in an unsupported format. Click to hide."
   },
   "navigator": {
     "title": "Navigator",

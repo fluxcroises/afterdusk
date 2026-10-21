@@ -1,6 +1,8 @@
+import { TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isFiltering, useLibrary } from "../store/library";
 import { useRescan } from "../store/rescan";
+import { useWarnings } from "../store/warnings";
 
 /** Barre d'état en bas de la fenêtre. */
 export function StatusBar() {
@@ -26,6 +28,11 @@ export function StatusBar() {
   const rescanning = useRescan((s) => s.running);
   const rescanDone = useRescan((s) => s.progress?.done ?? 0);
   const rescanTotal = useRescan((s) => s.progress?.total ?? 0);
+  const xmpFailed = useWarnings((s) => s.xmpFailed);
+  const xmpDetail = useWarnings((s) => s.xmpDetail);
+  const previewFailed = useWarnings((s) => s.previewFailed);
+  const previewDetail = useWarnings((s) => s.previewDetail);
+  const dismissPreviews = useWarnings((s) => s.dismissPreviews);
   return (
     <footer className="status-bar">
       <span>
@@ -37,7 +44,29 @@ export function StatusBar() {
       </span>
       <span className="status-bar-spacer" />
       {rescanning && <span>{t("rescan.progress", { done: rescanDone, total: rescanTotal })}</span>}
-      <span title={t("status.safetyHint")}>{t("status.safety")}</span>
+      {previewFailed > 0 && (
+        <button
+          type="button"
+          className="status-warning"
+          title={[previewDetail, t("status.previewFailedHint")].filter(Boolean).join("\n")}
+          onClick={dismissPreviews}
+        >
+          <TriangleAlert aria-hidden="true" />
+          {t("status.previewFailed", { count: previewFailed })}
+        </button>
+      )}
+      {xmpFailed > 0 ? (
+        <span
+          role="status"
+          className="status-warning"
+          title={[xmpDetail, t("status.xmpFailedHint")].filter(Boolean).join("\n")}
+        >
+          <TriangleAlert aria-hidden="true" />
+          {t("status.xmpFailed", { count: xmpFailed })}
+        </span>
+      ) : (
+        <span title={t("status.safetyHint")}>{t("status.safety")}</span>
+      )}
     </footer>
   );
 }
