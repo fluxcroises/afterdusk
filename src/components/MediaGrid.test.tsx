@@ -62,5 +62,7 @@ describe("grille : rafales", () => {
     expect(useLibrary.getState().selectedIds).not.toContain(2);
     // Dépliée : les trois photos sont reliées.
     expect(document.querySelectorAll(".media-cell[data-burst]")).toHaveLength(3);
+    // Le badge reste sur la photo du dessus seulement.
+    expect(document.querySelectorAll(".burst-badge")).toHaveLength(1);
   });
 });

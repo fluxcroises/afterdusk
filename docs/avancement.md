@@ -580,4 +580,11 @@ Critères (cahier des charges, section 7) :
   - choix du dessus ;
   - de bout en bout : trois prises du Nikon Z 6 et un Sony. Rafale de trois, dessus le mieux noté, hash calculé pour les trois seulement, originaux et carte intacts, repliée et dépliée, filtre, recalcul qui garde le dessus choisi, corbeille, retrait, empilage à la main ;
   - côté interface : badge, dépliage au clic et avec S, dessus changé, détection, empilage, retrait, préférence.
-- Pas encore vérifié dans l'application compilée.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises, originaux d'essai intacts) :
+  - trois prises du Nikon Z 6, copies du RAW d'essai, ajoutées à la bibliothèque d'essai et inscrites par Fichier > Réanalyser la bibliothèque ;
+  - Photo > Regrouper les rafales : avec l'original, quatre prises repliées sur une vignette au badge « 4 » ;
+  - le badge déplie la rafale, et S la déplie depuis le clavier ;
+  - « Mettre en haut de la rafale » fait passer DSC_1002 au-dessus et replie la rafale ;
+  - « Retirer de la rafale » sort DSC_1001, et la rafale passe à 3.
+- Corrigé à cette occasion : une fois la rafale dépliée, chaque prise répétait le badge ; il ne reste que sur la photo du dessus.
+- Le regroupement automatique en fin d'import n'a pas été vu à l'écran ; il est couvert par le test du magasin et le test de bout en bout du cœur.

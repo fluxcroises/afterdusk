@@ -208,7 +208,8 @@ function MediaCell({
             {t("grid.copy")}
           </span>
         )}
-        {burstSize > 1 && media.companionOf === null && (
+        {/* Dépliée, la rafale garde son badge sur la photo du dessus seulement. */}
+        {burstSize > 1 && media.companionOf === null && (!burstOpen || expanded) && (
           <span
             className="burst-badge"
             data-open={burstOpen || undefined}
