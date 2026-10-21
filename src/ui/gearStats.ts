@@ -57,7 +57,7 @@ export function monthBars(months: GearStats["months"], language: string): Bar[] 
     }
     return bars;
   }
-  const format = new Intl.DateTimeFormat(language, { month: "short", year: "2-digit" });
+  const format = new Intl.DateTimeFormat(language, { month: "short", year: "numeric" });
   const bars: Bar[] = [];
   for (let i = first; i <= last; i++) {
     const date = new Date(Math.floor(i / 12), i % 12, 1);

@@ -10,6 +10,8 @@ const WIDTH = 520;
 const HEIGHT = 120;
 const AXIS = 18;
 const GAP = 2;
+/** Peu de valeurs : des barres étroites, centrées, plutôt qu'un aplat. */
+const MAX_BAR = 32;
 /** Au-delà, une étiquette sur deux, sur trois… pour qu'elles ne se chevauchent pas. */
 const MAX_LABELS = 10;
 
@@ -58,8 +60,8 @@ export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
         />
         {bars.map((b, i) => {
           const h = Math.max(1, (b.count / max) * (HEIGHT - AXIS - 4));
-          const x = i * band + GAP / 2;
-          const w = Math.max(1, band - GAP);
+          const w = Math.max(1, Math.min(band - GAP, MAX_BAR));
+          const x = i * band + (band - w) / 2;
           return (
             <g key={b.label} onMouseEnter={() => setHover(i)}>
               <rect className="bar-chart-hit" x={i * band} y={0} width={band} height={HEIGHT} />
