@@ -406,12 +406,12 @@ html[data-platform="mac"][data-fullscreen="true"] .welcome-brand::before {
   color: var(--ad-text-secondary);
 }
 
+/* Une valeur longue (lieu, coordonnées) passe à la ligne plutôt que d'être
+   coupée. */
 .field-row-value {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   text-align: right;
 }
 
@@ -496,7 +496,12 @@ html[data-platform="mac"][data-fullscreen="true"] .welcome-brand::before {
   gap: var(--ad-space-2);
 }
 
+/* L'état cède la place aux boutons : coupé, il reste lisible en infobulle. */
 .toolbar-status {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
 
@@ -889,6 +894,8 @@ input[type="checkbox"] {
 .button-small {
   width: auto;
   height: 22px;
+  flex: none;
+  white-space: nowrap;
   padding: 0 var(--ad-space-2);
   font-weight: 400;
   border-radius: var(--ad-radius-sm);
@@ -3600,8 +3607,9 @@ input[type="radio"] {
   text-overflow: ellipsis;
 }
 
-.locate-offset {
+input.locate-offset {
   flex: 0 0 7ch;
+  width: 7ch;
 }
 
 .locate-manual {
@@ -3638,6 +3646,8 @@ input[type="radio"] {
 
 /* Photo > Corriger l'heure… */
 .timefix-groups {
+  font: var(--ad-font-ui);
+  color: var(--ad-text-secondary);
   display: flex;
   flex-direction: column;
   gap: var(--ad-space-1);

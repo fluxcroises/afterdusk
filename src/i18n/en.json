@@ -144,7 +144,7 @@
     "stackFiles": "Stack",
     "place": "Location",
     "coordinates": "Coordinates",
-    "placeValue": "{{lat}} {{latRef}}, {{lon}} {{lonRef}}",
+    "placeValue": "{{lat}} {{latRef}}, {{lon}} {{lonRef}}",
     "placeSource": "Location source",
     "hemispheres": {
       "n": "N",

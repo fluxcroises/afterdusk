@@ -328,7 +328,9 @@ function StatusLine() {
         {t("import.selectNone")}
       </button>
       <span className="toolbar-spacer" />
-      <span className="toolbar-status">{status}</span>
+      <span className="toolbar-status" title={status}>
+        {status}
+      </span>
       {!running && unlocated.length > 0 && (
         <button
           type="button"

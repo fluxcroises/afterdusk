@@ -95,7 +95,8 @@ export const useTimeFix = create<TimeFixState>()((set, get) => {
       set({ running: true, error: null });
       try {
         const corrected = await invoke<number>("geo_time_correct", { ids, offsetMinutes });
-        set({ corrected });
+        // Le fuseau écrit est désormais celui du lieu : la boîte le relit.
+        set({ corrected, clock: await invoke<ClockInfo>("geo_clock", { ids }) });
         await examine();
         // Grilles triées par date et fiche de la photo active à jour.
         const library = useLibrary.getState();
