@@ -12,6 +12,7 @@ use super::marks::XmpWriter;
 use super::{AppState, blocking};
 use crate::geo::GeoError;
 use crate::geo::locate::{self, LocateOptions, LocateReport};
+use crate::geo::map::{self, AlbumPoint, MediaPoint};
 use crate::geo::matching::{Clock, parse_offset};
 use crate::geo::places::{self, PlaceName};
 use crate::geo::time::{self, TimeReport};
@@ -204,4 +205,44 @@ pub async fn geo_time_correct(
 pub async fn geo_unlocated(state: State<'_, AppState>, import_id: i64) -> CommandResult<Vec<i64>> {
     let conn = state.connect()?;
     blocking(move || Ok(locate::unlocated_in_import(&conn, import_id)?)).await
+}
+
+/// Ce que montre la carte : les albums localisés et leurs photos.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MapData {
+    pub albums: Vec<AlbumPoint>,
+    pub media: Vec<MediaPoint>,
+}
+
+#[tauri::command]
+pub async fn geo_map(state: State<'_, AppState>, library_id: i64) -> CommandResult<MapData> {
+    let conn = state.connect()?;
+    blocking(move || {
+        Ok(MapData {
+            albums: map::album_points(&conn, library_id)?,
+            media: map::media_points(&conn, library_id)?,
+        })
+    })
+    .await
+}
+
+/// Traces GPX des jours d'un album, en lignes [longitude, latitude].
+#[tauri::command]
+pub async fn geo_album_tracks(
+    state: State<'_, AppState>,
+    library_id: i64,
+    start_date: String,
+    end_date: String,
+) -> CommandResult<Vec<Vec<[f64; 2]>>> {
+    let conn = state.connect()?;
+    blocking(move || {
+        Ok(map::album_tracks(
+            &conn,
+            library_id,
+            &start_date,
+            &end_date,
+        )?)
+    })
+    .await
 }

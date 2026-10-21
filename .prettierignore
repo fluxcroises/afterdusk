@@ -8,3 +8,4 @@ docs/cahier-des-charges.md
 src-tauri/libraw-sys/LibRaw
 CLAUDE.md
 docs/charte-graphique.md
+src/assets/geo/countries.json

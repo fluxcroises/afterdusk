@@ -206,11 +206,22 @@ export function FilterBar() {
   const showAlbums = useLibrary((s) => s.showAlbums);
   const filtering = useLibrary((s) => isFiltering(s.filter));
   const resetFilter = useLibrary((s) => s.resetFilter);
+  const area = useLibrary((s) => s.filter.area !== undefined);
   if (!visible) return null;
   return (
     <div className="filter-bar" role="search">
       <SearchField />
       {!showAlbums && <PhotoFilters />}
+      {area && !showAlbums && (
+        <button
+          type="button"
+          className="button button-small filter-reset"
+          onClick={() => void useLibrary.getState().setFilter({ area: undefined })}
+        >
+          <X aria-hidden="true" strokeWidth={1.75} />
+          {t("filter.mapArea")}
+        </button>
+      )}
       <span className="toolbar-spacer" />
       {filtering && !showAlbums && (
         <button

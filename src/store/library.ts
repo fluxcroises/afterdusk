@@ -66,6 +66,8 @@ export interface MediaFilter {
   cameraId?: number;
   lensId?: number;
   query?: string;
+  /** Zone tracée sur la carte : ouest, sud, est, nord, en millionièmes de degré. */
+  area?: [number, number, number, number];
 }
 
 export type MediaSort = "captureTime" | "fileName" | "rating";
@@ -94,7 +96,8 @@ export function isFiltering(filter: MediaFilter): boolean {
     (filter.colors?.length ?? 0) > 0 ||
     filter.cameraId !== undefined ||
     filter.lensId !== undefined ||
-    !!filter.query?.trim()
+    !!filter.query?.trim() ||
+    filter.area !== undefined
   );
 }
 

@@ -4,6 +4,7 @@ import { FieldRow, ListRow, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
 import i18n, { type Language, resources } from "../i18n";
 import { useLibrary } from "../store/library";
+import { useMap } from "../store/map";
 import { IdentityPage, ImportSettings, LibrarySettings } from "../settings/Pages";
 
 /** Corbeille et cache : délai avant suppression définitive. */
@@ -59,6 +60,8 @@ export function SettingsView() {
     </PanelSection>
   );
 
+  const online = useMap((s) => s.online);
+
   return (
     <ScreenLayout left={left}>
       <div className="settings-page">
@@ -79,6 +82,15 @@ export function SettingsView() {
               </select>
             </label>
             <FieldRow label={t("settings.theme")} value={t("settings.themeDarkOnly")} />
+            <label className="check-row">
+              <input
+                type="checkbox"
+                checked={online}
+                onChange={(e) => useMap.getState().setOnline(e.currentTarget.checked)}
+              />
+              {t("settings.mapOnline")}
+            </label>
+            <p className="panel-note">{t("settings.mapOnlineNote")}</p>
           </div>
         ) : category === "library" ? (
           <LibrarySettings />

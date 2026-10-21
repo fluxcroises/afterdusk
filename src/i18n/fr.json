@@ -228,7 +228,9 @@
       "nothing": "Ne rien faire"
     },
     "cloudFolders": "Dossiers cloud",
-    "cloudBackup": "Dossier synchronisé par {{service}} : Afterdusk vérifie la copie locale, pas l'envoi en ligne."
+    "cloudBackup": "Dossier synchronisé par {{service}} : Afterdusk vérifie la copie locale, pas l'envoi en ligne.",
+    "mapOnline": "Fond de carte en ligne (OpenFreeMap)",
+    "mapOnlineNote": "Désactivé : la carte n'affiche que les frontières embarquées et ne fait aucune requête."
   },
   "menu": {
     "app": "Afterdusk",
@@ -432,7 +434,8 @@
     "reset": "Réinitialiser",
     "noMatchTitle": "Aucune photo ne correspond",
     "noAlbum": "Aucun album ne correspond.",
-    "searchHint": "Albums, noms de fichiers, mots-clés et lieux"
+    "searchHint": "Albums, noms de fichiers, mots-clés et lieux",
+    "mapArea": "Zone de la carte"
   },
   "pile": {
     "badge_one": "{{count}} fichier",
@@ -1018,5 +1021,35 @@
     "done_one": "{{count}} photo corrigée",
     "done_other": "{{count}} photos corrigées",
     "confirm": "Corriger"
+  },
+  "map": {
+    "label": "Carte du monde",
+    "albums": "Albums sur la carte",
+    "noAlbum": "Aucun album localisé.",
+    "album": "Album",
+    "noSelection": "Aucun album choisi.",
+    "name": "Nom",
+    "dates": "Dates",
+    "located": "Photos localisées",
+    "locatedOf": "{{count}} sur {{total}}",
+    "tracks": "Traces GPX",
+    "openAlbum": "Ouvrir l'album",
+    "area": "Zone",
+    "areaPhotos": "Photos dans la zone",
+    "showArea_one": "Voir la photo dans la Bibliothèque",
+    "showArea_other": "Voir les {{count}} photos dans la Bibliothèque",
+    "clearArea": "Effacer la zone",
+    "drawArea": "Tracer une zone",
+    "place_one": "Placer la photo",
+    "place_other": "Placer {{count}} photos",
+    "placing_one": "Clic : placer la photo sélectionnée · Échap : annuler",
+    "placing_other": "Clic : placer les {{count}} photos sélectionnées · Échap : annuler",
+    "drawing": "Glisser : tracer la zone · Échap : annuler",
+    "cluster_one": "{{count}} album",
+    "cluster_other": "{{count}} albums",
+    "albumCount_one": "{{count}} album",
+    "albumCount_other": "{{count}} albums",
+    "locatedCount_one": "{{count}} photo localisée",
+    "locatedCount_other": "{{count}} photos localisées"
   }
 }

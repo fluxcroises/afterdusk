@@ -459,3 +459,79 @@ fn photos_sans_lieu_proposees_a_la_fin_de_l_import() {
             .is_empty()
     );
 }
+
+#[test]
+fn carte_albums_photos_traces_et_zone() {
+    use afterdusk_lib::geo::map;
+    use afterdusk_lib::library::filter::MediaFilter;
+    use afterdusk_lib::library::media::{MediaQuery, list_media};
+
+    let dir = tempfile::tempdir().unwrap();
+    let (mut conn, _root, photos) = setup(dir.path(), &["nikon_z6.NEF", "sony_ilce-7m3.ARW"]);
+    let library_id: i64 = conn
+        .query_row("SELECT id FROM libraries", [], |r| r.get(0))
+        .unwrap();
+    assert!(map::album_points(&conn, library_id).unwrap().is_empty());
+    // Une photo à Cabourg, l'autre à New York.
+    locate_manual(&mut conn, &[photos[0].id], 49.2869, -0.1166, false).unwrap();
+    locate_manual(&mut conn, &[photos[1].id], 40.7484, -73.9857, false).unwrap();
+    let albums = map::album_points(&conn, library_id).unwrap();
+    assert_eq!(albums.len(), 1, "un seul album à l'import");
+    let a = &albums[0];
+    assert_eq!((a.located, a.total), (2, 2));
+    assert!((a.latitude - (49.2869 + 40.7484) / 2.0).abs() < 1e-9);
+    assert!(a.city.is_some());
+    assert_eq!(map::media_points(&conn, library_id).unwrap().len(), 2);
+
+    // Zone autour de Cabourg : une seule photo.
+    let area = |w: f64, s: f64, e: f64, n: f64| MediaQuery {
+        filter: MediaFilter {
+            area: Some([w, s, e, n].map(|v| (v * 1e6) as i64)),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let near = list_media(&conn, library_id, &area(-1.0, 48.0, 1.0, 50.0)).unwrap();
+    assert_eq!(
+        near.iter().map(|m| m.id).collect::<Vec<_>>(),
+        vec![photos[0].id]
+    );
+    // Zone à cheval sur 180° (de 170° E à 75° O) : New York seulement.
+    let pacific = list_media(&conn, library_id, &area(170.0, 30.0, -70.0, 50.0)).unwrap();
+    assert_eq!(
+        pacific.iter().map(|m| m.id).collect::<Vec<_>>(),
+        vec![photos[1].id]
+    );
+
+    // Trace GPX d'un autre jour : absente ; du jour de l'album : présente.
+    let day = photos[0].taken.format("%Y-%m-%d").to_string();
+    assert!(
+        map::album_tracks(&conn, library_id, "2000-01-01", "2000-01-02")
+            .unwrap()
+            .is_empty()
+    );
+    let gpx = dir.path().join("jour.gpx");
+    let t = photos[0].taken.format("%Y-%m-%dT%H:%M:%SZ");
+    fs::write(
+        &gpx,
+        format!(
+            "<gpx><trk><trkseg><trkpt lat=\"49.28\" lon=\"-0.11\"><time>{t}</time></trkpt>             <trkpt lat=\"49.29\" lon=\"-0.12\"><time>{t}</time></trkpt></trkseg></trk></gpx>"
+        ),
+    )
+    .unwrap();
+    let options = LocateOptions {
+        clock: Clock::Offset(Duration::zero()),
+        replace: false,
+    };
+    locate_gpx(
+        &mut conn,
+        &[photos[0].id],
+        &[gpx],
+        options,
+        Duration::minutes(10),
+    )
+    .unwrap();
+    let tracks = map::album_tracks(&conn, library_id, &day, &day).unwrap();
+    assert_eq!(tracks.len(), 1);
+    assert_eq!(tracks[0], vec![[-0.11, 49.28], [-0.12, 49.29]]);
+}

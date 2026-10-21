@@ -3,6 +3,7 @@
 
 pub mod gpx;
 pub mod locate;
+pub mod map;
 pub mod matching;
 pub mod naming;
 pub mod places;

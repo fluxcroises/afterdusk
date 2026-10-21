@@ -39,10 +39,7 @@ describe("App", () => {
     render(<App />);
     // Les modules de la version en cours ne sont pas marqués.
     expect(screen.getByRole("button", { name: "Retoucher" })).not.toHaveAttribute("title");
-    // La version prévue est lue au clavier, pas seulement dans l'infobulle.
-    expect(
-      screen.getByRole("button", { name: "Carte, Disponible en version 0.3" }),
-    ).toHaveAttribute("title", "Disponible en version 0.3");
+    expect(screen.getByRole("button", { name: "Carte" })).not.toHaveAttribute("title");
   });
 
   it("replie une section de panneau", () => {

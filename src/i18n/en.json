@@ -228,7 +228,9 @@
       "nothing": "Do nothing"
     },
     "cloudFolders": "Cloud folders",
-    "cloudBackup": "Folder synced by {{service}}: Afterdusk verifies the local copy, not the upload."
+    "cloudBackup": "Folder synced by {{service}}: Afterdusk verifies the local copy, not the upload.",
+    "mapOnline": "Online base map (OpenFreeMap)",
+    "mapOnlineNote": "Off: the map only shows the built-in borders and makes no request."
   },
   "menu": {
     "app": "Afterdusk",
@@ -432,7 +434,8 @@
     "reset": "Reset",
     "noMatchTitle": "No matching photos",
     "noAlbum": "No matching albums.",
-    "searchHint": "Albums, file names, keywords and places"
+    "searchHint": "Albums, file names, keywords and places",
+    "mapArea": "Map area"
   },
   "pile": {
     "badge_one": "{{count}} file",
@@ -1018,5 +1021,35 @@
     "done_one": "{{count}} photo corrected",
     "done_other": "{{count}} photos corrected",
     "confirm": "Correct"
+  },
+  "map": {
+    "label": "World map",
+    "albums": "Albums on the map",
+    "noAlbum": "No located album.",
+    "album": "Album",
+    "noSelection": "No album chosen.",
+    "name": "Name",
+    "dates": "Dates",
+    "located": "Located photos",
+    "locatedOf": "{{count}} of {{total}}",
+    "tracks": "GPX tracks",
+    "openAlbum": "Open album",
+    "area": "Area",
+    "areaPhotos": "Photos in the area",
+    "showArea_one": "Show the photo in the Library",
+    "showArea_other": "Show the {{count}} photos in the Library",
+    "clearArea": "Clear area",
+    "drawArea": "Draw an area",
+    "place_one": "Place the photo",
+    "place_other": "Place {{count}} photos",
+    "placing_one": "Click: place the selected photo · Esc: cancel",
+    "placing_other": "Click: place the {{count}} selected photos · Esc: cancel",
+    "drawing": "Drag: draw the area · Esc: cancel",
+    "cluster_one": "{{count}} album",
+    "cluster_other": "{{count}} albums",
+    "albumCount_one": "{{count}} album",
+    "albumCount_other": "{{count}} albums",
+    "locatedCount_one": "{{count}} located photo",
+    "locatedCount_other": "{{count}} located photos"
   }
 }

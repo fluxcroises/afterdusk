@@ -16,6 +16,8 @@ const COMPONENTS: { name: string; license: string; version?: keyof AppInfo }[] =
   { name: "lensfun (portage Rust)", license: "LGPL 3" },
   { name: "Base lensfun", license: "CC BY-SA 3.0" },
   { name: "GeoNames", license: "CC BY 4.0" },
+  { name: "MapLibre GL JS", license: "BSD 3" },
+  { name: "Natural Earth", license: "publicDomain" },
   { name: "jpeg-encoder", license: "MIT / Apache 2.0, IJG" },
   { name: "rav1e, ravif", license: "BSD" },
   { name: "Inter", license: "SIL OFL 1.1" },

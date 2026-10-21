@@ -21,7 +21,7 @@ export const AVAILABLE_IN: Record<Screen, string> = {
   gear: "0.3",
 };
 
-export const CURRENT_VERSION = "0.2";
+export const CURRENT_VERSION = "0.3";
 
 /** Écran prévu pour une version postérieure à celle en cours. */
 export function isLater(screen: Screen): boolean {

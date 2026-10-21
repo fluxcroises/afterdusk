@@ -49,6 +49,9 @@ pub struct MediaFilter {
     pub lens_id: Option<i64>,
     /// Texte libre : albums, noms de fichiers, mots-clés, lieux.
     pub query: Option<String>,
+    /// Zone tracée sur la carte : ouest, sud, est, nord, en millionièmes de
+    /// degré. L'ouest peut dépasser l'est (zone à cheval sur 180°).
+    pub area: Option<[i64; 4]>,
 }
 
 const COLORS: [&str; 5] = ["red", "yellow", "green", "blue", "purple"];
@@ -163,6 +166,19 @@ impl MediaFilter {
                 values.push(fts.into());
             }
             clauses.push(format!("({})", parts.join(" OR ")));
+        }
+        if let Some([west, south, east, north]) = self.area {
+            let deg = |v: i64| v as f64 / 1e6;
+            clauses.push("m.lat BETWEEN ? AND ?".to_owned());
+            values.push(deg(south.min(north)).into());
+            values.push(deg(south.max(north)).into());
+            clauses.push(if west <= east {
+                "m.lon BETWEEN ? AND ?".to_owned()
+            } else {
+                "(m.lon >= ? OR m.lon <= ?)".to_owned()
+            });
+            values.push(deg(west).into());
+            values.push(deg(east).into());
         }
         (clauses, values)
     }

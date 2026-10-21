@@ -204,6 +204,8 @@ pub fn run() {
             commands::geo::geo_time_proposals,
             commands::geo::geo_time_correct,
             commands::geo::geo_unlocated,
+            commands::geo::geo_map,
+            commands::geo::geo_album_tracks,
             commands::library::library_rescan,
             commands::presets::presets_list,
             commands::presets::presets_create,
