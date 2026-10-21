@@ -15,6 +15,7 @@ use afterdusk_lib::export::metadata::{MetadataPolicy, PhotoMeta, embedded};
 use afterdusk_lib::geo::locate::{LocateOptions, locate_gpx, locate_manual, locate_phone};
 use afterdusk_lib::geo::matching::Clock;
 use afterdusk_lib::geo::naming::name_pending;
+use afterdusk_lib::geo::time;
 use afterdusk_lib::import::{self, ImportOptions};
 use afterdusk_lib::library::marks::flush_pending_xmp;
 use afterdusk_lib::metadata::media::MediaMetadata;
@@ -359,4 +360,76 @@ fn photo_de_telephone_importee_avec_son_lieu() {
     assert_eq!(source, "exif");
     assert_eq!(place(&conn, media).0.as_deref(), Some("Marseille"));
     assert_eq!(found(&conn, "marseille"), vec![media]);
+}
+
+fn times(conn: &Connection, id: i64) -> (String, Option<String>, Option<String>) {
+    conn.query_row(
+        "SELECT captured_at, utc_offset, captured_at_camera FROM media WHERE id = ?1",
+        [id],
+        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+    )
+    .unwrap()
+}
+
+#[test]
+fn heure_du_boitier_corrigee_d_apres_le_lieu() {
+    let dir = tempfile::tempdir().unwrap();
+    let (mut conn, root, photos) = setup(dir.path(), &["nikon_z6.NEF"]);
+    let before = hashes(&root);
+    let id = photos[0].id;
+    // Le boîtier a écrit 17:13:55 à l'heure de Paris (+01:00) ; la photo est
+    // à New York, à l'heure d'hiver (-05:00).
+    assert_eq!(times(&conn, id).1.as_deref(), Some("+01:00"));
+    let none = time::proposals(&conn, &[id], Clock::Written).unwrap();
+    assert_eq!((none.no_place, none.groups.len()), (1, 0));
+    locate_manual(&mut conn, &[id], 40.7484, -73.9857, false).unwrap();
+    let report = time::proposals(&conn, &[id], Clock::Written).unwrap();
+    assert_eq!(report.groups.len(), 1, "{report:?}");
+    let g = &report.groups[0];
+    assert_eq!(g.city.as_deref(), Some("New York City"));
+    assert_eq!(
+        (g.camera_minutes, g.local_minutes, g.shift_minutes),
+        (60, -300, -360)
+    );
+
+    assert_eq!(time::correct(&mut conn, &[id], Clock::Written).unwrap(), 1);
+    assert_eq!(
+        times(&conn, id),
+        (
+            "2019-11-29T11:13:55".into(),
+            Some("-05:00".into()),
+            Some("2019-11-29T17:13:55".into())
+        )
+    );
+    // Déjà à l'heure locale : plus rien à proposer.
+    let after = time::proposals(&conn, &[id], Clock::Written).unwrap();
+    assert_eq!((after.correct, after.groups.len()), (1, 0));
+
+    // L'heure corrigée part dans le XMP, et la réanalyse la retrouve.
+    flush_pending_xmp(&conn, usize::MAX).unwrap();
+    let sidecar: String = conn
+        .query_row("SELECT sidecar_path FROM media WHERE id = ?1", [id], |r| {
+            r.get(0)
+        })
+        .unwrap();
+    let xmp = read_sidecar(&root.join(sidecar)).unwrap().unwrap();
+    assert_eq!(
+        xmp.captured_at.as_deref(),
+        Some("2019-11-29T11:13:55-05:00")
+    );
+    let mut fresh = db::open(&dir.path().join("nouvelle.db")).unwrap();
+    let lib = library::create_library(&fresh, "Photos", &root, None).unwrap();
+    import::rescan::rescan(&mut fresh, lib.id, &AtomicBool::new(false), |_, _| {}).unwrap();
+    let again: i64 = fresh
+        .query_row("SELECT id FROM media", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(
+        times(&fresh, again),
+        (
+            "2019-11-29T11:13:55".into(),
+            Some("-05:00".into()),
+            Some("2019-11-29T17:13:55".into())
+        )
+    );
+    assert_eq!(hashes(&root), before);
 }

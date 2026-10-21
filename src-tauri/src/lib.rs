@@ -201,6 +201,8 @@ pub fn run() {
             commands::geo::geo_locate_phone,
             commands::geo::geo_search_places,
             commands::geo::geo_locate_manual,
+            commands::geo::geo_time_proposals,
+            commands::geo::geo_time_correct,
             commands::library::library_rescan,
             commands::presets::presets_list,
             commands::presets::presets_create,

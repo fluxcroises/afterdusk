@@ -3635,3 +3635,12 @@ input[type="radio"] {
   max-height: 200px;
   overflow-y: auto;
 }
+
+/* Photo > Corriger l'heure… */
+.timefix-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+  margin: 0;
+  padding-left: var(--ad-space-4);
+}

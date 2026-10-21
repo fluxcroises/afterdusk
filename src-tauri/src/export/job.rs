@@ -198,6 +198,16 @@ fn export_one(
             )
             .ok();
     }
+    // Heure corrigée d'après le lieu : c'est elle qui part dans le fichier.
+    if let Ok((at, offset)) = conn.query_row(
+        "SELECT captured_at, utc_offset FROM media
+         WHERE id = ?1 AND captured_at_camera IS NOT NULL",
+        [photo.media_id],
+        |r| Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?)),
+    ) {
+        camera.captured_at = Some(at);
+        camera.utc_offset = offset;
+    }
     let meta = PhotoMeta {
         camera,
         sidecar: photo

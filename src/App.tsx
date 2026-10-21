@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { useAppEvents } from "./appEvents";
 import { AboutDialog } from "./components/AboutDialog";
 import { LocateDialog } from "./components/LocateDialog";
+import { TimeFixDialog } from "./components/TimeFixDialog";
 import { DeviceBanner } from "./components/DeviceBanner";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PerfOverlay } from "./components/PerfOverlay";
@@ -47,6 +48,7 @@ export default function App() {
       <PerfOverlay />
       <AboutDialog />
       <LocateDialog />
+      <TimeFixDialog />
     </div>
   );
 }

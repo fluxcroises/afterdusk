@@ -130,6 +130,7 @@
     "metadata": "Informations",
     "fileName": "Fichier",
     "captureTime": "Prise de vue",
+    "cameraTime": "Heure du boîtier",
     "camera": "Boîtier",
     "lens": "Objectif",
     "keywords": "Mots-clés",
@@ -280,7 +281,8 @@
     "copySettings": "Copier les réglages…",
     "pasteSettings": "Coller les réglages",
     "rescanLibrary": "Réanalyser la bibliothèque",
-    "locate": "Localiser…"
+    "locate": "Localiser…",
+    "timeFix": "Corriger l'heure…"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -997,5 +999,22 @@
       "unusable_one": "{{count}} fichier sans position ou sans heure",
       "unusable_other": "{{count}} fichiers sans position ou sans heure"
     }
+  },
+  "timefix": {
+    "title_one": "Corriger l'heure de {{count}} photo",
+    "title_other": "Corriger l'heure de {{count}} photos",
+    "group_one": "{{city}} : horloge UTC {{camera}}, heure locale UTC {{local}}, {{shift}} ({{count}} photo)",
+    "group_other": "{{city}} : horloge UTC {{camera}}, heure locale UTC {{local}}, {{shift}} ({{count}} photos)",
+    "unnamed": "Lieu sans nom",
+    "nothing": "Aucune heure à corriger.",
+    "correct_one": "{{count}} déjà à l'heure locale",
+    "correct_other": "{{count}} déjà à l'heure locale",
+    "noPlace_one": "{{count}} sans lieu",
+    "noPlace_other": "{{count}} sans lieu",
+    "noZone_one": "{{count}} sans fuseau d'horloge",
+    "noZone_other": "{{count}} sans fuseau d'horloge",
+    "done_one": "{{count}} photo corrigée",
+    "done_other": "{{count}} photos corrigées",
+    "confirm": "Corriger"
   }
 }

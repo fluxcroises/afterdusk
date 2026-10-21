@@ -29,6 +29,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0007_apercus_rendus.sql"),
     include_str!("migrations/0008_traces_gpx.sql"),
     include_str!("migrations/0009_lieux_nommes.sql"),
+    include_str!("migrations/0010_heure_du_boitier.sql"),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;

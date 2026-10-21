@@ -442,3 +442,9 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Photo > Localiser…, onglet « Saisie » : recherche d'une ville, choix dans la liste, lieu posé sans condition d'heure. Les quatre sources sont là ; le clic sur la carte viendra avec la carte.
 - Tests : lieux connus (deux hémisphères, de part et d'autre de 180°, grandes villes, pleine mer), recherche sans accents, vitesse ; de bout en bout : saisie, lieu gardé ou remplacé, recherche, base antérieure nommée au démarrage, photo de téléphone importée avec sa ville ; boîte testée dans l'interface. Non vu à l'écran.
 - Reste pour le premier critère : la correction du fuseau horaire proposée d'après le lieu.
+
+### 2026-10-21 (suite) : V0.3, correction de l'heure d'après le lieu
+
+- Photo > Corriger l'heure… : pour chaque photo localisée et nommée, le fuseau du lieu à sa date (règles IANA par `chrono-tz`, heure d'été comprise) est comparé à celui de l'horloge du boîtier (écrit par lui, ou saisi ; celui de l'ordinateur par défaut s'il n'en a pas écrit). Les écarts sont présentés par groupe (« New York City : horloge UTC +01:00, heure locale UTC -05:00, −6 h (12 photos) »), avec ce qui est déjà juste ou sans lieu ; « Corriger » applique.
+- L'heure et le fuseau corrigés vont en base, l'heure du boîtier est gardée (migration 0010, ligne « Heure du boîtier » dans la fiche), le XMP reçoit `exif:DateTimeOriginal` avec son fuseau, la réanalyse le retrouve, l'export l'écrit. L'original n'est pas touché et les fichiers ne changent pas de dossier.
+- Tests : fuseaux en été et en hiver, demi-heures ; de bout en bout sur un vrai NEF : écart de −6 h proposé à New York, correction, plus rien à proposer ensuite, XMP, réanalyse, original inchangé ; boîte testée dans l'interface. Non vu à l'écran.

@@ -179,6 +179,8 @@ export interface MediaDetails {
   region: string | null;
   /** Code ISO du pays ; vide si aucun lieu habité à proximité. */
   country: string | null;
+  /** Heure écrite par le boîtier, si elle a été corrigée d'après le lieu. */
+  capturedAtCamera: string | null;
 }
 
 /** Origine d'un lieu : GPS du boîtier, trace GPX, téléphone, saisie. */

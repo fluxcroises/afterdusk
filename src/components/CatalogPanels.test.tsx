@@ -30,6 +30,7 @@ const details = {
   city: "Cabourg",
   region: "Normandy",
   country: "FR",
+  capturedAtCamera: null,
 };
 
 describe("fiche Informations : lieu", () => {

@@ -14,6 +14,7 @@ use crate::geo::GeoError;
 use crate::geo::locate::{self, LocateOptions, LocateReport};
 use crate::geo::matching::{Clock, parse_offset};
 use crate::geo::places::{self, PlaceName};
+use crate::geo::time::{self, TimeReport};
 
 impl From<GeoError> for CommandError {
     fn from(e: GeoError) -> Self {
@@ -153,4 +154,47 @@ pub async fn geo_locate_manual(
     .await?;
     writer.wake();
     Ok(report)
+}
+
+/// Photo > Corriger l'heure… : écarts entre l'horloge du boîtier et l'heure
+/// locale du lieu, sans rien modifier.
+#[tauri::command]
+pub async fn geo_time_proposals(
+    state: State<'_, AppState>,
+    ids: Vec<i64>,
+    offset_minutes: Option<i32>,
+) -> CommandResult<TimeReport> {
+    let conn = state.connect()?;
+    let ids: Vec<i64> = ids.into_iter().filter(|id| *id > 0).collect();
+    blocking(move || {
+        Ok(time::proposals(
+            &conn,
+            &ids,
+            options(offset_minutes, false).clock,
+        )?)
+    })
+    .await
+}
+
+/// Met l'heure des photos à l'heure locale du lieu ; rend le nombre de
+/// photos corrigées.
+#[tauri::command]
+pub async fn geo_time_correct(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    ids: Vec<i64>,
+    offset_minutes: Option<i32>,
+) -> CommandResult<usize> {
+    let mut conn = state.connect()?;
+    let ids: Vec<i64> = ids.into_iter().filter(|id| *id > 0).collect();
+    let done = blocking(move || {
+        Ok(time::correct(
+            &mut conn,
+            &ids,
+            options(offset_minutes, false).clock,
+        )?)
+    })
+    .await?;
+    writer.wake();
+    Ok(done)
 }

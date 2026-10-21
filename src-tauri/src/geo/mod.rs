@@ -6,6 +6,7 @@ pub mod locate;
 pub mod matching;
 pub mod naming;
 pub mod places;
+pub mod time;
 
 use std::path::PathBuf;
 

@@ -51,6 +51,8 @@ pollster = "1.0.1"
 roxmltree = "0.20"
 # Données de géocodage compressées (zlib), déjà dans l'arbre des dépendances.
 flate2 = "1"
+# Règles des fuseaux horaires (heure d'été comprise), pour corriger l'heure du boîtier.
+chrono-tz = { version = "0.10", default-features = false, features = ["std"] }
 
 # HEIF par l'encodeur du système (décision 0007) : WIC sous Windows, avec les
 # extensions HEIF/HEVC de Microsoft ; ImageIO sous macOS.

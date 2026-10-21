@@ -130,6 +130,7 @@
     "metadata": "Metadata",
     "fileName": "File",
     "captureTime": "Capture time",
+    "cameraTime": "Camera time",
     "camera": "Camera",
     "lens": "Lens",
     "keywords": "Keywords",
@@ -280,7 +281,8 @@
     "copySettings": "Copy Settings…",
     "pasteSettings": "Paste Settings",
     "rescanLibrary": "Rescan Library",
-    "locate": "Locate…"
+    "locate": "Locate…",
+    "timeFix": "Correct time…"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -997,5 +999,22 @@
       "unusable_one": "{{count}} file without position or time",
       "unusable_other": "{{count}} files without position or time"
     }
+  },
+  "timefix": {
+    "title_one": "Correct the time of {{count}} photo",
+    "title_other": "Correct the time of {{count}} photos",
+    "group_one": "{{city}}: clock UTC {{camera}}, local time UTC {{local}}, {{shift}} ({{count}} photo)",
+    "group_other": "{{city}}: clock UTC {{camera}}, local time UTC {{local}}, {{shift}} ({{count}} photos)",
+    "unnamed": "Unnamed place",
+    "nothing": "No time to correct.",
+    "correct_one": "{{count}} already at local time",
+    "correct_other": "{{count}} already at local time",
+    "noPlace_one": "{{count}} without location",
+    "noPlace_other": "{{count}} without location",
+    "noZone_one": "{{count}} without clock time zone",
+    "noZone_other": "{{count}} without clock time zone",
+    "done_one": "{{count}} photo corrected",
+    "done_other": "{{count}} photos corrected",
+    "confirm": "Correct"
   }
 }

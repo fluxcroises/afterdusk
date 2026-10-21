@@ -112,6 +112,12 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
             )}
             <FieldRow label={t("info.originalName")} value={d.originalName} />
             <FieldRow label={t("info.captureTime")} value={formatCaptureTime(d.capturedAt, lng)} />
+            {d.capturedAtCamera && (
+              <FieldRow
+                label={t("info.cameraTime")}
+                value={formatCaptureTime(d.capturedAtCamera, lng)}
+              />
+            )}
             <FieldRow
               label={t("info.dimensions")}
               value={d.width && d.height ? `${d.width} × ${d.height}` : undefined}

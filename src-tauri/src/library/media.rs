@@ -303,6 +303,8 @@ pub struct MediaDetails {
     pub region: Option<String>,
     /// Code ISO du pays ; vide si aucun lieu habité à proximité.
     pub country: Option<String>,
+    /// Heure écrite par le boîtier, si elle a été corrigée d'après le lieu.
+    pub captured_at_camera: Option<String>,
 }
 
 /// Séparateur des mots-clés dans `group_concat` (caractère de contrôle US).
@@ -320,7 +322,8 @@ pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>,
                     e.exposure_compensation,
                     (SELECT group_concat(k.word, char(31)) FROM media_keywords mk
                        JOIN keywords k ON k.id = mk.keyword_id WHERE mk.media_id = m.id),
-                    m.lat, m.lon, m.location_source, m.city, m.region, m.country
+                    m.lat, m.lon, m.location_source, m.city, m.region, m.country,
+                    m.captured_at_camera
              FROM media m
              LEFT JOIN gear c ON c.id = m.camera_id
              LEFT JOIN gear l ON l.id = m.lens_id
@@ -357,6 +360,7 @@ pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>,
                 city: r.get(19)?,
                 region: r.get(20)?,
                 country: r.get(21)?,
+                captured_at_camera: r.get(22)?,
             })
         },
     )

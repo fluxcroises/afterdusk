@@ -856,15 +856,35 @@ pub(crate) fn insert_media(
         (None, Some(l)) => Some((l.latitude, l.longitude, l.source.as_db())),
         (None, None) => None,
     };
+    // Heure corrigée d'après le lieu et gardée dans le XMP (base
+    // reconstruite) : elle prime, l'heure du boîtier est gardée à côté.
+    let corrected = marks
+        .captured_at
+        .as_deref()
+        .and_then(|t| {
+            let local = t.get(..19)?;
+            crate::geo::matching::parse_local(local)?;
+            let offset = t.get(19..).filter(|o| !o.is_empty()).map(str::to_owned);
+            Some((local.to_owned(), offset))
+        })
+        .filter(|(local, _)| *local != file.captured_at);
+    let (captured_at, utc_offset, camera_time) = match corrected {
+        Some((local, offset)) => (
+            local,
+            offset.or_else(|| m.utc_offset.clone()),
+            Some(file.captured_at.clone()),
+        ),
+        None => (file.captured_at.clone(), m.utc_offset.clone(), None),
+    };
     let now = now_utc();
     tx.execute(
         "INSERT INTO media (library_id, album_id, kind, path, sidecar_path, original_name,
                             file_size, fingerprint, content_hash, captured_at, utc_offset,
                             width, height, orientation, lat, lon, location_source,
                             camera_id, lens_id, import_id, imported_at, updated_at,
-                            rating, flag, color)
+                            rating, flag, color, captured_at_camera)
          VALUES (?1, ?2, 'photo', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
-                 ?16, ?17, ?18, ?19, ?20, ?20, ?21, ?22, ?23)
+                 ?16, ?17, ?18, ?19, ?20, ?20, ?21, ?22, ?23, ?24)
          ON CONFLICT (library_id, path) DO NOTHING",
         params![
             lib.id,
@@ -875,8 +895,8 @@ pub(crate) fn insert_media(
             file.size as i64,
             new.fingerprint,
             new.hash,
-            file.captured_at,
-            m.utc_offset,
+            captured_at,
+            utc_offset,
             m.width,
             m.height,
             m.orientation,
@@ -889,7 +909,8 @@ pub(crate) fn insert_media(
             now,
             marks.rating,
             marks.flag.as_db(),
-            marks.label.map(|l| l.as_db())
+            marks.label.map(|l| l.as_db()),
+            camera_time,
         ],
     )?;
     let media_id: i64 = tx.query_row(

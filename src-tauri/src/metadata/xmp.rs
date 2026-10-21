@@ -220,6 +220,10 @@ pub struct SidecarData {
     pub versions: Option<String>,
     /// Lieu posé après coup. `None` à l'écriture : le XMP garde le sien.
     pub location: Option<XmpLocation>,
+    /// Heure de prise de vue corrigée, avec son fuseau
+    /// (« 2026-07-14T12:00:00-04:00 »), en `exif:DateTimeOriginal`. `None` à
+    /// l'écriture : le XMP garde la sienne.
+    pub captured_at: Option<String>,
 }
 
 pub fn sidecar_path(original: &Path, naming: SidecarNaming) -> PathBuf {
@@ -318,6 +322,9 @@ pub fn read_sidecar(path: &Path) -> Result<Option<SidecarData>, XmpError> {
         snapshots: meta.property(AFTERDUSK_NS, "Snapshots").map(|v| v.value),
         versions: meta.property(AFTERDUSK_NS, "Versions").map(|v| v.value),
         location: read_location(&meta),
+        captured_at: meta
+            .property(xmp_ns::EXIF, "DateTimeOriginal")
+            .map(|v| v.value),
     }))
 }
 
@@ -419,6 +426,10 @@ pub fn write_sidecar(path: &Path, data: &SidecarData) -> Result<(), XmpError> {
         meta.set_property(AFTERDUSK_NS, "LocationSource", &loc.source.as_db().into())
             .map_err(toolkit)?;
     }
+    if let Some(at) = &data.captured_at {
+        meta.set_property(xmp_ns::EXIF, "DateTimeOriginal", &at.as_str().into())
+            .map_err(toolkit)?;
+    }
 
     let text = meta
         .to_string_with_options(ToStringOptions::default().omit_packet_wrapper())
@@ -484,6 +495,7 @@ mod tests {
             snapshots: Some(r#"[{"name":"N&B","settings":{"version":1,"process":1}}]"#.into()),
             versions: None,
             location: None,
+            captured_at: Some("2026-07-14T12:00:00-04:00".into()),
         };
         write_sidecar(&path, &data).unwrap();
         assert_eq!(read_sidecar(&path).unwrap(), Some(data));

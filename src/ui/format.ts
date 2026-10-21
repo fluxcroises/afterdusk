@@ -87,3 +87,12 @@ export function placeName(
   }
   return `${city}, ${name}`;
 }
+
+/** Correction d'heure : « −6 h », « +5 h 30 ». */
+export function formatShift(minutes: number, hours: string): string {
+  const sign = minutes < 0 ? "−" : "+";
+  const abs = Math.abs(minutes);
+  const h = Math.floor(abs / 60);
+  const m = abs % 60;
+  return m === 0 ? `${sign}${h} ${hours}` : `${sign}${h} ${hours} ${String(m).padStart(2, "0")}`;
+}

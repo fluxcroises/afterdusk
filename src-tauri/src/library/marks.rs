@@ -89,6 +89,8 @@ struct Pending {
     revision: i64,
     /// Lieu de la base.
     location: Option<XmpLocation>,
+    /// Heure corrigée et son fuseau, si l'heure du boîtier a été corrigée.
+    captured_at: Option<String>,
 }
 
 /// Écrit dans les XMP jusqu'à `limit` photos en attente.
@@ -96,7 +98,10 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
     let pending: Vec<Pending> = conn
         .prepare(
             "SELECT id, library_id, sidecar_path, rating, flag, color, xmp_pending,
-                    lat, lon, location_source FROM media
+                    lat, lon, location_source,
+                    CASE WHEN captured_at_camera IS NOT NULL
+                         THEN captured_at || coalesce(utc_offset, '') END
+               FROM media
              WHERE xmp_pending > 0 AND state = 'normal'
              ORDER BY updated_at, id LIMIT ?1",
         )?
@@ -119,6 +124,7 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
                     }
                     _ => None,
                 },
+                captured_at: r.get(10)?,
             })
         })?
         .collect::<Result<_, _>>()?;
@@ -179,6 +185,9 @@ fn write_marks(
     // va dans le XMP.
     if let Some(loc) = p.location.filter(|l| l.source != LocationSource::Exif) {
         data.location = Some(loc);
+    }
+    if let Some(at) = &p.captured_at {
+        data.captured_at = Some(at.clone());
     }
     xmp::write_sidecar(&path, &data).map_err(|e| e.to_string())
 }
