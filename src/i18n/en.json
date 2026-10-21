@@ -140,7 +140,8 @@
     "noKeywords": "No keywords.",
     "stackFiles": "Stack",
     "place": "Location",
-    "placeValue": "{{lat}} {{ns}}, {{lon}} {{ew}}",
+    "placeValue": "{{lat}} {{latRef}}, {{lon}} {{lonRef}}",
+    "placeSource": "Location source",
     "hemispheres": {
       "n": "N",
       "s": "S",
@@ -148,10 +149,10 @@
       "w": "W"
     },
     "placeSources": {
-      "exif": "camera GPS",
+      "exif": "Camera GPS",
       "gpx": "GPX track",
-      "phone": "phone",
-      "manual": "entered"
+      "phone": "Phone",
+      "manual": "Entered"
     }
   },
   "cull": {
@@ -967,6 +968,8 @@
     "clock": "Camera time",
     "written_one": "Time zone written by the camera: UTC {{offset}} ({{count}} of {{total}})",
     "written_other": "Time zone written by the camera: UTC {{offset}} ({{count}} of {{total}})",
+    "writtenMixed_one": "Time zone written by each camera ({{count}} of {{total}})",
+    "writtenMixed_other": "Time zone written by each camera ({{count}} of {{total}})",
     "writtenNone": "No time zone written by the camera",
     "utc": "Offset from UTC:",
     "offsetHours": "Offset from UTC, in hours",

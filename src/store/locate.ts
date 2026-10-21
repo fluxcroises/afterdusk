@@ -15,6 +15,8 @@ export interface LocateReport {
 /** Fuseau écrit par les boîtiers dans la sélection. */
 export interface ClockInfo {
   writtenMinutes: number | null;
+  /** Fuseaux différents d'une photo à l'autre. */
+  mixed: boolean;
   withOffset: number;
   total: number;
 }
@@ -85,9 +87,9 @@ export const useLocate = create<LocateState>()((set, get) => ({
               replace,
             });
       set({ report });
-      // La fiche de la photo active montre le nouveau lieu.
+      // La fiche de la photo active montre le nouveau lieu ; la sélection reste.
       const library = useLibrary.getState();
-      if (library.selectedId !== null) await library.select(library.selectedId);
+      if (library.selectedId !== null) await library.activate(library.selectedId);
     } catch (e) {
       set({ error: toCommandError(e) });
     } finally {

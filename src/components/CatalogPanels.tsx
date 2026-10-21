@@ -128,13 +128,19 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
                 d.latitude !== null && d.longitude !== null
                   ? `${t("info.placeValue", {
                       lat: formatDegrees(d.latitude, lng),
-                      ns: t(d.latitude < 0 ? "info.hemispheres.s" : "info.hemispheres.n"),
+                      latRef: t(d.latitude < 0 ? "info.hemispheres.s" : "info.hemispheres.n"),
                       lon: formatDegrees(d.longitude, lng),
-                      ew: t(d.longitude < 0 ? "info.hemispheres.w" : "info.hemispheres.e"),
-                    })}${d.locationSource ? ` (${t(`info.placeSources.${d.locationSource}`)})` : ""}`
+                      lonRef: t(d.longitude < 0 ? "info.hemispheres.w" : "info.hemispheres.e"),
+                    })}`
                   : undefined
               }
             />
+            {d.locationSource && (
+              <FieldRow
+                label={t("info.placeSource")}
+                value={t(`info.placeSources.${d.locationSource}`)}
+              />
+            )}
           </>
         ) : (
           <PanelNote>{t("info.noSelection")}</PanelNote>

@@ -140,7 +140,8 @@
     "noKeywords": "Aucun mot-clé.",
     "stackFiles": "Pile",
     "place": "Lieu",
-    "placeValue": "{{lat}} {{ns}}, {{lon}} {{ew}}",
+    "placeValue": "{{lat}} {{latRef}}, {{lon}} {{lonRef}}",
+    "placeSource": "Origine du lieu",
     "hemispheres": {
       "n": "N",
       "s": "S",
@@ -149,9 +150,9 @@
     },
     "placeSources": {
       "exif": "GPS du boîtier",
-      "gpx": "trace GPX",
-      "phone": "téléphone",
-      "manual": "saisi"
+      "gpx": "Trace GPX",
+      "phone": "Téléphone",
+      "manual": "Saisi"
     }
   },
   "cull": {
@@ -967,6 +968,8 @@
     "clock": "Heure du boîtier",
     "written_one": "Fuseau écrit par le boîtier : UTC {{offset}} ({{count}} sur {{total}})",
     "written_other": "Fuseau écrit par le boîtier : UTC {{offset}} ({{count}} sur {{total}})",
+    "writtenMixed_one": "Fuseau écrit par chaque boîtier ({{count}} sur {{total}})",
+    "writtenMixed_other": "Fuseau écrit par chaque boîtier ({{count}} sur {{total}})",
     "writtenNone": "Aucun fuseau écrit par le boîtier",
     "utc": "Décalage sur UTC :",
     "offsetHours": "Décalage sur UTC, en heures",

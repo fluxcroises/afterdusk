@@ -119,13 +119,15 @@ function LocateForm({ count }: { count: number }) {
               disabled={!canUseWritten}
               onChange={() => setUseWritten(true)}
             />
-            {written !== null
-              ? t("locate.written", {
-                  offset: formatOffset(written),
-                  count: clock?.withOffset ?? 0,
-                  total: clock?.total ?? 0,
-                })
-              : t("locate.writtenNone")}
+            {written !== null && clock?.mixed
+              ? t("locate.writtenMixed", { count: clock.withOffset, total: clock.total })
+              : written !== null
+                ? t("locate.written", {
+                    offset: formatOffset(written),
+                    count: clock?.withOffset ?? 0,
+                    total: clock?.total ?? 0,
+                  })
+                : t("locate.writtenNone")}
           </label>
           <label className="check-row">
             <input

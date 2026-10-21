@@ -30,6 +30,8 @@ impl From<GeoError> for CommandError {
 pub struct ClockInfo {
     /// Fuseau le plus fréquent dans la sélection, en minutes.
     pub written_minutes: Option<i32>,
+    /// Les photos portent des fuseaux différents.
+    pub mixed: bool,
     /// Photos qui portent un fuseau, sur le total.
     pub with_offset: usize,
     pub total: usize,
@@ -53,6 +55,7 @@ pub async fn geo_clock(state: State<'_, AppState>, ids: Vec<i64>) -> CommandResu
         }
         Ok(ClockInfo {
             written_minutes: counts.iter().max_by_key(|(_, n)| **n).map(|(m, _)| *m),
+            mixed: counts.len() > 1,
             with_offset: counts.values().sum(),
             total,
         })
