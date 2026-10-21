@@ -293,6 +293,9 @@ mod tests {
 
     #[test]
     fn heif_du_systeme_avec_profil_et_metadonnees() {
+        // macOS a toujours son encodeur : le test ne doit pas y être sauté.
+        #[cfg(target_os = "macos")]
+        assert!(available(), "ImageIO sans encodeur HEIF");
         if !available() {
             eprintln!("pas d'encodeur HEIF sur ce système : test sauté");
             return;

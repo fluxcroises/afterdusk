@@ -19,6 +19,20 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
 - [x] Interface en français et en anglais
 
+## V0.2 : Retoucher et livrer
+
+- [x] Pipeline de développement GPU avec rendu neutre fidèle au boîtier par défaut
+- [ ] Tous les réglages essentiels et intermédiaires de la section 4.5, avec retour visuel en moins de 100 ms
+- [x] Corrections d'objectifs automatiques via lensfun
+- [x] Recadrage, redressement, ratios
+- [x] Correcteur de défauts (poussières, petites imperfections), corrections copiables entre photos
+- [x] Presets fournis et personnels, intensité réglable, copier-coller et synchronisation des réglages
+- [x] Historique, instantanés, copies virtuelles, avant/après
+- [x] Retouches enregistrées dans le XMP et restaurées après reconstruction de la base
+- [x] Les cinq presets d'export de la section 4.6, formats JPEG, HEIF, AVIF, TIFF, PNG
+- [x] Filigrane texte et image, nettoyage des métadonnées, export multiple
+- [ ] Export de 100 photos en JPEG 2048 px en moins de 2 minutes sur une machine de milieu de gamme
+
 ## Journal
 
 ### 2026-10-18
@@ -383,3 +397,11 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Test de bout en bout : un NEF importé puis exporté en HEIF porte le copyright et la marque du boîtier ; original inchangé. Sans encodeur (CI Windows), les tests HEIF sont sautés avec un message.
 - Code macOS vérifié par compilation croisée (aarch64-apple-darwin) et clippy ; son exécution sera vérifiée par la CI macOS et sur le Mac de l'utilisateur.
 - Non vu à l'écran dans l'application compilée.
+
+### 2026-10-21 (suite) : V0.2, critères et mesures
+
+- Liste des critères de la V0.2 reportée ci-dessus. Cochés : ceux dont les tests passent dans la CI sous Windows et macOS (run 39596900326, HEIF compris ; le test HEIF exige désormais l'encodeur sous macOS pour ne plus pouvoir y être sauté sans bruit).
+- Mesures (`tests/perf_v02.rs`, version optimisée, sur les six RAW de test ; `cargo test --release --test perf_v02 -- --ignored --nocapture`), sur la machine de développement Windows (RTX 3060 Ti, 20 fils de calcul) :
+  - retour visuel d'un curseur, image de 2048 px avec tous les réglages en jeu : 95 % des rendus en 11 ms au GPU, en 81 ms au processeur (`AFTERDUSK_GPU=0`) ;
+  - export de 100 photos en JPEG 2048 px (preset Web) : 14,6 s.
+- Les deux critères chiffrés restent ouverts : cette machine est au-dessus du milieu de gamme visé. À mesurer sur le Mac de l'utilisateur avec la même commande. Au processeur, une machine modeste dépasserait les 100 ms : c'est le GPU, même intégré, qui tient ce critère.
