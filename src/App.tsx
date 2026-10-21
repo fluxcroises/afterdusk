@@ -1,3 +1,4 @@
+import { ContactSheetDialog } from "./components/ContactSheetDialog";
 import { AppDialog } from "./components/AppDialog";
 import type { ReactElement } from "react";
 import { useAppEvents } from "./appEvents";
@@ -50,6 +51,7 @@ export default function App() {
       <AboutDialog />
       <LocateDialog />
       <TimeFixDialog />
+      <ContactSheetDialog />
       <AppDialog />
     </div>
   );

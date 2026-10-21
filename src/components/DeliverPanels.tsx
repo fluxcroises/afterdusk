@@ -1,5 +1,7 @@
+import { useStudioLogo } from "../store/studioLogo";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen, SlidersHorizontal, X } from "lucide-react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { pickFolder } from "../actions";
 import {
@@ -351,6 +353,22 @@ const NEW_WATERMARK: Watermark = {
 };
 
 /** Filigrane : texte ou logo, position, taille, opacité, marge. */
+/** Filigrane « logo du studio » : rappelle où le choisir s'il n'y en a pas. */
+function StudioLogoNote() {
+  const { t } = useTranslation();
+  const url = useStudioLogo((s) => s.url);
+  useEffect(() => {
+    void useStudioLogo.getState().load();
+  }, []);
+  return url ? (
+    <div className="studio-logo-preview studio-logo-small">
+      <img src={url} alt={t("settings.logo")} />
+    </div>
+  ) : (
+    <p className="panel-note">{t("deliver.noStudioLogo")}</p>
+  );
+}
+
 export function WatermarkSection() {
   const { t } = useTranslation();
   const settings = useDeliver((s) => s.settings);
@@ -379,7 +397,7 @@ export function WatermarkSection() {
       ) : (
         <div className="deliver-editor">
           <div className="develop-segmented" role="radiogroup" aria-label={t("deliver.watermark")}>
-            {(["text", "image"] as const).map((k) => (
+            {(["text", "image", "studioLogo"] as const).map((k) => (
               <button
                 key={k}
                 type="button"
@@ -390,7 +408,9 @@ export function WatermarkSection() {
                     content:
                       k === "text"
                         ? { kind: "text", text: "©", dark: false }
-                        : { kind: "image", path: "" },
+                        : k === "image"
+                          ? { kind: "image", path: "" }
+                          : { kind: "studioLogo" },
                   })
                 }
               >
@@ -429,6 +449,8 @@ export function WatermarkSection() {
                 {t("deliver.watermarkDark")}
               </label>
             </>
+          ) : wm.content.kind === "studioLogo" ? (
+            <StudioLogoNote />
           ) : (
             <div className="deliver-path">
               <span className="deliver-path-value" title={wm.content.path}>

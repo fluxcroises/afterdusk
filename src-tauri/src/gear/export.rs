@@ -6,33 +6,19 @@
 
 use std::path::Path;
 
-use printpdf::{
-    Color, Line, LinePoint, Op, ParsedFont, PdfDocument, PdfFontHandle, PdfPage, PdfSaveOptions,
-    Point, Pt, RawImage, Rgb, TextItem, TextRenderingMode, XObjectTransform,
-};
+use image::DynamicImage;
 use serde::Deserialize;
 
 use super::GearError;
+pub use crate::pdf::Table;
+use crate::pdf::{Layout, Orientation, PageSize, Paper, gray};
 
-/// Inter, déjà embarquée pour l'interface (licence OFL).
-const FONT: &[u8] = include_bytes!("../../assets/fonts/InterVariable.ttf");
-
-/// A4 portrait, en points.
-const PAGE_W: f32 = 595.28;
-const PAGE_H: f32 = 841.89;
 const MARGIN: f32 = 48.0;
 const PHOTO_W: f32 = 150.0;
 const PHOTO_H: f32 = 100.0;
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Table {
-    pub headers: Vec<String>,
-    pub rows: Vec<Vec<String>>,
-    /// Largeurs relatives des colonnes ; vides, toutes égales.
-    #[serde(default)]
-    pub widths: Vec<f32>,
-}
+/// Logo du studio, en haut à droite de la première page.
+const LOGO_W: f32 = 120.0;
+const LOGO_H: f32 = 40.0;
 
 /// Fiche d'un appareil : champs renseignés, puis son journal d'entretien.
 #[derive(Debug, Clone, Deserialize)]
@@ -57,13 +43,7 @@ pub struct InventoryPdf {
 }
 
 fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), GearError> {
-    let part = path.with_extension("part");
-    std::fs::write(&part, bytes)
-        .and_then(|()| std::fs::rename(&part, path))
-        .map_err(|e| {
-            let _ = std::fs::remove_file(&part);
-            GearError::Export(e.to_string())
-        })
+    crate::pdf::write_atomic(path, bytes).map_err(|e| GearError::Export(e.to_string()))
 }
 
 fn csv_field(value: &str, delimiter: char) -> String {
@@ -96,218 +76,26 @@ pub fn write_csv(path: &Path, table: &Table, delimiter: char) -> Result<(), Gear
     write_atomic(path, csv(table, delimiter).as_bytes())
 }
 
-fn gray(v: f32) -> Color {
-    Color::Rgb(Rgb::new(v, v, v, None))
-}
-
-/// Mise en page par lignes, du haut vers le bas, avec saut de page.
-struct Layout {
-    font: ParsedFont,
-    font_handle: PdfFontHandle,
-    pages: Vec<Vec<Op>>,
-    /// Page où s'écrivent les opérations.
-    current: usize,
-    /// Distance depuis le haut de la page courante.
-    y: f32,
-}
-
-impl Layout {
-    fn ops(&mut self) -> &mut Vec<Op> {
-        if self.pages.is_empty() {
-            self.new_page();
-        }
-        &mut self.pages[self.current]
-    }
-
-    fn new_page(&mut self) {
-        self.pages.push(Vec::new());
-        self.current = self.pages.len() - 1;
-        self.y = MARGIN;
-    }
-
-    /// Place la suite sur une nouvelle page si `height` ne tient plus.
-    fn ensure(&mut self, height: f32) -> bool {
-        if self.pages.is_empty() || self.y + height > PAGE_H - MARGIN - 14.0 {
-            self.new_page();
-            return true;
-        }
-        false
-    }
-
-    fn width(&self, text: &str, size: f32) -> f32 {
-        let units: u32 = text
-            .chars()
-            .map(|c| {
-                self.font
-                    .lookup_glyph_index(c as u32)
-                    .and_then(|g| self.font.get_glyph_width(g))
-                    .map_or(0, u32::from)
-            })
-            .sum();
-        units as f32 * size / f32::from(self.font.units_per_em.max(1))
-    }
-
-    /// Coupe le texte à `max` points, avec des points de suspension.
-    fn fit(&self, text: &str, size: f32, max: f32) -> String {
-        if self.width(text, size) <= max {
-            return text.to_owned();
-        }
-        let mut out: String = text.to_owned();
-        while !out.is_empty() && self.width(&format!("{out}…"), size) > max {
-            out.pop();
-        }
-        format!("{}…", out.trim_end())
-    }
-
-    /// Texte dont le haut est à `top` (depuis le haut de page).
-    fn text(&mut self, x: f32, top: f32, size: f32, color: Color, bold: bool, text: &str) {
-        let font = self.font_handle.clone();
-        let mut ops = vec![
-            Op::StartTextSection,
-            Op::SetFont {
-                font,
-                size: Pt(size),
-            },
-            Op::SetFillColor { col: color.clone() },
-        ];
-        if bold {
-            // Inter variable : le gras est simulé par un léger contour.
-            ops.push(Op::SetTextRenderingMode {
-                mode: TextRenderingMode::FillStroke,
-            });
-            ops.push(Op::SetOutlineColor { col: color });
-            ops.push(Op::SetOutlineThickness {
-                pt: Pt(size * 0.03),
-            });
-        }
-        ops.extend([
-            Op::SetTextCursor {
-                pos: Point {
-                    x: Pt(x),
-                    y: Pt(PAGE_H - top - size * 0.8),
-                },
-            },
-            Op::ShowText {
-                items: vec![TextItem::Text(text.to_owned())],
-            },
-        ]);
-        if bold {
-            ops.push(Op::SetTextRenderingMode {
-                mode: TextRenderingMode::Fill,
-            });
-        }
-        ops.push(Op::EndTextSection);
-        self.ops().extend(ops);
-    }
-
-    fn rule(&mut self, top: f32, shade: f32) {
-        let y = PAGE_H - top;
-        let point = |x| LinePoint {
-            p: Point { x: Pt(x), y: Pt(y) },
-            bezier: false,
-        };
-        self.ops().extend([
-            Op::SetOutlineColor { col: gray(shade) },
-            Op::SetOutlineThickness { pt: Pt(0.5) },
-            Op::DrawLine {
-                line: Line {
-                    points: vec![point(MARGIN), point(PAGE_W - MARGIN)],
-                    is_closed: false,
-                },
-            },
-        ]);
-    }
-
-    fn table(&mut self, table: &Table, size: f32) {
-        let inner = PAGE_W - 2.0 * MARGIN;
-        let n = table.headers.len().max(1);
-        let weights: Vec<f32> = if table.widths.len() == n {
-            table.widths.clone()
-        } else {
-            vec![1.0; n]
-        };
-        let total: f32 = weights.iter().sum::<f32>().max(f32::EPSILON);
-        let widths: Vec<f32> = weights.iter().map(|w| w / total * inner).collect();
-        let row_h = size * 1.9;
-        let header = |l: &mut Layout| {
-            let mut x = MARGIN;
-            let top = l.y;
-            for (h, w) in table.headers.iter().zip(&widths) {
-                let t = l.fit(h, size * 0.9, w - 6.0);
-                l.text(x, top + 4.0, size * 0.9, gray(0.4), false, &t);
-                x += w;
-            }
-            l.y += row_h;
-            let y = l.y;
-            l.rule(y, 0.55);
-        };
-        self.ensure(row_h * 2.0);
-        header(self);
-        for row in &table.rows {
-            if self.ensure(row_h) {
-                header(self);
-            }
-            let mut x = MARGIN;
-            let top = self.y;
-            for (cell, w) in row.iter().zip(&widths) {
-                let t = self.fit(cell, size, w - 6.0);
-                self.text(x, top + 5.0, size, gray(0.1), false, &t);
-                x += w;
-            }
-            self.y += row_h;
-            let y = self.y;
-            self.rule(y, 0.88);
-        }
-    }
-
-    fn image(&mut self, doc: &mut PdfDocument, bytes: &[u8], left: f32, top: f32) -> bool {
-        let Ok(image) = RawImage::decode_from_bytes(bytes, &mut Vec::new()) else {
-            return false;
-        };
-        let (w, h) = (image.width as f32, image.height as f32);
-        if w <= 0.0 || h <= 0.0 {
-            return false;
-        }
-        // Tient dans le cadre, proportions gardées.
-        let scale = (PHOTO_W / w).min(PHOTO_H / h);
-        let dh = h * scale;
-        let id = doc.add_image(&image);
-        self.ops().push(Op::UseXobject {
-            id,
-            transform: XObjectTransform {
-                translate_x: Some(Pt(left)),
-                translate_y: Some(Pt(PAGE_H - top - dh)),
-                // À 72 ppp, un pixel vaut un point ; l'échelle fait le reste.
-                dpi: Some(72.0),
-                scale_x: Some(scale),
-                scale_y: Some(scale),
-                ..Default::default()
-            },
-        });
-        true
-    }
-}
-
 /// PDF de l'inventaire : tableau récapitulatif, puis une fiche par appareil.
-/// `photo` donne l'image d'un appareil (JPEG ou PNG), s'il en a une.
+/// `photo` donne l'image d'un appareil (JPEG ou PNG), s'il en a une ; `logo`
+/// est celui du studio (Réglages > Identité).
 pub fn pdf(
     doc_in: &InventoryPdf,
+    logo: Option<&DynamicImage>,
     photo: impl Fn(i64) -> Option<Vec<u8>>,
 ) -> Result<Vec<u8>, GearError> {
-    let font = ParsedFont::from_bytes(FONT, 0, &mut Vec::new())
+    let page = PageSize::new(Paper::A4, Orientation::Portrait);
+    let mut l = Layout::new(&doc_in.title, page, MARGIN)
         .ok_or_else(|| GearError::Export("police illisible".into()))?;
-    let mut doc = PdfDocument::new(&doc_in.title);
-    let font_id = doc.add_font(&font);
-    let mut l = Layout {
-        font,
-        font_handle: PdfFontHandle::External(font_id),
-        pages: Vec::new(),
-        current: 0,
-        y: MARGIN,
-    };
 
     l.ensure(60.0);
-    l.text(MARGIN, l.y, 18.0, gray(0.05), true, &doc_in.title);
+    if let Some(logo) = logo {
+        let right = page.w - MARGIN;
+        let _ = l.image(logo, right - LOGO_W, MARGIN - 6.0, LOGO_W, LOGO_H, false);
+    }
+    let title_w = l.inner_width() - if logo.is_some() { LOGO_W + 12.0 } else { 0.0 };
+    let title = l.fit(&doc_in.title, 18.0, title_w);
+    l.text(MARGIN, l.y, 18.0, gray(0.05), true, &title);
     l.y += 26.0;
     l.text(MARGIN, l.y, 9.5, gray(0.4), false, &doc_in.subtitle);
     l.y += 26.0;
@@ -326,14 +114,17 @@ pub fn pdf(
         l.text(MARGIN, top + 18.0, 9.0, gray(0.4), false, &s.subtitle);
         l.y += 38.0;
         let block = l.y;
-        let has_photo = photo(s.gear_id).is_some_and(|b| l.image(&mut doc, &b, MARGIN, block));
+        let has_photo = photo(s.gear_id)
+            .and_then(|b| image::load_from_memory(&b).ok())
+            .and_then(|img| l.image(&img, MARGIN, block, PHOTO_W, PHOTO_H, false))
+            .is_some();
         let x = if has_photo {
             MARGIN + PHOTO_W + 18.0
         } else {
             MARGIN
         };
         let label_w = 110.0;
-        let value_w = PAGE_W - MARGIN - x - label_w;
+        let value_w = page.w - MARGIN - x - label_w;
         for (i, (label, value)) in s.fields.iter().enumerate() {
             let t = block + i as f32 * 15.0;
             let lab = l.fit(label, 9.0, label_w - 8.0);
@@ -346,34 +137,8 @@ pub fn pdf(
             l.table(journal, 8.5);
         }
     }
-
-    let total = l.pages.len();
-    let footer_size = 8.0;
-    for i in 0..total {
-        let text = doc_in
-            .footer
-            .replace("{page}", &(i + 1).to_string())
-            .replace("{pages}", &total.to_string());
-        let w = l.width(&text, footer_size);
-        l.current = i;
-        l.text(
-            PAGE_W - MARGIN - w,
-            PAGE_H - MARGIN + 6.0,
-            footer_size,
-            gray(0.5),
-            false,
-            &text,
-        );
-    }
-
-    let pages = l
-        .pages
-        .into_iter()
-        .map(|ops| PdfPage::new(Pt(PAGE_W).into(), Pt(PAGE_H).into(), ops))
-        .collect();
-    Ok(doc
-        .with_pages(pages)
-        .save(&PdfSaveOptions::default(), &mut Vec::new()))
+    l.footer(&doc_in.footer);
+    Ok(l.finish())
 }
 
 /// Image d'un appareil pour le PDF : celle déposée sur la fiche, sinon
@@ -402,9 +167,10 @@ pub fn gear_photo(
 pub fn write_pdf(
     path: &Path,
     doc: &InventoryPdf,
+    logo: Option<&DynamicImage>,
     photo: impl Fn(i64) -> Option<Vec<u8>>,
 ) -> Result<(), GearError> {
-    write_atomic(path, &pdf(doc, photo)?)
+    write_atomic(path, &pdf(doc, logo, photo)?)
 }
 
 #[cfg(test)]
@@ -462,15 +228,21 @@ mod tests {
             img.write_to(&mut out, image::ImageFormat::Jpeg).unwrap();
             out.into_inner()
         };
-        let bytes = pdf(&doc, |_| Some(jpeg.clone())).unwrap();
+        let logo = DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
+            90,
+            30,
+            image::Rgba([20, 20, 20, 200]),
+        ));
+        let bytes = pdf(&doc, Some(&logo), |_| Some(jpeg.clone())).unwrap();
         assert!(bytes.starts_with(b"%PDF"));
         // Relu par printpdf : 160 lignes de tableau ne tiennent pas sur une page.
-        let parsed = PdfDocument::parse(&bytes, &Default::default(), &mut Vec::new()).unwrap();
+        let parsed =
+            printpdf::PdfDocument::parse(&bytes, &Default::default(), &mut Vec::new()).unwrap();
         assert!(parsed.pages.len() >= 4, "{} pages", parsed.pages.len());
 
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("inventaire.pdf");
-        write_pdf(&path, &doc, |_| None).unwrap();
+        write_pdf(&path, &doc, None, |_| None).unwrap();
         assert!(std::fs::read(&path).unwrap().starts_with(b"%PDF"));
         assert!(!path.with_extension("part").exists());
     }

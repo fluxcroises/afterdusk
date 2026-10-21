@@ -1,3 +1,4 @@
+import { useContactSheet } from "./store/contactSheet";
 import { useAnalysis } from "./store/analysis";
 import { isTauri } from "@tauri-apps/api/core";
 import { useRescan } from "./store/rescan";
@@ -86,6 +87,9 @@ export function useAppEvents(label: WindowLabel): void {
       ),
       listen<{ done: number; total: number }>("analysis-progress", (e) =>
         useAnalysis.getState().onProgress(e.payload),
+      ),
+      listen<{ done: number; total: number }>("contact-sheet-progress", (e) =>
+        useContactSheet.getState().onProgress(e.payload),
       ),
       listen<ExportProgress>("export://progress", (e) =>
         useDeliver.getState().onProgress(e.payload),

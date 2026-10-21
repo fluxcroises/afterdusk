@@ -9,6 +9,7 @@ pub mod geo;
 pub mod import;
 pub mod library;
 pub mod metadata;
+pub mod pdf;
 pub mod raw;
 
 use tauri::Manager;
@@ -120,6 +121,9 @@ pub fn run() {
                     resources.join("onnxruntime").join(analysis::eyes::LIBRARY),
                 );
             }
+            if let Ok(conn) = db::open(&db_path) {
+                commands::library::refresh_studio_logo(&conn, &dir);
+            }
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
             commands::library::watch_libraries(
@@ -169,6 +173,10 @@ pub fn run() {
             commands::bursts::bursts_detect,
             commands::bursts::bursts_stack,
             commands::bursts::bursts_unstack,
+            commands::contact_sheet::contact_sheet_export,
+            commands::library::identity_logo,
+            commands::library::identity_logo_set,
+            commands::library::identity_logo_clear,
             commands::collections::collections_list,
             commands::collections::collection_create,
             commands::collections::collection_rename,

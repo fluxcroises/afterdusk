@@ -232,7 +232,14 @@
     "mapOnline": "Online base map (OpenFreeMap)",
     "mapOnlineNote": "Off: the map only shows the built-in borders and makes no request.",
     "autoBursts": "Group bursts after each import",
-    "autoAnalysis": "Find misses after each import"
+    "autoAnalysis": "Find misses after each import",
+    "logo": "Studio logo",
+    "noLogo": "No logo",
+    "logoNote": "At the top of contact sheets and the gear inventory, and as a watermark. A transparent PNG works best.",
+    "logoChoose": "Choose a logo…",
+    "logoReplace": "Replace logo…",
+    "logoRemove": "Remove",
+    "logoImages": "Images"
   },
   "menu": {
     "app": "Afterdusk",
@@ -352,7 +359,9 @@
     "invalidDate": "Invalid date.",
     "collectionNotFound": "This collection no longer exists.",
     "collectionKind": "This action does not apply to this kind of collection.",
-    "emptyName": "Give it a name."
+    "emptyName": "Give it a name.",
+    "logo": "This file cannot be used as a logo.",
+    "contactSheet": "The contact sheet could not be saved."
   },
   "home": {
     "morning": "Hello",
@@ -915,7 +924,8 @@
     "removeWatermark": "Remove the watermark",
     "watermarkKind": {
       "text": "Text",
-      "image": "PNG logo"
+      "image": "PNG logo",
+      "studioLogo": "Studio logo"
     },
     "watermarkText": "Text",
     "watermarkDark": "Dark text",
@@ -964,7 +974,8 @@
     "previewPreset": "Preset",
     "previewLoading": "Computing the preview…",
     "previewFailed": "No preview for this photo.",
-    "previewSize": "File of {{width}} × {{height}} px"
+    "previewSize": "File of {{width}} × {{height}} px",
+    "noStudioLogo": "No studio logo: choose one in Settings > Identity."
   },
   "rescan": {
     "title": "Library rescan",
@@ -1245,5 +1256,26 @@
   },
   "dialog": {
     "ok": "OK"
+  },
+  "contactSheet": {
+    "open": "Contact sheet…",
+    "title": "Contact sheet",
+    "allPhotos": "All photos",
+    "count_one": "{{count}} photo",
+    "count_other": "{{count}} photos",
+    "selection": "selection",
+    "columns": "Columns",
+    "paper": "Paper",
+    "letter": "US Letter",
+    "orientation": "Orientation",
+    "portrait": "Portrait",
+    "landscape": "Landscape",
+    "headerLogo": "Studio logo at the top of each page",
+    "watermark": "Watermark",
+    "watermarkNone": "None",
+    "watermarkText": "Text",
+    "save": "Save…",
+    "progress": "Thumbnails: {{done}} / {{total}}",
+    "footer": "Page {{page}} of {{pages}}"
   }
 }

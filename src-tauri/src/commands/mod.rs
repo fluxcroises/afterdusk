@@ -3,6 +3,7 @@
 pub mod analysis;
 pub mod bursts;
 pub mod collections;
+pub mod contact_sheet;
 pub mod develop;
 pub mod devices;
 pub mod error;
@@ -52,6 +53,11 @@ impl AppState {
     }
 
     /// Une connexion par appel : SQLite en WAL le permet sans verrou applicatif.
+    /// Dossier des données de l'application (celui de la base).
+    pub fn data_dir(&self) -> PathBuf {
+        self.db_path.parent().map(PathBuf::from).unwrap_or_default()
+    }
+
     pub fn connect(&self) -> CommandResult<Connection> {
         Ok(db::connect(&self.db_path)?)
     }

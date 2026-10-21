@@ -54,6 +54,9 @@ pub enum WatermarkContent {
     Text { text: String, dark: bool },
     /// Logo PNG (transparence respectée).
     Image { path: PathBuf },
+    /// Logo du studio (Réglages > Identité), résolu à l'export : remplacer
+    /// le logo ne casse aucun preset.
+    StudioLogo,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -67,6 +70,20 @@ pub struct Watermark {
     pub opacity: f64,
     /// Marge, en % du petit côté de l'image.
     pub margin: f64,
+}
+
+static STUDIO_LOGO: std::sync::RwLock<Option<PathBuf>> = std::sync::RwLock::new(None);
+
+/// Emplacement du logo du studio, tenu à jour par l'application (démarrage,
+/// changement de logo) pour les filigranes « logo du studio ».
+pub fn set_studio_logo_path(path: Option<PathBuf>) {
+    if let Ok(mut current) = STUDIO_LOGO.write() {
+        *current = path;
+    }
+}
+
+fn studio_logo_path() -> Option<PathBuf> {
+    STUDIO_LOGO.read().ok()?.clone().filter(|p| p.is_file())
 }
 
 /// Filigrane prêt à poser : couleur et transparence par pixel.
@@ -179,6 +196,11 @@ pub fn apply(img: &mut Rendered, wm: &Watermark) -> Result<(), ExportError> {
     let stamp = match &wm.content {
         WatermarkContent::Text { text, dark } => text_stamp(text, *dark, target as f32)?,
         WatermarkContent::Image { path } => image_stamp(path, target.min(img.width))?,
+        // Pas de logo enregistré : pas de filigrane plutôt qu'un export refusé.
+        WatermarkContent::StudioLogo => match studio_logo_path() {
+            Some(path) => image_stamp(&path, target.min(img.width))?,
+            None => None,
+        },
     };
     let Some(stamp) = stamp else {
         return Ok(());

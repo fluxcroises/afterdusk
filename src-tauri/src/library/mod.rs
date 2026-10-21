@@ -40,6 +40,8 @@ pub enum LibraryError {
     NotManual(i64),
     #[error("le nom est vide")]
     EmptyName,
+    #[error("logo : {0}")]
+    Logo(String),
 }
 
 #[derive(Debug, Clone, Serialize)]

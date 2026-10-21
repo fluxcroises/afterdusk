@@ -2,6 +2,7 @@
 //! espaces colorimétriques, et copie vérifiée des originaux.
 
 pub mod color;
+pub mod contact_sheet;
 pub mod encode;
 pub mod heif;
 pub mod heif_meta;

@@ -210,7 +210,8 @@ pub async fn gear_export_pdf(
     let dir = data_dir(&state);
     let cache = state.cache_root.clone();
     blocking(move || {
-        Ok(export::write_pdf(&path, &doc, |id| {
+        let logo = crate::library::identity::logo(&conn, &dir);
+        Ok(export::write_pdf(&path, &doc, logo.as_ref(), |id| {
             export::gear_photo(&conn, &dir, &cache, id)
         })?)
     })

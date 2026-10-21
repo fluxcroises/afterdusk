@@ -114,6 +114,52 @@ pub async fn identity_set(
     blocking(move || Ok(identity::set(&conn, identity)?)).await
 }
 
+/// Garde le filigrane « logo du studio » en phase avec le logo enregistré.
+pub fn refresh_studio_logo(conn: &rusqlite::Connection, data_dir: &Path) {
+    crate::export::watermark::set_studio_logo_path(
+        identity::logo_path(conn, data_dir).ok().flatten(),
+    );
+}
+
+/// Logo du studio, en octets (vide s'il n'y en a pas).
+#[tauri::command]
+pub async fn identity_logo(state: State<'_, AppState>) -> CommandResult<tauri::ipc::Response> {
+    let conn = state.connect()?;
+    let dir = state.data_dir();
+    let bytes = blocking(move || {
+        Ok(identity::logo_path(&conn, &dir)?
+            .and_then(|p| std::fs::read(p).ok())
+            .unwrap_or_default())
+    })
+    .await?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Choisit le logo du studio : copie vérifiée, la source n'est pas touchée.
+#[tauri::command]
+pub async fn identity_logo_set(state: State<'_, AppState>, path: PathBuf) -> CommandResult<()> {
+    let conn = state.connect()?;
+    let dir = state.data_dir();
+    blocking(move || {
+        identity::set_logo(&conn, &dir, &path)?;
+        refresh_studio_logo(&conn, &dir);
+        Ok(())
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn identity_logo_clear(state: State<'_, AppState>) -> CommandResult<()> {
+    let conn = state.connect()?;
+    let dir = state.data_dir();
+    blocking(move || {
+        identity::clear_logo(&conn, &dir)?;
+        refresh_studio_logo(&conn, &dir);
+        Ok(())
+    })
+    .await
+}
+
 /// Événement : le disque d'une bibliothèque a été débranché ou rebranché.
 pub const EVENT_LIBRARY_STATUS: &str = "library-status";
 

@@ -4211,3 +4211,52 @@ input.locate-offset {
 .button-danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--ad-danger) 85%, var(--ad-text));
 }
+
+/* Logo du studio (Réglages > Identité, filigrane). */
+.studio-logo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  margin-top: var(--ad-space-4);
+  padding-top: var(--ad-space-4);
+  border-top: 1px solid var(--ad-border);
+}
+
+.studio-logo-preview {
+  display: grid;
+  place-items: center;
+  max-width: 320px;
+  min-height: 72px;
+  padding: var(--ad-space-3);
+  border-radius: var(--ad-radius-md);
+  /* Damier : la transparence du logo se voit. */
+  background: repeating-conic-gradient(var(--ad-surface) 0 25%, var(--ad-panel) 0 50%) 0 0 / 16px
+    16px;
+  color: var(--ad-text-muted);
+  font: var(--ad-font-ui);
+}
+
+.studio-logo-preview img {
+  max-width: 100%;
+  max-height: 96px;
+  object-fit: contain;
+}
+
+.studio-logo-small {
+  min-height: 48px;
+}
+
+.studio-logo-small img {
+  max-height: 40px;
+}
+
+/* Planche contact. */
+.contact-sheet-dialog {
+  width: min(400px, calc(100vw - 32px));
+}
+
+.contact-sheet-dialog .field-row select,
+.contact-sheet-dialog .field-row input {
+  flex: 1;
+  min-width: 0;
+}

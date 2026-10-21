@@ -1,3 +1,5 @@
+import { open } from "@tauri-apps/plugin-dialog";
+import { useStudioLogo } from "../store/studioLogo";
 import { useAnalysis } from "../store/analysis";
 import { useBursts } from "../store/bursts";
 import { isTauri } from "@tauri-apps/api/core";
@@ -163,6 +165,48 @@ export function ImportSettings() {
   );
 }
 
+/** Logo du studio : en tête des documents PDF et comme filigrane. */
+function StudioLogoField() {
+  const { t } = useTranslation();
+  const url = useStudioLogo((s) => s.url);
+  const error = useStudioLogo((s) => s.error);
+  useEffect(() => {
+    void useStudioLogo.getState().load();
+  }, []);
+  const choose = async () => {
+    const path = await open({
+      multiple: false,
+      title: t("settings.logoChoose"),
+      filters: [{ name: t("settings.logoImages"), extensions: ["png", "jpg", "jpeg", "webp"] }],
+    });
+    if (typeof path === "string") await useStudioLogo.getState().set(path);
+  };
+  return (
+    <div className="studio-logo">
+      <span className="field-row-label">{t("settings.logo")}</span>
+      <ErrorBanner error={error} onDismiss={() => useStudioLogo.setState({ error: null })} />
+      <div className="studio-logo-preview">
+        {url ? <img src={url} alt={t("settings.logo")} /> : <span>{t("settings.noLogo")}</span>}
+      </div>
+      <p className="panel-note">{t("settings.logoNote")}</p>
+      <div className="settings-actions">
+        <button type="button" className="button button-secondary" onClick={() => void choose()}>
+          {t(url ? "settings.logoReplace" : "settings.logoChoose")}
+        </button>
+        {url && (
+          <button
+            type="button"
+            className="button button-small"
+            onClick={() => void useStudioLogo.getState().clear()}
+          >
+            {t("settings.logoRemove")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Réglages > Identité : nom, copyright et site du photographe. */
 export function IdentitySettings({ initial }: { initial: Identity }) {
   const { t } = useTranslation();
@@ -191,6 +235,7 @@ export function IdentitySettings({ initial }: { initial: Identity }) {
         </button>
         {saved && !changed && <span className="settings-saved">{t("settings.saved")}</span>}
       </div>
+      <StudioLogoField />
     </div>
   );
 }

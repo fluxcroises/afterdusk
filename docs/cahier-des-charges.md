@@ -195,11 +195,11 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 
 - **Formats disponibles** : JPEG, HEIF, AVIF, TIFF 8 ou 16 bits, PNG, DNG pour les originaux.
 - **Options** : redimensionnement (côté long, largeur, hauteur, pourcentage), espace colorimétrique, accentuation de sortie (écran ou papier), modèle de nom des fichiers, dossier de destination, ouverture du dossier à la fin.
-- **Filigrane** texte ou image (logo PNG), position sur une grille de 9 points, taille relative à l'image, opacité, marge.
+- **Filigrane** texte, image (logo PNG) ou logo du studio (Réglages > Identité), position sur une grille de 9 points, taille relative à l'image, opacité, marge.
 - **Nettoyage des métadonnées** : tout garder, retirer le GPS, retirer le numéro de série du boîtier, ne garder que le copyright, ou tout retirer.
 - **Export multiple** : plusieurs presets en une seule opération (par exemple Web et Instagram), dans des sous-dossiers.
 - **Galerie web** \[V0.4\] : génération d'un site statique (HTML, CSS, images) d'un album ou d'une collection, avec thème clair ou sombre, titre, texte d'introduction, téléchargement optionnel des images, à héberger où l'utilisateur le souhaite. Option de sélection client : le client coche ses photos préférées et renvoie la liste par lien ou fichier, qu'Afterdusk sait réimporter comme drapeaux.
-- **Planches contact** \[V0.4\] (idée de l'utilisateur, décision 0009) : PDF d'un album ou d'une collection, pour un client ou pour l'archive. Grille de 2 à 8 colonnes, A4 ou Lettre, portrait ou paysage (par défaut 4 colonnes en A4 portrait). Sous chaque vignette, son numéro d'ordre et le nom du fichier. En-tête : nom de l'album ou de la collection, client et séance, date de la séance, photographe. Vignettes tirées des aperçus rendus, retouches comprises. Filigrane texte en option, désactivé par défaut.
+- **Planches contact** \[V0.4\] (idée de l'utilisateur, décision 0009) : PDF d'un album ou d'une collection, pour un client ou pour l'archive. Grille de 2 à 8 colonnes, A4 ou Lettre, portrait ou paysage (par défaut 4 colonnes en A4 portrait). Sous chaque vignette, son numéro d'ordre et le nom du fichier. En-tête : nom de l'album ou de la collection, client et séance, date de la séance, photographe. Vignettes tirées des aperçus rendus, retouches comprises. Filigrane en option, désactivé par défaut : texte ou logo du studio. Logo du studio en tête de page s'il y en a un.
 
 ### 4.7 Localisation et carte du monde \[V0.3\]
 
@@ -239,6 +239,7 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - Emplacement de la bibliothèque et de la sauvegarde.
 - Modèles de rangement et de renommage, avec aperçu du résultat.
 - Identité du photographe (nom, copyright, site) pour les métadonnées et le filigrane.
+- Logo du studio (PNG, JPEG ou WebP, copié dans les données d'Afterdusk) : en tête des documents PDF (planches contact, inventaire du matériel) et comme filigrane (idée de l'utilisateur).
 - Langue (français, anglais, ou celle du système), thème (sombre par défaut, clair, système).
 - Durée de la corbeille, taille maximale du cache d'aperçus.
 - Comportement à l'insertion d'une carte (ouvrir l'import, notifier, ne rien faire, ou importer automatiquement une carte connue \[V0.4\]).

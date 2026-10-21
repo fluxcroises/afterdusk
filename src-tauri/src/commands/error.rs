@@ -50,6 +50,7 @@ fn library_code(e: &LibraryError) -> &'static str {
         LibraryError::CollectionNotFound(_) => "collectionNotFound",
         LibraryError::NotSmart(_) | LibraryError::NotManual(_) => "collectionKind",
         LibraryError::EmptyName => "emptyName",
+        LibraryError::Logo(_) => "logo",
         LibraryError::Sqlite(_) => "internal",
     }
 }

@@ -1,3 +1,4 @@
+import { useContactSheet } from "../store/contactSheet";
 import { Images } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -51,6 +52,14 @@ export function DeliverStep() {
           <span className="toolbar-status">{t("deliver.selection", { count: selected })}</span>
           <span className="toolbar-spacer" />
           <ExportStatus />
+          <button
+            type="button"
+            className="button button-small"
+            disabled={count === 0}
+            onClick={() => useContactSheet.getState().show()}
+          >
+            {t("contactSheet.open")}
+          </button>
         </>
       }
     >

@@ -641,3 +641,14 @@ Critères (cahier des charges, section 7) :
   - Photo > Rechercher les ratés reprend les onze photos (analyse version 2), avec la progression dans la barre d'état. Le portrait aux yeux fermés porte « Yeux fermés probables », l'autre rien ; les ratés déjà connus gardent leur pastille ;
   - la suppression de l'album intelligent demande confirmation dans une boîte d'Afterdusk (avertissement, « Supprimer » en rouge), et Échap annule.
 - Corrigé à cette occasion : « Arrêter » passait à la ligne sous la progression, hors de la barre d'état.
+
+### 2026-10-21 (suite) : V0.4, planches contact et logo du studio
+
+- Mise en page PDF commune (`src-tauri/src/pdf.rs`) : formats A4 et Lettre, portrait ou paysage, texte coupé à la largeur, images cadrées, opacité, pied de page numéroté, écriture atomique. L'inventaire du matériel l'utilise aussi.
+- Livrer > Planche contact… :
+  - les photos de la grille, ou la sélection quand plusieurs photos sont choisies ; les fichiers du dessous d'une paire RAW + JPEG sont écartés, les copies virtuelles portent leur nom ;
+  - titre de l'album ou de la collection, puis dates, photographe et nombre de photos (client et séance viendront avec les clients) ;
+  - de 2 à 8 colonnes, A4 ou Lettre, portrait ou paysage, logo en tête, filigrane aucun, texte ou logo : réglages gardés d'une planche à l'autre ;
+  - vignettes tirées des aperçus retouchés (600 px), progression dans la boîte ; 20 photos par page en 4 colonnes A4, 72 en 8 colonnes.
+- Logo du studio (idée de l'utilisateur), dans Réglages > Identité : copié et vérifié dans les données d'Afterdusk, aperçu sur damier, remplaçable et retirable. Il sert en tête des planches contact et de l'inventaire du matériel, et comme filigrane des exports (« Logo du studio », à côté de texte et image) et des planches.
+- Tests : pagination et filigranes de la planche, formats de page, copie et retrait du logo, boîte de dialogue (photos retenues, sélection, réglages envoyés). Une planche d'exemple de 26 photos, rendue puis regardée page par page, avec filigrane texte puis logo.

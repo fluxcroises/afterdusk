@@ -232,7 +232,14 @@
     "mapOnline": "Fond de carte en ligne (OpenFreeMap)",
     "mapOnlineNote": "Désactivé : la carte n'affiche que les frontières embarquées et ne fait aucune requête.",
     "autoBursts": "Regrouper les rafales après chaque import",
-    "autoAnalysis": "Rechercher les ratés après chaque import"
+    "autoAnalysis": "Rechercher les ratés après chaque import",
+    "logo": "Logo du studio",
+    "noLogo": "Aucun logo",
+    "logoNote": "En tête des planches contact et de l'inventaire du matériel, et comme filigrane. Un PNG transparent rend le mieux.",
+    "logoChoose": "Choisir un logo…",
+    "logoReplace": "Remplacer le logo…",
+    "logoRemove": "Retirer",
+    "logoImages": "Images"
   },
   "menu": {
     "app": "Afterdusk",
@@ -352,7 +359,9 @@
     "invalidDate": "Date invalide.",
     "collectionNotFound": "Cette collection n'existe plus.",
     "collectionKind": "Cette action ne s'applique pas à ce type de collection.",
-    "emptyName": "Donnez-lui un nom."
+    "emptyName": "Donnez-lui un nom.",
+    "logo": "Ce fichier ne peut pas servir de logo.",
+    "contactSheet": "La planche contact n'a pas pu être enregistrée."
   },
   "home": {
     "morning": "Bonjour",
@@ -915,7 +924,8 @@
     "removeWatermark": "Retirer le filigrane",
     "watermarkKind": {
       "text": "Texte",
-      "image": "Logo PNG"
+      "image": "Logo PNG",
+      "studioLogo": "Logo du studio"
     },
     "watermarkText": "Texte",
     "watermarkDark": "Texte sombre",
@@ -964,7 +974,8 @@
     "previewPreset": "Preset",
     "previewLoading": "Calcul de l'aperçu…",
     "previewFailed": "Aperçu impossible pour cette photo.",
-    "previewSize": "Fichier de {{width}} × {{height}} px"
+    "previewSize": "Fichier de {{width}} × {{height}} px",
+    "noStudioLogo": "Aucun logo du studio : il se choisit dans Réglages > Identité."
   },
   "rescan": {
     "title": "Réanalyse de la bibliothèque",
@@ -1245,5 +1256,26 @@
   },
   "dialog": {
     "ok": "OK"
+  },
+  "contactSheet": {
+    "open": "Planche contact…",
+    "title": "Planche contact",
+    "allPhotos": "Toutes les photos",
+    "count_one": "{{count}} photo",
+    "count_other": "{{count}} photos",
+    "selection": "sélection",
+    "columns": "Colonnes",
+    "paper": "Papier",
+    "letter": "Lettre US",
+    "orientation": "Orientation",
+    "portrait": "Portrait",
+    "landscape": "Paysage",
+    "headerLogo": "Logo du studio en tête de page",
+    "watermark": "Filigrane",
+    "watermarkNone": "Aucun",
+    "watermarkText": "Texte",
+    "save": "Enregistrer…",
+    "progress": "Vignettes : {{done}} / {{total}}",
+    "footer": "Page {{page}} sur {{pages}}"
   }
 }

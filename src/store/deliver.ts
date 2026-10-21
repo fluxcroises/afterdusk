@@ -58,7 +58,10 @@ export interface ExportPreset {
 }
 
 export type WatermarkContent =
-  { kind: "text"; text: string; dark: boolean } | { kind: "image"; path: string };
+  | { kind: "text"; text: string; dark: boolean }
+  | { kind: "image"; path: string }
+  /** Logo du studio (Réglages > Identité), résolu à l'export. */
+  | { kind: "studioLogo" };
 
 export interface Watermark {
   content: WatermarkContent;
