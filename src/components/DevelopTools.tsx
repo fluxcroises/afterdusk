@@ -1,11 +1,12 @@
-import { Bandage, Crop, type LucideIcon, SlidersHorizontal, WandSparkles } from "lucide-react";
+import { Bandage, Crop, type LucideIcon, SlidersHorizontal, SwatchBook } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { type DevelopTool, useDevelop } from "../store/develop";
 import { useLayout } from "../store/layout";
 
 const TOOLS: { tool: DevelopTool; icon: LucideIcon; shortcut?: string }[] = [
   { tool: "adjust", icon: SlidersHorizontal },
-  { tool: "filters", icon: WandSparkles },
+  // Nuancier : une collection de rendus prêts à appliquer.
+  { tool: "filters", icon: SwatchBook },
   { tool: "crop", icon: Crop, shortcut: "R" },
   { tool: "spots", icon: Bandage, shortcut: "Q" },
 ];

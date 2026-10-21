@@ -64,7 +64,9 @@ Prévoir une gestion cohérente des contrastes pour tous les textes, icônes et 
 
 ## 3. Typographie
 
-Police à définir : Inter, Manrope, Sora, IBM Plex Sans ou Geist
+Police retenue : **Inter**, embarquée dans l'application (licence OFL, compatible GPL v3).
+
+Raisons : rendu identique sur Windows et macOS (le même fichier sert au filigrane de l'export), chiffres tabulaires pour les valeurs des curseurs et des fiches, lisibilité à 11 et 12 px dans des panneaux denses. Manrope, Sora, IBM Plex Sans et Geist étaient les autres candidates.
 
 Définir la hiérarchie suivante :
 

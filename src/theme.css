@@ -1,4 +1,15 @@
 /* Variables de design : référence unique, voir docs/charte-graphique.md. */
+
+/* Inter embarquée (licence OFL), le même fichier que le filigrane de l'export :
+   rendu identique sur Windows et macOS. */
+@font-face {
+  font-family: Inter;
+  src: url("../src-tauri/assets/fonts/InterVariable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --ad-bg: #17191c;
   --ad-workspace: #111214;

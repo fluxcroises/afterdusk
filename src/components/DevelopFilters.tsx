@@ -1,4 +1,4 @@
-import { Check, Trash2, WandSparkles } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type Film, type PresetSummary, type PresetThumb, useDevelop } from "../store/develop";
@@ -238,7 +238,6 @@ export function FiltersPanel() {
           title={t("develop.autoHint")}
           onClick={() => void st.autoLight()}
         >
-          <WandSparkles aria-hidden="true" strokeWidth={1.75} />
           {t("develop.presets.autoOptimize")}
         </button>
         <div className="filter-grid">

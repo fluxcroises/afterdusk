@@ -172,7 +172,7 @@
       "en": "English"
     },
     "theme": "Thème",
-    "themeDark": "Sombre",
+    "themeDarkOnly": "Sombre (thème clair à venir)",
     "trashRetention": "Supprimer définitivement après",
     "days_one": "jour",
     "days_other": "jours",

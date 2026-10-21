@@ -66,9 +66,10 @@ button:disabled {
   outline: none;
 }
 
+/* 2 px en retrait : repérable sur les curseurs et les vignettes sans déborder des panneaux. */
 :focus-visible {
-  outline: 1px solid var(--ad-accent);
-  outline-offset: -1px;
+  outline: 2px solid var(--ad-accent);
+  outline-offset: -2px;
 }
 
 select {
@@ -1317,8 +1318,8 @@ input[type="checkbox"] {
 
 /* Le focus clavier se distingue du survol par le contour d'accent (3,86:1 sur le survol). */
 .menu-row:focus-visible {
-  outline: 1px solid var(--ad-accent);
-  outline-offset: -1px;
+  outline: 2px solid var(--ad-accent);
+  outline-offset: -2px;
 }
 
 /* Le texte discret passe sous 4,5:1 sur le fond de survol : il remonte d'un cran. */
@@ -2974,9 +2975,7 @@ input[type="radio"] {
 .develop-subheading {
   margin: var(--ad-space-2) 0 0;
   color: var(--ad-text-secondary);
-  font: var(--ad-font-meta);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font: var(--ad-font-section);
 }
 
 /* Pastille de la teinte devant chaque curseur TSL. */
@@ -3240,17 +3239,8 @@ input[type="radio"] {
 
 /* Galerie de filtres : grille de trois colonnes, vignettes carrées. */
 .develop-optimize {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ad-space-2);
   width: 100%;
   margin-bottom: var(--ad-space-3);
-}
-
-.develop-optimize svg {
-  width: 16px;
-  height: 16px;
 }
 
 .filter-grid {

@@ -128,7 +128,7 @@ impl Preset {
     }
 }
 
-// -------------------------------- catalogue --------------------------------
+// Catalogue des presets intégrés.
 
 #[derive(Deserialize)]
 struct RawCatalog {
@@ -204,7 +204,7 @@ fn catalog() -> Result<&'static [(String, Vec<Preset>)], PresetError> {
         .map_err(|e| PresetError::Catalog(e.clone()))
 }
 
-// ---------------------------- presets personnels ----------------------------
+// Presets personnels, rangés dans presets.json à côté de la base.
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 struct UserFile {
@@ -391,7 +391,7 @@ pub fn find(path: &Path, id: &str) -> Result<Preset, PresetError> {
         .ok_or_else(|| PresetError::Unknown(id.to_owned()))
 }
 
-// --------------------------------- intensité ---------------------------------
+// Intensité : rapproche chaque réglage du neutre.
 
 fn lerp(neutral: f64, value: f64, k: f64) -> f64 {
     neutral + k * (value - neutral)

@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import {
   AVAILABLE_IN,
-  CURRENT_VERSION,
   STEPS,
   type Screen,
   VIEWS,
+  isLater,
   useNavigation,
 } from "../store/navigation";
 
@@ -15,7 +15,10 @@ export function ModulePicker() {
   const goTo = useNavigation((s) => s.goTo);
 
   const item = (target: Screen) => {
-    const later = AVAILABLE_IN[target] !== CURRENT_VERSION;
+    const later = isLater(target);
+    const availability = later
+      ? t("modules.availableIn", { version: AVAILABLE_IN[target] })
+      : undefined;
     return (
       <li key={target}>
         <button
@@ -23,7 +26,9 @@ export function ModulePicker() {
           className="module"
           data-later={later || undefined}
           aria-current={screen === target ? "page" : undefined}
-          title={later ? t("modules.availableIn", { version: AVAILABLE_IN[target] }) : undefined}
+          // La version prévue fait partie du nom lu au clavier, pas seulement de l'infobulle.
+          aria-label={availability && `${t(`modules.${target}`)}, ${availability}`}
+          title={availability}
           onClick={() => goTo(target)}
         >
           {t(`modules.${target}`)}

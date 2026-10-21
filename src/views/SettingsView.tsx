@@ -78,7 +78,7 @@ export function SettingsView() {
                 ))}
               </select>
             </label>
-            <FieldRow label={t("settings.theme")} value={t("settings.themeDark")} />
+            <FieldRow label={t("settings.theme")} value={t("settings.themeDarkOnly")} />
           </div>
         ) : category === "library" ? (
           <LibrarySettings />
