@@ -335,7 +335,11 @@
     "writeFailed": "Écriture impossible dans le dossier de destination.",
     "exportRunning": "Un export est déjà en cours.",
     "heifUnavailable": "Encodeur HEIF absent. Sous Windows, il vient des extensions HEIF et HEVC de Microsoft.",
-    "gpxUnreadable": "Trace GPX illisible."
+    "gpxUnreadable": "Trace GPX illisible.",
+    "gearNotFound": "Ce matériel n'existe plus.",
+    "gearKindMismatch": "Seuls deux appareils du même type se fusionnent.",
+    "gearDetected": "Un appareil relevé dans les photos se masque, il ne se supprime pas.",
+    "gearPhoto": "Cette image ne peut pas être utilisée."
   },
   "home": {
     "morning": "Bonjour",
@@ -1051,5 +1055,82 @@
     "albumCount_other": "{{count}} albums",
     "locatedCount_one": "{{count}} photo localisée",
     "locatedCount_other": "{{count}} photos localisées"
+  },
+  "gear": {
+    "count_one": "{{count}} appareil",
+    "count_other": "{{count}} appareils",
+    "emptyTitle": "Aucun matériel",
+    "groups": {
+      "bodies": "Boîtiers",
+      "lenses": "Objectifs",
+      "accessories": "Accessoires"
+    },
+    "empty": {
+      "bodies": "Aucun boîtier.",
+      "lenses": "Aucun objectif.",
+      "accessories": "Aucun accessoire."
+    },
+    "hiddenHint": "masqué",
+    "showHidden": "Afficher le matériel masqué",
+    "add": "Ajouter…",
+    "kinds": {
+      "body": "Boîtier",
+      "lens": "Objectif",
+      "flash": "Flash",
+      "filter": "Filtre",
+      "tripod": "Trépied",
+      "bag": "Sac",
+      "battery": "Batterie",
+      "other": "Autre"
+    },
+    "styles": {
+      "mirrorless": "Hybride",
+      "dslr": "Reflex",
+      "compact": "Compact",
+      "prime": "Focale fixe",
+      "zoom": "Zoom"
+    },
+    "conditions": {
+      "new": "Neuf",
+      "excellent": "Très bon",
+      "good": "Bon",
+      "worn": "Usé",
+      "repair": "En réparation",
+      "broken": "Hors service"
+    },
+    "fields": {
+      "name": "Nom",
+      "kind": "Type",
+      "make": "Marque",
+      "model": "Modèle",
+      "style": "Silhouette",
+      "serial": "Numéro de série",
+      "purchaseDate": "Date d'achat",
+      "purchasePlace": "Lieu d'achat",
+      "price": "Prix",
+      "currency": "Devise",
+      "condition": "État",
+      "warrantyUntil": "Garantie jusqu'au",
+      "notes": "Notes"
+    },
+    "usage": "Utilisation",
+    "photos": "Photos",
+    "firstUsed": "Première photo",
+    "lastUsed": "Dernière photo",
+    "manual": "Saisi à la main.",
+    "aliases": "Noms relevés dans les photos",
+    "photo": "Photo de l'appareil",
+    "chooseImage": "Choisir une image…",
+    "images": "Images",
+    "useSelected": "Photo sélectionnée dans la Bibliothèque",
+    "removePhoto": "Retirer la photo",
+    "manage": "Gestion",
+    "confirmed": "C'est mon matériel",
+    "hide": "Masquer",
+    "unhide": "Ne plus masquer",
+    "mergeWith": "Fusionner avec…",
+    "merge": "Fusionner",
+    "delete": "Supprimer",
+    "confirmDelete": "Supprimer la fiche « {{name}} » ? Ses notes et sa photo sont perdues."
   }
 }

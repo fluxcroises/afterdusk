@@ -37,8 +37,8 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 
 - [x] Les quatre sources de localisation de la section 4.7, avec correction du fuseau horaire
 - [x] Géocodage inverse hors ligne (pays, ville)
-- [ ] Carte du monde des albums avec grappes, aperçu et filtre par zone
-- [ ] Fond de carte simplifié hors ligne
+- [x] Carte du monde des albums avec grappes, aperçu et filtre par zone
+- [x] Fond de carte simplifié hors ligne
 - [ ] Inventaire alimenté automatiquement, fusion des doublons, masquage
 - [ ] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
 - [ ] Journal d'entretien et rappels
@@ -467,3 +467,12 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Tests : données de la carte, filtre de zone et traces (cœur), zones et longitudes (interface), écran Carte avec la carte remplacée (WebGL absent des tests).
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : quatre albums (Cabourg avec trace GPX, Paris, Marseille, New York), grappe « 3 » sur la France, vignette à New York, aperçu de l'album de Cabourg, trace et photo en zoomant, zone tracée puis « 1 sur 4 photos » dans la Bibliothèque, fond hors ligne après coupure dans les Réglages. Corrigé à cette occasion : carte de hauteur nulle (MapLibre impose sa position), couverture absente de l'aperçu, vignettes d'albums masquant les photos en vue détaillée, album choisi repéré par son nom. Non vu à l'écran : le placement d'un clic (testé dans l'interface et le cœur).
 - Les préférences de l'interface (dont l'interrupteur du fond de carte) sont gardées par WebView2 hors du dossier de données : l'interrupteur coupé pendant l'essai a été remis.
+- Critères de la carte et du fond hors ligne cochés : CI verte sous Windows et macOS (run 39625230546).
+
+### 2026-10-21 (suite) : V0.3, matériel (inventaire et fiches)
+
+- Migration 0011 : tous les types (boîtier, objectif, flash, filtre, trépied, sac, batterie, autre) et les champs de la fiche (nom choisi, silhouette, numéro de série, date et lieu d'achat, prix et devise, état, garantie, notes, confirmé, photo). La table est recréée pour changer sa contrainte : les migrations coupent désormais les clés étrangères (hors transaction) et vérifient l'intégrité avant de les rétablir ; sans cela, la suppression de l'ancienne table aurait vidé les liens boîtier et objectif des photos (test sur une base arrêtée à la version 10, puis migration réelle d'une base d'essai : les 4 liens gardés).
+- Écran Matériel : boîtiers, objectifs et accessoires, avec le nombre de photos ; fiche modifiable (marque, modèle et type pour un accessoire saisi à la main seulement), noms relevés dans les photos, première et dernière photo. Illustration : la photo choisie dans la Bibliothèque ou une image déposée (copiée et vérifiée à côté de la base, la source intacte), sinon une silhouette dessinée pour Afterdusk (hybride, reflex, compact, focale fixe, zoom, trépied ; devinée d'après le modèle, modifiable) et la marque en toutes lettres. Fusion de deux fiches du même type (noms EXIF, photos et champs vides repris), masquage, « C'est mon matériel », suppression d'un accessoire saisi (un appareil relevé dans les photos se masque seulement).
+- Tests : silhouettes devinées, migration sans liens rompus, et de bout en bout sur les six RAW (inventaire, fusion et nouvel import retrouvant la fiche fusionnée, masquage, accessoire, fiche, photo déposée puis retirée) ; écran testé dans l'interface.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : inventaire de la base d'essai migrée, fiche du Canon EOS R6 avec son numéro de série, photo de la Bibliothèque en illustration, trépied ajouté puis nommé. Corrigé à cette occasion : un accessoire sans marque ni modèle n'avait pas de nom (il prend celui de son type). La fusion et l'image déposée n'ont pas été faites à l'écran (testées dans le cœur et l'interface).
+- Restent pour le matériel : statistiques et graphiques, compteur de déclenchements, entretien et rappels, export PDF et CSV.

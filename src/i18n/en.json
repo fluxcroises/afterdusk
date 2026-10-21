@@ -335,7 +335,11 @@
     "writeFailed": "Cannot write to the destination folder.",
     "exportRunning": "An export is already running.",
     "heifUnavailable": "No HEIF encoder. On Windows, it comes from Microsoft's HEIF and HEVC extensions.",
-    "gpxUnreadable": "Unreadable GPX track."
+    "gpxUnreadable": "Unreadable GPX track.",
+    "gearNotFound": "This gear no longer exists.",
+    "gearKindMismatch": "Only two items of the same type can be merged.",
+    "gearDetected": "Gear found in your photos can be hidden, not deleted.",
+    "gearPhoto": "This image cannot be used."
   },
   "home": {
     "morning": "Hello",
@@ -1051,5 +1055,82 @@
     "albumCount_other": "{{count}} albums",
     "locatedCount_one": "{{count}} located photo",
     "locatedCount_other": "{{count}} located photos"
+  },
+  "gear": {
+    "count_one": "{{count}} item",
+    "count_other": "{{count}} items",
+    "emptyTitle": "No gear",
+    "groups": {
+      "bodies": "Cameras",
+      "lenses": "Lenses",
+      "accessories": "Accessories"
+    },
+    "empty": {
+      "bodies": "No camera.",
+      "lenses": "No lens.",
+      "accessories": "No accessory."
+    },
+    "hiddenHint": "hidden",
+    "showHidden": "Show hidden gear",
+    "add": "Add…",
+    "kinds": {
+      "body": "Camera",
+      "lens": "Lens",
+      "flash": "Flash",
+      "filter": "Filter",
+      "tripod": "Tripod",
+      "bag": "Bag",
+      "battery": "Battery",
+      "other": "Other"
+    },
+    "styles": {
+      "mirrorless": "Mirrorless",
+      "dslr": "DSLR",
+      "compact": "Compact",
+      "prime": "Prime",
+      "zoom": "Zoom"
+    },
+    "conditions": {
+      "new": "New",
+      "excellent": "Excellent",
+      "good": "Good",
+      "worn": "Worn",
+      "repair": "Under repair",
+      "broken": "Out of service"
+    },
+    "fields": {
+      "name": "Name",
+      "kind": "Type",
+      "make": "Make",
+      "model": "Model",
+      "style": "Silhouette",
+      "serial": "Serial number",
+      "purchaseDate": "Purchase date",
+      "purchasePlace": "Purchased at",
+      "price": "Price",
+      "currency": "Currency",
+      "condition": "Condition",
+      "warrantyUntil": "Warranty until",
+      "notes": "Notes"
+    },
+    "usage": "Use",
+    "photos": "Photos",
+    "firstUsed": "First photo",
+    "lastUsed": "Last photo",
+    "manual": "Entered by hand.",
+    "aliases": "Names found in the photos",
+    "photo": "Gear photo",
+    "chooseImage": "Choose an image…",
+    "images": "Images",
+    "useSelected": "Photo selected in the Library",
+    "removePhoto": "Remove photo",
+    "manage": "Management",
+    "confirmed": "This is my gear",
+    "hide": "Hide",
+    "unhide": "Stop hiding",
+    "mergeWith": "Merge with…",
+    "merge": "Merge",
+    "delete": "Delete",
+    "confirmDelete": "Delete the record “{{name}}”? Its notes and photo are lost."
   }
 }

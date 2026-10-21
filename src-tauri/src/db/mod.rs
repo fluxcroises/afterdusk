@@ -6,7 +6,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 
 #[derive(Debug, thiserror::Error)]
 pub enum DbError {
@@ -16,6 +16,8 @@ pub enum DbError {
         "la base est en version {found}, plus récente que cette version d'Afterdusk ({supported})"
     )]
     TooNew { found: u32, supported: u32 },
+    #[error("la migration {0} laisserait des liens rompus dans la table {1}")]
+    ForeignKeys(u32, String),
 }
 
 /// Migrations dans l'ordre ; l'indice + 1 est le numéro de version.
@@ -30,6 +32,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0008_traces_gpx.sql"),
     include_str!("migrations/0009_lieux_nommes.sql"),
     include_str!("migrations/0010_heure_du_boitier.sql"),
+    include_str!("migrations/0011_fiches_materiel.sql"),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
@@ -77,13 +80,35 @@ fn migrate(conn: &mut Connection) -> Result<(), DbError> {
             supported: SCHEMA_VERSION,
         });
     }
-    for (index, sql) in MIGRATIONS.iter().enumerate().skip(current as usize) {
-        let tx = conn.transaction()?;
-        tx.execute_batch(sql)?;
-        tx.pragma_update(None, "user_version", index as u32 + 1)?;
-        tx.commit()?;
+    if current == SCHEMA_VERSION {
+        return Ok(());
     }
-    Ok(())
+    // Une table recréée pour changer ses contraintes (méthode de SQLite :
+    // créer, copier, supprimer, renommer) ne doit pas déclencher les actions
+    // des clés étrangères (ON DELETE SET NULL vers elle) : elles sont coupées
+    // le temps des migrations, hors transaction, et vérifiées avant de repartir.
+    conn.pragma_update(None, "foreign_keys", false)?;
+    let result = (|| -> Result<(), DbError> {
+        for (index, sql) in MIGRATIONS.iter().enumerate().skip(current as usize) {
+            let tx = conn.transaction()?;
+            tx.execute_batch(sql)?;
+            let broken: Option<String> = tx
+                .query_row(
+                    "SELECT \"table\" FROM pragma_foreign_key_check LIMIT 1",
+                    [],
+                    |r| r.get(0),
+                )
+                .optional()?;
+            if let Some(table) = broken {
+                return Err(DbError::ForeignKeys(index as u32 + 1, table));
+            }
+            tx.pragma_update(None, "user_version", index as u32 + 1)?;
+            tx.commit()?;
+        }
+        Ok(())
+    })();
+    conn.pragma_update(None, "foreign_keys", true)?;
+    result
 }
 
 /// Instant présent en UTC, au format ISO 8601 stocké en base.
@@ -114,6 +139,53 @@ mod tests {
             )
             .unwrap();
         assert_eq!(tables, 6);
+    }
+
+    #[test]
+    fn table_recreee_sans_rompre_les_liens() {
+        // Base arrêtée avant la migration 0011, avec une photo liée à son
+        // boîtier : le lien survit à la reconstruction de la table `gear`.
+        let mut conn = Connection::open_in_memory().unwrap();
+        configure(&conn).unwrap();
+        for sql in &MIGRATIONS[..10] {
+            conn.execute_batch(sql).unwrap();
+        }
+        conn.pragma_update(None, "user_version", 10).unwrap();
+        conn.execute_batch(
+            "INSERT INTO libraries (id, name, root_path, created_at) VALUES (1, 'P', '/p', 'x');
+             INSERT INTO albums (id, library_id, name, folder, created_at)
+               VALUES (1, 1, 'A', 'a', 'x');
+             INSERT INTO gear (id, kind, make, model, created_at)
+               VALUES (7, 'body', 'Nikon', 'Z 6', 'x');
+             INSERT INTO gear_aliases (gear_id, exif_make, exif_model) VALUES (7, 'NIKON', 'Z 6');
+             INSERT INTO media (id, library_id, album_id, kind, path, original_name, file_size,
+                                fingerprint, content_hash, camera_id, imported_at, updated_at)
+               VALUES (3, 1, 1, 'photo', 'a/1.NEF', '1.NEF', 1, 'f', 'h', 7, 'x', 'x');",
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        let camera: Option<i64> = conn
+            .query_row("SELECT camera_id FROM media WHERE id = 3", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(camera, Some(7));
+        let aliases: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM gear_aliases WHERE gear_id = 7",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(aliases, 1);
+        // Les nouveaux types sont admis, les clés étrangères de nouveau actives.
+        conn.execute(
+            "INSERT INTO gear (kind, make, model, created_at) VALUES ('tripod', '', 'T', 'x')",
+            [],
+        )
+        .unwrap();
+        let fk: bool = conn
+            .pragma_query_value(None, "foreign_keys", |r| r.get(0))
+            .unwrap();
+        assert!(fk);
     }
 
     #[test]

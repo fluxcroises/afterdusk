@@ -3,6 +3,7 @@ pub mod db;
 pub mod develop;
 pub mod devices;
 pub mod export;
+pub mod gear;
 pub mod geo;
 pub mod import;
 pub mod library;
@@ -206,6 +207,17 @@ pub fn run() {
             commands::geo::geo_unlocated,
             commands::geo::geo_map,
             commands::geo::geo_album_tracks,
+            commands::gear::gear_list,
+            commands::gear::gear_get,
+            commands::gear::gear_update,
+            commands::gear::gear_create,
+            commands::gear::gear_delete,
+            commands::gear::gear_set_hidden,
+            commands::gear::gear_set_confirmed,
+            commands::gear::gear_merge,
+            commands::gear::gear_set_photo_media,
+            commands::gear::gear_set_photo_file,
+            commands::gear::gear_photo_file,
             commands::library::library_rescan,
             commands::presets::presets_list,
             commands::presets::presets_create,

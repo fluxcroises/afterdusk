@@ -74,7 +74,7 @@ impl From<DbError> for CommandError {
     fn from(e: DbError) -> Self {
         let code = match &e {
             DbError::TooNew { .. } => "databaseTooNew",
-            DbError::Sqlite(_) => "internal",
+            DbError::Sqlite(_) | DbError::ForeignKeys(..) => "internal",
         };
         Self::new(code, e)
     }
