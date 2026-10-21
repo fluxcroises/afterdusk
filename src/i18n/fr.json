@@ -138,7 +138,21 @@
     "dimensions": "Dimensions",
     "exposureCompensation": "Correction",
     "noKeywords": "Aucun mot-clé.",
-    "stackFiles": "Pile"
+    "stackFiles": "Pile",
+    "place": "Lieu",
+    "placeValue": "{{lat}} {{ns}}, {{lon}} {{ew}}",
+    "hemispheres": {
+      "n": "N",
+      "s": "S",
+      "e": "E",
+      "w": "O"
+    },
+    "placeSources": {
+      "exif": "GPS du boîtier",
+      "gpx": "trace GPX",
+      "phone": "téléphone",
+      "manual": "saisi"
+    }
   },
   "cull": {
     "emptyTitle": "Aucune photo à trier",
@@ -263,7 +277,8 @@
     "trashRaw": "Envoyer le RAW dans la corbeille",
     "copySettings": "Copier les réglages…",
     "pasteSettings": "Coller les réglages",
-    "rescanLibrary": "Réanalyser la bibliothèque"
+    "rescanLibrary": "Réanalyser la bibliothèque",
+    "locate": "Localiser…"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -311,7 +326,8 @@
     "copyFailed": "La copie de l'original a échoué.",
     "writeFailed": "Écriture impossible dans le dossier de destination.",
     "exportRunning": "Un export est déjà en cours.",
-    "heifUnavailable": "Encodeur HEIF absent. Sous Windows, il vient des extensions HEIF et HEVC de Microsoft."
+    "heifUnavailable": "Encodeur HEIF absent. Sous Windows, il vient des extensions HEIF et HEVC de Microsoft.",
+    "gpxUnreadable": "Trace GPX illisible."
   },
   "home": {
     "morning": "Bonjour",
@@ -931,5 +947,47 @@
     "failed_one": "{{count}} fichier illisible :",
     "failed_other": "{{count}} fichiers illisibles :",
     "progress": "Réanalyse : {{done}} / {{total}}"
+  },
+  "locate": {
+    "title_one": "Localiser {{count}} photo",
+    "title_other": "Localiser {{count}} photos",
+    "source": "Source",
+    "sources": {
+      "gpx": "Trace GPX",
+      "phone": "Photos de téléphone"
+    },
+    "choose": {
+      "gpx": "Choisir des traces…",
+      "phone": "Choisir des photos…"
+    },
+    "phonePhotos": "Photos",
+    "noFile": "Aucun fichier choisi",
+    "files_one": "{{count}} fichier",
+    "files_other": "{{count}} fichiers",
+    "clock": "Heure du boîtier",
+    "written_one": "Fuseau écrit par le boîtier : UTC {{offset}} ({{count}} sur {{total}})",
+    "written_other": "Fuseau écrit par le boîtier : UTC {{offset}} ({{count}} sur {{total}})",
+    "writtenNone": "Aucun fuseau écrit par le boîtier",
+    "utc": "Décalage sur UTC :",
+    "offsetHours": "Décalage sur UTC, en heures",
+    "hours": "h",
+    "minutes": {
+      "gpx": "Écart maximal avec la trace (min)",
+      "phone": "Écart maximal avec le téléphone (min)"
+    },
+    "replace": "Remplacer les lieux déjà posés",
+    "confirm": "Localiser",
+    "report": {
+      "located_one": "{{count}} photo localisée",
+      "located_other": "{{count}} photos localisées",
+      "kept_one": "{{count}} déjà localisée",
+      "kept_other": "{{count}} déjà localisées",
+      "unmatched_one": "{{count}} sans point assez proche",
+      "unmatched_other": "{{count}} sans point assez proche",
+      "noTime_one": "{{count}} sans heure ni fuseau",
+      "noTime_other": "{{count}} sans heure ni fuseau",
+      "unusable_one": "{{count}} fichier sans position ou sans heure",
+      "unusable_other": "{{count}} fichiers sans position ou sans heure"
+    }
   }
 }

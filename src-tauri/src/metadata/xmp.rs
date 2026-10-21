@@ -124,8 +124,82 @@ impl ColorLabel {
     }
 }
 
+/// Origine d'un lieu (colonne `media.location_source`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LocationSource {
+    /// GPS écrit par le boîtier dans l'original.
+    Exif,
+    /// Trace GPX.
+    Gpx,
+    /// Photo de téléphone du même moment.
+    Phone,
+    /// Saisi par l'utilisateur.
+    Manual,
+}
+
+impl LocationSource {
+    pub fn as_db(self) -> &'static str {
+        match self {
+            Self::Exif => "exif",
+            Self::Gpx => "gpx",
+            Self::Phone => "phone",
+            Self::Manual => "manual",
+        }
+    }
+
+    pub fn from_db(value: &str) -> Option<Self> {
+        match value {
+            "exif" => Some(Self::Exif),
+            "gpx" => Some(Self::Gpx),
+            "phone" => Some(Self::Phone),
+            "manual" => Some(Self::Manual),
+            _ => None,
+        }
+    }
+}
+
+/// Lieu posé par Afterdusk : `exif:GPSLatitude` et `exif:GPSLongitude`
+/// (format XMP « 48,51.504000N »), sa source en `afterdusk:LocationSource`.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct XmpLocation {
+    pub latitude: f64,
+    pub longitude: f64,
+    pub source: LocationSource,
+}
+
+/// Coordonnée au format XMP : degrés, minutes décimales et hémisphère.
+fn xmp_coordinate(value: f64, positive: char, negative: char) -> String {
+    let hemisphere = if value < 0.0 { negative } else { positive };
+    let abs = value.abs();
+    let degrees = abs.trunc();
+    format!("{degrees},{:.6}{hemisphere}", (abs - degrees) * 60.0)
+}
+
+/// Lit « 48,51.504N » ou « 48,51,30N » ; rien si la valeur est illisible.
+fn parse_coordinate(text: &str) -> Option<f64> {
+    let text = text.trim();
+    let hemisphere = text.chars().last()?.to_ascii_uppercase();
+    let sign = match hemisphere {
+        'N' | 'E' => 1.0,
+        'S' | 'W' => -1.0,
+        _ => return None,
+    };
+    let parts: Vec<f64> = text[..text.len() - 1]
+        .split(',')
+        .map(|p| p.trim().parse::<f64>())
+        .collect::<Result<_, _>>()
+        .ok()?;
+    let value = match parts.as_slice() {
+        [d, m] => d + m / 60.0,
+        [d, m, s] => d + m / 60.0 + s / 3600.0,
+        _ => return None,
+    };
+    Some(sign * value)
+}
+
 /// Ce qu'Afterdusk écrit dans le XMP en V0.1.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct SidecarData {
     /// 0 à 5 étoiles.
     pub rating: u8,
@@ -144,6 +218,8 @@ pub struct SidecarData {
     /// Copies virtuelles, avec leurs réglages et instantanés (JSON),
     /// `afterdusk:Versions`.
     pub versions: Option<String>,
+    /// Lieu posé après coup. `None` à l'écriture : le XMP garde le sien.
+    pub location: Option<XmpLocation>,
 }
 
 pub fn sidecar_path(original: &Path, naming: SidecarNaming) -> PathBuf {
@@ -241,7 +317,23 @@ pub fn read_sidecar(path: &Path) -> Result<Option<SidecarData>, XmpError> {
         develop: meta.property(AFTERDUSK_NS, "Develop").map(|v| v.value),
         snapshots: meta.property(AFTERDUSK_NS, "Snapshots").map(|v| v.value),
         versions: meta.property(AFTERDUSK_NS, "Versions").map(|v| v.value),
+        location: read_location(&meta),
     }))
+}
+
+fn read_location(meta: &XmpMeta) -> Option<XmpLocation> {
+    let latitude = parse_coordinate(&meta.property(xmp_ns::EXIF, "GPSLatitude")?.value)?;
+    let longitude = parse_coordinate(&meta.property(xmp_ns::EXIF, "GPSLongitude")?.value)?;
+    // Lieu écrit par un autre logiciel : posé par l'utilisateur.
+    let source = meta
+        .property(AFTERDUSK_NS, "LocationSource")
+        .and_then(|v| LocationSource::from_db(&v.value))
+        .unwrap_or(LocationSource::Manual);
+    Some(XmpLocation {
+        latitude,
+        longitude,
+        source,
+    })
 }
 
 /// Crée ou met à jour le XMP annexe en conservant les propriétés inconnues.
@@ -315,6 +407,19 @@ pub fn write_sidecar(path: &Path, data: &SidecarData) -> Result<(), XmpError> {
         .map_err(toolkit)?;
     }
 
+    if let Some(loc) = &data.location {
+        for (name, value) in [
+            ("GPSLatitude", xmp_coordinate(loc.latitude, 'N', 'S')),
+            ("GPSLongitude", xmp_coordinate(loc.longitude, 'E', 'W')),
+            ("GPSVersionID", "2.2.0.0".to_owned()),
+        ] {
+            meta.set_property(xmp_ns::EXIF, name, &value.as_str().into())
+                .map_err(toolkit)?;
+        }
+        meta.set_property(AFTERDUSK_NS, "LocationSource", &loc.source.as_db().into())
+            .map_err(toolkit)?;
+    }
+
     let text = meta
         .to_string_with_options(ToStringOptions::default().omit_packet_wrapper())
         .map_err(toolkit)?;
@@ -378,9 +483,55 @@ mod tests {
             develop: Some(r#"{"version":1,"process":1,"light":{"exposure":0.5}}"#.into()),
             snapshots: Some(r#"[{"name":"N&B","settings":{"version":1,"process":1}}]"#.into()),
             versions: None,
+            location: None,
         };
         write_sidecar(&path, &data).unwrap();
         assert_eq!(read_sidecar(&path).unwrap(), Some(data));
+    }
+
+    #[test]
+    fn lieu_aller_retour_et_lieu_d_un_autre_logiciel() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("DSCF0002.xmp");
+        // Cabourg, et un point de l'hémisphère sud-ouest.
+        for (lat, lon) in [
+            (49.2869, -0.1166),
+            (-33.8568, 151.2153),
+            (-22.9519, -43.2105),
+        ] {
+            let data = SidecarData {
+                location: Some(XmpLocation {
+                    latitude: lat,
+                    longitude: lon,
+                    source: LocationSource::Gpx,
+                }),
+                ..SidecarData::default()
+            };
+            write_sidecar(&path, &data).unwrap();
+            let back = read_sidecar(&path).unwrap().unwrap().location.unwrap();
+            assert!((back.latitude - lat).abs() < 1e-6, "{back:?}");
+            assert!((back.longitude - lon).abs() < 1e-6, "{back:?}");
+            assert_eq!(back.source, LocationSource::Gpx);
+        }
+        // Écrire sans lieu ne retire pas celui du XMP.
+        write_sidecar(&path, &SidecarData::default()).unwrap();
+        assert!(read_sidecar(&path).unwrap().unwrap().location.is_some());
+
+        let other = dir.path().join("IMG_0002.xmp");
+        fs::write(
+            &other,
+            r#"<x:xmpmeta xmlns:x="adobe:ns:meta/">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about="" xmlns:exif="http://ns.adobe.com/exif/1.0/"
+    exif:GPSLatitude="48,51,30N" exif:GPSLongitude="2,17.4W"/>
+ </rdf:RDF>
+</x:xmpmeta>"#,
+        )
+        .unwrap();
+        let loc = read_sidecar(&other).unwrap().unwrap().location.unwrap();
+        assert!((loc.latitude - 48.858_333).abs() < 1e-5);
+        assert!((loc.longitude + 2.29).abs() < 1e-9);
+        assert_eq!(loc.source, LocationSource::Manual);
     }
 
     #[test]

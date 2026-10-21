@@ -44,6 +44,7 @@ dependencies = [
  "png 0.18.1",
  "pollster",
  "ravif",
+ "roxmltree",
  "rusqlite",
  "serde",
  "serde_json",

@@ -2,7 +2,7 @@ import { ImageOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { useLibrary } from "../store/library";
-import { formatCaptureTime, formatCompensation } from "../ui/format";
+import { formatCaptureTime, formatCompensation, formatDegrees } from "../ui/format";
 import { ExifLine } from "./ExifLine";
 import { FieldRow, ListRow, PanelNote, PanelSection } from "./PanelSection";
 import { Thumbnail } from "./Thumbnail";
@@ -121,6 +121,19 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
             <FieldRow
               label={t("info.exposureCompensation")}
               value={formatCompensation(d.exposureCompensation, lng)}
+            />
+            <FieldRow
+              label={t("info.place")}
+              value={
+                d.latitude !== null && d.longitude !== null
+                  ? `${t("info.placeValue", {
+                      lat: formatDegrees(d.latitude, lng),
+                      ns: t(d.latitude < 0 ? "info.hemispheres.s" : "info.hemispheres.n"),
+                      lon: formatDegrees(d.longitude, lng),
+                      ew: t(d.longitude < 0 ? "info.hemispheres.w" : "info.hemispheres.e"),
+                    })}${d.locationSource ? ` (${t(`info.placeSources.${d.locationSource}`)})` : ""}`
+                  : undefined
+              }
             />
           </>
         ) : (

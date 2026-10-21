@@ -47,6 +47,8 @@ walkdir = "2"
 xmp_toolkit = "1.12"
 wgpu = { version = "30.0.1", default-features = false, features = ["wgsl", "dx12", "metal", "vulkan", "std"] }
 pollster = "1.0.1"
+# Traces GPX (localisation, V0.3), déjà dans l'arbre des dépendances.
+roxmltree = "0.20"
 
 # HEIF par l'encodeur du système (décision 0007) : WIC sous Windows, avec les
 # extensions HEIF/HEVC de Microsoft ; ImageIO sous macOS.

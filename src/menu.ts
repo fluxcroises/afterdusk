@@ -18,6 +18,7 @@ import { useLayout } from "./store/layout";
 import { pasteTargets } from "./ui/paste";
 import { canRedo, canUndo, useDevelop } from "./store/develop";
 import { useImport } from "./store/import";
+import { useLocate } from "./store/locate";
 import { useLibrary } from "./store/library";
 import { useRescan } from "./store/rescan";
 import { COLOR_LABELS } from "./ui/labels";
@@ -263,6 +264,17 @@ export function buildMenuItems(t: TFunction): Item[] {
         action: whenMarkable(() => {
           const id = useLibrary.getState().selectedId;
           if (id !== null) void useLibrary.getState().setAsCover(id);
+        }),
+      },
+      {
+        id: "locate",
+        text: t("menu.locate"),
+        enabled: canMark,
+        action: whenMarkable(() => {
+          const { selectedIds, selectedId } = useLibrary.getState();
+          void useLocate
+            .getState()
+            .open(selectedIds.length > 0 ? selectedIds : selectedId !== null ? [selectedId] : []);
         }),
       },
       separator,

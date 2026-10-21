@@ -294,6 +294,10 @@ pub struct MediaDetails {
     pub keywords: Vec<String>,
     /// Pile RAW + JPEG : noms des fichiers, le dessus d'abord.
     pub stack_files: Vec<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    /// « exif », « gpx », « phone » ou « manual ».
+    pub location_source: Option<String>,
 }
 
 /// Séparateur des mots-clés dans `group_concat` (caractère de contrôle US).
@@ -310,7 +314,8 @@ pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>,
                     e.focal_length, e.focal_length_35mm, e.aperture, e.shutter, e.iso,
                     e.exposure_compensation,
                     (SELECT group_concat(k.word, char(31)) FROM media_keywords mk
-                       JOIN keywords k ON k.id = mk.keyword_id WHERE mk.media_id = m.id)
+                       JOIN keywords k ON k.id = mk.keyword_id WHERE mk.media_id = m.id),
+                    m.lat, m.lon, m.location_source
              FROM media m
              LEFT JOIN gear c ON c.id = m.camera_id
              LEFT JOIN gear l ON l.id = m.lens_id
@@ -341,6 +346,9 @@ pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>,
                     .map(|k| k.split(KEYWORD_SEPARATOR).map(str::to_owned).collect())
                     .unwrap_or_default(),
                 stack_files: Vec::new(),
+                latitude: r.get(16)?,
+                longitude: r.get(17)?,
+                location_source: r.get(18)?,
             })
         },
     )

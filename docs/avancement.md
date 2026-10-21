@@ -33,6 +33,18 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] Filigrane texte et image, nettoyage des métadonnées, export multiple
 - [ ] Export de 100 photos en JPEG 2048 px en moins de 2 minutes sur une machine de milieu de gamme
 
+## V0.3 : Carte et matériel
+
+- [ ] Les quatre sources de localisation de la section 4.7, avec correction du fuseau horaire
+- [ ] Géocodage inverse hors ligne (pays, ville)
+- [ ] Carte du monde des albums avec grappes, aperçu et filtre par zone
+- [ ] Fond de carte simplifié hors ligne
+- [ ] Inventaire alimenté automatiquement, fusion des doublons, masquage
+- [ ] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
+- [ ] Journal d'entretien et rappels
+- [ ] Export d'inventaire PDF et CSV
+- [ ] Albums intelligents
+
 ## Journal
 
 ### 2026-10-18
@@ -405,3 +417,12 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
   - retour visuel d'un curseur, image de 2048 px avec tous les réglages en jeu : 95 % des rendus en 11 ms au GPU, en 81 ms au processeur (`AFTERDUSK_GPU=0`) ;
   - export de 100 photos en JPEG 2048 px (preset Web) : 14,6 s.
 - Les deux critères chiffrés restent ouverts : cette machine est au-dessus du milieu de gamme visé. À mesurer sur le Mac de l'utilisateur avec la même commande. Au processeur, une machine modeste dépasserait les 100 ms : c'est le GPU, même intégré, qui tient ce critère.
+
+### 2026-10-21 (suite) : V0.3, choix de départ et sources de localisation
+
+- Choix de l'utilisateur ([décision 0008](decisions/0008-carte-et-materiel.md)) : tuiles OpenFreeMap, frontières Natural Earth hors ligne, géocodage GeoNames (lieux de plus de 1000 habitants), photo de l'appareil sinon silhouette dessinée (ni photo ni logo de fabricant), lieux et carte avant le matériel.
+- Photo > Localiser… : trace GPX (une ou plusieurs ; position interpolée à l'heure de la photo, écart maximal réglable, 10 min par défaut) ou photos de téléphone du même moment (la plus proche dans une fenêtre réglable, 30 min par défaut). Heure du boîtier ramenée en UTC par le fuseau qu'il a écrit, ou par un décalage saisi (fuseau et avance de l'horloge). Une pile RAW + JPEG prend un seul lieu. Le GPS du boîtier n'est jamais remplacé ; un lieu déjà posé seulement sur demande. Bilan dans la boîte (localisées, déjà localisées, sans point proche, sans heure).
+- Le lieu va en base (`lat`, `lon`, `location_source`) et dans le XMP (`exif:GPSLatitude`, `exif:GPSLongitude`, `afterdusk:LocationSource`), jamais dans l'original ; la réanalyse le retrouve ; l'export l'écrit dans le fichier sauf preset sans GPS. Traces gardées pour la carte (migration 0008, table `gpx_tracks`). Fiche Informations : ligne « Lieu » avec sa source.
+- Corrigé au passage : le GPS des JPEG et HEIF (photos de téléphone, compagnons des RAW) n'était pas lu à l'import.
+- Tests : rapprochement (interpolation, trous de la trace, fenêtre), lecture GPX, aller-retour XMP des coordonnées, et de bout en bout sur de vrais RAW : trace GPX puis XMP, réanalyse qui retrouve le lieu, photo de téléphone générée ; originaux, trace et photo de téléphone inchangés. Boîte testée dans l'interface (Vitest).
+- Non vu à l'écran dans l'application compilée. Restent pour ce critère : saisie manuelle (après le géocodage et la carte) et correction du fuseau horaire proposée d'après le lieu.

@@ -171,7 +171,13 @@ export interface MediaDetails {
   keywords: string[];
   /** Pile RAW + JPEG : noms des fichiers, le dessus d'abord. */
   stackFiles: string[];
+  latitude: number | null;
+  longitude: number | null;
+  locationSource: LocationSource | null;
 }
+
+/** Origine d'un lieu : GPS du boîtier, trace GPX, téléphone, saisie. */
+export type LocationSource = "exif" | "gpx" | "phone" | "manual";
 
 export type ColorName = "red" | "yellow" | "green" | "blue" | "purple";
 /** -1 rejetée, 0 sans drapeau, 1 retenue. */

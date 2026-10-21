@@ -180,8 +180,26 @@ fn export_one(
     let mark = settings.watermark.as_ref().filter(|_| preset.watermark);
     let image = render_photo(&mut raw, &develop, profile.as_ref(), options, mark)?;
     drop(raw);
+    let mut camera = read_metadata(&photo.path, MediaFormat::Raw);
+    // Lieu posé après coup (trace, téléphone, saisie) : il suit la photo,
+    // sauf si le preset retire le GPS.
+    if camera.gps.is_none() {
+        camera.gps = conn
+            .query_row(
+                "SELECT lat, lon FROM media WHERE id = ?1 AND lat IS NOT NULL",
+                [photo.media_id],
+                |r| {
+                    Ok(crate::raw::Gps {
+                        latitude: r.get(0)?,
+                        longitude: r.get(1)?,
+                        altitude: None,
+                    })
+                },
+            )
+            .ok();
+    }
     let meta = PhotoMeta {
-        camera: read_metadata(&photo.path, MediaFormat::Raw),
+        camera,
         sidecar: photo
             .sidecar
             .as_ref()

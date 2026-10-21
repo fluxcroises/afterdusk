@@ -138,7 +138,21 @@
     "dimensions": "Dimensions",
     "exposureCompensation": "Exposure comp.",
     "noKeywords": "No keywords.",
-    "stackFiles": "Stack"
+    "stackFiles": "Stack",
+    "place": "Location",
+    "placeValue": "{{lat}} {{ns}}, {{lon}} {{ew}}",
+    "hemispheres": {
+      "n": "N",
+      "s": "S",
+      "e": "E",
+      "w": "W"
+    },
+    "placeSources": {
+      "exif": "camera GPS",
+      "gpx": "GPX track",
+      "phone": "phone",
+      "manual": "entered"
+    }
   },
   "cull": {
     "emptyTitle": "No photos to cull",
@@ -263,7 +277,8 @@
     "trashRaw": "Move RAW to Trash",
     "copySettings": "Copy Settings…",
     "pasteSettings": "Paste Settings",
-    "rescanLibrary": "Rescan Library"
+    "rescanLibrary": "Rescan Library",
+    "locate": "Locate…"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -311,7 +326,8 @@
     "copyFailed": "Copying the original failed.",
     "writeFailed": "Cannot write to the destination folder.",
     "exportRunning": "An export is already running.",
-    "heifUnavailable": "No HEIF encoder. On Windows, it comes from Microsoft's HEIF and HEVC extensions."
+    "heifUnavailable": "No HEIF encoder. On Windows, it comes from Microsoft's HEIF and HEVC extensions.",
+    "gpxUnreadable": "Unreadable GPX track."
   },
   "home": {
     "morning": "Hello",
@@ -931,5 +947,47 @@
     "failed_one": "{{count}} unreadable file:",
     "failed_other": "{{count}} unreadable files:",
     "progress": "Rescan: {{done}} / {{total}}"
+  },
+  "locate": {
+    "title_one": "Locate {{count}} photo",
+    "title_other": "Locate {{count}} photos",
+    "source": "Source",
+    "sources": {
+      "gpx": "GPX track",
+      "phone": "Phone photos"
+    },
+    "choose": {
+      "gpx": "Choose tracks…",
+      "phone": "Choose photos…"
+    },
+    "phonePhotos": "Photos",
+    "noFile": "No file chosen",
+    "files_one": "{{count}} file",
+    "files_other": "{{count}} files",
+    "clock": "Camera time",
+    "written_one": "Time zone written by the camera: UTC {{offset}} ({{count}} of {{total}})",
+    "written_other": "Time zone written by the camera: UTC {{offset}} ({{count}} of {{total}})",
+    "writtenNone": "No time zone written by the camera",
+    "utc": "Offset from UTC:",
+    "offsetHours": "Offset from UTC, in hours",
+    "hours": "h",
+    "minutes": {
+      "gpx": "Maximum gap with the track (min)",
+      "phone": "Maximum gap with the phone (min)"
+    },
+    "replace": "Replace locations already set",
+    "confirm": "Locate",
+    "report": {
+      "located_one": "{{count}} photo located",
+      "located_other": "{{count}} photos located",
+      "kept_one": "{{count}} already located",
+      "kept_other": "{{count}} already located",
+      "unmatched_one": "{{count}} with no point close enough",
+      "unmatched_other": "{{count}} with no point close enough",
+      "noTime_one": "{{count}} without time or time zone",
+      "noTime_other": "{{count}} without time or time zone",
+      "unusable_one": "{{count}} file without position or time",
+      "unusable_other": "{{count}} files without position or time"
+    }
   }
 }

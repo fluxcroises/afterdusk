@@ -53,3 +53,20 @@ export function albumDates(
   if (!album.endDate || album.endDate === album.startDate) return format.format(start);
   return `${format.format(start)} – ${format.format(day(album.endDate))}`;
 }
+
+/** Degrés sans signe, quatre décimales (une dizaine de mètres) : « 49,2869° ». */
+export function formatDegrees(value: number, language: string): string {
+  return `${Math.abs(value).toLocaleString(language, {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  })}°`;
+}
+
+/** « +02:00 » d'un décalage en minutes. */
+export function formatOffset(minutes: number): string {
+  const sign = minutes < 0 ? "-" : "+";
+  const abs = Math.abs(minutes);
+  const h = String(Math.floor(abs / 60)).padStart(2, "0");
+  const m = String(abs % 60).padStart(2, "0");
+  return `${sign}${h}:${m}`;
+}

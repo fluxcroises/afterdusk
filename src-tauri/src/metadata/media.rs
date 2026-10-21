@@ -202,8 +202,57 @@ fn read_image(path: &Path) -> Option<MediaMetadata> {
             .and_then(|v| u8::try_from(v).ok())
             .filter(|v| (1..=8).contains(v))
             .unwrap_or(1),
-        gps: None,
+        gps: gps(&field),
         tags,
+    })
+}
+
+/// Coordonnée EXIF : degrés, minutes, secondes en rationnels, et sa référence
+/// (N/S, E/O).
+fn coordinate(value: &Value, reference: Option<String>, negative: &str) -> Option<f64> {
+    let Value::Rational(parts) = value else {
+        return None;
+    };
+    let dms: Vec<f64> = parts
+        .iter()
+        .filter(|r| r.denom != 0)
+        .map(|r| r.to_f64())
+        .collect();
+    let [d, m, s] = dms.as_slice() else {
+        return None;
+    };
+    let v = d + m / 60.0 + s / 3600.0;
+    Some(if reference.as_deref() == Some(negative) {
+        -v
+    } else {
+        v
+    })
+}
+
+fn gps<'a>(field: &impl Fn(Tag) -> Option<&'a Value>) -> Option<Gps> {
+    let reference = |tag| field(tag).and_then(ascii);
+    let latitude = coordinate(
+        field(Tag::GPSLatitude)?,
+        reference(Tag::GPSLatitudeRef),
+        "S",
+    )?;
+    let longitude = coordinate(
+        field(Tag::GPSLongitude)?,
+        reference(Tag::GPSLongitudeRef),
+        "W",
+    )?;
+    // 0,0 : téléphones sans position qui écrivent tout de même la balise.
+    if latitude == 0.0 && longitude == 0.0 {
+        return None;
+    }
+    let altitude = field(Tag::GPSAltitude).and_then(rational).map(|a| {
+        let below = field(Tag::GPSAltitudeRef).and_then(|v| v.get_uint(0)) == Some(1);
+        if below { -f64::from(a) } else { f64::from(a) }
+    });
+    Some(Gps {
+        latitude,
+        longitude,
+        altitude,
     })
 }
 

@@ -3,6 +3,7 @@ pub mod db;
 pub mod develop;
 pub mod devices;
 pub mod export;
+pub mod geo;
 pub mod import;
 pub mod library;
 pub mod metadata;
@@ -174,6 +175,9 @@ pub fn run() {
             commands::export::export_reveal,
             commands::export::export_preview,
             commands::export::export_heif_available,
+            commands::geo::geo_clock,
+            commands::geo::geo_locate_gpx,
+            commands::geo::geo_locate_phone,
             commands::library::library_rescan,
             commands::presets::presets_list,
             commands::presets::presets_create,

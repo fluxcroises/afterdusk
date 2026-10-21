@@ -16,7 +16,7 @@ use serde::Serialize;
 
 use super::{Library, LibraryError, get_library, paths};
 use crate::db::now_utc;
-use crate::metadata::xmp::{self, ColorLabel, Flag};
+use crate::metadata::xmp::{self, ColorLabel, Flag, LocationSource, XmpLocation};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MarkError {
@@ -87,13 +87,16 @@ struct Pending {
     color: Option<String>,
     /// Compteur de modifications lu avec la photo.
     revision: i64,
+    /// Lieu de la base.
+    location: Option<XmpLocation>,
 }
 
 /// Écrit dans les XMP jusqu'à `limit` photos en attente.
 pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport, MarkError> {
     let pending: Vec<Pending> = conn
         .prepare(
-            "SELECT id, library_id, sidecar_path, rating, flag, color, xmp_pending FROM media
+            "SELECT id, library_id, sidecar_path, rating, flag, color, xmp_pending,
+                    lat, lon, location_source FROM media
              WHERE xmp_pending > 0 AND state = 'normal'
              ORDER BY updated_at, id LIMIT ?1",
         )?
@@ -106,6 +109,16 @@ pub fn flush_pending_xmp(conn: &Connection, limit: usize) -> Result<FlushReport,
                 flag: r.get(4)?,
                 color: r.get(5)?,
                 revision: r.get(6)?,
+                location: match (r.get(7)?, r.get(8)?, r.get::<_, Option<String>>(9)?) {
+                    (Some(latitude), Some(longitude), Some(source)) => {
+                        LocationSource::from_db(&source).map(|source| XmpLocation {
+                            latitude,
+                            longitude,
+                            source,
+                        })
+                    }
+                    _ => None,
+                },
             })
         })?
         .collect::<Result<_, _>>()?;
@@ -162,6 +175,11 @@ fn write_marks(
     data.develop = develop.develop;
     data.snapshots = develop.snapshots;
     data.versions = develop.versions;
+    // Le GPS du boîtier reste dans l'original ; seul un lieu posé après coup
+    // va dans le XMP.
+    if let Some(loc) = p.location.filter(|l| l.source != LocationSource::Exif) {
+        data.location = Some(loc);
+    }
     xmp::write_sidecar(&path, &data).map_err(|e| e.to_string())
 }
 

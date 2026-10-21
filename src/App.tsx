@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { useAppEvents } from "./appEvents";
 import { AboutDialog } from "./components/AboutDialog";
+import { LocateDialog } from "./components/LocateDialog";
 import { DeviceBanner } from "./components/DeviceBanner";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { PerfOverlay } from "./components/PerfOverlay";
@@ -45,6 +46,7 @@ export default function App() {
       {!immersive && <StatusBar />}
       <PerfOverlay />
       <AboutDialog />
+      <LocateDialog />
     </div>
   );
 }

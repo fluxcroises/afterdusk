@@ -849,6 +849,13 @@ pub(crate) fn insert_media(
         )?),
         None => None,
     };
+    // GPS du boîtier, sinon lieu posé après coup et gardé dans le XMP
+    // (base reconstruite).
+    let location = match (&m.gps, &marks.location) {
+        (Some(g), _) => Some((g.latitude, g.longitude, "exif")),
+        (None, Some(l)) => Some((l.latitude, l.longitude, l.source.as_db())),
+        (None, None) => None,
+    };
     let now = now_utc();
     tx.execute(
         "INSERT INTO media (library_id, album_id, kind, path, sidecar_path, original_name,
@@ -873,9 +880,9 @@ pub(crate) fn insert_media(
             m.width,
             m.height,
             m.orientation,
-            m.gps.as_ref().map(|g| g.latitude),
-            m.gps.as_ref().map(|g| g.longitude),
-            m.gps.as_ref().map(|_| "exif"),
+            location.map(|l| l.0),
+            location.map(|l| l.1),
+            location.map(|l| l.2),
             camera_id,
             lens_id,
             new.import_id,
