@@ -1,14 +1,22 @@
 //! Détection des ratés (cahier des charges, 4.3), entièrement en local :
-//! flou ou bougé, sous ou surexposition. Les yeux fermés viendront avec un
-//! modèle ONNX, après prototype. Afterdusk signale, il ne rejette jamais.
+//! flou ou bougé, sous ou surexposition, yeux fermés (`eyes`, décision 0010).
+//! Afterdusk signale, il ne rejette jamais.
 
+pub mod eyes;
 pub mod run;
 
 use image::imageops::{self, FilterType};
 use image::{GrayImage, RgbImage};
 
 /// Version de l'analyse : la changer relance l'analyse des photos déjà vues.
-pub const VERSION: i64 = 1;
+/// 2 : yeux fermés. Sans ONNX Runtime, l'analyse reste en version 1 et sera
+/// reprise quand la bibliothèque sera là.
+pub const VERSION: i64 = 2;
+pub const VERSION_WITHOUT_EYES: i64 = 1;
+
+/// Côté de l'image lue pour l'analyse : assez grand pour les visages ; le
+/// flou et l'exposition se mesurent ensuite à `ANALYSIS_SIDE`.
+pub const SOURCE_SIDE: u32 = 2048;
 
 /// Côté long de l'image analysée : les mesures dépendent de l'échelle.
 pub const ANALYSIS_SIDE: u32 = 1024;

@@ -1,6 +1,7 @@
 //! Détection des ratés de bout en bout : les six RAW de test sont nets et
-//! bien exposés ; une photo floutée et une photo brûlée sont signalées, et le
-//! filtre « Ratés probables » ne garde qu'elles. Une seconde analyse ne
+//! bien exposés ; une photo floutée, une photo brûlée et un portrait aux yeux
+//! fermés sont signalés, pas le portrait aux yeux ouverts, et le filtre
+//! « Ratés probables » ne garde qu'eux. Une seconde analyse ne
 //! refait rien. Les originaux ne sont que lus.
 
 mod common;
@@ -21,7 +22,10 @@ fn rates_signales_et_filtres() {
     let dir = tempfile::tempdir().unwrap();
     let card = dir.path().join("carte");
     fs::create_dir_all(&card).unwrap();
-    for name in common::RAW_SAMPLES {
+    for name in common::RAW_SAMPLES
+        .iter()
+        .chain(&["visage_ouverts.jpg", "visage_fermes.jpg"])
+    {
         fs::copy(common::sample(name), card.join(name)).unwrap();
     }
     // Une prise floue (bougé simulé) et une prise brûlée, en JPEG.
@@ -74,8 +78,12 @@ fn rates_signales_et_filtres() {
         |_, _| calls += 1,
     )
     .unwrap();
-    assert_eq!((report.analyzed, report.misses, report.skipped), (8, 2, 0));
-    assert_eq!(calls, 8);
+    assert_eq!((report.analyzed, report.misses, report.skipped), (10, 3, 0));
+    assert!(
+        report.eyes,
+        "ONNX Runtime : node scripts/fetch-onnxruntime.mjs"
+    );
+    assert_eq!(calls, 10);
 
     // Chaque photo porte ses raisons ; les autres n'en ont aucune.
     let all = list_media(&conn, lib.id, &MediaQuery::default()).unwrap();
@@ -92,6 +100,8 @@ fn rates_signales_et_filtres() {
         "blur over",
         "un aplat brûlé n'a aucun détail"
     );
+    assert_eq!(misses("visage_fermes.jpg"), "eyes");
+    assert_eq!(misses("visage_ouverts.jpg"), "");
     assert!(
         all.iter()
             .filter(|m| !m.file_name.ends_with(".jpg"))
@@ -112,7 +122,7 @@ fn rates_signales_et_filtres() {
         .map(|m| m.file_name)
         .collect();
     names.sort();
-    assert_eq!(names, ["brulee.jpg", "floue.jpg"]);
+    assert_eq!(names, ["brulee.jpg", "floue.jpg", "visage_fermes.jpg"]);
 
     // Déjà analysées par cette version : rien à refaire.
     let again = run::run(

@@ -622,3 +622,17 @@ Critères (cahier des charges, section 7) :
 - La boîte est montée dans la fenêtre principale et dans l'accueil. Les autorisations `dialog:allow-ask` et `dialog:allow-message` ne servent plus et sont retirées.
 - Les sélecteurs de fichiers et « Enregistrer sous » restent ceux du système : ce sont des explorateurs complets (favoris, réseau, recherche), qu'il vaut mieux ne pas refaire.
 - Tests : focus sur Annuler, Échap, validation, file d'attente, message à un seul bouton. Pas encore vérifié dans l'application compilée.
+
+### 2026-10-21 (suite) : V0.4, yeux fermés (décision 0010)
+
+- Prototype hors du dépôt, sur onze photos libres de Wikimedia Commons (CC0 et domaine public), notées à la main :
+  - YuNet trouve les visages et leurs yeux ; Face Mesh V2 place 478 repères ; le rapport d'ouverture de chaque œil (EAR) dit s'il est fermé ;
+  - deux yeux fermés trouvés sur trois (le troisième est un profil endormi, sans visage trouvé), aucune fausse alerte, lunettes de soleil, regard baissé et rire compris ;
+  - tract et ort donnent les mêmes valeurs ; ort est deux à cinq fois plus rapide. L'utilisateur a choisi ort, malgré la bibliothèque native.
+- ONNX Runtime 1.22.0, pour la bibliothèque universelle sur Mac (Intel compris), récupérée par `scripts/fetch-onnxruntime.mjs` depuis la publication officielle de Microsoft, vérifiée par SHA-256 et livrée par Tauri (12,4 Mo sous Windows, 70,8 Mo sous macOS). La CI la récupère et la garde en cache. Les deux modèles (5,1 Mo) sont versionnés avec leurs licences et intégrés à l'exécutable. « À propos » cite ONNX Runtime, YuNet, MediaPipe Face Mesh, et printpdf, oublié lors de l'export d'inventaire.
+- Analyse version 2 :
+  - l'image est lue à 2 048 px pour bien voir les visages ; le flou et l'exposition restent mesurés à 1 024 px ;
+  - une photo est signalée « Yeux fermés probables » si un visage (cinq au plus, les plus grands, d'au moins 48 px) a les deux yeux sous 0,12 ;
+  - les photos déjà analysées sont reprises ; sans la bibliothèque, l'analyse reste en version 1 et sera reprise plus tard.
+- Échantillons de test : deux portraits CC0 de Wikimedia Commons, yeux ouverts et yeux fermés, ajoutés au manifeste avec leur source et leur empreinte (le script envoie maintenant un User-Agent, que Wikimedia exige).
+- Tests : rapport d'ouverture, portraits réels (ouverts, fermés, sans visage), et de bout en bout, avec le portrait aux yeux fermés signalé « eyes » et filtré, l'autre non. Le prototype a montré la vitesse ; le critère des 1 000 photos se mesurera sur l'analyse complète, en version optimisée. Pas encore vérifié dans l'application compilée.

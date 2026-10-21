@@ -469,7 +469,7 @@ Crée docs/avancement.md avec les critères de la V0.1 et coche-les au fur et à
 - [ ] Choisir le nom du dépôt GitHub (le compte « afterdusk » est déjà pris : `afterdusk-app` ou `afterdusk-photo`)
 - [ ] Choisir entre Exiv2 et xmp-toolkit-rs pour les métadonnées (prototype en V0.1)
 - [ ] Choisir le fournisseur de tuiles de carte et vérifier ses conditions d'usage
-- [ ] Choisir les modèles ONNX de détection des yeux fermés et vérifier leur licence
+- [x] Choisir les modèles ONNX de détection des yeux fermés et vérifier leur licence (décision 0010 : YuNet, MIT ; MediaPipe Face Mesh V2, Apache 2.0 ; ONNX Runtime 1.22.0, MIT)
 - [ ] Signature des applications : certificat de développeur Apple (99 $ par an) pour macOS, certificat de signature de code pour Windows ou distribution non signée au début
 - [ ] Logo, icône et identité visuelle
 

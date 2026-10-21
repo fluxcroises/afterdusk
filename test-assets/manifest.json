@@ -31,6 +31,18 @@
       "name": "ricoh_gr-iii.DNG",
       "url": "https://raw.pixls.us/data/Ricoh/GR%20III/R0000357.DNG",
       "sha256": "05513ee72f7cac4165534c9f64995412084f414a033c80c473c79fd94154292e"
+    },
+    {
+      "name": "visage_ouverts.jpg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/7/70/18_year_old_girl.jpg",
+      "license": "CC0 1.0 (Wikimedia Commons, « 18 year old girl.jpg »)",
+      "sha256": "f1fc857b7302b9dfd2be42945c57e09471b7601c1df668f4e25c86162e46fec4"
+    },
+    {
+      "name": "visage_fermes.jpg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/35/Closed_Eyes_%28Unsplash%29.jpg",
+      "license": "CC0 1.0 (Wikimedia Commons, « Closed Eyes (Unsplash).jpg »)",
+      "sha256": "651b8d11fd46c2c9080ec0f4a305528e79b803a34216ea320602e887851714fb"
     }
   ]
 }

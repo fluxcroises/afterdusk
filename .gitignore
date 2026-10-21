@@ -29,3 +29,6 @@ test-assets/*
 
 # Original de la photo d accueil (pleine définition, métadonnées GPS) : non versionné
 src/assets/accueil.JPG
+
+# ONNX Runtime (décision 0010) : récupéré par scripts/fetch-onnxruntime.mjs
+src-tauri/resources/onnxruntime/

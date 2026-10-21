@@ -48,6 +48,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "resources": {
+      "resources/onnxruntime/": "onnxruntime/"
+    },
     "category": "Photography",
     "copyright": "GPL-3.0-or-later",
     "shortDescription": "Gestion photo open source"

@@ -47,6 +47,15 @@ jobs:
       - name: Télécharger les échantillons manquants
         run: node scripts/fetch-test-assets.mjs
 
+      - name: ONNX Runtime (cache)
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/resources/onnxruntime
+          key: onnxruntime-${{ runner.os }}-${{ hashFiles('scripts/fetch-onnxruntime.mjs') }}
+
+      - name: ONNX Runtime — bibliothèque officielle, vérifiée
+        run: node scripts/fetch-onnxruntime.mjs
+
       - name: Dépendances de l'interface
         run: npm ci
 

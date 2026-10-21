@@ -114,6 +114,12 @@ pub fn run() {
             app.manage(XmpWriter::start(app.handle().clone(), db_path.clone()));
             app.manage(commands::develop::DevelopEngine::new());
             app.manage(commands::export::ExportState::default());
+            // ONNX Runtime livré avec l'application (décision 0010).
+            if let Ok(resources) = app.path().resource_dir() {
+                analysis::eyes::set_library_path(
+                    resources.join("onnxruntime").join(analysis::eyes::LIBRARY),
+                );
+            }
             app.manage(AppState::new(db_path, cache_root));
             app.manage(queue);
             commands::library::watch_libraries(

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Télécharge les échantillons RAW de test-assets/manifest.json et vérifie leur SHA-256.
+// Télécharge les échantillons de test-assets/manifest.json (RAW, portraits libres)
+// et vérifie leur SHA-256.
 //
 //   node scripts/fetch-test-assets.mjs           télécharge les fichiers absents ou altérés
 //   node scripts/fetch-test-assets.mjs --update  écrit dans le manifeste les sommes vides
@@ -28,7 +29,10 @@ for (const file of manifest.files) {
   }
 
   process.stdout.write(`télécharge ${file.name}… `);
-  const res = await fetch(file.url);
+  // Wikimedia refuse les requêtes sans User-Agent identifiable.
+  const res = await fetch(file.url, {
+    headers: { "User-Agent": "Afterdusk-tests/1.0 (https://github.com/lewisbedar/afterdusk-app)" },
+  });
   if (!res.ok) {
     console.log(`échec HTTP ${res.status}`);
     failed = true;
