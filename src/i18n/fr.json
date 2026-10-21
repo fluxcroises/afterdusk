@@ -342,7 +342,10 @@
     "gearPhoto": "Cette image ne peut pas être utilisée.",
     "gearExport": "L'inventaire n'a pas pu être enregistré.",
     "maintenanceNotFound": "Cette intervention n'existe plus.",
-    "invalidDate": "Date invalide."
+    "invalidDate": "Date invalide.",
+    "collectionNotFound": "Cette collection n'existe plus.",
+    "collectionKind": "Cette action ne s'applique pas à ce type de collection.",
+    "emptyName": "Donnez-lui un nom."
   },
   "home": {
     "morning": "Bonjour",
@@ -442,7 +445,10 @@
     "noMatchTitle": "Aucune photo ne correspond",
     "noAlbum": "Aucun album ne correspond.",
     "searchHint": "Albums, noms de fichiers, mots-clés et lieux",
-    "mapArea": "Zone de la carte"
+    "mapArea": "Zone de la carte",
+    "focal": "Focale",
+    "anyFocal": "Toutes les focales",
+    "focalValue": "{{mm}} mm"
   },
   "pile": {
     "badge_one": "{{count}} fichier",
@@ -1192,5 +1198,25 @@
     "purchase": "Achat",
     "lastMaintenance": "Dernier entretien",
     "footer": "Page {{page}} sur {{pages}}"
+  },
+  "collections": {
+    "newManual": "Nouvelle collection…",
+    "newSmart": "Enregistrer le filtre comme album intelligent…",
+    "name": {
+      "manual": "Nom de la nouvelle collection",
+      "smart": "Nom du nouvel album intelligent"
+    },
+    "smart": "intelligent",
+    "rename": "Renommer",
+    "updateFilter": "Remplacer par le filtre actuel",
+    "addSelection_one": "Ajouter la photo sélectionnée à « {{name}} »",
+    "addSelection_other": "Ajouter les {{count}} photos sélectionnées à « {{name}} »",
+    "removeSelection_one": "Retirer la photo de la collection",
+    "removeSelection_other": "Retirer les {{count}} photos de la collection",
+    "delete": "Supprimer",
+    "confirmDelete": {
+      "manual": "Supprimer la collection « {{name}} » ? Ses photos restent dans leurs albums.",
+      "smart": "Supprimer l'album intelligent « {{name}} » ? Ses photos restent dans leurs albums."
+    }
   }
 }

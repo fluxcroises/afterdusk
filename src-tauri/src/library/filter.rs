@@ -1,5 +1,6 @@
 //! Filtres et recherche des grilles : période, note, drapeau, couleur, boîtier,
-//! objectif et texte libre. Tout est traduit en SQL paramétré.
+//! objectif, focale, collection et texte libre. Tout est traduit en SQL
+//! paramétré. Un album intelligent enregistre ce filtre (`collections`).
 
 use rusqlite::types::Value;
 use rusqlite::{Connection, params};
@@ -8,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use super::LibraryError;
 
 /// Comparaison de la note, comme le filtre d'attributs de Lightroom.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RatingOp {
     AtLeast,
@@ -16,7 +17,7 @@ pub enum RatingOp {
     Exactly,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RatingFilter {
     pub op: RatingOp,
@@ -34,7 +35,7 @@ pub enum MediaSort {
 }
 
 /// Filtre d'une grille ; un champ absent ne filtre pas.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct MediaFilter {
     /// Jour de prise de vue, AAAA-MM-JJ, bornes comprises.
@@ -52,6 +53,11 @@ pub struct MediaFilter {
     /// Zone tracée sur la carte : ouest, sud, est, nord, en millionièmes de
     /// degré. L'ouest peut dépasser l'est (zone à cheval sur 180°).
     pub area: Option<[i64; 4]>,
+    /// Focale réelle en millimètres, bornes comprises (une seule focale :
+    /// deux fois la même valeur).
+    pub focal: Option<[f64; 2]>,
+    /// Collection manuelle : ses photos seulement.
+    pub collection_id: Option<i64>,
 }
 
 const COLORS: [&str; 5] = ["red", "yellow", "green", "blue", "purple"];
@@ -180,6 +186,22 @@ impl MediaFilter {
             values.push(deg(west).into());
             values.push(deg(east).into());
         }
+        if let Some([a, b]) = self.focal.filter(|f| f.iter().all(|v| v.is_finite())) {
+            clauses.push(
+                "m.id IN (SELECT media_id FROM media_exif
+                           WHERE round(focal_length) BETWEEN ? AND ?)"
+                    .to_owned(),
+            );
+            values.push(a.min(b).round().into());
+            values.push(a.max(b).round().into());
+        }
+        if let Some(id) = self.collection_id {
+            clauses.push(
+                "m.id IN (SELECT media_id FROM collection_media WHERE collection_id = ?)"
+                    .to_owned(),
+            );
+            values.push(id.into());
+        }
         (clauses, values)
     }
 
@@ -209,12 +231,20 @@ pub struct GearOption {
     pub count: i64,
 }
 
-/// Choix proposés par la barre de filtres : boîtiers et objectifs présents.
+#[derive(Debug, Clone, Serialize)]
+pub struct FocalOption {
+    /// Focale arrondie au millimètre.
+    pub value: f64,
+    pub count: i64,
+}
+
+/// Choix proposés par la barre de filtres : boîtiers, objectifs et focales présents.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FilterOptions {
     pub cameras: Vec<GearOption>,
     pub lenses: Vec<GearOption>,
+    pub focals: Vec<FocalOption>,
     /// Premier et dernier jour de prise de vue.
     pub first_day: Option<String>,
     pub last_day: Option<String>,
@@ -240,6 +270,21 @@ pub fn filter_options(conn: &Connection, library_id: i64) -> Result<FilterOption
             .collect::<Result<_, _>>()?;
         Ok(rows)
     };
+    let focals = conn
+        .prepare(&format!(
+            "SELECT round(e.focal_length) AS f, count(*)
+             FROM media m JOIN media_exif e ON e.media_id = m.id
+             WHERE m.library_id = ?1 AND m.state = 'normal' AND e.focal_length > 0 AND {}
+             GROUP BY f ORDER BY f",
+            super::pairs::HEAD_SQL
+        ))?
+        .query_map([library_id], |r| {
+            Ok(FocalOption {
+                value: r.get(0)?,
+                count: r.get(1)?,
+            })
+        })?
+        .collect::<Result<_, _>>()?;
     let (first_day, last_day) = conn.query_row(
         "SELECT min(substr(captured_at, 1, 10)), max(substr(captured_at, 1, 10))
          FROM media WHERE library_id = ?1 AND state = 'normal'",
@@ -249,6 +294,7 @@ pub fn filter_options(conn: &Connection, library_id: i64) -> Result<FilterOption
     Ok(FilterOptions {
         cameras: gear("camera_id")?,
         lenses: gear("lens_id")?,
+        focals,
         first_day,
         last_day,
     })

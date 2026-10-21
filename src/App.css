@@ -4047,3 +4047,42 @@ input.locate-offset {
   justify-content: flex-end;
   gap: var(--ad-space-2);
 }
+
+/* Collections du panneau de gauche. */
+.panel-section-tools {
+  display: flex;
+  margin-left: auto;
+}
+
+.collection-row {
+  display: flex;
+  align-items: center;
+}
+
+.collection-row .list-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.collection-row .icon-button {
+  flex: none;
+  margin-right: calc(-1 * var(--ad-space-2));
+}
+
+.collection-name input {
+  width: 100%;
+  height: var(--ad-field-height);
+  padding: 0 var(--ad-space-2);
+  font: var(--ad-font-ui);
+  color: var(--ad-text);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-accent);
+  border-radius: var(--ad-radius-sm);
+}
+
+.collection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ad-space-1) var(--ad-space-3);
+  padding-top: var(--ad-space-2);
+}

@@ -68,6 +68,10 @@ export interface MediaFilter {
   query?: string;
   /** Zone tracée sur la carte : ouest, sud, est, nord, en millionièmes de degré. */
   area?: [number, number, number, number];
+  /** Focale réelle en mm, bornes comprises. */
+  focal?: [number, number];
+  /** Collection manuelle : posée par le magasin, pas par la barre de filtres. */
+  collectionId?: number;
 }
 
 export type MediaSort = "captureTime" | "fileName" | "rating";
@@ -82,6 +86,8 @@ export interface GearOption {
 export interface FilterOptions {
   cameras: GearOption[];
   lenses: GearOption[];
+  /** Focales présentes, arrondies au millimètre. */
+  focals: { value: number; count: number }[];
   firstDay: string | null;
   lastDay: string | null;
 }
@@ -97,7 +103,8 @@ export function isFiltering(filter: MediaFilter): boolean {
     filter.cameraId !== undefined ||
     filter.lensId !== undefined ||
     !!filter.query?.trim() ||
-    filter.area !== undefined
+    filter.area !== undefined ||
+    filter.focal !== undefined
   );
 }
 
@@ -269,6 +276,8 @@ interface LibraryState {
   albums: AlbumSummary[];
   /** Album affiché ; `null` pour toutes les photos. */
   albumId: number | null;
+  /** Collection manuelle affichée, à la place d'un album. */
+  collectionId: number | null;
   /** Vue Corbeille : les photos jetées, à restaurer ou à supprimer. */
   trash: boolean;
   trashCount: number;
@@ -308,6 +317,10 @@ interface LibraryState {
 
   load: (libraryId: number | null) => Promise<void>;
   showAlbum: (albumId: number | null) => Promise<void>;
+  /** Affiche une collection manuelle (ses photos, tous albums confondus). */
+  showCollection: (collectionId: number) => Promise<void>;
+  /** Toutes les photos, filtrées comme un album intelligent. */
+  applyFilter: (filter: MediaFilter) => Promise<void>;
   select: (mediaId: number, mode?: SelectMode) => Promise<void>;
   /** Change la photo active sans toucher à la sélection (panneaux de comparaison). */
   activate: (mediaId: number) => Promise<void>;
@@ -396,9 +409,15 @@ export const useLibrary = create<LibraryState>((set, get) => {
   }
 
   /** Ce qu'affiche la grille : source (album, corbeille), filtre et tri. */
-  function query(albumId = get().albumId, trash = get().trash) {
+  function query(albumId = get().albumId, trash = get().trash, collectionId = get().collectionId) {
     const { filter, sort, expanded } = get();
-    return { albumId: trash ? null : albumId, trashed: trash, filter, sort, expanded };
+    return {
+      albumId: trash ? null : albumId,
+      trashed: trash,
+      filter: collectionId !== null && !trash ? { ...filter, collectionId } : filter,
+      sort,
+      expanded,
+    };
   }
 
   /** Recharge la grille, la photo active gardée si elle y est encore. */
@@ -463,6 +482,7 @@ export const useLibrary = create<LibraryState>((set, get) => {
     libraryId: null,
     albums: [],
     albumId: null,
+    collectionId: null,
     trash: false,
     trashCount: 0,
     retentionDays: 30,
@@ -497,7 +517,7 @@ export const useLibrary = create<LibraryState>((set, get) => {
         const albumId = same ? get().albumId : null;
         const trash = same && get().trash;
         // Une autre bibliothèque : ses boîtiers et ses dates ne sont pas les mêmes.
-        if (!same) set({ filter: {} });
+        if (!same) set({ filter: {}, collectionId: null });
         const [albums, media, summary, filterOptions] = await Promise.all([
           libraryApi.albumsList(libraryId),
           libraryApi.mediaList(libraryId, query(albumId, trash)),
@@ -531,14 +551,33 @@ export const useLibrary = create<LibraryState>((set, get) => {
       const { libraryId } = get();
       if (libraryId === null) return;
       try {
-        const media = await libraryApi.mediaList(libraryId, query(albumId, false));
-        set({ albumId, media, trash: false, showAlbums: false });
+        const media = await libraryApi.mediaList(libraryId, query(albumId, false, null));
+        set({ albumId, collectionId: null, media, trash: false, showAlbums: false });
         const first = media[0];
         if (first) await get().select(first.id);
         else set({ selectedId: null, details: null });
       } catch (e) {
         set({ error: toCommandError(e) });
       }
+    },
+
+    showCollection: async (collectionId) => {
+      const { libraryId } = get();
+      if (libraryId === null) return;
+      try {
+        const media = await libraryApi.mediaList(libraryId, query(null, false, collectionId));
+        set({ albumId: null, collectionId, media, trash: false, showAlbums: false });
+        const first = media[0];
+        if (first) await get().select(first.id);
+        else set({ selectedId: null, selectedIds: [], details: null });
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
+
+    applyFilter: async (filter) => {
+      set({ albumId: null, collectionId: null, trash: false, showAlbums: false, filter });
+      await reloadMedia();
     },
 
     select: async (mediaId, mode = "replace") => {
@@ -642,8 +681,15 @@ export const useLibrary = create<LibraryState>((set, get) => {
       const { libraryId } = get();
       if (libraryId === null) return;
       try {
-        const media = await libraryApi.mediaList(libraryId, query(null, true));
-        set({ trash: true, media, view: "grid", zoom: null, showAlbums: false });
+        const media = await libraryApi.mediaList(libraryId, query(null, true, null));
+        set({
+          trash: true,
+          collectionId: null,
+          media,
+          view: "grid",
+          zoom: null,
+          showAlbums: false,
+        });
         const first = media[0];
         if (first) await get().select(first.id);
         else set({ selectedId: null, selectedIds: [], details: null });

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { useLibrary } from "../store/library";
 import { formatCaptureTime, formatCompensation, formatDegrees, placeName } from "../ui/format";
+import { CollectionsSection } from "./CollectionsSection";
 import { ExifLine } from "./ExifLine";
 import { FieldRow, ListRow, PanelNote, PanelSection } from "./PanelSection";
 import { Thumbnail } from "./Thumbnail";
@@ -42,6 +43,7 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
   const { t, i18n } = useTranslation();
   const albums = useLibrary((s) => s.albums);
   const albumId = useLibrary((s) => s.albumId);
+  const collectionId = useLibrary((s) => s.collectionId);
   const total = useLibrary((s) => s.total);
   const trash = useLibrary((s) => s.trash);
   const trashCount = useLibrary((s) => s.trashCount);
@@ -56,7 +58,7 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
         <ListRow
           label={t("catalog.allPhotos")}
           count={total}
-          selected={!trash && albumId === null}
+          selected={!trash && albumId === null && collectionId === null}
           onClick={() => void showAlbum(null)}
         />
         <ListRow
@@ -84,9 +86,7 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
           ))
         )}
       </PanelSection>
-      <PanelSection id={`${scope}.collections`} title={t("catalog.collections")}>
-        <PanelNote>{t("catalog.noCollections")}</PanelNote>
-      </PanelSection>
+      <CollectionsSection scope={scope} />
     </>
   );
 }

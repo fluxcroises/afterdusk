@@ -342,7 +342,10 @@
     "gearPhoto": "This image cannot be used.",
     "gearExport": "The inventory could not be saved.",
     "maintenanceNotFound": "This maintenance entry no longer exists.",
-    "invalidDate": "Invalid date."
+    "invalidDate": "Invalid date.",
+    "collectionNotFound": "This collection no longer exists.",
+    "collectionKind": "This action does not apply to this kind of collection.",
+    "emptyName": "Give it a name."
   },
   "home": {
     "morning": "Hello",
@@ -442,7 +445,10 @@
     "noMatchTitle": "No matching photos",
     "noAlbum": "No matching albums.",
     "searchHint": "Albums, file names, keywords and places",
-    "mapArea": "Map area"
+    "mapArea": "Map area",
+    "focal": "Focal length",
+    "anyFocal": "All focal lengths",
+    "focalValue": "{{mm}} mm"
   },
   "pile": {
     "badge_one": "{{count}} file",
@@ -1192,5 +1198,25 @@
     "purchase": "Purchase",
     "lastMaintenance": "Last maintenance",
     "footer": "Page {{page}} of {{pages}}"
+  },
+  "collections": {
+    "newManual": "New collection…",
+    "newSmart": "Save filter as smart album…",
+    "name": {
+      "manual": "Name of the new collection",
+      "smart": "Name of the new smart album"
+    },
+    "smart": "smart",
+    "rename": "Rename",
+    "updateFilter": "Replace with current filter",
+    "addSelection_one": "Add the selected photo to “{{name}}”",
+    "addSelection_other": "Add the {{count}} selected photos to “{{name}}”",
+    "removeSelection_one": "Remove the photo from the collection",
+    "removeSelection_other": "Remove the {{count}} photos from the collection",
+    "delete": "Delete",
+    "confirmDelete": {
+      "manual": "Delete the collection “{{name}}”? Its photos stay in their albums.",
+      "smart": "Delete the smart album “{{name}}”? Its photos stay in their albums."
+    }
   }
 }

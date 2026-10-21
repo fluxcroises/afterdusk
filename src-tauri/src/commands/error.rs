@@ -47,6 +47,9 @@ fn library_code(e: &LibraryError) -> &'static str {
         LibraryError::Template(_) => "invalidTemplate",
         LibraryError::NotFound(_) => "libraryNotFound",
         LibraryError::NotInAlbum { .. } => "notInAlbum",
+        LibraryError::CollectionNotFound(_) => "collectionNotFound",
+        LibraryError::NotSmart(_) | LibraryError::NotManual(_) => "collectionKind",
+        LibraryError::EmptyName => "emptyName",
         LibraryError::Sqlite(_) => "internal",
     }
 }

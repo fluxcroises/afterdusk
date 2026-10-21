@@ -1,6 +1,7 @@
 //! Bibliothèques, albums et matériel détecté.
 
 pub mod cloud;
+pub mod collections;
 pub mod copies;
 pub mod filter;
 pub mod identity;
@@ -30,6 +31,14 @@ pub enum LibraryError {
     Template(#[from] template::TemplateError),
     #[error("la photo {media_id} n'appartient pas à l'album {album_id}")]
     NotInAlbum { album_id: i64, media_id: i64 },
+    #[error("collection {0} introuvable")]
+    CollectionNotFound(i64),
+    #[error("la collection {0} n'est pas un album intelligent")]
+    NotSmart(i64),
+    #[error("l'album intelligent {0} choisit ses photos lui-même")]
+    NotManual(i64),
+    #[error("le nom est vide")]
+    EmptyName,
 }
 
 #[derive(Debug, Clone, Serialize)]

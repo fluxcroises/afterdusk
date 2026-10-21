@@ -509,3 +509,16 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Idée de l'utilisateur, à inscrire au cahier des charges : des planches contact en PDF, qui réutiliseraient cette mise en page. Leur place logique est l'étape Livrer, en V0.4.
 - Critères de l'inventaire, des fiches avec statistiques et du journal d'entretien cochés : CI verte sous Windows et macOS (run 39636780190, commit f709996).
 - Critère de l'export d'inventaire PDF et CSV coché : CI verte sous Windows et macOS (run 39641509658, commit e57229c). Reste pour la V0.3 : les albums intelligents.
+
+### 2026-10-21 (suite) : V0.3, albums intelligents et collections manuelles
+
+- Décision de l'utilisateur : les collections manuelles (4.2), jamais faites jusqu'ici, arrivent avec les albums intelligents, dans le même panneau.
+- Cœur (`library/collections.rs`), sur la table `collections` prévue dès la migration 0001, sans nouvelle migration. Une collection manuelle garde la liste des photos qu'on y ajoute (à la fin, doublons ignorés). Un album intelligent garde un filtre en JSON versionné (`{"version":1,"filter":…}`) et se recalcule à chaque lecture : une photo notée 5 étoiles y entre aussitôt. Un champ absent prend sa valeur par défaut ; une version inconnue ou un texte abîmé donnent un filtre vide plutôt qu'une erreur. Un album intelligent n'enregistre jamais de collection manuelle, qui pourrait disparaître. Comptes hors corbeille, une photo par pile. Supprimer une collection ne touche à aucune photo.
+- Les collections vivent dans la base seulement, comme celles de Lightroom : une base perdue puis reconstruite depuis les XMP ne les retrouve pas.
+- Filtre : nouvelle pastille « Focale » dans la barre de filtres (focales présentes, arrondies au millimètre, avec leur nombre de photos), nécessaire à l'exemple du cahier des charges « 5 étoiles prises au 23 mm ». Le filtre accepte aussi une collection manuelle, que le magasin pose quand on l'ouvre (la barre de filtres reste libre).
+- Panneau de gauche (Bibliothèque et Trier), section Collections :
+  - deux boutons : « Nouvelle collection… » et « Enregistrer le filtre comme album intelligent… » (actif quand un filtre est posé). Le nom se saisit dans le panneau : Entrée valide, Échap annule.
+  - Les albums intelligents portent la mention « intelligent ». Un clic ouvre une collection manuelle, ou applique le filtre d'un album intelligent à toutes les photos.
+  - Sur une collection manuelle, un bouton « + » ajoute les photos sélectionnées.
+  - Sous la collection ouverte : Renommer, Remplacer par le filtre actuel (album intelligent dont le filtre a changé), Retirer de la collection (sélection) et Supprimer, après confirmation.
+- Tests : filtre enregistré et relu (version, champ absent, version future), de bout en bout sur les six RAW (focales proposées, « 5 étoiles à 52 mm » vide puis rempli après la note, collection manuelle avec doublon et identifiant inconnu, retrait, corbeille puis restauration, refus croisés, nom vide, suppression sans perte de photo). Côté interface : panneau (ouverture, création, ajout, retrait, remplacement du filtre, suppression), comparaison de filtres et pastille Focale. Pas encore vérifié dans l'application compilée.

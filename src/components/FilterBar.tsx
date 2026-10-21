@@ -195,6 +195,21 @@ function PhotoFilters() {
           </option>
         ))}
       </select>
+      <select
+        aria-label={t("filter.focal")}
+        value={filter.focal ? String(filter.focal[0]) : ""}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          void setFilter({ focal: e.target.value ? [v, v] : undefined });
+        }}
+      >
+        <option value="">{t("filter.anyFocal")}</option>
+        {options?.focals.map((f) => (
+          <option key={f.value} value={f.value}>
+            {t("filter.focalValue", { mm: f.value })} ({f.count})
+          </option>
+        ))}
+      </select>
     </>
   );
 }
