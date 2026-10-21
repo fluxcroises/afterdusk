@@ -12,7 +12,9 @@ use chrono::{Duration, NaiveDateTime};
 use rusqlite::Connection;
 
 use afterdusk_lib::export::metadata::{MetadataPolicy, PhotoMeta, embedded};
-use afterdusk_lib::geo::locate::{LocateOptions, locate_gpx, locate_manual, locate_phone};
+use afterdusk_lib::geo::locate::{
+    LocateOptions, locate_gpx, locate_manual, locate_phone, unlocated_in_import,
+};
 use afterdusk_lib::geo::matching::Clock;
 use afterdusk_lib::geo::naming::name_pending;
 use afterdusk_lib::geo::time;
@@ -432,4 +434,28 @@ fn heure_du_boitier_corrigee_d_apres_le_lieu() {
         )
     );
     assert_eq!(hashes(&root), before);
+}
+
+#[test]
+fn photos_sans_lieu_proposees_a_la_fin_de_l_import() {
+    let dir = tempfile::tempdir().unwrap();
+    let (mut conn, _root, photos) = setup(dir.path(), &["nikon_z6.NEF", "sony_ilce-7m3.ARW"]);
+    let import_id: i64 = conn
+        .query_row("SELECT id FROM imports", [], |r| r.get(0))
+        .unwrap();
+    let mut ids: Vec<i64> = photos.iter().map(|p| p.id).collect();
+    ids.sort();
+    let mut found = unlocated_in_import(&conn, import_id).unwrap();
+    found.sort();
+    assert_eq!(found, ids);
+    locate_manual(&mut conn, &ids[..1], 49.2869, -0.1166, false).unwrap();
+    assert_eq!(
+        unlocated_in_import(&conn, import_id).unwrap(),
+        ids[1..].to_vec()
+    );
+    assert!(
+        unlocated_in_import(&conn, import_id + 1)
+            .unwrap()
+            .is_empty()
+    );
 }

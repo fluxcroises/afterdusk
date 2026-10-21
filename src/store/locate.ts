@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { type CommandError, toCommandError } from "../api/core";
+import { useImport } from "./import";
 import { useLibrary } from "./library";
 
 /** Bilan d'une localisation, miroir de `geo::locate::LocateReport`. */
@@ -112,6 +113,8 @@ export const useLocate = create<LocateState>()((set, get) => ({
                 replace,
               });
       set({ report });
+      // La proposition de fin d'import ne compte plus les photos localisées.
+      void useImport.getState().refreshUnlocated();
       // La fiche de la photo active montre le nouveau lieu ; la sélection reste.
       const library = useLibrary.getState();
       if (library.selectedId !== null) await library.activate(library.selectedId);

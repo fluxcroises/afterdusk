@@ -8,6 +8,7 @@ import { ImportGrid } from "../components/ImportGrid";
 import { FieldRow, ListRow, PanelNote, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { deviceLabel, useDevices } from "../store/devices";
+import { useLocate } from "../store/locate";
 import { useImport } from "../store/import";
 
 /**
@@ -291,6 +292,7 @@ function StatusLine() {
   const running = useImport((s) => s.running);
   const progress = useImport((s) => s.progress);
   const lastResult = useImport((s) => s.lastResult);
+  const unlocated = useImport((s) => s.unlocated);
   const selected = useImport((s) => s.selected);
   const selectAll = useImport((s) => s.selectAll);
   const source = useImport((s) => s.source);
@@ -327,6 +329,15 @@ function StatusLine() {
       </button>
       <span className="toolbar-spacer" />
       <span className="toolbar-status">{status}</span>
+      {!running && unlocated.length > 0 && (
+        <button
+          type="button"
+          className="button button-small"
+          onClick={() => void useLocate.getState().open(unlocated)}
+        >
+          {t("import.locate", { count: unlocated.length })}
+        </button>
+      )}
     </>
   );
 }

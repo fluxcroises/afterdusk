@@ -250,3 +250,18 @@ pub fn locate_manual(
         Some((latitude, longitude))
     })
 }
+
+/// Photos d'un import sans lieu (une par pile), à proposer à la
+/// localisation à la fin de l'import.
+pub fn unlocated_in_import(conn: &Connection, import_id: i64) -> Result<Vec<i64>, GeoError> {
+    let ids = conn
+        .prepare(
+            "SELECT id FROM media
+             WHERE import_id = ?1 AND state = 'normal' AND lat IS NULL
+               AND companion_of IS NULL
+             ORDER BY captured_at, id",
+        )?
+        .query_map([import_id], |r| r.get(0))?
+        .collect::<Result<_, _>>()?;
+    Ok(ids)
+}

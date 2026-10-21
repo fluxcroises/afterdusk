@@ -198,3 +198,10 @@ pub async fn geo_time_correct(
     writer.wake();
     Ok(done)
 }
+
+/// Photos d'un import qui n'ont pas de lieu.
+#[tauri::command]
+pub async fn geo_unlocated(state: State<'_, AppState>, import_id: i64) -> CommandResult<Vec<i64>> {
+    let conn = state.connect()?;
+    blocking(move || Ok(locate::unlocated_in_import(&conn, import_id)?)).await
+}

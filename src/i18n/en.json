@@ -101,6 +101,8 @@
     "copying": "Copying and verifying {{file}}…",
     "summary": "Import complete: {{imported}} imported, {{duplicates}} already present, {{failed}} failed.",
     "summaryInterrupted": "Import interrupted: {{imported}} imported. It can be resumed.",
+    "locate_one": "Locate the photo without location…",
+    "locate_other": "Locate the {{count}} photos without location…",
     "selectAll": "Select All",
     "selectNone": "Select None",
     "scanning": "Scanning source…",

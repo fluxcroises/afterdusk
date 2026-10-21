@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import {
   api,
@@ -42,6 +43,8 @@ interface ImportState {
   progress: ImportProgress | null;
   running: boolean;
   lastResult: ImportFinished | null;
+  /** Photos du dernier import sans lieu (une par pile), à localiser. */
+  unlocated: number[];
   resumable: ResumableImport[];
   error: CommandError | null;
 
@@ -58,6 +61,8 @@ interface ImportState {
   cancel: () => Promise<void>;
   onProgress: (progress: ImportProgress) => void;
   onFinished: (finished: ImportFinished) => void;
+  /** Relit les photos du dernier import encore sans lieu. */
+  refreshUnlocated: () => Promise<void>;
   dismissError: () => void;
 }
 
@@ -108,6 +113,7 @@ export const useImport = create<ImportState>((set, get) => ({
   progress: null,
   running: false,
   lastResult: null,
+  unlocated: [],
   resumable: [],
   error: null,
 
@@ -206,7 +212,7 @@ export const useImport = create<ImportState>((set, get) => ({
     const { libraryId, source, selected, form, libraries } = get();
     if (libraryId === null || !source || selected.size === 0) return;
     const library = libraries.find((l) => l.id === libraryId);
-    set({ running: true, progress: null, lastResult: null, error: null });
+    set({ running: true, progress: null, lastResult: null, unlocated: [], error: null });
     try {
       await api.importStart({
         libraryId,
@@ -236,7 +242,7 @@ export const useImport = create<ImportState>((set, get) => ({
   },
 
   resume: async (importId) => {
-    set({ running: true, progress: null, lastResult: null, error: null });
+    set({ running: true, progress: null, lastResult: null, unlocated: [], error: null });
     try {
       await api.importResume(importId);
     } catch (e) {
@@ -256,10 +262,23 @@ export const useImport = create<ImportState>((set, get) => ({
 
   onFinished: (finished) => {
     set({ running: false, lastResult: finished, error: finished.error });
+    // Photos sans GPS : la localisation est proposée (cahier des charges, 2).
+    void get().refreshUnlocated();
     // Les photos importées apparaissent désormais grisées.
     const source = get().source;
     void get().loadLibraries();
     if (source) void get().scanSource(source.root);
+  },
+
+  refreshUnlocated: async () => {
+    const importId = get().lastResult?.importId;
+    if (importId === undefined) return;
+    try {
+      set({ unlocated: await invoke<number[]>("geo_unlocated", { importId }) });
+    } catch {
+      // La proposition n'est qu'une aide : sans elle, l'import reste valable.
+      set({ unlocated: [] });
+    }
   },
 
   dismissError: () => set({ error: null }),
