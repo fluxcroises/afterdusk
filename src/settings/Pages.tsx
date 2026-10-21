@@ -1,3 +1,4 @@
+import { useAnalysis } from "../store/analysis";
 import { useBursts } from "../store/bursts";
 import { isTauri } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
@@ -88,6 +89,22 @@ function InsertBehaviorField() {
   );
 }
 
+/** Ratés détectés après chaque import (préférence locale, oui par défaut). */
+function AnalysisField() {
+  const { t } = useTranslation();
+  const auto = useAnalysis((s) => s.auto);
+  return (
+    <label className="check-row">
+      <input
+        type="checkbox"
+        checked={auto}
+        onChange={(e) => useAnalysis.getState().setAuto(e.currentTarget.checked)}
+      />
+      {t("settings.autoAnalysis")}
+    </label>
+  );
+}
+
 /** Rafales regroupées après chaque import (préférence locale, oui par défaut). */
 function BurstsField() {
   const { t } = useTranslation();
@@ -124,6 +141,7 @@ export function ImportSettings() {
       />
       <p className="panel-note">{t("settings.templatesHint")}</p>
       <InsertBehaviorField />
+      <AnalysisField />
       <BurstsField />
       <div className="settings-actions">
         <button

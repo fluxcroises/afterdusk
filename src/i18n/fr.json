@@ -231,7 +231,8 @@
     "cloudBackup": "Dossier synchronisé par {{service}} : Afterdusk vérifie la copie locale, pas l'envoi en ligne.",
     "mapOnline": "Fond de carte en ligne (OpenFreeMap)",
     "mapOnlineNote": "Désactivé : la carte n'affiche que les frontières embarquées et ne fait aucune requête.",
-    "autoBursts": "Regrouper les rafales après chaque import"
+    "autoBursts": "Regrouper les rafales après chaque import",
+    "autoAnalysis": "Rechercher les ratés après chaque import"
   },
   "menu": {
     "app": "Afterdusk",
@@ -291,7 +292,8 @@
     "detectBursts": "Regrouper les rafales",
     "stackBurst": "Empiler en rafale",
     "unstackBurst": "Retirer de la rafale",
-    "burstTop": "Mettre en haut de la rafale"
+    "burstTop": "Mettre en haut de la rafale",
+    "analyse": "Rechercher les ratés"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -453,7 +455,8 @@
     "mapArea": "Zone de la carte",
     "focal": "Focale",
     "anyFocal": "Toutes les focales",
-    "focalValue": "{{mm}} mm"
+    "focalValue": "{{mm}} mm",
+    "misses": "Ratés probables"
   },
   "pile": {
     "badge_one": "{{count}} fichier",
@@ -1229,5 +1232,15 @@
     "expand_other": "Déplier la rafale ({{count}} photos)",
     "collapse_one": "Replier la rafale",
     "collapse_other": "Replier la rafale"
+  },
+  "misses": {
+    "blur": "Floue ou bougée probable",
+    "under": "Sous-exposée probable",
+    "over": "Surexposée probable",
+    "eyes": "Yeux fermés probables"
+  },
+  "analysis": {
+    "progress": "Analyse : {{done}} / {{total}}",
+    "stop": "Arrêter"
   }
 }

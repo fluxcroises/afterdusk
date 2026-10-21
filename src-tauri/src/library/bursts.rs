@@ -12,10 +12,8 @@ use image::imageops::{self, FilterType};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 
-use super::{LibraryError, get_library, pairs, paths};
+use super::{LibraryError, pairs};
 use crate::db::now_utc;
-use crate::metadata::media::format_of;
-use crate::raw::preview;
 
 /// Écart maximal entre deux photos voisines d'une rafale, en secondes.
 pub const MAX_GAP: f64 = 2.0;
@@ -55,6 +53,8 @@ pub struct Shot {
     pub phash: Option<u64>,
     pub rating: i64,
     pub flag: i64,
+    /// Score de netteté de l'analyse des ratés, s'il est connu.
+    pub sharpness: Option<f32>,
 }
 
 /// Chaînes de photos d'un même boîtier séparées de `MAX_GAP` au plus,
@@ -110,8 +110,8 @@ pub fn group(shots: &[Shot]) -> Vec<Vec<i64>> {
     out
 }
 
-/// Photo du dessus : la mieux notée, puis la retenue, puis la première.
-/// (La plus nette passera devant la première avec la détection des ratés.)
+/// Photo du dessus : la mieux notée, puis la retenue, puis la plus nette
+/// (analyse des ratés), puis la première.
 pub fn best(shots: &[&Shot]) -> Option<i64> {
     shots
         .iter()
@@ -119,6 +119,11 @@ pub fn best(shots: &[&Shot]) -> Option<i64> {
             b.rating
                 .cmp(&a.rating)
                 .then((b.flag == 1).cmp(&(a.flag == 1)))
+                .then(
+                    b.sharpness
+                        .unwrap_or(0.0)
+                        .total_cmp(&a.sharpness.unwrap_or(0.0)),
+                )
                 .then(a.time.total_cmp(&b.time))
                 .then(a.id.cmp(&b.id))
         })
@@ -141,38 +146,15 @@ fn instant(captured_at: &str, subsec: Option<&str>) -> Option<f64> {
 /// Un aperçu retouché ne sert pas : la retouche éloignerait la photo de ses
 /// voisines.
 fn ensure_phash(conn: &Connection, cache_root: &Path, media_id: i64) -> Option<u64> {
-    let (stored, library_id, rel, orientation): (Option<i64>, i64, String, u8) = conn
-        .query_row(
-            "SELECT phash, library_id, path, orientation FROM media WHERE id = ?1",
-            [media_id],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
-        )
+    let stored: Option<i64> = conn
+        .query_row("SELECT phash FROM media WHERE id = ?1", [media_id], |r| {
+            r.get(0)
+        })
         .ok()?;
     if let Some(h) = stored {
         return Some(h as u64);
     }
-    let cached: Option<String> = conn
-        .query_row(
-            "SELECT source FROM previews WHERE media_id = ?1 AND size = 256",
-            [media_id],
-            |r| r.get(0),
-        )
-        .optional()
-        .ok()
-        .flatten();
-    let from_cache = cached
-        .filter(|s| s != "rendered")
-        .and_then(|_| std::fs::read(preview::cache_path(cache_root, media_id, 256)).ok())
-        .and_then(|data| preview::decode_jpeg_scaled(&data, 64).ok());
-    let img = match from_cache {
-        Some(img) => img,
-        None => {
-            let lib = get_library(conn, library_id).ok()?;
-            let abs = paths::to_absolute(&lib.root_path, &rel).ok()?;
-            let format = format_of(&abs)?;
-            preview::load(&abs, format, orientation, HASH_SOURCE).ok()?
-        }
-    };
+    let img = crate::analysis::run::source_image(conn, cache_root, media_id, HASH_SOURCE)?;
     let hash = dhash(&img);
     let _ = conn.execute(
         "UPDATE media SET phash = ?2 WHERE id = ?1",
@@ -205,8 +187,9 @@ pub fn detect(
         .prepare(&format!(
             "SELECT m.id, m.camera_id, m.captured_at,
                     CAST(json_extract(e.raw_json, '$.\"exif.0x9291\"') AS TEXT),
-                    m.phash, m.rating, m.flag
+                    m.phash, m.rating, m.flag, an.sharpness
                FROM media m LEFT JOIN media_exif e ON e.media_id = m.id
+               LEFT JOIN analysis an ON an.media_id = m.id
               WHERE m.library_id = ?1 AND (?2 IS NULL OR m.album_id = ?2)
                 AND m.state = 'normal' AND m.kind = 'photo' AND {}
                 AND m.camera_id IS NOT NULL AND m.captured_at IS NOT NULL
@@ -220,6 +203,7 @@ pub fn detect(
             let (id, camera_id) = (r.get(0)?, r.get(1)?);
             let phash = r.get::<_, Option<i64>>(4)?.map(|h| h as u64);
             let (rating, flag) = (r.get(5)?, r.get(6)?);
+            let sharpness = r.get::<_, Option<f64>>(7)?.map(|v| v as f32);
             Ok(instant(&at, subsec.as_deref()).map(|time| Shot {
                 id,
                 camera_id,
@@ -227,6 +211,7 @@ pub fn detect(
                 phash,
                 rating,
                 flag,
+                sharpness,
             }))
         })?
         .filter_map(|row| row.transpose())
@@ -414,6 +399,7 @@ mod tests {
             phash: Some(phash),
             rating: 0,
             flag: 0,
+            sharpness: None,
         }
     }
 
@@ -446,6 +432,12 @@ mod tests {
     fn meilleure_photo_au_dessus() {
         let mut s = [shot(1, 1, 0.0, 0), shot(2, 1, 0.1, 0), shot(3, 1, 0.2, 0)];
         assert_eq!(best(&s.iter().collect::<Vec<_>>()), Some(1), "la première");
+        s[1].sharpness = Some(300.0);
+        assert_eq!(
+            best(&s.iter().collect::<Vec<_>>()),
+            Some(2),
+            "la plus nette"
+        );
         s[2].flag = 1;
         assert_eq!(best(&s.iter().collect::<Vec<_>>()), Some(3), "la retenue");
         s[1].rating = 4;

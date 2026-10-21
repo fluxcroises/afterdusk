@@ -4122,3 +4122,44 @@ input.locate-offset {
   box-shadow: inset 0 -2px 0 var(--ad-accent);
   background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
 }
+
+/* Raté probable : pastille d'avertissement en bas à gauche de la vignette. */
+.miss-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--ad-on-accent);
+  background: var(--ad-warning);
+  border-radius: 9px;
+}
+
+.miss-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+}
+
+.filter-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.filter-toggle[aria-pressed="true"] {
+  color: var(--ad-on-accent);
+  background: var(--ad-warning);
+  border-color: var(--ad-warning);
+}
+
+.status-bar-action {
+  margin-left: var(--ad-space-2);
+}

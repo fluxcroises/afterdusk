@@ -1,3 +1,4 @@
+import { useAnalysis } from "./store/analysis";
 import { isTauri } from "@tauri-apps/api/core";
 import { useRescan } from "./store/rescan";
 import { type ExportFinished, type ExportProgress, useDeliver } from "./store/deliver";
@@ -82,6 +83,9 @@ export function useAppEvents(label: WindowLabel): void {
       events.onImportProgress(imp.onProgress),
       listen<{ done: number; total: number }>("rescan-progress", (e) =>
         useRescan.getState().onProgress(e.payload),
+      ),
+      listen<{ done: number; total: number }>("analysis-progress", (e) =>
+        useAnalysis.getState().onProgress(e.payload),
       ),
       listen<ExportProgress>("export://progress", (e) =>
         useDeliver.getState().onProgress(e.payload),

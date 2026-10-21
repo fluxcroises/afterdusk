@@ -1,3 +1,4 @@
+import { useAnalysis } from "./store/analysis";
 import { useBursts } from "./store/bursts";
 import { isTauri } from "@tauri-apps/api/core";
 import {
@@ -309,6 +310,15 @@ export function buildMenuItems(t: TFunction): Item[] {
         action: whenMarkable(() => void useLibrary.getState().setStackTop()),
       },
       separator,
+      {
+        id: "analysis-run",
+        text: t("menu.analyse"),
+        enabled: isMac || onPhotos(),
+        action: () => {
+          if (!onPhotos()) return;
+          void useAnalysis.getState().run(useLibrary.getState().albumId);
+        },
+      },
       {
         id: "bursts-detect",
         text: t("menu.detectBursts"),

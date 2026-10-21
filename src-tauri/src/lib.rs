@@ -1,3 +1,4 @@
+pub mod analysis;
 pub mod commands;
 pub mod db;
 pub mod develop;
@@ -157,6 +158,8 @@ pub fn run() {
             commands::import::imports_recent,
             commands::media::media_list,
             commands::media::filter_options,
+            commands::analysis::analysis_run,
+            commands::analysis::analysis_cancel,
             commands::bursts::bursts_detect,
             commands::bursts::bursts_stack,
             commands::bursts::bursts_unstack,

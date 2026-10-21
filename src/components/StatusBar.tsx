@@ -1,3 +1,4 @@
+import { useAnalysis } from "../store/analysis";
 import { TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isFiltering, useLibrary } from "../store/library";
@@ -28,6 +29,9 @@ export function StatusBar() {
   const rescanning = useRescan((s) => s.running);
   const rescanDone = useRescan((s) => s.progress?.done ?? 0);
   const rescanTotal = useRescan((s) => s.progress?.total ?? 0);
+  const analysing = useAnalysis((s) => s.running);
+  const analysisDone = useAnalysis((s) => s.progress?.done ?? 0);
+  const analysisTotal = useAnalysis((s) => s.progress?.total ?? 0);
   const xmpFailed = useWarnings((s) => s.xmpFailed);
   const xmpDetail = useWarnings((s) => s.xmpDetail);
   const previewFailed = useWarnings((s) => s.previewFailed);
@@ -44,6 +48,18 @@ export function StatusBar() {
       </span>
       <span className="status-bar-spacer" />
       {rescanning && <span>{t("rescan.progress", { done: rescanDone, total: rescanTotal })}</span>}
+      {analysing && analysisTotal > 0 && (
+        <span>
+          {t("analysis.progress", { done: analysisDone, total: analysisTotal })}
+          <button
+            type="button"
+            className="link-button status-bar-action"
+            onClick={() => void useAnalysis.getState().cancel()}
+          >
+            {t("analysis.stop")}
+          </button>
+        </span>
+      )}
       {previewFailed > 0 && (
         <button
           type="button"

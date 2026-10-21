@@ -28,6 +28,8 @@ export interface MediaSummary {
   burstId?: number | null;
   /** Photos de la rafale (1 pour une photo seule). */
   burstSize?: number;
+  /** Ratés probables, séparés par des espaces (« blur over ») ; vide sinon. */
+  misses?: string;
 }
 
 /**
@@ -74,6 +76,8 @@ export interface MediaFilter {
   area?: [number, number, number, number];
   /** Focale réelle en mm, bornes comprises. */
   focal?: [number, number];
+  /** Ratés probables (flou, exposition, yeux fermés) seulement. */
+  misses?: boolean;
   /** Collection manuelle : posée par le magasin, pas par la barre de filtres. */
   collectionId?: number;
 }
@@ -108,7 +112,8 @@ export function isFiltering(filter: MediaFilter): boolean {
     filter.lensId !== undefined ||
     !!filter.query?.trim() ||
     filter.area !== undefined ||
-    filter.focal !== undefined
+    filter.focal !== undefined ||
+    filter.misses === true
   );
 }
 

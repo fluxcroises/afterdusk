@@ -65,4 +65,13 @@ describe("grille : rafales", () => {
     // Le badge reste sur la photo du dessus seulement.
     expect(document.querySelectorAll(".burst-badge")).toHaveLength(1);
   });
+
+  it("une photo signalée porte un badge qui dit pourquoi", () => {
+    useLibrary.setState({ media: [{ ...photo(4, null, 1), misses: "blur over" }] });
+    render(<MediaGrid />);
+    const badge = screen.getByRole("img", {
+      name: "Floue ou bougée probable, Surexposée probable",
+    });
+    expect(badge).toHaveClass("miss-badge");
+  });
 });

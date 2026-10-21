@@ -67,6 +67,9 @@ pub struct MediaFilter {
     /// deux fois la même valeur).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub focal: Option<[f64; 2]>,
+    /// Ratés probables (flou, exposition, yeux fermés) seulement.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub misses: bool,
     /// Collection manuelle : ses photos seulement.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collection_id: Option<i64>,
@@ -206,6 +209,13 @@ impl MediaFilter {
             );
             values.push(a.min(b).round().into());
             values.push(a.max(b).round().into());
+        }
+        if self.misses {
+            clauses.push(
+                "m.id IN (SELECT media_id FROM analysis
+                           WHERE blurry = 1 OR exposure IS NOT NULL OR eyes_closed = 1)"
+                    .to_owned(),
+            );
         }
         if let Some(id) = self.collection_id {
             clauses.push(

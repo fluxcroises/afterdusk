@@ -1,9 +1,10 @@
-import { BookImage, Flag, FlagOff, Layers, Star } from "lucide-react";
+import { BookImage, Flag, FlagOff, Layers, Star, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { type MediaSummary, type SelectMode, daysLeft, useLibrary } from "../store/library";
+import { missesOf } from "../store/analysis";
 import { useBursts } from "../store/bursts";
 import { purgeSelection } from "../trash";
 import { Thumbnail } from "./Thumbnail";
@@ -203,6 +204,20 @@ function MediaCell({
           src={media.hasPreview ? previewUrl(media.id, 256, version) : null}
           fallback={media.fileName.split(".").pop()?.toUpperCase()}
         />
+        {missesOf(media.misses).length > 0 && (
+          <span
+            className="miss-badge"
+            role="img"
+            aria-label={missesOf(media.misses)
+              .map((m) => t(`misses.${m}`))
+              .join(", ")}
+            title={missesOf(media.misses)
+              .map((m) => t(`misses.${m}`))
+              .join("\n")}
+          >
+            <TriangleAlert aria-hidden="true" strokeWidth={2} />
+          </span>
+        )}
         {media.copyOf && (
           <span className="copy-badge" title={media.version ?? undefined}>
             {t("grid.copy")}

@@ -1,4 +1,4 @@
-import { Flag, FlagOff, Search, X } from "lucide-react";
+import { Flag, FlagOff, Search, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type FlagValue, type RatingOp, isFiltering, useLibrary } from "../store/library";
@@ -214,6 +214,23 @@ function PhotoFilters() {
   );
 }
 
+/** « Ratés probables » : les photos signalées par l'analyse, à revoir et rejeter en lot. */
+function MissesToggle() {
+  const { t } = useTranslation();
+  const on = useLibrary((s) => s.filter.misses === true);
+  return (
+    <button
+      type="button"
+      className="button button-small filter-toggle"
+      aria-pressed={on}
+      onClick={() => void useLibrary.getState().setFilter({ misses: on ? undefined : true })}
+    >
+      <TriangleAlert aria-hidden="true" strokeWidth={1.75} />
+      {t("filter.misses")}
+    </button>
+  );
+}
+
 /** Barre de filtres au-dessus de la grille (\ pour la masquer, Ctrl+F pour chercher). */
 export function FilterBar() {
   const { t } = useTranslation();
@@ -227,6 +244,7 @@ export function FilterBar() {
     <div className="filter-bar" role="search">
       <SearchField />
       {!showAlbums && <PhotoFilters />}
+      {!showAlbums && <MissesToggle />}
       {area && !showAlbums && (
         <button
           type="button"

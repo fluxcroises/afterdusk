@@ -49,4 +49,15 @@ describe("barre de filtres : focale", () => {
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Réinitialiser" })));
     expect(useLibrary.getState().filter).toEqual({});
   });
+
+  it("« Ratés probables » s'allume et s'éteint", async () => {
+    render(<FilterBar />);
+    const toggle = screen.getByRole("button", { name: "Ratés probables" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await act(async () => fireEvent.click(toggle));
+    expect(useLibrary.getState().filter).toEqual({ misses: true });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await act(async () => fireEvent.click(toggle));
+    expect(useLibrary.getState().filter).toEqual({});
+  });
 });

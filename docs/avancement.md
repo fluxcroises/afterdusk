@@ -589,3 +589,24 @@ Critères (cahier des charges, section 7) :
 - Corrigé à cette occasion : une fois la rafale dépliée, chaque prise répétait le badge ; il ne reste que sur la photo du dessus.
 - Le regroupement automatique en fin d'import n'a pas été vu à l'écran ; il est couvert par le test du magasin et le test de bout en bout du cœur.
 - Critère du regroupement des rafales coché : CI verte sous Windows et macOS (run 39658755656, commit 9cd7406).
+
+### 2026-10-21 (suite) : V0.4, ratés probables (flou et exposition)
+
+- Ordre choisi par l'utilisateur : flou et exposition d'abord, sans dépendance nouvelle ; le prototype des yeux fermés (ONNX) ensuite.
+- Migration 0014 : table `analysis` du cahier des charges (score de netteté, flou, exposition, yeux fermés encore vides, version de l'analyse). Le hash perceptuel reste sur `media` (migration 0013). Une nouvelle version de l'analyse relance le calcul des photos déjà vues.
+- Mesures (`analysis/`), sur la luminance ramenée à 1 024 px de côté :
+  - netteté : variance du laplacien par tuile, sur une grille de 8 × 8, et moyenne des quatre tuiles les plus nettes. Un sujet net sur un fond flou reste net ; un bougé abaisse toutes les tuiles ;
+  - seuil 80, calibré sur les six RAW de test : nets de 290 à 3 400, floutés (rayon 3 px) de 6 à 74. Un test sur ces échantillons garde ce calibrage ;
+  - exposition : part de pixels écrêtés (≥ 250) ou bouchés (≤ 5), et luminance moyenne. Résultats : « surexposée probable » ou « sous-exposée probable ».
+- Source : l'aperçu en cache s'il vient du boîtier, sinon l'original, lu sans être écrit. Un aperçu retouché ne sert pas, car on juge la prise de vue. Cette lecture est désormais commune avec le hash des rafales.
+- Analyse en arrière-plan (`analysis_run`) : photos jamais vues ou vues par une version plus ancienne. La progression s'affiche dans la barre d'état, avec « Arrêter » entre deux photos. Photo > Rechercher les ratés (album affiché, sinon bibliothèque). Après chaque import : ratés, puis rafales, chacun désactivable dans Réglages > Import (préférences locales).
+- Interface :
+  - une pastille d'avertissement en bas à gauche des vignettes signalées, qui donne les raisons (« Floue ou bougée probable, Surexposée probable ») ;
+  - un bouton « Ratés probables » dans la barre de filtres ; on les revoit, puis on les rejette en lot avec Ctrl+A et X. Afterdusk ne rejette rien seul.
+- Rafales : à note et drapeau égaux, la plus nette passe au-dessus.
+- Tests :
+  - mesures : damier net, flouté, sujet net sur fond flou, expositions, échantillons réels ;
+  - de bout en bout : les six RAW nets et bien exposés, une prise floutée et une prise brûlée signalées, filtre, seconde analyse sans travail, source intacte ;
+  - choix du dessus par la netteté ;
+  - côté interface : magasin, ordre ratés puis rafales après l'import, préférences, pastille, bouton du filtre.
+- Reste pour le critère : les yeux fermés (prototype ONNX, licences à vérifier, téléchargements à autoriser). Le critère de performance (1 000 photos en moins de 10 minutes) sera mesuré sur l'analyse complète. Pas encore vérifié dans l'application compilée.

@@ -231,7 +231,8 @@
     "cloudBackup": "Folder synced by {{service}}: Afterdusk verifies the local copy, not the upload.",
     "mapOnline": "Online base map (OpenFreeMap)",
     "mapOnlineNote": "Off: the map only shows the built-in borders and makes no request.",
-    "autoBursts": "Group bursts after each import"
+    "autoBursts": "Group bursts after each import",
+    "autoAnalysis": "Find misses after each import"
   },
   "menu": {
     "app": "Afterdusk",
@@ -291,7 +292,8 @@
     "detectBursts": "Group bursts",
     "stackBurst": "Stack as burst",
     "unstackBurst": "Remove from burst",
-    "burstTop": "Move to top of burst"
+    "burstTop": "Move to top of burst",
+    "analyse": "Find misses"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -453,7 +455,8 @@
     "mapArea": "Map area",
     "focal": "Focal length",
     "anyFocal": "All focal lengths",
-    "focalValue": "{{mm}} mm"
+    "focalValue": "{{mm}} mm",
+    "misses": "Likely misses"
   },
   "pile": {
     "badge_one": "{{count}} file",
@@ -1229,5 +1232,15 @@
     "expand_other": "Expand burst ({{count}} photos)",
     "collapse_one": "Collapse burst",
     "collapse_other": "Collapse burst"
+  },
+  "misses": {
+    "blur": "Likely blurred or shaken",
+    "under": "Likely underexposed",
+    "over": "Likely overexposed",
+    "eyes": "Eyes likely closed"
+  },
+  "analysis": {
+    "progress": "Analysis: {{done}} / {{total}}",
+    "stop": "Stop"
   }
 }

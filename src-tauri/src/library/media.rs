@@ -47,6 +47,9 @@ pub struct MediaSummary {
     pub burst_id: Option<i64>,
     /// Photos de la rafale (1 pour une photo seule).
     pub burst_size: i64,
+    /// Ratés probables : « blur », « under », « over », « eyes », séparés
+    /// par des espaces ; vide si rien n'est signalé ou pas encore analysé.
+    pub misses: String,
 }
 
 const SUMMARY_COLUMNS: &str = "m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
@@ -54,7 +57,11 @@ const SUMMARY_COLUMNS: &str = "m.id, m.album_id, m.path, m.captured_at, m.rating
      (SELECT count(*) FROM previews p WHERE p.media_id = m.id) = 3,
      m.trashed_at, m.companion_of, m.burst_id,
      CASE WHEN m.burst_id IS NULL THEN 1 ELSE
-       (SELECT count(*) FROM media x WHERE x.burst_id = m.burst_id AND x.state = m.state) END";
+       (SELECT count(*) FROM media x WHERE x.burst_id = m.burst_id AND x.state = m.state) END,
+     coalesce((SELECT trim(CASE WHEN a.blurry = 1 THEN 'blur ' ELSE '' END
+                           || coalesce(a.exposure, '')
+                           || CASE WHEN a.eyes_closed = 1 THEN ' eyes' ELSE '' END)
+                 FROM analysis a WHERE a.media_id = m.id), '')";
 
 /// Condition SQL (alias `m`) : photo hors rafale, ou dessus visible de sa
 /// rafale (la photo choisie si elle est encore là, sinon la première).
@@ -84,6 +91,7 @@ fn summary(r: &rusqlite::Row<'_>, stack_size: i64) -> rusqlite::Result<MediaSumm
         version: None,
         burst_id: r.get(13)?,
         burst_size: r.get(14)?,
+        misses: r.get(15)?,
     })
 }
 
@@ -148,7 +156,7 @@ pub fn list_media(
     ))?;
     let heads: Vec<MediaSummary> = stmt
         .query_map(rusqlite::params_from_iter(values), |r| {
-            summary(r, r.get(15)?)
+            summary(r, r.get(16)?)
         })?
         .collect::<Result<_, _>>()?;
     let heads = gather_bursts(heads, &query.expanded);
