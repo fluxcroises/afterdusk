@@ -543,7 +543,7 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 
 Critères (cahier des charges, section 7) :
 
-- [ ] Regroupement des rafales en piles
+- [x] Regroupement des rafales en piles
 - [ ] Détection locale du flou, des yeux fermés et des problèmes d'exposition, avec filtre « Ratés probables »
 - [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
 - [ ] Vidéos : import, rangement, tri, lecture, fichiers annexes
@@ -588,3 +588,4 @@ Critères (cahier des charges, section 7) :
   - « Retirer de la rafale » sort DSC_1001, et la rafale passe à 3.
 - Corrigé à cette occasion : une fois la rafale dépliée, chaque prise répétait le badge ; il ne reste que sur la photo du dessus.
 - Le regroupement automatique en fin d'import n'a pas été vu à l'écran ; il est couvert par le test du magasin et le test de bout en bout du cœur.
+- Critère du regroupement des rafales coché : CI verte sous Windows et macOS (run 39658755656, commit 9cd7406).
