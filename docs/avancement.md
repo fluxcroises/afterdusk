@@ -659,4 +659,4 @@ Critères (cahier des charges, section 7) :
 - Couleurs, rayons et police (Inter, le fichier de l'application) repris de la charte graphique. Photo de Cabourg en ouverture, capture de l'écran d'accueil sous Windows.
 - Contenu tiré du cahier des charges et de cette page : seules les fonctions livrées sont décrites, celles en cours portent la mention « En cours ». La section Avancement recopie le nombre de critères cochés au 21 octobre 2026 : à mettre à jour avec chaque version.
 - Vérifié dans le navigateur à 800 px et à 375 px (aucun débordement, cibles de 44 px), au clavier (lien d'évitement, focus visible), ancres et fichiers chargés, console sans erreur. Contrastes calculés : 6,3:1 au minimum.
-- Pas encore publié : l'hébergement (GitHub Pages ou autre) reste à choisir.
+- Publication sur GitHub Pages par le workflow `pages.yml`, à chaque modification de `site/` sur main (Pages à activer dans les réglages du dépôt, source « GitHub Actions »).
