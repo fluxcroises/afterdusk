@@ -141,7 +141,7 @@ describe("fenêtre d'accueil", () => {
     });
     render(<WelcomeApp />);
     expect(
-      screen.getByText("Nikon Z 6 : Nettoyage du capteur, à faire depuis le 10 juil. 2026."),
+      screen.getByText("Nikon Z 6 · Nettoyage du capteur, à faire depuis le 10 juil. 2026."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/NIKKOR/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Ouvrir la fiche" }));

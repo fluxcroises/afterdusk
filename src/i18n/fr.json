@@ -1177,7 +1177,7 @@
     "dueHint": "entretien",
     "dueCount_one": "{{count}} entretien à faire",
     "dueCount_other": "{{count}} entretiens à faire",
-    "homeDue": "{{name}} : {{kind}}, à faire depuis le {{date}}.",
+    "homeDue": "{{name}} · {{kind}}, à faire depuis le {{date}}.",
     "open": "Ouvrir la fiche"
   }
 }

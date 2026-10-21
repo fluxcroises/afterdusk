@@ -1177,7 +1177,7 @@
     "dueHint": "maintenance",
     "dueCount_one": "{{count}} maintenance due",
     "dueCount_other": "{{count}} maintenance items due",
-    "homeDue": "{{name}}: {{kind}}, overdue since {{date}}.",
+    "homeDue": "{{name}} · {{kind}}, overdue since {{date}}.",
     "open": "Open record"
   }
 }

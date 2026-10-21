@@ -233,6 +233,21 @@ html[data-platform="mac"][data-fullscreen="true"] .welcome-brand::before {
   color: var(--ad-text);
 }
 
+/* Entretiens échus, sur l'onglet Matériel. */
+.module-badge {
+  display: inline-block;
+  min-width: 16px;
+  height: 16px;
+  margin-left: var(--ad-space-1);
+  padding: 0 4px;
+  border-radius: 8px;
+  font: 600 10px/16px var(--ad-font);
+  text-align: center;
+  vertical-align: 2px;
+  color: var(--ad-on-accent);
+  background: var(--ad-warning);
+}
+
 .module[data-later] {
   color: var(--ad-text-muted);
 }
