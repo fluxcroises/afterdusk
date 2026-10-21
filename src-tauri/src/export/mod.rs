@@ -3,6 +3,8 @@
 
 pub mod color;
 pub mod encode;
+pub mod heif;
+pub mod heif_meta;
 pub mod job;
 pub mod metadata;
 pub mod presets;
@@ -25,6 +27,8 @@ pub enum ExportError {
     Watermark(String),
     #[error("encodage impossible : {0}")]
     Encode(String),
+    #[error("aucun encodeur HEIF sur ce système")]
+    HeifUnavailable,
     #[error("réglages d'export illisibles : {0}")]
     Settings(String),
     #[error("copie de l'original impossible : {0}")]

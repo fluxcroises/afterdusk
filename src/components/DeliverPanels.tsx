@@ -32,7 +32,7 @@ function useSummary() {
     const format =
       o.kind === "original"
         ? t("deliver.output.original")
-        : o.kind === "jpeg" || o.kind === "avif"
+        : o.kind === "jpeg" || o.kind === "avif" || o.kind === "heif"
           ? `${t(`deliver.output.${o.kind}`)} ${o.quality}`
           : `${t(`deliver.output.${o.kind}`)} ${o.sixteen ? 16 : 8} ${t("deliver.bits")}`;
     if (o.kind === "original") return format;
@@ -64,6 +64,7 @@ const DEFAULT_OUTPUT: Record<ExportOutput["kind"], ExportOutput> = {
   png: { kind: "png", sixteen: false },
   tiff: { kind: "tiff", sixteen: true },
   avif: { kind: "avif", quality: 70 },
+  heif: { kind: "heif", quality: 80 },
 };
 
 function NumberField({
@@ -106,6 +107,7 @@ function PresetEditor({ preset }: { preset: ExportPreset }) {
   const r = preset.resize;
   const original = o.kind === "original";
   const builtin = BUILTIN_EXPORTS.includes(preset.id);
+  const heifAvailable = useDeliver((s) => s.heifAvailable);
 
   return (
     <div className="deliver-editor">
@@ -129,13 +131,18 @@ function PresetEditor({ preset }: { preset: ExportPreset }) {
           }
         >
           {(Object.keys(DEFAULT_OUTPUT) as ExportOutput["kind"][]).map((k) => (
-            <option key={k} value={k}>
-              {t(`deliver.output.${k}`)}
+            <option key={k} value={k} disabled={k === "heif" && !heifAvailable}>
+              {k === "heif" && !heifAvailable
+                ? t("deliver.output.heifMissing")
+                : t(`deliver.output.${k}`)}
             </option>
           ))}
         </select>
       </label>
-      {(o.kind === "jpeg" || o.kind === "avif") && (
+      {o.kind === "heif" && !heifAvailable && (
+        <p className="panel-note">{t("errors.heifUnavailable")}</p>
+      )}
+      {(o.kind === "jpeg" || o.kind === "avif" || o.kind === "heif") && (
         <Slider
           label={t("deliver.quality")}
           display={String(o.quality)}

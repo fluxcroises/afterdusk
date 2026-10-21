@@ -8,7 +8,8 @@ export type ExportOutput =
   | { kind: "jpeg"; quality: number }
   | { kind: "png"; sixteen: boolean }
   | { kind: "tiff"; sixteen: boolean }
-  | { kind: "avif"; quality: number };
+  | { kind: "avif"; quality: number }
+  | { kind: "heif"; quality: number };
 
 export type ResizeMode = "full" | "longSide" | "width" | "height" | "percent" | "fit";
 
@@ -131,6 +132,8 @@ interface DeliverState {
   progress: ExportProgress | null;
   finished: ExportFinished | null;
   error: CommandError | null;
+  /** Encodeur HEIF du système présent (extensions Microsoft sous Windows). */
+  heifAvailable: boolean;
   load: () => Promise<void>;
   /** Modifie les réglages (enregistrés peu après). */
   update: (settings: ExportSettings) => void;
@@ -176,12 +179,20 @@ export const useDeliver = create<DeliverState>()((set, get) => {
     progress: null,
     finished: null,
     error: null,
+    heifAvailable: false,
 
     load: async () => {
       try {
-        const settings = await invoke<ExportSettings>("export_settings");
+        const [settings, heifAvailable] = await Promise.all([
+          invoke<ExportSettings>("export_settings"),
+          invoke<boolean>("export_heif_available"),
+        ]);
         const ids = settings.presets.map((p) => p.id);
-        set({ settings, chosen: get().chosen.filter((id) => ids.includes(id)) });
+        set({
+          settings,
+          heifAvailable,
+          chosen: get().chosen.filter((id) => ids.includes(id)),
+        });
       } catch (e) {
         set({ error: toCommandError(e) });
       }

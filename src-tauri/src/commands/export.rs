@@ -20,8 +20,18 @@ pub const EVENT_FINISHED: &str = "export://finished";
 
 impl From<ExportError> for CommandError {
     fn from(e: ExportError) -> Self {
-        Self::new("internal", e)
+        let code = match e {
+            ExportError::HeifUnavailable => "heifUnavailable",
+            _ => "internal",
+        };
+        Self::new(code, e)
     }
+}
+
+/// Vrai si le système sait écrire du HEIF (encodeur de Windows ou de macOS).
+#[tauri::command]
+pub async fn export_heif_available() -> CommandResult<bool> {
+    blocking(|| Ok(crate::export::heif::available())).await
 }
 
 /// Export en cours : son drapeau d'arrêt.

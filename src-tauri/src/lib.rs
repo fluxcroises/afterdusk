@@ -173,6 +173,7 @@ pub fn run() {
             commands::export::export_cancel,
             commands::export::export_reveal,
             commands::export::export_preview,
+            commands::export::export_heif_available,
             commands::library::library_rescan,
             commands::presets::presets_list,
             commands::presets::presets_create,

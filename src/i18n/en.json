@@ -310,7 +310,8 @@
     "invalidName": "The name can't be empty (64 characters at most).",
     "copyFailed": "Copying the original failed.",
     "writeFailed": "Cannot write to the destination folder.",
-    "exportRunning": "An export is already running."
+    "exportRunning": "An export is already running.",
+    "heifUnavailable": "No HEIF encoder. On Windows, it comes from Microsoft's HEIF and HEVC extensions."
   },
   "home": {
     "morning": "Hello",
@@ -817,7 +818,9 @@
       "jpeg": "JPEG",
       "png": "PNG",
       "tiff": "TIFF",
-      "avif": "AVIF"
+      "avif": "AVIF",
+      "heif": "HEIF",
+      "heifMissing": "HEIF (unavailable)"
     },
     "originalHint": "Unedited, copied and verified with its XMP.",
     "size": "Size",

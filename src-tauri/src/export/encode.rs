@@ -30,6 +30,10 @@ pub enum Format {
     Avif {
         quality: u8,
     },
+    /// HEIF par l'encodeur du système (voir `heif`).
+    Heif {
+        quality: u8,
+    },
 }
 
 impl Format {
@@ -39,6 +43,7 @@ impl Format {
             Self::Png { .. } => "png",
             Self::Tiff { .. } => "tif",
             Self::Avif { .. } => "avif",
+            Self::Heif { .. } => "heic",
         }
     }
 }
@@ -187,6 +192,7 @@ pub fn write(
         Format::Png { sixteen } => png(img, sixteen, icc, meta)?,
         Format::Tiff { sixteen } => tiff(img, sixteen, icc, meta)?,
         Format::Avif { quality } => avif(img, quality)?,
+        Format::Heif { quality } => super::heif::encode(img, quality, icc, meta)?,
     };
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;

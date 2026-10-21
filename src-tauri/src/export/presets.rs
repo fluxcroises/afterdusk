@@ -37,6 +37,9 @@ pub enum Output {
     Avif {
         quality: u8,
     },
+    Heif {
+        quality: u8,
+    },
 }
 
 impl Output {
@@ -48,6 +51,7 @@ impl Output {
             Self::Png { sixteen } => Some(Format::Png { sixteen }),
             Self::Tiff { sixteen } => Some(Format::Tiff { sixteen }),
             Self::Avif { quality } => Some(Format::Avif { quality }),
+            Self::Heif { quality } => Some(Format::Heif { quality }),
         }
     }
 }
@@ -187,6 +191,9 @@ impl ExportSettings {
                     quality: quality.clamp(1, 100),
                 },
                 Output::Avif { quality } => Output::Avif {
+                    quality: quality.clamp(1, 100),
+                },
+                Output::Heif { quality } => Output::Heif {
                     quality: quality.clamp(1, 100),
                 },
                 other => other,

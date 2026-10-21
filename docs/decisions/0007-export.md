@@ -14,6 +14,10 @@ La V0.2 se termine par l'export (cahier des charges, 4.6) : cinq presets, format
 - **Filigrane texte** (choix de l'utilisateur) : une police libre (licence OFL) livrée avec Afterdusk, pour un rendu identique sous Windows et macOS, créditée dans « À propos ».
 - **Rendu d'export** : processeur, en virgule flottante (16 bits sans perte), demi-définition quand la taille demandée le permet ; jamais d'agrandissement.
 
+## Complément du 2026-10-21 : métadonnées du HEIF
+
+L'encodeur HEIF de Windows (WIC) accepte l'EXIF et le XMP sans erreur mais ne les écrit pas, même une seule propriété. Afterdusk ajoute donc lui-même deux éléments au fichier produit par le système, « Exif » et « mime » (XMP), décrivant l'image principale (ISO/IEC 23008-12), et recale les décalages de la table iloc. Le même code sert sous macOS, où ImageIO n'encode que l'image et son profil. Les tests vérifient que les octets de l'image restent identiques et que le décodeur de Windows relit l'image et le XMP.
+
 ## Limite connue
 
 Le rendu du processus 1 passe par l'espace sRGB avant les couleurs par teinte et les courbes : un export Display P3 ou Adobe RGB décrit exactement les couleurs dans ces espaces, sans couleurs hors du gamut sRGB. Un espace de travail plus large demandera un nouveau processus.

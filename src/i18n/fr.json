@@ -310,7 +310,8 @@
     "invalidName": "Le nom ne peut pas être vide (64 caractères au plus).",
     "copyFailed": "La copie de l'original a échoué.",
     "writeFailed": "Écriture impossible dans le dossier de destination.",
-    "exportRunning": "Un export est déjà en cours."
+    "exportRunning": "Un export est déjà en cours.",
+    "heifUnavailable": "Encodeur HEIF absent. Sous Windows, il vient des extensions HEIF et HEVC de Microsoft."
   },
   "home": {
     "morning": "Bonjour",
@@ -817,7 +818,9 @@
       "jpeg": "JPEG",
       "png": "PNG",
       "tiff": "TIFF",
-      "avif": "AVIF"
+      "avif": "AVIF",
+      "heif": "HEIF",
+      "heifMissing": "HEIF (indisponible)"
     },
     "originalHint": "Sans retouche, copié et vérifié avec son XMP.",
     "size": "Taille",

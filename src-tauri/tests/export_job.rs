@@ -11,7 +11,7 @@ use std::sync::atomic::AtomicBool;
 use afterdusk_lib::develop::settings::DevelopSettings;
 use afterdusk_lib::develop::store;
 use afterdusk_lib::export::job::{self, ExportRequest, Target};
-use afterdusk_lib::export::presets::ExportSettings;
+use afterdusk_lib::export::presets::{ExportSettings, Output};
 use afterdusk_lib::export::watermark::{Anchor, Watermark, WatermarkContent};
 use afterdusk_lib::import::{self, ImportOptions};
 use afterdusk_lib::{db, library};
@@ -157,6 +157,90 @@ fn web_et_originaux_dans_des_sous_dossiers() {
     )
     .unwrap();
     assert_eq!(walk(&out.join("Web")).len(), 4);
+}
+
+#[test]
+fn heif_avec_copyright_quand_le_systeme_sait_l_ecrire() {
+    if !afterdusk_lib::export::heif::available() {
+        eprintln!("pas d'encodeur HEIF sur ce système : test sauté");
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("carte");
+    fs::create_dir_all(&card).unwrap();
+    fs::copy(common::sample("nikon_z6.NEF"), card.join("nikon_z6.NEF")).unwrap();
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let db_path = dir.path().join("afterdusk.db");
+    let mut conn = db::open(&db_path).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let id = import::plan(
+        &mut conn,
+        &ImportOptions {
+            library_id: lib.id,
+            source_path: card.clone(),
+            source_label: "Carte".into(),
+            files: vec![card.join("nikon_z6.NEF")],
+            album_name: "HEIF".into(),
+            album_per_day: false,
+            rename: false,
+            backup: false,
+            keywords: vec![],
+            creator: Some("Lewis Bedar".into()),
+            rights: Some("© 2026 Lewis Bedar".into()),
+            skip_pair_jpegs: false,
+        },
+    )
+    .unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+    let media: i64 = conn
+        .query_row("SELECT id FROM media", [], |r| r.get(0))
+        .unwrap();
+    let original = walk(&root)
+        .into_iter()
+        .find(|p| p.extension().is_some_and(|e| e == "NEF"))
+        .unwrap();
+    let hash = common::sha256(&original);
+
+    let mut settings = ExportSettings::default();
+    settings
+        .presets
+        .iter_mut()
+        .find(|p| p.id == "web")
+        .unwrap()
+        .output = Output::Heif { quality: 80 };
+    let out = dir.path().join("Livraison");
+    let done = job::run(
+        &db_path,
+        &settings,
+        &ExportRequest {
+            media_ids: vec![media],
+            targets: vec![Target {
+                preset: "web".into(),
+                folder: None,
+            }],
+            destination: out.clone(),
+        },
+        &AtomicBool::new(false),
+        &|_| {},
+    )
+    .unwrap();
+    assert!(done.failures.is_empty(), "{:?}", done.failures);
+    let files = walk(&out);
+    assert_eq!(files.len(), 1, "{files:?}");
+    assert_eq!(files[0].extension().unwrap(), "heic");
+    let bytes = fs::read(&files[0]).unwrap();
+    assert_eq!(&bytes[4..8], b"ftyp");
+    let has = |needle: &[u8]| bytes.windows(needle.len()).any(|w| w == needle);
+    assert!(has("© 2026 Lewis Bedar".as_bytes()), "copyright absent");
+    // Bloc EXIF (en-tête TIFF) avec la marque du boîtier, quelle que soit sa casse.
+    assert!(has(b"II*\0") || has(b"MM\0*"), "EXIF absent");
+    assert!(
+        bytes.to_ascii_lowercase().windows(5).any(|w| w == b"nikon"),
+        "marque absente"
+    );
+    // Règle absolue : l'original n'a pas bougé.
+    assert_eq!(common::sha256(&original), hash);
 }
 
 fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
