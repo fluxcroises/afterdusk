@@ -43,7 +43,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
 - [x] Journal d'entretien et rappels
 - [x] Export d'inventaire PDF et CSV
-- [ ] Albums intelligents
+- [x] Albums intelligents
 
 ## Journal
 
@@ -527,3 +527,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
   - La focale « 32 mm (1) » ne garde que la photo du Sony ; enregistrée comme album intelligent « Au 32 mm ». Le filtre réinitialisé, l'album intelligent l'applique de nouveau.
   - Corrigé à cette occasion : les champs vides du filtre revenaient du cœur sous forme de `null`, et l'interface y voyait une zone de carte posée (pastille « Zone de la carte » fantôme). Le cœur ne les écrit plus et l'interface nettoie un filtre relu.
   - Corrigé aussi : le nom lu au clavier d'une ligne de liste collait le libellé à sa précision (« Essai12 mai 2021 »).
+- Critère des albums intelligents coché : CI verte sous Windows et macOS (run 39650062200, commit c324240). Tous les critères de la V0.3 sont cochés.
