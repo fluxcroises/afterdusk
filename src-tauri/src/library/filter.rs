@@ -34,29 +34,41 @@ pub enum MediaSort {
     Rating,
 }
 
-/// Filtre d'une grille ; un champ absent ne filtre pas.
+/// Filtre d'une grille ; un champ absent ne filtre pas. Les champs vides ne
+/// sont pas écrits : l'interface lit un champ présent comme un filtre posé.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct MediaFilter {
     /// Jour de prise de vue, AAAA-MM-JJ, bornes comprises.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub from: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub to: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rating: Option<RatingFilter>,
     /// Drapeaux retenus parmi -1, 0 et 1 ; vide = tous.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub flags: Vec<i64>,
     /// Couleurs retenues ; « none » pour les photos sans couleur ; vide = toutes.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub colors: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub camera_id: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lens_id: Option<i64>,
     /// Texte libre : albums, noms de fichiers, mots-clés, lieux.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
     /// Zone tracée sur la carte : ouest, sud, est, nord, en millionièmes de
     /// degré. L'ouest peut dépasser l'est (zone à cheval sur 180°).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub area: Option<[i64; 4]>,
     /// Focale réelle en millimètres, bornes comprises (une seule focale :
     /// deux fois la même valeur).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub focal: Option<[f64; 2]>,
     /// Collection manuelle : ses photos seulement.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub collection_id: Option<i64>,
 }
 

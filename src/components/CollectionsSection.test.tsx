@@ -43,7 +43,11 @@ const photo = (id: number) => ({
 describe("panneau Collections", () => {
   beforeEach(() => {
     invoke.mockReset().mockImplementation((cmd) => {
-      if (cmd === "collections_list") return Promise.resolve(collections);
+      // Le cœur peut renvoyer des champs vides : ils ne filtrent pas.
+      if (cmd === "collections_list")
+        return Promise.resolve(
+          collections.map((c) => (c.filter ? { ...c, filter: { ...c.filter, area: null } } : c)),
+        );
       if (cmd === "collection_create") return Promise.resolve(3);
       if (cmd === "media_list") return Promise.resolve([photo(7), photo(8)]);
       return Promise.resolve(null);

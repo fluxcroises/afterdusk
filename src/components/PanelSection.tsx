@@ -69,7 +69,8 @@ export function ListRow({ label, hint, count, selected, onClick }: ListRowProps)
     >
       <span className="list-row-label">
         {label}
-        {hint && <span className="list-row-hint">{hint}</span>}
+        {/* L'espace sépare le libellé de sa précision dans le nom lu au clavier. */}
+        {hint && <span className="list-row-hint"> {hint}</span>}
       </span>
       {count !== undefined && <span className="list-row-count">{count}</span>}
     </button>

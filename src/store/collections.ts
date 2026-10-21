@@ -13,6 +13,15 @@ export interface Collection {
   count: number;
 }
 
+/** Filtre relu : les champs vides (`null`, liste vide) ne filtrent pas, ils disparaissent. */
+export function cleanFilter(filter: MediaFilter | null): MediaFilter {
+  return Object.fromEntries(
+    Object.entries(filter ?? {}).filter(
+      ([, v]) => v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0),
+    ),
+  ) as MediaFilter;
+}
+
 /** Filtre de la barre, sans la collection affichée : ce qu'enregistre un album intelligent. */
 export function barFilter(filter: MediaFilter): MediaFilter {
   const rest = { ...filter };
@@ -70,7 +79,12 @@ export const useCollections = create<CollectionsState>()((set, get) => {
           return;
         }
         const collections = await invoke<Collection[] | null>("collections_list", { libraryId });
-        set({ collections: collections ?? [] });
+        set({
+          collections: (collections ?? []).map((c) => ({
+            ...c,
+            filter: c.kind === "smart" ? cleanFilter(c.filter) : null,
+          })),
+        });
       }),
 
     open: (c) =>

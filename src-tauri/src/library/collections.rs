@@ -266,6 +266,8 @@ mod tests {
         };
         let json = encode(&f);
         assert!(json.starts_with("{\"version\":1,"), "{json}");
+        // Champs vides absents : l'interface lit un champ présent comme posé.
+        assert!(!json.contains("null") && !json.contains("[]"), "{json}");
         let back = decode(&json);
         assert_eq!(back.rating, f.rating);
         assert_eq!(back.focal, f.focal);
