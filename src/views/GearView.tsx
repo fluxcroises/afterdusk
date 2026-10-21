@@ -296,8 +296,8 @@ function GearStatsView({ record }: { record: GearRecord }) {
   const number = new Intl.NumberFormat(i18n.language);
   const photos = (count: number) => t("gear.stats.photoCount", { count, n: number.format(count) });
   return (
-    <section className="gear-stats">
-      <h2 className="gear-section-title">{t("gear.stats.title")}</h2>
+    <>
+      <h2 className="visually-hidden">{t("gear.stats.title")}</h2>
       <BarChart title={t("gear.stats.focal")} bars={focalBars(stats.focal)} />
       <BarChart title={t("gear.stats.aperture")} bars={apertureBars(stats.aperture)} />
       <BarChart title={t("gear.stats.iso")} bars={isoBars(stats.iso)} />
@@ -333,7 +333,7 @@ function GearStatsView({ record }: { record: GearRecord }) {
           </table>
         </div>
       )}
-    </section>
+    </>
   );
 }
 
@@ -520,10 +520,14 @@ export function GearView() {
     >
       <ErrorBanner error={error} onDismiss={() => useGear.setState({ error: null })} />
       {record ? (
-        <div className="gear-record">
-          <GearPicture record={record} />
-          <h1 className="gear-title">{nameOf(record)}</h1>
-          <GearForm key={record.id} record={record} />
+        <div className="gear-dashboard">
+          <div className="gear-card gear-identity">
+            <GearPicture record={record} />
+            <h1 className="gear-title">{nameOf(record)}</h1>
+          </div>
+          <div className="gear-card gear-form-card">
+            <GearForm key={record.id} record={record} />
+          </div>
           <GearStatsView record={record} />
         </div>
       ) : (

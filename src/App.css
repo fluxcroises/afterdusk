@@ -3745,15 +3745,51 @@ input.locate-offset {
 }
 
 /* Matériel. */
-.gear-record {
+/* Tableau de bord d'un appareil : une grille de cartes. La fiche tient sur
+   trois rangées, les graphiques comblent les colonnes voisines. */
+.gear-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-flow: row dense;
+  align-content: start;
+  gap: var(--ad-space-3);
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--ad-space-4);
+}
+
+.gear-card,
+.gear-dashboard > .bar-chart,
+.gear-dashboard > .gear-stats-list {
+  min-width: 0;
+  padding: var(--ad-space-3);
+  border-radius: var(--ad-radius-md);
+  background: var(--ad-panel);
+}
+
+.gear-identity {
   display: flex;
   flex-direction: column;
-  gap: var(--ad-space-3);
-  max-width: 560px;
-  margin: 0 auto;
-  padding: var(--ad-space-5) var(--ad-space-4);
-  overflow-y: auto;
-  height: 100%;
+  gap: var(--ad-space-2);
+}
+
+/* Les notes s'allongent jusqu'au bas de la carte. */
+.gear-form-card {
+  grid-row: span 3;
+  display: flex;
+  flex-direction: column;
+}
+
+.gear-form-card .gear-form {
+  flex: 1;
+}
+
+.gear-form-card .gear-notes {
+  flex: 1;
+}
+
+.gear-form-card .gear-notes textarea {
+  flex: 1;
 }
 
 .gear-picture {
@@ -3768,8 +3804,8 @@ input.locate-offset {
 }
 
 .gear-silhouette {
-  width: 192px;
-  height: 120px;
+  width: 160px;
+  height: 100px;
 }
 
 .gear-photo {
@@ -3848,20 +3884,6 @@ input.locate-offset {
   overflow-wrap: anywhere;
 }
 
-.gear-stats {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ad-space-4);
-  padding-top: var(--ad-space-3);
-  border-top: 1px solid var(--ad-border);
-}
-
-.gear-section-title {
-  margin: 0;
-  font: var(--ad-font-panel-title);
-  color: var(--ad-text);
-}
-
 .bar-chart {
   margin: 0;
 }
@@ -3886,9 +3908,9 @@ input.locate-offset {
 }
 
 .bar-chart svg {
+  overflow: visible;
   display: block;
   width: 100%;
-  height: auto;
 }
 
 .bar-chart-axis {
