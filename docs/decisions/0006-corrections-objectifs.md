@@ -10,11 +10,11 @@ Entre-temps, un portage Rust complet de lensfun a été publié : la crate `lens
 
 ## Options examinées
 
-| Option | Pour | Contre |
-| --- | --- | --- |
-| **Crate `lensfun` 0.7.0** (retenue) | Rust pur, sans dépendance C ; même calcul que lensfun (vérifié sur 1 640 cas contre l'original C++) ; base incluse ; dépendances permissives (`flate2`, `regex`, `roxmltree`) | Jeune (version bêta, un seul auteur) |
-| Notre portage de la base (`lensdb`) | Contrôle complet | Plusieurs jours de travail, erreurs possibles là où la crate est déjà vérifiée |
-| Bibliothèque C++ lensfun | Référence | GLib : compilation fragile sous Windows et macOS, binaires plus gros |
+| Option                              | Pour                                                                                                                                                                          | Contre                                                                         |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Crate `lensfun` 0.7.0** (retenue) | Rust pur, sans dépendance C ; même calcul que lensfun (vérifié sur 1 640 cas contre l'original C++) ; base incluse ; dépendances permissives (`flate2`, `regex`, `roxmltree`) | Jeune (version bêta, un seul auteur)                                           |
+| Notre portage de la base (`lensdb`) | Contrôle complet                                                                                                                                                              | Plusieurs jours de travail, erreurs possibles là où la crate est déjà vérifiée |
+| Bibliothèque C++ lensfun            | Référence                                                                                                                                                                     | GLib : compilation fragile sous Windows et macOS, binaires plus gros           |
 
 ## Décision
 

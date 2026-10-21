@@ -376,7 +376,6 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : bibliothèque importée et retouchée, base supprimée puis recréée vide, réanalyse : « 6 photos ajoutées, retouches de 1 photo reprises du XMP », note de 5 étoiles et vignette noir et blanc retrouvées, originaux identiques. Le bouton de l'accueil n'a pas été vu à l'écran (même commande).
 - Limites : l'album prend le nom de son dossier (« 2018-03-13 Six boîtiers ») ; la couverture choisie et les collections, qui ne sont qu'en base, ne sont pas retrouvées.
 
-
 ### 2026-10-21 (suite) : V0.2, export HEIF
 
 - Format HEIF dans Livrer (décision 0007) : encodeur du système, WIC sous Windows avec les extensions HEIF et HEVC de Microsoft, ImageIO sous macOS. Qualité réglable, profil ICC incorporé, extension `.heic`. Sans encodeur, l'option est grisée (« HEIF (indisponible) ») avec la raison.
