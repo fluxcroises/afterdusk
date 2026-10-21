@@ -53,6 +53,7 @@ roxmltree = "0.20"
 flate2 = "1"
 # Règles des fuseaux horaires (heure d'été comprise), pour corriger l'heure du boîtier.
 chrono-tz = { version = "0.10", default-features = false, features = ["std"] }
+printpdf = { version = "0.12.8", default-features = false, features = ["jpeg"] }
 
 # HEIF par l'encodeur du système (décision 0007) : WIC sous Windows, avec les
 # extensions HEIF/HEVC de Microsoft ; ImageIO sous macOS.

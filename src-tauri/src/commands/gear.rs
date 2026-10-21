@@ -7,6 +7,7 @@ use tauri::ipc::Response;
 
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
+use crate::gear::export::{self, InventoryPdf, Table};
 use crate::gear::maintenance::{self, MaintenanceEntry, MaintenanceInput, Reminder};
 use crate::gear::stats::GearStats;
 use crate::gear::{self, GearError, GearItem, GearKind, GearRecord, GearUpdate};
@@ -20,6 +21,7 @@ impl From<GearError> for CommandError {
             GearError::Photo(_) => "gearPhoto",
             GearError::MaintenanceNotFound(_) => "maintenanceNotFound",
             GearError::InvalidDate(_) => "invalidDate",
+            GearError::Export(_) => "gearExport",
             GearError::Sqlite(_) => "internal",
         };
         Self::new(code, e)
@@ -189,4 +191,28 @@ pub async fn maintenance_reminders(
     let conn = state.connect()?;
     let today = chrono::Local::now().date_naive();
     blocking(move || Ok(maintenance::reminders(&conn, gear_id, today)?)).await
+}
+
+/// Inventaire en CSV, à l'emplacement choisi par l'utilisateur.
+#[tauri::command]
+pub async fn gear_export_csv(path: PathBuf, table: Table, delimiter: char) -> CommandResult<()> {
+    blocking(move || Ok(export::write_csv(&path, &table, delimiter)?)).await
+}
+
+/// Inventaire en PDF, avec la photo de chaque appareil quand il en a une.
+#[tauri::command]
+pub async fn gear_export_pdf(
+    state: State<'_, AppState>,
+    path: PathBuf,
+    doc: InventoryPdf,
+) -> CommandResult<()> {
+    let conn = state.connect()?;
+    let dir = data_dir(&state);
+    let cache = state.cache_root.clone();
+    blocking(move || {
+        Ok(export::write_pdf(&path, &doc, |id| {
+            export::gear_photo(&conn, &dir, &cache, id)
+        })?)
+    })
+    .await
 }

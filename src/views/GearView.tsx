@@ -1,4 +1,5 @@
-import { open as chooseFile } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
+import { open as chooseFile, save as chooseTarget } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
@@ -17,11 +18,14 @@ import {
   type GearUpdate,
   useGear,
 } from "../store/gear";
+import { toCommandError } from "../api/core";
+import { useImport } from "../store/import";
 import { useLibrary } from "../store/library";
 import { useReminders } from "../store/maintenance";
 import { confirmWarning } from "../ui/confirm";
 import { formatCaptureTime } from "../ui/format";
 import { apertureBars, focalBars, isoBars, monthBars } from "../ui/gearStats";
+import { collectGear, csvDelimiter, inventoryCsv, inventoryPdf } from "../ui/gearExport";
 import { Camera } from "lucide-react";
 
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD", "JPY"];
@@ -511,6 +515,62 @@ function GearActions({ record }: { record: GearRecord }) {
   );
 }
 
+/** Export de l'inventaire (matériel visible) en PDF ou en CSV. */
+function ExportButtons() {
+  const { t, i18n } = useTranslation();
+  const items = useGear((s) => s.items);
+  const library = useImport((s) => s.libraries.find((l) => l.id === s.libraryId)?.name ?? "");
+  const [busy, setBusy] = useState(false);
+  const run = async (format: "pdf" | "csv") => {
+    const path = await chooseTarget({
+      title: t(`gearExport.${format}`),
+      defaultPath: `${t("gearExport.fileName")}.${format}`,
+      filters: [{ name: format.toUpperCase(), extensions: [format] }],
+    });
+    if (!path) return;
+    setBusy(true);
+    try {
+      const data = await collectGear(items);
+      if (format === "csv") {
+        await invoke("gear_export_csv", {
+          path,
+          table: inventoryCsv(t, data, i18n.language),
+          delimiter: csvDelimiter(i18n.language),
+        });
+      } else {
+        await invoke("gear_export_pdf", {
+          path,
+          doc: inventoryPdf(t, data, i18n.language, library),
+        });
+      }
+    } catch (e) {
+      useGear.setState({ error: toCommandError(e) });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <button
+        type="button"
+        className="button button-small"
+        disabled={busy || items.length === 0}
+        onClick={() => void run("pdf")}
+      >
+        {t("gearExport.pdf")}
+      </button>
+      <button
+        type="button"
+        className="button button-small"
+        disabled={busy || items.length === 0}
+        onClick={() => void run("csv")}
+      >
+        {t("gearExport.csv")}
+      </button>
+    </>
+  );
+}
+
 export function GearView() {
   const { t } = useTranslation();
   const record = useGear((s) => s.record);
@@ -526,7 +586,13 @@ export function GearView() {
     <ScreenLayout
       left={<GearList />}
       right={record ? <GearActions record={record} /> : undefined}
-      toolbar={<span className="toolbar-status">{t("gear.count", { count })}</span>}
+      toolbar={
+        <>
+          <span className="toolbar-status">{t("gear.count", { count })}</span>
+          <span className="toolbar-spacer" />
+          <ExportButtons />
+        </>
+      }
     >
       <ErrorBanner error={error} onDismiss={() => useGear.setState({ error: null })} />
       {record ? (

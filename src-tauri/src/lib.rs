@@ -215,6 +215,8 @@ pub fn run() {
             commands::gear::maintenance_update,
             commands::gear::maintenance_delete,
             commands::gear::maintenance_reminders,
+            commands::gear::gear_export_csv,
+            commands::gear::gear_export_pdf,
             commands::gear::gear_update,
             commands::gear::gear_create,
             commands::gear::gear_delete,

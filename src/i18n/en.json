@@ -339,7 +339,10 @@
     "gearNotFound": "This gear no longer exists.",
     "gearKindMismatch": "Only two items of the same type can be merged.",
     "gearDetected": "Gear found in your photos can be hidden, not deleted.",
-    "gearPhoto": "This image cannot be used."
+    "gearPhoto": "This image cannot be used.",
+    "gearExport": "The inventory could not be saved.",
+    "maintenanceNotFound": "This maintenance entry no longer exists.",
+    "invalidDate": "Invalid date."
   },
   "home": {
     "morning": "Hello",
@@ -1179,5 +1182,15 @@
     "dueCount_other": "{{count}} maintenance items due",
     "homeDue": "{{name}} · {{kind}}, overdue since {{date}}.",
     "open": "Open record"
+  },
+  "gearExport": {
+    "pdf": "Export as PDF…",
+    "csv": "Export as CSV…",
+    "fileName": "Gear inventory",
+    "title": "Gear inventory",
+    "device": "Item",
+    "purchase": "Purchase",
+    "lastMaintenance": "Last maintenance",
+    "footer": "Page {{page}} of {{pages}}"
   }
 }

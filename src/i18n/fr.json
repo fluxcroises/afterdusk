@@ -339,7 +339,10 @@
     "gearNotFound": "Ce matériel n'existe plus.",
     "gearKindMismatch": "Seuls deux appareils du même type se fusionnent.",
     "gearDetected": "Un appareil relevé dans les photos se masque, il ne se supprime pas.",
-    "gearPhoto": "Cette image ne peut pas être utilisée."
+    "gearPhoto": "Cette image ne peut pas être utilisée.",
+    "gearExport": "L'inventaire n'a pas pu être enregistré.",
+    "maintenanceNotFound": "Cette intervention n'existe plus.",
+    "invalidDate": "Date invalide."
   },
   "home": {
     "morning": "Bonjour",
@@ -1179,5 +1182,15 @@
     "dueCount_other": "{{count}} entretiens à faire",
     "homeDue": "{{name}} · {{kind}}, à faire depuis le {{date}}.",
     "open": "Ouvrir la fiche"
+  },
+  "gearExport": {
+    "pdf": "Exporter en PDF…",
+    "csv": "Exporter en CSV…",
+    "fileName": "Inventaire du matériel",
+    "title": "Inventaire du matériel",
+    "device": "Appareil",
+    "purchase": "Achat",
+    "lastMaintenance": "Dernier entretien",
+    "footer": "Page {{page}} sur {{pages}}"
   }
 }

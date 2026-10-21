@@ -194,6 +194,14 @@ fn inventaire_fusion_masquage_accessoires_et_fiche() {
     assert_eq!(common::sha256(&source), before);
     assert!(gear::set_photo_file(&conn, &data_dir, tripod, &dir.path().join("x.txt")).is_err());
 
+    // Export : la photo déposée sert au PDF ; sans photo ni aperçu, rien.
+    let cache = dir.path().join("cache");
+    assert_eq!(
+        gear::export::gear_photo(&conn, &data_dir, &cache, tripod).as_deref(),
+        Some(&b"\xFF\xD8 une image"[..])
+    );
+    assert!(gear::export::gear_photo(&conn, &data_dir, &cache, nikon).is_none());
+
     // Retirer la photo efface la copie ; la source reste.
     gear::set_photo_media(&conn, &data_dir, tripod, None).unwrap();
     assert!(

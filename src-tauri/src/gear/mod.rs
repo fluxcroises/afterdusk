@@ -2,6 +2,7 @@
 //! fiches complètes, accessoires saisis à la main, fusion des doublons et
 //! masquage des appareils d'autrui.
 
+pub mod export;
 pub mod maintenance;
 pub mod stats;
 
@@ -29,6 +30,8 @@ pub enum GearError {
     MaintenanceNotFound(i64),
     #[error("date invalide : {0}")]
     InvalidDate(String),
+    #[error("export de l'inventaire : {0}")]
+    Export(String),
 }
 
 /// Type d'appareil ou d'accessoire.

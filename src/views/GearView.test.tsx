@@ -7,6 +7,12 @@ vi.mock("@tauri-apps/api/core", async (original) => ({
   invoke: (cmd: string, args?: Record<string, unknown>) => invoke(cmd, args),
 }));
 
+const save = vi.fn(() => Promise.resolve<string | null>("D:/Inventaire du matériel.pdf"));
+vi.mock("@tauri-apps/plugin-dialog", () => ({
+  open: () => Promise.resolve(null),
+  save: () => save(),
+}));
+
 const confirmWarning = vi.fn(() => Promise.resolve(true));
 vi.mock("../ui/confirm", () => ({ confirmWarning: () => confirmWarning() }));
 
@@ -235,5 +241,26 @@ describe("écran Matériel", () => {
     );
     expect(confirmWarning).toHaveBeenCalled();
     expect(invoke).toHaveBeenCalledWith("maintenance_delete", { id: 7 });
+  });
+
+  it("exporte l'inventaire en PDF à l'emplacement choisi", async () => {
+    await act(async () => render(<GearView />));
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Exporter en PDF…" })),
+    );
+    const call = invoke.mock.calls.find(([cmd]) => cmd === "gear_export_pdf")?.[1];
+    expect(call?.path).toBe("D:/Inventaire du matériel.pdf");
+    const doc = call?.doc as { table: { rows: string[][] }; sections: unknown[] };
+    // Les quatre appareils visibles, chacun avec sa fiche.
+    expect(doc.table.rows).toHaveLength(4);
+    expect(doc.sections).toHaveLength(4);
+
+    // Boîte refermée sans choisir : rien n'est écrit.
+    save.mockResolvedValueOnce(null);
+    invoke.mockClear();
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Exporter en CSV…" })),
+    );
+    expect(invoke.mock.calls.some(([cmd]) => cmd === "gear_export_csv")).toBe(false);
   });
 });
