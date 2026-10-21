@@ -4160,8 +4160,16 @@ input.locate-offset {
   border-color: var(--ad-warning);
 }
 
+/* Progression et son bouton sur une seule ligne, à la hauteur de la barre. */
+.status-bar-progress {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 .status-bar-action {
   margin-left: var(--ad-space-2);
+  font: inherit;
 }
 
 /* Questions et messages de l'application (à la place des boîtes du système). */

@@ -49,7 +49,7 @@ export function StatusBar() {
       <span className="status-bar-spacer" />
       {rescanning && <span>{t("rescan.progress", { done: rescanDone, total: rescanTotal })}</span>}
       {analysing && analysisTotal > 0 && (
-        <span>
+        <span className="status-bar-progress">
           {t("analysis.progress", { done: analysisDone, total: analysisTotal })}
           <button
             type="button"

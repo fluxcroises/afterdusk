@@ -635,4 +635,9 @@ Critères (cahier des charges, section 7) :
   - une photo est signalée « Yeux fermés probables » si un visage (cinq au plus, les plus grands, d'au moins 48 px) a les deux yeux sous 0,12 ;
   - les photos déjà analysées sont reprises ; sans la bibliothèque, l'analyse reste en version 1 et sera reprise plus tard.
 - Échantillons de test : deux portraits CC0 de Wikimedia Commons, yeux ouverts et yeux fermés, ajoutés au manifeste avec leur source et leur empreinte (le script envoie maintenant un User-Agent, que Wikimedia exige).
-- Tests : rapport d'ouverture, portraits réels (ouverts, fermés, sans visage), et de bout en bout, avec le portrait aux yeux fermés signalé « eyes » et filtré, l'autre non. Le prototype a montré la vitesse ; le critère des 1 000 photos se mesurera sur l'analyse complète, en version optimisée. Pas encore vérifié dans l'application compilée.
+- Tests : rapport d'ouverture, portraits réels (ouverts, fermés, sans visage), et de bout en bout, avec le portrait aux yeux fermés signalé « eyes » et filtré, l'autre non. Le prototype a montré la vitesse ; le critère des 1 000 photos se mesurera sur l'analyse complète, en version optimisée.
+- Vérifié dans l'application compilée sous Windows, avec les boîtes de dialogue (données de l'utilisateur mises de côté puis remises, originaux d'essai intacts) :
+  - les deux portraits d'essai ajoutés à la bibliothèque d'essai ; la réanalyse affiche son bilan dans une boîte d'Afterdusk ;
+  - Photo > Rechercher les ratés reprend les onze photos (analyse version 2), avec la progression dans la barre d'état. Le portrait aux yeux fermés porte « Yeux fermés probables », l'autre rien ; les ratés déjà connus gardent leur pastille ;
+  - la suppression de l'album intelligent demande confirmation dans une boîte d'Afterdusk (avertissement, « Supprimer » en rouge), et Échap annule.
+- Corrigé à cette occasion : « Arrêter » passait à la ligne sous la progression, hors de la barre d'état.
