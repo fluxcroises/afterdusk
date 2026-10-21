@@ -652,3 +652,8 @@ Critères (cahier des charges, section 7) :
   - vignettes tirées des aperçus retouchés (600 px), progression dans la boîte ; 20 photos par page en 4 colonnes A4, 72 en 8 colonnes.
 - Logo du studio (idée de l'utilisateur), dans Réglages > Identité : copié et vérifié dans les données d'Afterdusk, aperçu sur damier, remplaçable et retirable. Il sert en tête des planches contact et de l'inventaire du matériel, et comme filigrane des exports (« Logo du studio », à côté de texte et image) et des planches.
 - Tests : pagination et filigranes de la planche, formats de page, copie et retrait du logo, boîte de dialogue (photos retenues, sélection, réglages envoyés). Une planche d'exemple de 26 photos, rendue puis regardée page par page, avec filigrane texte puis logo.
+
+### 2026-10-22 : ONNX Runtime 1.23.2, plantage macOS corrigé
+
+- Sous macOS 26 (CI), ONNX Runtime 1.22.0 plantait (SIGSEGV) à l'ouverture de la première session de modèle, après la création de l'environnement : traces posées sur une branche de diagnostic, supprimée ensuite.
+- Passage à la 1.23.2, toujours universelle (Apple Silicon et Intel) : sur la CI macOS, les deux sessions s'ouvrent, les portraits d'essai sont analysés et toute la suite du cœur passe. 14,2 Mo sous Windows, 74,9 Mo sous macOS ; empreintes publiées par GitHub, reprises dans le script. La décision 0010 est mise à jour.

@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "1.22.0";
+const VERSION = "1.23.2";
 const BASE = `https://github.com/microsoft/onnxruntime/releases/download/v${VERSION}`;
 
 // Empreintes calculées sur les archives officielles le 2026-10-21 (GitHub
@@ -22,14 +22,14 @@ const BASE = `https://github.com/microsoft/onnxruntime/releases/download/v${VERS
 const PLATFORMS = {
   "win32-x64": {
     archive: `onnxruntime-win-x64-${VERSION}.zip`,
-    sha256: "174c616efc0271194488642a72f1a514e01487da4dfe84c49296d66e40ebe0da",
+    sha256: "0b38df9af21834e41e73d602d90db5cb06dbd1ca618948b8f1d66d607ac9f3cd",
     lib: "lib/onnxruntime.dll",
     target: "onnxruntime.dll",
   },
   // Bibliothèque universelle : Apple Silicon et Intel.
   darwin: {
     archive: `onnxruntime-osx-universal2-${VERSION}.tgz`,
-    sha256: "cfa6f6584d87555ed9f6e7e8a000d3947554d589efe3723b8bfa358cd263d03c",
+    sha256: "49ae8e3a66ccb18d98ad3fe7f5906b6d7887df8a5edd40f49eb2b14e20885809",
     lib: `lib/libonnxruntime.${VERSION}.dylib`,
     target: "libonnxruntime.dylib",
   },
