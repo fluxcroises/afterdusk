@@ -121,6 +121,16 @@ Chaque module indique entre crochets la version qui le livre (voir section 7).
 - **Après import** : proposition d'éjecter la carte. Afterdusk ne supprime jamais rien sur la carte.
 - **Mots-clés et copyright** appliqués à l'import (auteur et mention de copyright par défaut dans les réglages).
 - **Traitement en arrière-plan** : l'utilisateur peut commencer à trier pendant que l'import, les aperçus et les analyses continuent, avec une barre de progression.
+- **Client et type de séance** \[V0.4\] : choisis dans le panneau de destination (voir 4.2), utilisables dans les modèles de rangement et de renommage (`{client}`, `{seance}`).
+
+### 4.1 bis Import automatique \[V0.4\]
+
+Demandé par l'utilisateur le 2026-10-21 (décision 0009). Les photos arrivent dans la bibliothèque sans passer par l'écran d'import, avec les mêmes garanties : copie vérifiée par somme de contrôle, sauvegarde si elle est configurée, rien d'écrit sur la source.
+
+- **Carte connue** : pour une carte déjà importée une fois, l'utilisateur peut choisir « importer automatiquement » avec les derniers réglages (album, rangement, renommage). Les photos déjà importées sont ignorées, et une notification donne le nombre de photos ajoutées.
+- **Dossier surveillé** : un ou plusieurs dossiers où l'application du fabricant (connexion USB ou Wi-Fi) ou un transfert sans fil dépose les photos. Afterdusk attend qu'un fichier soit complet (taille stable), le copie dans l'album choisi et l'affiche aussitôt dans le tri. Le dossier surveillé n'est jamais modifié.
+- **Réception FTP** : un serveur FTP limité au réseau local reçoit les photos envoyées par les boîtiers qui savent transférer en FTP. Désactivé par défaut, protégé par un identifiant et un mot de passe propres à Afterdusk ; chaque fichier reçu suit le même chemin qu'un fichier de dossier surveillé.
+- **Pendant une séance** : l'album en cours reste ouvert dans Trier et les nouvelles photos s'y ajoutent à la fin, sans changer la photo affichée.
 
 ### 4.2 Bibliothèque et albums \[V0.1\]
 
@@ -129,6 +139,7 @@ Chaque module indique entre crochets la version qui le livre (voir section 7).
 - **Recherche** texte sur noms d'albums, mots-clés, lieux et noms de fichiers.
 - **Collections** : regroupements virtuels de photos de plusieurs albums (par exemple « Meilleures photos 2026 »), sans déplacer les fichiers.
 - **Albums intelligents** : collections enregistrées à partir d'un filtre (par exemple « 5 étoiles prises au 23 mm ») \[V0.3\].
+- **Clients et séances** \[V0.4\] (décision 0009) : une fiche client (nom, contact facultatif, notes) et un type de séance (mariage, baptême, naissance, portrait, événement…, liste modifiable) se rattachent à un album. La Bibliothèque filtre et cherche par client et par type de séance, et la fiche d'un client liste ses albums. La galerie client (4.6) reprend son nom et réimporte ses choix dans le bon album. Les données des clients restent dans la base locale, jamais dans les XMP, et la suppression d'un client efface toutes ses données. Devis, factures, agenda et contrats restent hors périmètre.
 - **Fiche d'informations** d'une photo : EXIF lisibles (boîtier, objectif, focale, ouverture, vitesse, ISO, date), lieu, histogramme.
 - **Plusieurs bibliothèques** possibles, et bibliothèque hors ligne consultable grâce aux aperçus en cache, avec un message clair invitant à rebrancher le disque pour retoucher ou exporter.
 - **Synchronisation avec le disque** : bouton « Rechercher les changements » qui détecte les fichiers ajoutés, déplacés ou supprimés hors d'Afterdusk.
@@ -228,7 +239,8 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - Identité du photographe (nom, copyright, site) pour les métadonnées et le filigrane.
 - Langue (français, anglais, ou celle du système), thème (sombre par défaut, clair, système).
 - Durée de la corbeille, taille maximale du cache d'aperçus.
-- Comportement à l'insertion d'une carte (ouvrir l'import, notifier, ne rien faire).
+- Comportement à l'insertion d'une carte (ouvrir l'import, notifier, ne rien faire, ou importer automatiquement une carte connue \[V0.4\]).
+- Import automatique \[V0.4\] : dossiers surveillés, réception FTP (désactivée par défaut), et la liste des appels réseau autorisés, chacun désactivable.
 
 ## 5. Modèle de données
 
@@ -237,7 +249,8 @@ La base SQLite indexe la bibliothèque ; les fichiers et leurs XMP restent la r�
 | Table | Champs principaux | Liens |
 | --- | --- | --- |
 | `libraries` | id, nom, chemin racine, chemin de sauvegarde, modèle de rangement, modèle de renommage, en ligne oui/non | Contient des albums |
-| `albums` | id, nom, date de début, date de fin, dossier, lieu (lat, lon, ville, pays), couverture, notes | Appartient à une bibliothèque ; contient des médias |
+| `albums` | id, nom, date de début, date de fin, dossier, lieu (lat, lon, ville, pays), couverture, notes, id du client, type de séance \[V0.4\] | Appartient à une bibliothèque ; contient des médias ; lié à un client |
+| `clients` \[V0.4\] | id, nom, contact (facultatif), notes | Plusieurs albums |
 | `media` | id, type (photo ou vidéo), chemin, nom d'origine, taille, empreinte, date de prise de vue, fuseau, largeur, hauteur, orientation, lat, lon, source du lieu, note, drapeau, couleur, état (normal, corbeille), date de mise en corbeille | Appartient à un album ; lié à un boîtier et un objectif |
 | `media_exif` | id du média, focale, ouverture, vitesse, ISO, compensation, mode, flash, numéro de série boîtier, compteur de déclenchements, EXIF bruts (JSON) | Un pour un avec `media` |
 | `edits` | id, id du média, nom de version (original ou copie virtuelle), réglages (JSON versionné), date de modification | Plusieurs versions par média |
@@ -373,6 +386,8 @@ Objectif : gagner du temps au tri et partager avec des clients.
 - [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
 - [ ] Vidéos : import, rangement, tri, lecture, fichiers annexes
 - [ ] Galerie web statique avec sélection client et réimport des choix
+- [ ] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
+- [ ] Import automatique : carte connue, dossier surveillé et réception FTP sur le réseau local, chaque photo affichée dans le tri moins de 5 secondes après son arrivée
 - [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques
 
 **Après la V0.4** (pistes pour une V1) : retouches locales (masques, pinceau, dégradés), suppression de défauts, simulations de film, connexion en direct au boîtier (tethering), version Linux, traductions communautaires.
@@ -403,7 +418,7 @@ Cahier des charges : docs/cahier-des-charges.md. Avancement : docs/avancement.md
 - Ne jamais écrire sur la carte SD ou le boîtier source.
 - Toute copie est vérifiée par somme de contrôle avant d'être considérée comme faite.
 - Toute suppression passe par la corbeille interne.
-- Aucun appel réseau hors tuiles de carte et vérification des mises à jour.
+- Aucun appel réseau hors des exceptions listées ici. Chaque exception se désactive dans les Réglages et n'envoie ni photo ni donnée personnelle à un tiers sans action de l'utilisateur. Exceptions : tuiles de carte, vérification des mises à jour, réception FTP sur le réseau local (désactivée par défaut, décision 0009). Toute nouvelle exception est ajoutée ici après accord de l'utilisateur.
 
 ## Conventions
 - Rust : cargo fmt et cargo clippy sans avertissement ; erreurs avec thiserror, jamais de unwrap hors tests.
