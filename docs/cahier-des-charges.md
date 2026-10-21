@@ -129,7 +129,8 @@ Demandé par l'utilisateur le 2026-10-21 (décision 0009). Les photos arrivent d
 
 - **Carte connue** : pour une carte déjà importée une fois, l'utilisateur peut choisir « importer automatiquement » avec les derniers réglages (album, rangement, renommage). Les photos déjà importées sont ignorées, et une notification donne le nombre de photos ajoutées.
 - **Dossier surveillé** : un ou plusieurs dossiers où l'application du fabricant (connexion USB ou Wi-Fi) ou un transfert sans fil dépose les photos. Afterdusk attend qu'un fichier soit complet (taille stable), le copie dans l'album choisi et l'affiche aussitôt dans le tri. Le dossier surveillé n'est jamais modifié.
-- **Réception FTP** : un serveur FTP limité au réseau local reçoit les photos envoyées par les boîtiers qui savent transférer en FTP. Désactivé par défaut, protégé par un identifiant et un mot de passe propres à Afterdusk ; chaque fichier reçu suit le même chemin qu'un fichier de dossier surveillé.
+- **Réception FTP** : un serveur FTP limité au réseau local reçoit les photos envoyées par les boîtiers qui savent transférer en FTP. Désactivé par défaut, protégé par un identifiant et un mot de passe propres à Afterdusk ; chaque fichier reçu suit le même chemin qu'un fichier de dossier surveillé. FTP et FTPS sont acceptés, FTPS conseillé : en FTP simple, un avertissement rappelle que le mot de passe et les photos circulent en clair sur le réseau local (décision 0009).
+- **Délai et ordre** : une photo arrivée s'affiche dans le tri en moins de 5 secondes. Ordre de réalisation : carte connue, dossier surveillé, réception FTP.
 - **Pendant une séance** : l'album en cours reste ouvert dans Trier et les nouvelles photos s'y ajoutent à la fin, sans changer la photo affichée.
 
 ### 4.2 Bibliothèque et albums \[V0.1\]
@@ -139,7 +140,7 @@ Demandé par l'utilisateur le 2026-10-21 (décision 0009). Les photos arrivent d
 - **Recherche** texte sur noms d'albums, mots-clés, lieux et noms de fichiers.
 - **Collections** : regroupements virtuels de photos de plusieurs albums (par exemple « Meilleures photos 2026 »), sans déplacer les fichiers.
 - **Albums intelligents** : collections enregistrées à partir d'un filtre (par exemple « 5 étoiles prises au 23 mm ») \[V0.3\].
-- **Clients et séances** \[V0.4\] (décision 0009) : une fiche client (nom, contact facultatif, notes) et un type de séance (mariage, baptême, naissance, portrait, événement…, liste modifiable) se rattachent à un album. La Bibliothèque filtre et cherche par client et par type de séance, et la fiche d'un client liste ses albums. La galerie client (4.6) reprend son nom et réimporte ses choix dans le bon album. Les données des clients restent dans la base locale, jamais dans les XMP, et la suppression d'un client efface toutes ses données. Devis, factures, agenda et contrats restent hors périmètre.
+- **Clients et séances** \[V0.4\] (décision 0009) : une fiche client (nom, courriel et téléphone facultatifs, notes) et un type de séance (mariage, baptême, naissance, portrait, événement, grossesse, famille, entreprise, produit, sport, concert ; liste modifiable) se rattachent à un album. La Bibliothèque filtre et cherche par client et par type de séance, et la fiche d'un client liste ses albums. La galerie client (4.6) reprend son nom et réimporte ses choix dans le bon album. Les données des clients restent dans la base locale, jamais dans les XMP, et la suppression d'un client efface toutes ses données. Devis, factures, agenda et contrats restent hors périmètre.
 - **Fiche d'informations** d'une photo : EXIF lisibles (boîtier, objectif, focale, ouverture, vitesse, ISO, date), lieu, histogramme.
 - **Plusieurs bibliothèques** possibles, et bibliothèque hors ligne consultable grâce aux aperçus en cache, avec un message clair invitant à rebrancher le disque pour retoucher ou exporter.
 - **Synchronisation avec le disque** : bouton « Rechercher les changements » qui détecte les fichiers ajoutés, déplacés ou supprimés hors d'Afterdusk.
@@ -180,7 +181,7 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - **Avertissements d'écrêtage** des hautes lumières et des ombres sur l'image et l'histogramme.
 - **Performance cible** : réglage reflété en moins de 100 ms sur un aperçu de 2048 px avec une carte graphique intégrée récente.
 
-### 4.6 Livraison et export \[V0.2, galerie web en V0.4\]
+### 4.6 Livraison et export \[V0.2, galerie web et planches contact en V0.4\]
 
 - **Presets d'export** fournis et modifiables :
 
@@ -198,6 +199,7 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - **Nettoyage des métadonnées** : tout garder, retirer le GPS, retirer le numéro de série du boîtier, ne garder que le copyright, ou tout retirer.
 - **Export multiple** : plusieurs presets en une seule opération (par exemple Web et Instagram), dans des sous-dossiers.
 - **Galerie web** \[V0.4\] : génération d'un site statique (HTML, CSS, images) d'un album ou d'une collection, avec thème clair ou sombre, titre, texte d'introduction, téléchargement optionnel des images, à héberger où l'utilisateur le souhaite. Option de sélection client : le client coche ses photos préférées et renvoie la liste par lien ou fichier, qu'Afterdusk sait réimporter comme drapeaux.
+- **Planches contact** \[V0.4\] (idée de l'utilisateur, décision 0009) : PDF d'un album ou d'une collection, pour un client ou pour l'archive. Grille de 2 à 8 colonnes, A4 ou Lettre, portrait ou paysage (par défaut 4 colonnes en A4 portrait). Sous chaque vignette, son numéro d'ordre et le nom du fichier. En-tête : nom de l'album ou de la collection, client et séance, date de la séance, photographe. Vignettes tirées des aperçus rendus, retouches comprises. Filigrane texte en option, désactivé par défaut.
 
 ### 4.7 Localisation et carte du monde \[V0.3\]
 
@@ -250,7 +252,7 @@ La base SQLite indexe la bibliothèque ; les fichiers et leurs XMP restent la r�
 | --- | --- | --- |
 | `libraries` | id, nom, chemin racine, chemin de sauvegarde, modèle de rangement, modèle de renommage, en ligne oui/non | Contient des albums |
 | `albums` | id, nom, date de début, date de fin, dossier, lieu (lat, lon, ville, pays), couverture, notes, id du client, type de séance \[V0.4\] | Appartient à une bibliothèque ; contient des médias ; lié à un client |
-| `clients` \[V0.4\] | id, nom, contact (facultatif), notes | Plusieurs albums |
+| `clients` \[V0.4\] | id, nom, courriel et téléphone (facultatifs), notes | Plusieurs albums |
 | `media` | id, type (photo ou vidéo), chemin, nom d'origine, taille, empreinte, date de prise de vue, fuseau, largeur, hauteur, orientation, lat, lon, source du lieu, note, drapeau, couleur, état (normal, corbeille), date de mise en corbeille | Appartient à un album ; lié à un boîtier et un objectif |
 | `media_exif` | id du média, focale, ouverture, vitesse, ISO, compensation, mode, flash, numéro de série boîtier, compteur de déclenchements, EXIF bruts (JSON) | Un pour un avec `media` |
 | `edits` | id, id du média, nom de version (original ou copie virtuelle), réglages (JSON versionné), date de modification | Plusieurs versions par média |
@@ -386,6 +388,7 @@ Objectif : gagner du temps au tri et partager avec des clients.
 - [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
 - [ ] Vidéos : import, rangement, tri, lecture, fichiers annexes
 - [ ] Galerie web statique avec sélection client et réimport des choix
+- [ ] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option
 - [ ] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
 - [ ] Import automatique : carte connue, dossier surveillé et réception FTP sur le réseau local, chaque photo affichée dans le tri moins de 5 secondes après son arrivée
 - [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques

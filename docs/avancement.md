@@ -506,7 +506,7 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
   - le numéro de série et les en-têtes étaient coupés dans le tableau (colonnes réparties autrement ; « Entretien » n'y garde que la date de la dernière intervention) ;
   - un compteur estimé s'écrivait comme un compteur lu : « au moins N » dans le PDF, et rien dans le CSV, qui a déjà la colonne Photos.
 - Limite connue : Excel retire le zéro initial d'un numéro de série comme « 093022004357 », qu'il prend pour un nombre. Le CSV garde la valeur exacte ; d'autres tableurs, ou l'import de texte d'Excel, la lisent correctement.
-- Idée de l'utilisateur, à inscrire au cahier des charges : des planches contact en PDF, qui réutiliseraient cette mise en page. Leur place logique est l'étape Livrer, en V0.4.
+- Idée de l'utilisateur : des planches contact en PDF, qui réutiliseraient cette mise en page. Inscrites au cahier des charges en V0.4 (étape Livrer).
 - Critères de l'inventaire, des fiches avec statistiques et du journal d'entretien cochés : CI verte sous Windows et macOS (run 39636780190, commit f709996).
 - Critère de l'export d'inventaire PDF et CSV coché : CI verte sous Windows et macOS (run 39641509658, commit e57229c). Reste pour la V0.3 : les albums intelligents.
 
@@ -528,3 +528,13 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
   - Corrigé à cette occasion : les champs vides du filtre revenaient du cœur sous forme de `null`, et l'interface y voyait une zone de carte posée (pastille « Zone de la carte » fantôme). Le cœur ne les écrit plus et l'interface nettoie un filtre relu.
   - Corrigé aussi : le nom lu au clavier d'une ligne de liste collait le libellé à sa précision (« Essai12 mai 2021 »).
 - Critère des albums intelligents coché : CI verte sous Windows et macOS (run 39650062200, commit c324240). Tous les critères de la V0.3 sont cochés.
+
+### 2026-10-21 (suite) : préparation de la V0.4
+
+- Décision 0009 complétée avec les réponses de l'utilisateur aux cinq questions ouvertes :
+  - import automatique dans l'ordre carte connue, dossier surveillé, FTP ;
+  - affichage dans le tri en moins de 5 secondes ;
+  - FTP et FTPS acceptés, avec un avertissement en FTP simple ;
+  - fiche client avec courriel et téléphone facultatifs ;
+  - onze types de séance fournis.
+- Planches contact ajoutées au cahier des charges (4.6) et aux critères de la V0.4 : grille de 2 à 8 colonnes au choix, vignettes numérotées avec le nom du fichier, en-tête (album, client et séance, date, photographe), vignettes retouchées, filigrane en option.

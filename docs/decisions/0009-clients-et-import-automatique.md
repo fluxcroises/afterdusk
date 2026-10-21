@@ -1,6 +1,6 @@
 # 0009. Clients, séances et import automatique
 
-Date : 2026-10-21 · Statut : **adoptée** pour le périmètre et la règle réseau (demande de l'utilisateur du 2026-10-21) ; détails à trancher en fin de document
+Date : 2026-10-21 · Statut : **adoptée** (périmètre et règle réseau le 2026-10-21 ; détails tranchés le 2026-10-21, en fin de document)
 
 ## Contexte
 
@@ -56,10 +56,22 @@ La connexion en direct au boîtier (déclenchement et réglages depuis Afterdusk
 - Surveillance de dossiers : la crate `notify` (Windows et macOS). Licence et comportement sur un dossier réseau à vérifier.
 - Serveur FTP : `libunftp` (Apache 2.0, compatible GPL v3), avec un stockage limité au dossier de réception. Prise en charge de FTPS à vérifier.
 
-## Questions à trancher
+## Questions tranchées (2026-10-21)
 
-1. **Version** : tout en V0.4, comme proposé, ou l'import automatique d'une carte connue plus tôt (juste après la V0.1, il ne demande presque rien) ?
-2. **Délai d'affichage** : le critère proposé est « affichée dans le tri moins de 5 secondes après son arrivée », sur le modèle de la détection des cartes. Il te convient ?
-3. **FTP ou FTPS** : en FTP simple, le mot de passe et les photos circulent en clair sur le réseau local. Exiger FTPS quand le boîtier le permet, ou accepter les deux ?
-4. **Fiche client** : quels champs de contact (courriel, téléphone, aucun) ? Moins il y en a, moins il y a de données personnelles à protéger.
-5. **Types de séance fournis** : la liste mariage, baptême, naissance, portrait, événement te va, ou faut-il en ajouter (grossesse, entreprise, sport…) ?
+Réponses de l'utilisateur, la V0.3 terminée :
+
+1. **Version et ordre** : tout l'import automatique en V0.4, dans cet ordre : carte connue d'abord (elle prolonge la détection des cartes), puis dossier surveillé, puis réception FTP.
+2. **Délai d'affichage** : une photo arrivée s'affiche dans le tri en moins de 5 secondes.
+3. **FTP ou FTPS** : les deux sont acceptés, FTPS conseillé. En FTP simple, un avertissement rappelle que le mot de passe et les photos circulent en clair sur le réseau local.
+4. **Fiche client** : nom, courriel et téléphone (tous deux facultatifs), notes. Ces deux données personnelles restent dans la base locale et disparaissent avec le client.
+5. **Types de séance fournis** : mariage, baptême, naissance, portrait, événement, grossesse, famille, entreprise, produit, sport, concert. La liste reste modifiable.
+
+## Planches contact (ajout du 2026-10-21)
+
+Idée de l'utilisateur, ajoutée à l'étape Livrer de la V0.4 : une planche contact en PDF d'un album ou d'une collection, mise en page par le cœur avec printpdf (décision prise pour l'export d'inventaire). Choix de l'utilisateur :
+
+- **Grille au choix** : 2 à 8 colonnes, A4 ou Lettre, portrait ou paysage ; par défaut 4 colonnes en A4 portrait.
+- **Sous chaque vignette** : son numéro d'ordre (1, 2, 3…, pour qu'un client donne ses choix sans ambiguïté) et le nom du fichier.
+- **En-tête** : nom de l'album ou de la collection, client et séance, date de la séance, photographe (identité des Réglages).
+- **Filigrane** en option, désactivé par défaut, repris du filigrane texte des presets d'export.
+- **Vignettes retouchées** : tirées des aperçus rendus, recadrage et réglages compris.
