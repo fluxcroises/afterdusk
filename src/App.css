@@ -4163,3 +4163,43 @@ input.locate-offset {
 .status-bar-action {
   margin-left: var(--ad-space-2);
 }
+
+/* Questions et messages de l'application (à la place des boîtes du système). */
+.app-dialog {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.app-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.app-dialog-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--ad-accent);
+}
+
+.app-dialog[data-warning] .app-dialog-icon {
+  color: var(--ad-warning);
+}
+
+.app-dialog-text {
+  margin: 0;
+  font: var(--ad-font-ui);
+  color: var(--ad-text-secondary);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.button-danger {
+  color: var(--ad-on-accent);
+  background: var(--ad-danger);
+  border-color: var(--ad-danger);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ad-danger) 85%, var(--ad-text));
+}

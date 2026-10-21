@@ -1,3 +1,4 @@
+import { AppDialog } from "../components/AppDialog";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { useRescan } from "../store/rescan";
 import { Check, ChevronDown, FolderOpen, HardDriveDownload, Images } from "lucide-react";
@@ -448,6 +449,7 @@ export function WelcomeApp() {
           {t("home.showOnStartup")}
         </label>
       </footer>
+      <AppDialog />
     </div>
   );
 }

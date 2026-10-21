@@ -1242,5 +1242,8 @@
   "analysis": {
     "progress": "Analyse : {{done}} / {{total}}",
     "stop": "Arrêter"
+  },
+  "dialog": {
+    "ok": "OK"
   }
 }

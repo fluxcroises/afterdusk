@@ -1,4 +1,5 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { useDialog } from "./dialog";
+import { invoke } from "@tauri-apps/api/core";
 import i18next from "i18next";
 import { create } from "zustand";
 import { toCommandError } from "../api/core";
@@ -17,14 +18,14 @@ interface RescanState {
   onProgress: (p: { done: number; total: number }) => void;
 }
 
-/** Bilan affiché à la fin (boîte native, ou alerte du navigateur en développement). */
+/** Bilan affiché à la fin, dans une boîte aux couleurs d'Afterdusk. */
 async function tell(text: string) {
-  if (!isTauri()) {
-    window.alert(text);
-    return;
-  }
-  const { message } = await import("@tauri-apps/plugin-dialog");
-  await message(text, { title: i18next.t("rescan.title"), kind: "info" });
+  await useDialog.getState().show({
+    kind: "message",
+    title: i18next.t("rescan.title"),
+    text,
+    okLabel: i18next.t("dialog.ok"),
+  });
 }
 
 export const useRescan = create<RescanState>()((set, get) => ({

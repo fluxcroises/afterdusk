@@ -1,3 +1,4 @@
+import { AppDialog } from "./components/AppDialog";
 import type { ReactElement } from "react";
 import { useAppEvents } from "./appEvents";
 import { AboutDialog } from "./components/AboutDialog";
@@ -49,6 +50,7 @@ export default function App() {
       <AboutDialog />
       <LocateDialog />
       <TimeFixDialog />
+      <AppDialog />
     </div>
   );
 }

@@ -614,3 +614,11 @@ Critères (cahier des charges, section 7) :
   - une prise floutée (bouge.jpg) et une prise éclaircie à l'extrême (brulee.jpg), tirées du RAW du Nikon, ajoutées à la bibliothèque d'essai et inscrites par la réanalyse ;
   - Photo > Rechercher les ratés : en quelques secondes, seules ces deux photos portent la pastille, avec « Floue ou bougée probable » et « Surexposée probable » ; les RAW nets n'en ont aucune ;
   - « Ratés probables » ne garde qu'elles (« 2 sur 9 photos »), et Ctrl+A puis X les rejette en lot.
+
+### 2026-10-21 (suite) : boîtes de dialogue aux couleurs d'Afterdusk
+
+- Demande de l'utilisateur : les questions et messages (confirmation d'une suppression, bilan de la réanalyse) s'affichaient dans une boîte du système, claire et étrangère à l'application. Ils passent désormais par une boîte d'Afterdusk : fond assombri, panneau sombre, icône d'information ou d'avertissement, boutons en bas à droite.
+- Une confirmation destructive met « Annuler » en avant ; le bouton d'action est rouge. Échap annule une question et ferme un message. Les demandes simultanées attendent leur tour.
+- La boîte est montée dans la fenêtre principale et dans l'accueil. Les autorisations `dialog:allow-ask` et `dialog:allow-message` ne servent plus et sont retirées.
+- Les sélecteurs de fichiers et « Enregistrer sous » restent ceux du système : ce sont des explorateurs complets (favoris, réseau, recherche), qu'il vaut mieux ne pas refaire.
+- Tests : focus sur Annuler, Échap, validation, file d'attente, message à un seul bouton. Pas encore vérifié dans l'application compilée.

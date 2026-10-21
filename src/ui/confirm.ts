@@ -1,4 +1,4 @@
-import { isTauri } from "@tauri-apps/api/core";
+import { useDialog } from "../store/dialog";
 
 interface ConfirmOptions {
   title: string;
@@ -6,9 +6,7 @@ interface ConfirmOptions {
   cancelLabel: string;
 }
 
-/** Demande de confirmation native ; dans un navigateur (développement), celle du navigateur. */
-export async function confirmWarning(text: string, options: ConfirmOptions): Promise<boolean> {
-  if (!isTauri()) return window.confirm(text);
-  const { ask } = await import("@tauri-apps/plugin-dialog");
-  return ask(text, { ...options, kind: "warning" });
+/** Confirmation d'une action destructive, dans une boîte aux couleurs d'Afterdusk. */
+export function confirmWarning(text: string, options: ConfirmOptions): Promise<boolean> {
+  return useDialog.getState().show({ kind: "confirm", warning: true, text, ...options });
 }
