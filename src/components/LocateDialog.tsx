@@ -1,8 +1,8 @@
 import { open as chooseFiles } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type LocateSource, useLocate } from "../store/locate";
-import { formatOffset } from "../ui/format";
+import { type LocateSource, type PlaceName, searchPlaces, useLocate } from "../store/locate";
+import { formatOffset, placeName } from "../ui/format";
 import { ErrorBanner } from "./ErrorBanner";
 
 /** Décalage de l'ordinateur à cette date, pour les boîtiers sans fuseau. */
@@ -10,16 +10,19 @@ function computerOffset(): number {
   return -new Date().getTimezoneOffset();
 }
 
-const DEFAULT_MINUTES: Record<LocateSource, number> = { gpx: 10, phone: 30 };
+const DEFAULT_MINUTES = { gpx: 10, phone: 30 };
+const SOURCES: LocateSource[] = ["gpx", "phone", "manual"];
+/** Attente après la dernière frappe avant de chercher un lieu. */
+const SEARCH_DELAY_MS = 200;
 
-/** Photo > Localiser… : trace GPX ou photos de téléphone. */
+/** Photo > Localiser… : trace GPX, photos de téléphone ou lieu saisi. */
 export function LocateDialog() {
   const ids = useLocate((s) => s.ids);
   return ids ? <LocateForm count={ids.length} /> : null;
 }
 
 function LocateForm({ count }: { count: number }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const clock = useLocate((s) => s.clock);
   const running = useLocate((s) => s.running);
   const report = useLocate((s) => s.report);
@@ -30,9 +33,15 @@ function LocateForm({ count }: { count: number }) {
   const [offset, setOffset] = useState<number | null>(null);
   const [minutes, setMinutes] = useState(DEFAULT_MINUTES.gpx);
   const [replace, setReplace] = useState(false);
+  const [query, setQuery] = useState("");
+  const [found, setFound] = useState<PlaceName[]>([]);
+  const [place, setPlace] = useState<PlaceName | null>(null);
   const written = clock?.writtenMinutes ?? null;
   const manual = offset ?? written ?? computerOffset();
   const canUseWritten = written !== null;
+  const timed = source !== "manual";
+  // Champ vidé : plus de résultats, sans attendre la recherche.
+  const shown = query.trim() === "" ? [] : found;
 
   useEffect(() => {
     const escape = (e: KeyboardEvent) => {
@@ -41,6 +50,20 @@ function LocateForm({ count }: { count: number }) {
     window.addEventListener("keydown", escape);
     return () => window.removeEventListener("keydown", escape);
   }, []);
+
+  useEffect(() => {
+    if (query.trim() === "") return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void searchPlaces(query).then((places) => {
+        if (!cancelled) setFound(places);
+      });
+    }, SEARCH_DELAY_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   const pick = async () => {
     const chosen = await chooseFiles({
@@ -59,8 +82,9 @@ function LocateForm({ count }: { count: number }) {
   const changeSource = (s: LocateSource) => {
     setSource(s);
     setFiles([]);
-    setMinutes(DEFAULT_MINUTES[s]);
+    if (s !== "manual") setMinutes(DEFAULT_MINUTES[s]);
   };
+  const ready = timed ? files.length > 0 : place !== null;
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && close()}>
@@ -74,6 +98,7 @@ function LocateForm({ count }: { count: number }) {
           void useLocate.getState().run({
             source,
             files,
+            place,
             offsetMinutes: useWritten && canUseWritten ? null : manual,
             minutes,
             replace,
@@ -85,7 +110,7 @@ function LocateForm({ count }: { count: number }) {
         </h2>
         <ErrorBanner error={error} onDismiss={() => useLocate.setState({ error: null })} />
         <div className="develop-segmented" role="radiogroup" aria-label={t("locate.source")}>
-          {(["gpx", "phone"] as const).map((s) => (
+          {SOURCES.map((s) => (
             <button
               key={s}
               type="button"
@@ -97,73 +122,108 @@ function LocateForm({ count }: { count: number }) {
             </button>
           ))}
         </div>
-        <div className="locate-files">
-          <button type="button" className="button button-small" onClick={() => void pick()}>
-            {t(`locate.choose.${source}`)}
-          </button>
-          <span className="panel-note">
-            {files.length === 0
-              ? t("locate.noFile")
-              : files.length === 1
-                ? (files[0].split(/[\\/]/).pop() ?? files[0])
-                : t("locate.files", { count: files.length })}
-          </span>
-        </div>
-        <fieldset className="form-fieldset locate-clock">
-          <legend className="field-row-label">{t("locate.clock")}</legend>
-          <label className="check-row">
+        {timed ? (
+          <>
+            <div className="locate-files">
+              <button type="button" className="button button-small" onClick={() => void pick()}>
+                {t(`locate.choose.${source}`)}
+              </button>
+              <span className="panel-note">
+                {files.length === 0
+                  ? t("locate.noFile")
+                  : files.length === 1
+                    ? (files[0].split(/[\\/]/).pop() ?? files[0])
+                    : t("locate.files", { count: files.length })}
+              </span>
+            </div>
+            <fieldset className="form-fieldset locate-clock">
+              <legend className="field-row-label">{t("locate.clock")}</legend>
+              <label className="check-row">
+                <input
+                  type="radio"
+                  name="locate-clock"
+                  checked={useWritten && canUseWritten}
+                  disabled={!canUseWritten}
+                  onChange={() => setUseWritten(true)}
+                />
+                {written !== null && clock?.mixed
+                  ? t("locate.writtenMixed", { count: clock.withOffset, total: clock.total })
+                  : written !== null
+                    ? t("locate.written", {
+                        offset: formatOffset(written),
+                        count: clock?.withOffset ?? 0,
+                        total: clock?.total ?? 0,
+                      })
+                    : t("locate.writtenNone")}
+              </label>
+              <label className="check-row">
+                <input
+                  type="radio"
+                  name="locate-clock"
+                  checked={!useWritten || !canUseWritten}
+                  onChange={() => setUseWritten(false)}
+                />
+                {t("locate.utc")}
+                <input
+                  type="number"
+                  className="locate-offset"
+                  aria-label={t("locate.offsetHours")}
+                  step={0.25}
+                  min={-14}
+                  max={14}
+                  value={manual / 60}
+                  onFocus={() => setUseWritten(false)}
+                  onChange={(e) => {
+                    setUseWritten(false);
+                    setOffset(Math.round(Number(e.currentTarget.value) * 60));
+                  }}
+                />
+                {t("locate.hours")}
+              </label>
+            </fieldset>
+            <label className="deliver-field">
+              <span>{t(`locate.minutes.${source}`)}</span>
+              <input
+                type="number"
+                min={1}
+                max={240}
+                value={minutes}
+                onChange={(e) => setMinutes(Math.max(1, Math.round(Number(e.currentTarget.value))))}
+              />
+            </label>
+          </>
+        ) : (
+          <div className="locate-manual">
             <input
-              type="radio"
-              name="locate-clock"
-              checked={useWritten && canUseWritten}
-              disabled={!canUseWritten}
-              onChange={() => setUseWritten(true)}
-            />
-            {written !== null && clock?.mixed
-              ? t("locate.writtenMixed", { count: clock.withOffset, total: clock.total })
-              : written !== null
-                ? t("locate.written", {
-                    offset: formatOffset(written),
-                    count: clock?.withOffset ?? 0,
-                    total: clock?.total ?? 0,
-                  })
-                : t("locate.writtenNone")}
-          </label>
-          <label className="check-row">
-            <input
-              type="radio"
-              name="locate-clock"
-              checked={!useWritten || !canUseWritten}
-              onChange={() => setUseWritten(false)}
-            />
-            {t("locate.utc")}
-            <input
-              type="number"
-              className="locate-offset"
-              aria-label={t("locate.offsetHours")}
-              step={0.25}
-              min={-14}
-              max={14}
-              value={manual / 60}
-              onFocus={() => setUseWritten(false)}
+              type="search"
+              aria-label={t("locate.searchPlace")}
+              placeholder={t("locate.searchPlace")}
+              value={query}
+              autoFocus
               onChange={(e) => {
-                setUseWritten(false);
-                setOffset(Math.round(Number(e.currentTarget.value) * 60));
+                setQuery(e.currentTarget.value);
+                setPlace(null);
               }}
             />
-            {t("locate.hours")}
-          </label>
-        </fieldset>
-        <label className="deliver-field">
-          <span>{t(`locate.minutes.${source}`)}</span>
-          <input
-            type="number"
-            min={1}
-            max={240}
-            value={minutes}
-            onChange={(e) => setMinutes(Math.max(1, Math.round(Number(e.currentTarget.value))))}
-          />
-        </label>
+            <div className="locate-places" role="radiogroup" aria-label={t("locate.places")}>
+              {shown.map((p) => (
+                <label key={`${p.latitude},${p.longitude}`} className="check-row">
+                  <input
+                    type="radio"
+                    name="locate-place"
+                    checked={place === p}
+                    onChange={() => setPlace(p)}
+                  />
+                  <span>{placeName(p.city, p.country, i18n.language)}</span>
+                  {p.region && <span className="list-row-hint">{p.region}</span>}
+                </label>
+              ))}
+              {query.trim() !== "" && shown.length === 0 && (
+                <p className="panel-note">{t("locate.noPlace")}</p>
+              )}
+            </div>
+          </div>
+        )}
         <label className="check-row">
           <input
             type="checkbox"
@@ -194,7 +254,7 @@ function LocateForm({ count }: { count: number }) {
           <button
             type="submit"
             className="button button-small button-primary"
-            disabled={files.length === 0 || running}
+            disabled={!ready || running}
           >
             {t("locate.confirm")}
           </button>

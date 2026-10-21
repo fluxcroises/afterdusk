@@ -21,11 +21,29 @@ export interface ClockInfo {
   total: number;
 }
 
-export type LocateSource = "gpx" | "phone";
+export type LocateSource = "gpx" | "phone" | "manual";
+
+/** Lieu trouvé par son nom, miroir de `geo::places::PlaceName`. */
+export interface PlaceName {
+  city: string;
+  region: string | null;
+  country: string;
+  countryName: string;
+  timezone: string;
+  latitude: number;
+  longitude: number;
+}
+
+/** Lieux dont le nom commence par `query`, les plus peuplés d'abord. */
+export function searchPlaces(query: string): Promise<PlaceName[]> {
+  return invoke<PlaceName[]>("geo_search_places", { query });
+}
 
 export interface LocateRequest {
   source: LocateSource;
   files: string[];
+  /** Saisie manuelle : le lieu choisi. */
+  place: { latitude: number; longitude: number } | null;
   /** Heure du boîtier = UTC + ce décalage ; `null` : le fuseau écrit. */
   offsetMinutes: number | null;
   /** Écart maximal sur la trace, ou fenêtre autour des photos de téléphone. */
@@ -65,27 +83,34 @@ export const useLocate = create<LocateState>()((set, get) => ({
 
   close: () => set({ ids: null, report: null, error: null }),
 
-  run: async ({ source, files, offsetMinutes, minutes, replace }) => {
+  run: async ({ source, files, place, offsetMinutes, minutes, replace }) => {
     const { ids } = get();
     if (!ids) return;
     set({ running: true, error: null, report: null });
     try {
       const report =
-        source === "gpx"
-          ? await invoke<LocateReport>("geo_locate_gpx", {
+        source === "manual"
+          ? await invoke<LocateReport>("geo_locate_manual", {
               ids,
-              files,
-              offsetMinutes,
-              maxGapMinutes: minutes,
+              latitude: place?.latitude,
+              longitude: place?.longitude,
               replace,
             })
-          : await invoke<LocateReport>("geo_locate_phone", {
-              ids,
-              files,
-              offsetMinutes,
-              windowMinutes: minutes,
-              replace,
-            });
+          : source === "gpx"
+            ? await invoke<LocateReport>("geo_locate_gpx", {
+                ids,
+                files,
+                offsetMinutes,
+                maxGapMinutes: minutes,
+                replace,
+              })
+            : await invoke<LocateReport>("geo_locate_phone", {
+                ids,
+                files,
+                offsetMinutes,
+                windowMinutes: minutes,
+                replace,
+              });
       set({ report });
       // La fiche de la photo active montre le nouveau lieu ; la sélection reste.
       const library = useLibrary.getState();

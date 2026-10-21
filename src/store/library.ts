@@ -174,6 +174,11 @@ export interface MediaDetails {
   latitude: number | null;
   longitude: number | null;
   locationSource: LocationSource | null;
+  /** Lieu habité le plus proche (géocodage hors ligne). */
+  city: string | null;
+  region: string | null;
+  /** Code ISO du pays ; vide si aucun lieu habité à proximité. */
+  country: string | null;
 }
 
 /** Origine d'un lieu : GPS du boîtier, trace GPX, téléphone, saisie. */

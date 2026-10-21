@@ -298,6 +298,11 @@ pub struct MediaDetails {
     pub longitude: Option<f64>,
     /// « exif », « gpx », « phone » ou « manual ».
     pub location_source: Option<String>,
+    /// Lieu habité le plus proche (géocodage hors ligne).
+    pub city: Option<String>,
+    pub region: Option<String>,
+    /// Code ISO du pays ; vide si aucun lieu habité à proximité.
+    pub country: Option<String>,
 }
 
 /// Séparateur des mots-clés dans `group_concat` (caractère de contrôle US).
@@ -315,7 +320,7 @@ pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>,
                     e.exposure_compensation,
                     (SELECT group_concat(k.word, char(31)) FROM media_keywords mk
                        JOIN keywords k ON k.id = mk.keyword_id WHERE mk.media_id = m.id),
-                    m.lat, m.lon, m.location_source
+                    m.lat, m.lon, m.location_source, m.city, m.region, m.country
              FROM media m
              LEFT JOIN gear c ON c.id = m.camera_id
              LEFT JOIN gear l ON l.id = m.lens_id
@@ -349,6 +354,9 @@ pub fn media_details(conn: &Connection, id: i64) -> Result<Option<MediaDetails>,
                 latitude: r.get(16)?,
                 longitude: r.get(17)?,
                 location_source: r.get(18)?,
+                city: r.get(19)?,
+                region: r.get(20)?,
+                country: r.get(21)?,
             })
         },
     )

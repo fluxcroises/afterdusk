@@ -140,6 +140,7 @@
     "noKeywords": "Aucun mot-clé.",
     "stackFiles": "Pile",
     "place": "Lieu",
+    "coordinates": "Coordonnées",
     "placeValue": "{{lat}} {{latRef}}, {{lon}} {{lonRef}}",
     "placeSource": "Origine du lieu",
     "hemispheres": {
@@ -955,7 +956,8 @@
     "source": "Source",
     "sources": {
       "gpx": "Trace GPX",
-      "phone": "Photos de téléphone"
+      "phone": "Photos de téléphone",
+      "manual": "Saisie"
     },
     "choose": {
       "gpx": "Choisir des traces…",
@@ -963,6 +965,9 @@
     },
     "phonePhotos": "Photos",
     "noFile": "Aucun fichier choisi",
+    "searchPlace": "Rechercher une ville",
+    "places": "Lieux trouvés",
+    "noPlace": "Aucun lieu de ce nom",
     "files_one": "{{count}} fichier",
     "files_other": "{{count}} fichiers",
     "clock": "Heure du boîtier",

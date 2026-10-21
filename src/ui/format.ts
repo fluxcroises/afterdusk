@@ -70,3 +70,20 @@ export function formatOffset(minutes: number): string {
   const m = String(abs % 60).padStart(2, "0");
   return `${sign}${h}:${m}`;
 }
+
+/** « Cabourg, France » : la ville, et le pays dans la langue de l'interface. */
+export function placeName(
+  city: string | null,
+  country: string | null,
+  language: string,
+): string | undefined {
+  if (!city) return undefined;
+  if (!country) return city;
+  let name = country;
+  try {
+    name = new Intl.DisplayNames([language], { type: "region" }).of(country) ?? country;
+  } catch {
+    // Code inconnu du navigateur : le code ISO.
+  }
+  return `${city}, ${name}`;
+}

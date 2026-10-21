@@ -62,6 +62,26 @@ fn purge_expired_trash(db_path: std::path::PathBuf, cache_root: std::path::PathB
     });
 }
 
+/// Nomme le lieu des photos localisées qui n'en ont pas encore (bases
+/// antérieures à la V0.3), en arrière-plan et par lots.
+fn name_places(db_path: std::path::PathBuf) {
+    std::thread::spawn(move || {
+        let Ok(conn) = db::connect(&db_path) else {
+            return;
+        };
+        loop {
+            match geo::naming::name_pending(&conn, 500) {
+                Ok(0) => return,
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("lieux des photos : {err}");
+                    return;
+                }
+            }
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let result = tauri::Builder::default()
@@ -88,6 +108,7 @@ pub fn run() {
                 workers,
             );
             purge_expired_trash(db_path.clone(), cache_root.clone());
+            name_places(db_path.clone());
             app.manage(XmpWriter::start(app.handle().clone(), db_path.clone()));
             app.manage(commands::develop::DevelopEngine::new());
             app.manage(commands::export::ExportState::default());
@@ -178,6 +199,8 @@ pub fn run() {
             commands::geo::geo_clock,
             commands::geo::geo_locate_gpx,
             commands::geo::geo_locate_phone,
+            commands::geo::geo_search_places,
+            commands::geo::geo_locate_manual,
             commands::library::library_rescan,
             commands::presets::presets_list,
             commands::presets::presets_create,

@@ -32,6 +32,7 @@ dependencies = [
  "afterdusk-libraw-sys",
  "blake3",
  "chrono",
+ "flate2",
  "image",
  "jpeg-decoder",
  "jpeg-encoder",

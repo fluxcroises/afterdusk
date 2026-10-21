@@ -4,6 +4,8 @@
 pub mod gpx;
 pub mod locate;
 pub mod matching;
+pub mod naming;
+pub mod places;
 
 use std::path::PathBuf;
 

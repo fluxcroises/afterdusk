@@ -27,6 +27,9 @@ const details = {
   latitude: 49.2869,
   longitude: -0.1166,
   locationSource: "gpx" as const,
+  city: "Cabourg",
+  region: "Normandy",
+  country: "FR",
 };
 
 describe("fiche Informations : lieu", () => {
@@ -36,6 +39,7 @@ describe("fiche Informations : lieu", () => {
     await i18n.changeLanguage("fr");
     useLibrary.setState({ details });
     render(<PhotoInfoPanel scope="library" />);
+    expect(screen.getByText("Lieu").nextSibling).toHaveTextContent("Cabourg, France");
     expect(screen.getByText("49,2869° N, 0,1166° O")).toBeInTheDocument();
     expect(screen.getByText("Origine du lieu").nextSibling).toHaveTextContent("Trace GPX");
   });
@@ -44,10 +48,19 @@ describe("fiche Informations : lieu", () => {
     await i18n.changeLanguage("en");
     useLibrary.setState({ details: { ...details, locationSource: "exif" } });
     const { rerender } = render(<PhotoInfoPanel scope="library" />);
+    expect(screen.getByText("Location").nextSibling).toHaveTextContent("Cabourg, France");
     expect(screen.getByText("49.2869° N, 0.1166° W")).toBeInTheDocument();
     expect(screen.getByText("Location source").nextSibling).toHaveTextContent("Camera GPS");
     useLibrary.setState({
-      details: { ...details, latitude: null, longitude: null, locationSource: null },
+      details: {
+        ...details,
+        latitude: null,
+        longitude: null,
+        locationSource: null,
+        city: null,
+        region: null,
+        country: null,
+      },
     });
     rerender(<PhotoInfoPanel scope="library" />);
     expect(screen.getByText("Location").nextSibling).toHaveTextContent("Not set");

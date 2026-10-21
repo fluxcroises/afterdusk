@@ -13,6 +13,7 @@ use super::{AppState, blocking};
 use crate::geo::GeoError;
 use crate::geo::locate::{self, LocateOptions, LocateReport};
 use crate::geo::matching::{Clock, parse_offset};
+use crate::geo::places::{self, PlaceName};
 
 impl From<GeoError> for CommandError {
     fn from(e: GeoError) -> Self {
@@ -119,6 +120,34 @@ pub async fn geo_locate_phone(
             &files,
             options(offset_minutes, replace),
             Duration::minutes(i64::from(window_minutes)),
+        )?)
+    })
+    .await?;
+    writer.wake();
+    Ok(report)
+}
+
+/// Lieux dont le nom commence par `query`, pour la saisie manuelle.
+#[tauri::command]
+pub async fn geo_search_places(query: String) -> CommandResult<Vec<PlaceName>> {
+    blocking(move || Ok(places::search(&query, 8))).await
+}
+
+/// Pose un lieu saisi sur les photos.
+#[tauri::command]
+pub async fn geo_locate_manual(
+    state: State<'_, AppState>,
+    writer: State<'_, XmpWriter>,
+    ids: Vec<i64>,
+    latitude: f64,
+    longitude: f64,
+    replace: bool,
+) -> CommandResult<LocateReport> {
+    let mut conn = state.connect()?;
+    let ids: Vec<i64> = ids.into_iter().filter(|id| *id > 0).collect();
+    let report = blocking(move || {
+        Ok(locate::locate_manual(
+            &mut conn, &ids, latitude, longitude, replace,
         )?)
     })
     .await?;

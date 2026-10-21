@@ -12,8 +12,9 @@ use chrono::{Duration, NaiveDateTime};
 use rusqlite::Connection;
 
 use afterdusk_lib::export::metadata::{MetadataPolicy, PhotoMeta, embedded};
-use afterdusk_lib::geo::locate::{LocateOptions, locate_gpx, locate_phone};
+use afterdusk_lib::geo::locate::{LocateOptions, locate_gpx, locate_manual, locate_phone};
 use afterdusk_lib::geo::matching::Clock;
+use afterdusk_lib::geo::naming::name_pending;
 use afterdusk_lib::import::{self, ImportOptions};
 use afterdusk_lib::library::marks::flush_pending_xmp;
 use afterdusk_lib::metadata::media::MediaMetadata;
@@ -259,4 +260,103 @@ fn photo_de_telephone_du_meme_moment() {
     assert_eq!(source, "phone");
     assert_eq!(hashes(&root), before);
     assert_eq!(common::sha256(&phone), phone_hash);
+}
+
+fn place(conn: &Connection, id: i64) -> (Option<String>, Option<String>, Option<String>) {
+    conn.query_row(
+        "SELECT city, country, timezone FROM media WHERE id = ?1",
+        [id],
+        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+    )
+    .unwrap()
+}
+
+fn found(conn: &Connection, words: &str) -> Vec<i64> {
+    conn.prepare("SELECT rowid FROM media_search WHERE media_search MATCH ?1")
+        .unwrap()
+        .query_map([words], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect()
+}
+
+#[test]
+fn lieu_nomme_recherche_et_saisie_manuelle() {
+    let dir = tempfile::tempdir().unwrap();
+    let (mut conn, root, photos) = setup(dir.path(), &["nikon_z6.NEF"]);
+    let before = hashes(&root);
+    let id = photos[0].id;
+    // Saisie : Cabourg.
+    let r = locate_manual(&mut conn, &[id], 49.2869, -0.1166, false).unwrap();
+    assert_eq!(r.located, 1);
+    assert_eq!(located(&conn, id).unwrap().2, "manual");
+    assert_eq!(
+        place(&conn, id),
+        (
+            Some("Cabourg".into()),
+            Some("FR".into()),
+            Some("Europe/Paris".into())
+        )
+    );
+    // Recherche par ville, par pays, sans accents ni casse.
+    assert_eq!(found(&conn, "cabourg"), vec![id]);
+    assert_eq!(found(&conn, "france"), vec![id]);
+    // Lieu déjà posé : gardé, sauf demande.
+    let r = locate_manual(&mut conn, &[id], 43.2965, 5.3698, false).unwrap();
+    assert_eq!((r.located, r.kept), (0, 1));
+    locate_manual(&mut conn, &[id], 43.2965, 5.3698, true).unwrap();
+    assert_eq!(place(&conn, id).0.as_deref(), Some("Marseille"));
+    assert!(found(&conn, "cabourg").is_empty());
+    assert_eq!(found(&conn, "marseille"), vec![id]);
+
+    // Base antérieure : lieu sans nom, nommé au démarrage.
+    conn.execute(
+        "UPDATE media SET city = NULL, country = NULL WHERE id = ?1",
+        [id],
+    )
+    .unwrap();
+    assert_eq!(name_pending(&conn, 100).unwrap(), 1);
+    assert_eq!(place(&conn, id).0.as_deref(), Some("Marseille"));
+    assert_eq!(name_pending(&conn, 100).unwrap(), 0);
+    assert_eq!(hashes(&root), before);
+}
+
+#[test]
+fn photo_de_telephone_importee_avec_son_lieu() {
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("telephone");
+    fs::create_dir_all(&card).unwrap();
+    let taken = NaiveDateTime::parse_from_str("2026-07-14 18:30:00", "%Y-%m-%d %H:%M:%S").unwrap();
+    phone_photo(&card.join("IMG_0001.JPG"), taken, "+02:00", 43.2965, 5.3698);
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let mut conn = db::open(&dir.path().join("afterdusk.db")).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let id = import::plan(
+        &mut conn,
+        &ImportOptions {
+            library_id: lib.id,
+            source_path: card.clone(),
+            source_label: "Téléphone".into(),
+            files: vec![card.join("IMG_0001.JPG")],
+            album_name: "Marseille".into(),
+            album_per_day: false,
+            rename: false,
+            backup: false,
+            keywords: vec![],
+            creator: None,
+            rights: None,
+            skip_pair_jpegs: false,
+        },
+    )
+    .unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+    let (media, source): (i64, String) = conn
+        .query_row("SELECT id, location_source FROM media", [], |r| {
+            Ok((r.get(0)?, r.get(1)?))
+        })
+        .unwrap();
+    assert_eq!(source, "exif");
+    assert_eq!(place(&conn, media).0.as_deref(), Some("Marseille"));
+    assert_eq!(found(&conn, "marseille"), vec![media]);
 }

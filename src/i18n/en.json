@@ -140,6 +140,7 @@
     "noKeywords": "No keywords.",
     "stackFiles": "Stack",
     "place": "Location",
+    "coordinates": "Coordinates",
     "placeValue": "{{lat}} {{latRef}}, {{lon}} {{lonRef}}",
     "placeSource": "Location source",
     "hemispheres": {
@@ -955,7 +956,8 @@
     "source": "Source",
     "sources": {
       "gpx": "GPX track",
-      "phone": "Phone photos"
+      "phone": "Phone photos",
+      "manual": "Entry"
     },
     "choose": {
       "gpx": "Choose tracks…",
@@ -963,6 +965,9 @@
     },
     "phonePhotos": "Photos",
     "noFile": "No file chosen",
+    "searchPlace": "Search for a town",
+    "places": "Places found",
+    "noPlace": "No place by that name",
     "files_one": "{{count}} file",
     "files_other": "{{count}} files",
     "clock": "Camera time",

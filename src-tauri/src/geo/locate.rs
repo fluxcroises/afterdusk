@@ -12,6 +12,7 @@ use serde::Serialize;
 use super::GeoError;
 use super::gpx::{self, Track};
 use super::matching::{self, Clock, Fix, Shot};
+use super::naming;
 use crate::db::now_utc;
 use crate::library::pairs;
 use crate::metadata::media::{format_of, read_metadata};
@@ -80,7 +81,8 @@ fn locate_with(
     ids: &[i64],
     options: LocateOptions,
     source: LocationSource,
-    find: impl Fn(DateTime<Utc>) -> Option<(f64, f64)>,
+    timed: bool,
+    find: impl Fn(Option<DateTime<Utc>>) -> Option<(f64, f64)>,
 ) -> Result<LocateReport, GeoError> {
     let candidates = candidates(conn, ids)?;
     let tx = conn.transaction()?;
@@ -98,15 +100,16 @@ fn locate_with(
             }
             _ => {}
         }
-        // Heure inconnue : `local` vaut l'époque, sans signification.
-        let Some(t) = c
+        // Heure inconnue : `local` vaut l'époque, sans signification. La
+        // saisie manuelle n'en a pas besoin.
+        let t = c
             .shot
             .utc(options.clock)
-            .filter(|_| c.shot.local != Default::default())
-        else {
+            .filter(|_| c.shot.local != Default::default());
+        if t.is_none() && timed {
             report.no_time += 1;
             continue;
-        };
+        }
         let Some((lat, lon)) = find(t) else {
             report.unmatched += 1;
             continue;
@@ -117,6 +120,7 @@ fn locate_with(
              WHERE id = ?1",
             params![c.shot.id, lat, lon, source.as_db(), now],
         )?;
+        naming::name_media(&tx, c.shot.id)?;
         report.located += 1;
     }
     tx.commit()?;
@@ -180,8 +184,8 @@ pub fn locate_gpx(
         .collect::<Result<Vec<_>, _>>()?;
     let mut points: Vec<Fix> = tracks.iter().flat_map(|t| t.points.clone()).collect();
     points.sort_by_key(|p| p.time);
-    let report = locate_with(conn, ids, options, LocationSource::Gpx, |t| {
-        matching::on_track(&points, t, max_gap)
+    let report = locate_with(conn, ids, options, LocationSource::Gpx, true, |t| {
+        matching::on_track(&points, t?, max_gap)
     })?;
     if let Some(library_id) = library_of(conn, ids)? {
         for t in &tracks {
@@ -223,9 +227,26 @@ pub fn locate_phone(
         .filter_map(|f| phone_fix(f, options.clock))
         .collect();
     let unusable = files.len() - fixes.len();
-    let mut report = locate_with(conn, ids, options, LocationSource::Phone, |t| {
-        matching::nearest(&fixes, t, window)
+    let mut report = locate_with(conn, ids, options, LocationSource::Phone, true, |t| {
+        matching::nearest(&fixes, t?, window)
     })?;
     report.unusable_sources = unusable;
     Ok(report)
+}
+
+/// Pose un lieu saisi (ville cherchée ou point de la carte) sur des photos.
+pub fn locate_manual(
+    conn: &mut Connection,
+    ids: &[i64],
+    latitude: f64,
+    longitude: f64,
+    replace: bool,
+) -> Result<LocateReport, GeoError> {
+    let options = LocateOptions {
+        clock: Clock::Written,
+        replace,
+    };
+    locate_with(conn, ids, options, LocationSource::Manual, false, |_| {
+        Some((latitude, longitude))
+    })
 }

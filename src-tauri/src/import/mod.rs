@@ -937,6 +937,9 @@ pub(crate) fn insert_media(
             marks.keywords.join(" ")
         ],
     )?;
+    if location.is_some() {
+        crate::geo::naming::name_media(tx, media_id)?;
+    }
     Ok(media_id)
 }
 

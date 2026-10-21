@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const invoke = vi.fn<(cmd: string, args?: Record<string, unknown>) => Promise<unknown>>();
@@ -16,15 +16,25 @@ const { LocateDialog } = await import("./LocateDialog");
 
 describe("Photo > Localiser…", () => {
   beforeEach(() => {
-    invoke
-      .mockReset()
-      .mockImplementation((cmd) =>
-        Promise.resolve(
-          cmd === "geo_clock"
-            ? { writtenMinutes: 120, withOffset: 2, total: 3 }
+    invoke.mockReset().mockImplementation((cmd) =>
+      Promise.resolve(
+        cmd === "geo_clock"
+          ? { writtenMinutes: 120, mixed: false, withOffset: 2, total: 3 }
+          : cmd === "geo_search_places"
+            ? [
+                {
+                  city: "Cabourg",
+                  region: "Normandy",
+                  country: "FR",
+                  countryName: "France",
+                  timezone: "Europe/Paris",
+                  latitude: 49.2911,
+                  longitude: -0.1133,
+                },
+              ]
             : { located: 2, kept: 1, unmatched: 0, noTime: 0, unusableSources: 0 },
-        ),
-      );
+      ),
+    );
     open.mockReset().mockResolvedValue(["D:/Traces/montre.gpx"]);
   });
 
@@ -64,6 +74,28 @@ describe("Photo > Localiser…", () => {
       files: ["D:/Traces/montre.gpx"],
       offsetMinutes: -300,
       windowMinutes: 30,
+      replace: false,
+    });
+  });
+
+  it("saisie : cherche une ville et pose son lieu, sans heure", async () => {
+    await act(() => useLocate.getState().open([8, 9]));
+    render(<LocateDialog />);
+    fireEvent.click(screen.getByRole("radio", { name: "Saisie" }));
+    expect(screen.queryByText("Heure du boîtier")).not.toBeInTheDocument();
+    const submit = screen.getByRole("button", { name: "Localiser" });
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Rechercher une ville"), {
+      target: { value: "cab" },
+    });
+    const choice = await waitFor(() => screen.getByLabelText(/Cabourg, France/));
+    expect(invoke).toHaveBeenCalledWith("geo_search_places", { query: "cab" });
+    fireEvent.click(choice);
+    await act(async () => fireEvent.click(submit));
+    expect(invoke).toHaveBeenCalledWith("geo_locate_manual", {
+      ids: [8, 9],
+      latitude: 49.2911,
+      longitude: -0.1133,
       replace: false,
     });
   });
