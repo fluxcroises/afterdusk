@@ -1,3 +1,4 @@
+import { useBursts } from "./bursts";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import {
@@ -264,6 +265,8 @@ export const useImport = create<ImportState>((set, get) => ({
     set({ running: false, lastResult: finished, error: finished.error });
     // Photos sans GPS : la localisation est proposée (cahier des charges, 2).
     void get().refreshUnlocated();
+    // Rafales regroupées en arrière-plan, sauf si l'utilisateur l'a coupé.
+    if (!finished.error && useBursts.getState().auto) void useBursts.getState().detect(null);
     // Les photos importées apparaissent désormais grisées.
     const source = get().source;
     void get().loadLibraries();

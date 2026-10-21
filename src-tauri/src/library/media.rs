@@ -43,12 +43,25 @@ pub struct MediaSummary {
     pub copy_of: Option<i64>,
     /// Copie virtuelle : son nom.
     pub version: Option<String>,
+    /// Rafale de la photo, s'il y en a une.
+    pub burst_id: Option<i64>,
+    /// Photos de la rafale (1 pour une photo seule).
+    pub burst_size: i64,
 }
 
 const SUMMARY_COLUMNS: &str = "m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
      m.width, m.height, m.orientation,
      (SELECT count(*) FROM previews p WHERE p.media_id = m.id) = 3,
-     m.trashed_at, m.companion_of";
+     m.trashed_at, m.companion_of, m.burst_id,
+     CASE WHEN m.burst_id IS NULL THEN 1 ELSE
+       (SELECT count(*) FROM media x WHERE x.burst_id = m.burst_id AND x.state = m.state) END";
+
+/// Condition SQL (alias `m`) : photo hors rafale, ou dessus visible de sa
+/// rafale (la photo choisie si elle est encore là, sinon la première).
+const BURST_TOP_SQL: &str = "(m.burst_id IS NULL OR m.id = coalesce(
+     (SELECT b.top_media_id FROM bursts b JOIN media t ON t.id = b.top_media_id
+       WHERE b.id = m.burst_id AND t.state = 'normal' AND t.burst_id = b.id),
+     (SELECT min(x.id) FROM media x WHERE x.burst_id = m.burst_id AND x.state = 'normal')))";
 
 fn summary(r: &rusqlite::Row<'_>, stack_size: i64) -> rusqlite::Result<MediaSummary> {
     let path: String = r.get(2)?;
@@ -69,6 +82,8 @@ fn summary(r: &rusqlite::Row<'_>, stack_size: i64) -> rusqlite::Result<MediaSumm
         stack_size,
         copy_of: None,
         version: None,
+        burst_id: r.get(13)?,
+        burst_size: r.get(14)?,
     })
 }
 
@@ -105,6 +120,19 @@ pub fn list_media(
         clauses.push("m.album_id = ?".to_owned());
         values.push(album_id.into());
     }
+    // Rafales repliées : seulement sans filtre (un filtre montre chaque photo
+    // qui y répond) et hors corbeille. Une rafale dépliée montre tout.
+    if !query.trashed && query.filter.is_empty() {
+        if query.expanded.is_empty() {
+            clauses.push(BURST_TOP_SQL.to_owned());
+        } else {
+            clauses.push(format!(
+                "({BURST_TOP_SQL} OR m.burst_id IN (SELECT burst_id FROM media WHERE id IN ({})))",
+                vec!["?"; query.expanded.len()].join(", ")
+            ));
+            values.extend(query.expanded.iter().map(|&id| id.into()));
+        }
+    }
     let order = if query.trashed {
         format!("m.trashed_at DESC, {}", query.sort.order_by())
     } else {
@@ -120,9 +148,10 @@ pub fn list_media(
     ))?;
     let heads: Vec<MediaSummary> = stmt
         .query_map(rusqlite::params_from_iter(values), |r| {
-            summary(r, r.get(13)?)
+            summary(r, r.get(15)?)
         })?
         .collect::<Result<_, _>>()?;
+    let heads = gather_bursts(heads, &query.expanded);
     let rows = expand_piles(conn, query, heads)?;
     if query.trashed {
         return Ok(rows);
@@ -152,6 +181,37 @@ pub fn list_media(
 }
 
 /// Piles dépliées : les fichiers du dessous suivent celui du dessus.
+/// Rafale dépliée : ses photos suivent celle du dessus (dépliée par
+/// l'utilisateur), dans l'ordre de la grille, quel que soit le tri.
+fn gather_bursts(rows: Vec<MediaSummary>, expanded: &[i64]) -> Vec<MediaSummary> {
+    let open: Vec<(i64, i64)> = rows
+        .iter()
+        .filter(|r| r.burst_size > 1 && expanded.contains(&r.id))
+        .filter_map(|r| r.burst_id.map(|b| (b, r.id)))
+        .collect();
+    if open.is_empty() {
+        return rows;
+    }
+    let in_open = |r: &MediaSummary| r.burst_id.and_then(|b| open.iter().find(|o| o.0 == b));
+    let mut members: Vec<MediaSummary> = Vec::new();
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        match in_open(&row) {
+            Some(&(_, top)) if row.id != top => members.push(row),
+            _ => out.push(row),
+        }
+    }
+    let mut result = Vec::with_capacity(out.len() + members.len());
+    for row in out {
+        let burst = in_open(&row).filter(|o| o.1 == row.id).map(|o| o.0);
+        result.push(row);
+        if let Some(b) = burst {
+            result.extend(members.iter().filter(|m| m.burst_id == Some(b)).cloned());
+        }
+    }
+    result
+}
+
 fn expand_piles(
     conn: &Connection,
     query: &MediaQuery,

@@ -24,6 +24,10 @@ export interface MediaSummary {
   copyOf?: number | null;
   /** Copie virtuelle : son nom. */
   version?: string | null;
+  /** Rafale de la photo, s'il y en a une. */
+  burstId?: number | null;
+  /** Photos de la rafale (1 pour une photo seule). */
+  burstSize?: number;
 }
 
 /**
@@ -782,6 +786,19 @@ export const useLibrary = create<LibraryState>((set, get) => {
     toggleStack: async (id = get().selectedId ?? undefined) => {
       const m = get().media.find((x) => x.id === id);
       if (!m) return;
+      // Rafale : dépliée depuis sa photo du dessus (celle de la grille repliée).
+      if (m.companionOf === null && m.burstId && (m.burstSize ?? 1) > 1) {
+        const { media, expanded } = get();
+        const anchor = expanded.find((e) => media.find((x) => x.id === e)?.burstId === m.burstId);
+        const top = anchor ?? m.id;
+        set((s) => ({
+          expanded:
+            anchor !== undefined ? s.expanded.filter((x) => x !== top) : [...s.expanded, top],
+        }));
+        await reloadMedia();
+        if (anchor !== undefined && get().selectedId !== top) await get().select(top);
+        return;
+      }
       const top = stackTop(m);
       const head = get().media.find((x) => x.id === top);
       if (!head || head.stackSize < 2) return;
@@ -796,7 +813,25 @@ export const useLibrary = create<LibraryState>((set, get) => {
 
     setStackTop: async (id = get().selectedId ?? undefined) => {
       const m = get().media.find((x) => x.id === id);
-      if (!m || m.companionOf === null) return;
+      if (!m) return;
+      // Rafale dépliée : la photo passe au-dessus et la rafale se replie sur elle.
+      if (m.companionOf === null && m.burstId) {
+        try {
+          await libraryApi.setStackTop(m.id);
+          const burstIds = new Set(
+            get()
+              .media.filter((x) => x.burstId === m.burstId)
+              .map((x) => x.id),
+          );
+          set((s) => ({ expanded: s.expanded.filter((x) => !burstIds.has(x)) }));
+          await reloadMedia();
+          await get().select(m.id);
+        } catch (e) {
+          set({ error: toCommandError(e) });
+        }
+        return;
+      }
+      if (m.companionOf === null) return;
       const oldTop = m.companionOf;
       try {
         await libraryApi.setStackTop(m.id);

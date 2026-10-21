@@ -538,3 +538,46 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
   - fiche client avec courriel et téléphone facultatifs ;
   - onze types de séance fournis.
 - Planches contact ajoutées au cahier des charges (4.6) et aux critères de la V0.4 : grille de 2 à 8 colonnes au choix, vignettes numérotées avec le nom du fichier, en-tête (album, client et séance, date, photographe), vignettes retouchées, filigrane en option.
+
+## V0.4 : Assistants et partage
+
+Critères (cahier des charges, section 7) :
+
+- [ ] Regroupement des rafales en piles
+- [ ] Détection locale du flou, des yeux fermés et des problèmes d'exposition, avec filtre « Ratés probables »
+- [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
+- [ ] Vidéos : import, rangement, tri, lecture, fichiers annexes
+- [ ] Galerie web statique avec sélection client et réimport des choix
+- [ ] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option
+- [ ] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
+- [ ] Import automatique : carte connue, dossier surveillé et réception FTP sur le réseau local, chaque photo affichée dans le tri moins de 5 secondes après son arrivée
+- [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques
+
+### 2026-10-21 (suite) : V0.4, regroupement des rafales en piles
+
+- Schéma validé par l'utilisateur. Migration 0013 : table `bursts` (bibliothèque, photo du dessus, automatique ou empilée à la main) ; sur `media`, `burst_id` et `phash`. Les rafales vivent dans la base seulement, comme les collections.
+- Détection (`library/bursts.rs`) :
+  - Pour chaque boîtier, par ordre de prise de vue, une chaîne de photos séparées de 2 secondes au plus, chacune proche de la précédente.
+  - Proximité visuelle : hash perceptuel dHash sur 64 bits, au plus 10 bits différents. Il est calculé sur l'aperçu de 256 px s'il vient du boîtier, sinon sur l'original, lu sans être écrit. Un aperçu retouché ne sert pas.
+  - Fractions de seconde (SubSecTimeOriginal) reprises des balises déjà relevées à l'import.
+  - Le hash n'est calculé que pour les photos qui ont une voisine dans le temps : une bibliothèque sans rafale ne coûte presque rien.
+  - Une paire RAW + JPEG compte pour une photo et reste une paire à l'intérieur de la rafale.
+- Recalcul : seules les rafales automatiques sont refaites ; le dessus choisi par l'utilisateur reste au-dessus s'il est toujours dans la rafale. Retirer une photo rend la rafale manuelle, et la détection ne la touche plus. Une rafale réduite à une photo disparaît.
+- Photo du dessus : la mieux notée, puis la retenue, puis la première. La plus nette passera devant la première avec la détection des ratés.
+- Grille :
+  - sans filtre, une rafale est repliée sur sa photo du dessus, avec un badge (icône et nombre de photos) en haut à gauche, le badge RAW + JPEG restant à droite ;
+  - un clic sur le badge, ou S, la déplie : ses photos suivent celle du dessus, reliées par un liseré, quel que soit le tri ;
+  - un filtre montre chaque photo qui y répond ;
+  - jetée, la photo du dessus laisse sa place à la suivante.
+- Commandes :
+  - menu Photo : Regrouper les rafales (album affiché, sinon bibliothèque), Empiler en rafale (sélection, la photo active au-dessus), Retirer de la rafale ;
+  - menu contextuel : Mettre en haut de la rafale, Retirer de la rafale ;
+  - « Mettre en haut de la pile » vaut aussi pour une rafale, et le nouveau dessus d'une paire prend sa place dans la rafale.
+- Automatique : la détection tourne en arrière-plan à la fin de chaque import réussi. Réglages > Import : « Regrouper les rafales après chaque import » (oui par défaut, préférence locale).
+- Les notes posées sur la photo du dessus ne valent que pour elle, contrairement aux paires RAW + JPEG, qui sont une seule prise de vue.
+- Tests :
+  - chaînes de temps et de ressemblance, fractions de seconde, dHash stable à l'échelle et discriminant ;
+  - choix du dessus ;
+  - de bout en bout : trois prises du Nikon Z 6 et un Sony. Rafale de trois, dessus le mieux noté, hash calculé pour les trois seulement, originaux et carte intacts, repliée et dépliée, filtre, recalcul qui garde le dessus choisi, corbeille, retrait, empilage à la main ;
+  - côté interface : badge, dépliage au clic et avec S, dessus changé, détection, empilage, retrait, préférence.
+- Pas encore vérifié dans l'application compilée.

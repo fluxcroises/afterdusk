@@ -230,7 +230,8 @@
     "cloudFolders": "Dossiers cloud",
     "cloudBackup": "Dossier synchronisé par {{service}} : Afterdusk vérifie la copie locale, pas l'envoi en ligne.",
     "mapOnline": "Fond de carte en ligne (OpenFreeMap)",
-    "mapOnlineNote": "Désactivé : la carte n'affiche que les frontières embarquées et ne fait aucune requête."
+    "mapOnlineNote": "Désactivé : la carte n'affiche que les frontières embarquées et ne fait aucune requête.",
+    "autoBursts": "Regrouper les rafales après chaque import"
   },
   "menu": {
     "app": "Afterdusk",
@@ -286,7 +287,11 @@
     "pasteSettings": "Coller les réglages",
     "rescanLibrary": "Réanalyser la bibliothèque",
     "locate": "Localiser…",
-    "timeFix": "Corriger l'heure…"
+    "timeFix": "Corriger l'heure…",
+    "detectBursts": "Regrouper les rafales",
+    "stackBurst": "Empiler en rafale",
+    "unstackBurst": "Retirer de la rafale",
+    "burstTop": "Mettre en haut de la rafale"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} sélectionnée",
@@ -1218,5 +1223,11 @@
       "manual": "Supprimer la collection « {{name}} » ? Ses photos restent dans leurs albums.",
       "smart": "Supprimer l'album intelligent « {{name}} » ? Ses photos restent dans leurs albums."
     }
+  },
+  "burst": {
+    "expand_one": "Déplier la rafale ({{count}} photo)",
+    "expand_other": "Déplier la rafale ({{count}} photos)",
+    "collapse_one": "Replier la rafale",
+    "collapse_other": "Replier la rafale"
   }
 }

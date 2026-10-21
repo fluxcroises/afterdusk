@@ -1,3 +1,4 @@
+import { useBursts } from "./store/bursts";
 import { isTauri } from "@tauri-apps/api/core";
 import {
   Menu,
@@ -306,6 +307,28 @@ export function buildMenuItems(t: TFunction): Item[] {
         text: t("menu.stackTop"),
         enabled: canMark,
         action: whenMarkable(() => void useLibrary.getState().setStackTop()),
+      },
+      separator,
+      {
+        id: "bursts-detect",
+        text: t("menu.detectBursts"),
+        enabled: isMac || onPhotos(),
+        action: () => {
+          if (!onPhotos()) return;
+          void useBursts.getState().detect(useLibrary.getState().albumId);
+        },
+      },
+      {
+        id: "burst-stack",
+        text: t("menu.stackBurst"),
+        enabled: canMark,
+        action: whenMarkable(() => void useBursts.getState().stackSelection()),
+      },
+      {
+        id: "burst-unstack",
+        text: t("menu.unstackBurst"),
+        enabled: canMark,
+        action: whenMarkable(() => void useBursts.getState().unstackSelection()),
       },
       separator,
       {

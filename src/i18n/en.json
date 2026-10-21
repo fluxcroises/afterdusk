@@ -230,7 +230,8 @@
     "cloudFolders": "Cloud folders",
     "cloudBackup": "Folder synced by {{service}}: Afterdusk verifies the local copy, not the upload.",
     "mapOnline": "Online base map (OpenFreeMap)",
-    "mapOnlineNote": "Off: the map only shows the built-in borders and makes no request."
+    "mapOnlineNote": "Off: the map only shows the built-in borders and makes no request.",
+    "autoBursts": "Group bursts after each import"
   },
   "menu": {
     "app": "Afterdusk",
@@ -286,7 +287,11 @@
     "pasteSettings": "Paste Settings",
     "rescanLibrary": "Rescan Library",
     "locate": "Locate…",
-    "timeFix": "Correct time…"
+    "timeFix": "Correct time…",
+    "detectBursts": "Group bursts",
+    "stackBurst": "Stack as burst",
+    "unstackBurst": "Remove from burst",
+    "burstTop": "Move to top of burst"
   },
   "status": {
     "selection_one": "{{count}} photo · {{selected}} selected",
@@ -1218,5 +1223,11 @@
       "manual": "Delete the collection “{{name}}”? Its photos stay in their albums.",
       "smart": "Delete the smart album “{{name}}”? Its photos stay in their albums."
     }
+  },
+  "burst": {
+    "expand_one": "Expand burst ({{count}} photo)",
+    "expand_other": "Expand burst ({{count}} photos)",
+    "collapse_one": "Collapse burst",
+    "collapse_other": "Collapse burst"
   }
 }

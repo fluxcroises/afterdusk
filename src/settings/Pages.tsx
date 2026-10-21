@@ -1,3 +1,4 @@
+import { useBursts } from "../store/bursts";
 import { isTauri } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -87,6 +88,22 @@ function InsertBehaviorField() {
   );
 }
 
+/** Rafales regroupées après chaque import (préférence locale, oui par défaut). */
+function BurstsField() {
+  const { t } = useTranslation();
+  const auto = useBursts((s) => s.auto);
+  return (
+    <label className="check-row">
+      <input
+        type="checkbox"
+        checked={auto}
+        onChange={(e) => useBursts.getState().setAuto(e.currentTarget.checked)}
+      />
+      {t("settings.autoBursts")}
+    </label>
+  );
+}
+
 /** Réglages > Import : modèles de rangement et de renommage de la bibliothèque. */
 export function ImportSettings() {
   const { t } = useTranslation();
@@ -107,6 +124,7 @@ export function ImportSettings() {
       />
       <p className="panel-note">{t("settings.templatesHint")}</p>
       <InsertBehaviorField />
+      <BurstsField />
       <div className="settings-actions">
         <button
           type="button"

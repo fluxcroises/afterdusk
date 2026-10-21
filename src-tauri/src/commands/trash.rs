@@ -80,7 +80,15 @@ pub async fn pile_set_top(state: State<'_, AppState>, id: i64) -> CommandResult<
         return Ok(());
     }
     let mut conn = state.connect()?;
-    blocking(move || Ok(pairs::set_top(&mut conn, id)?)).await
+    blocking(move || {
+        // Dans une rafale, la photo passe au-dessus de la rafale ; sinon, le
+        // fichier passe au-dessus de sa paire RAW + JPEG.
+        if !crate::library::bursts::set_top(&conn, id)? {
+            pairs::set_top(&mut conn, id)?;
+        }
+        Ok(())
+    })
+    .await
 }
 
 #[tauri::command]

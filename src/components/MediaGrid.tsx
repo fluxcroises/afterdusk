@@ -1,9 +1,10 @@
-import { BookImage, Flag, FlagOff, Star } from "lucide-react";
+import { BookImage, Flag, FlagOff, Layers, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { type MediaSummary, type SelectMode, daysLeft, useLibrary } from "../store/library";
+import { useBursts } from "../store/bursts";
 import { purgeSelection } from "../trash";
 import { Thumbnail } from "./Thumbnail";
 
@@ -70,6 +71,12 @@ function MediaContextMenu({
           {item(t("menu.setAlbumCover"), () => void setAsCover(media.id))}
           {media.companionOf !== null &&
             item(t("menu.stackTop"), () => void useLibrary.getState().setStackTop(media.id))}
+          {media.burstId && media.companionOf === null && (
+            <>
+              {item(t("menu.burstTop"), () => void useLibrary.getState().setStackTop(media.id))}
+              {item(t("menu.unstackBurst"), () => void useBursts.getState().unstackSelection())}
+            </>
+          )}
           <div className="menu-separator" role="separator" />
           {!media.copyOf &&
             item(t("menu.moveToTrash"), () => void useLibrary.getState().moveToTrash())}
@@ -156,6 +163,13 @@ function MediaCell({
   const trashed = useLibrary((s) => s.trash);
   const retentionDays = useLibrary((s) => s.retentionDays);
   const expanded = useLibrary((s) => s.expanded.includes(media.id));
+  // Rafale dépliée (depuis n'importe laquelle de ses photos).
+  const burstOpen = useLibrary(
+    (s) =>
+      !!media.burstId &&
+      s.expanded.some((e) => s.media.find((x) => x.id === e)?.burstId === media.burstId),
+  );
+  const burstSize = media.burstSize ?? 1;
   const { t } = useTranslation();
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLButtonElement>(null);
@@ -174,6 +188,7 @@ function MediaCell({
       data-rejected={media.flag === -1 || undefined}
       data-below={media.companionOf !== null || undefined}
       data-open={(media.stackSize > 1 && expanded) || undefined}
+      data-burst={(burstOpen && burstSize > 1) || undefined}
       title={media.version ? `${media.fileName} · ${media.version}` : media.fileName}
       onClick={(e) => void select(media.id, selectMode(e))}
       onDoubleClick={() => useLibrary.getState().setView("loupe")}
@@ -191,6 +206,20 @@ function MediaCell({
         {media.copyOf && (
           <span className="copy-badge" title={media.version ?? undefined}>
             {t("grid.copy")}
+          </span>
+        )}
+        {burstSize > 1 && media.companionOf === null && (
+          <span
+            className="burst-badge"
+            data-open={burstOpen || undefined}
+            title={t(burstOpen ? "burst.collapse" : "burst.expand", { count: burstSize }) + " (S)"}
+            onClick={(e) => {
+              e.stopPropagation();
+              void useLibrary.getState().toggleStack(media.id);
+            }}
+          >
+            <Layers aria-hidden="true" strokeWidth={2} />
+            {burstSize}
           </span>
         )}
         {media.stackSize > 1 && (

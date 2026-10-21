@@ -189,6 +189,16 @@ pub fn set_top(conn: &mut Connection, id: i64) -> Result<(), LibraryError> {
         params![id, top],
     )?;
     tx.execute("UPDATE media SET companion_of = NULL WHERE id = ?1", [id])?;
+    // Le nouveau dessus prend la place de l'ancien dans sa rafale.
+    tx.execute(
+        "UPDATE media SET burst_id = (SELECT burst_id FROM media WHERE id = ?2) WHERE id = ?1",
+        params![id, top],
+    )?;
+    tx.execute("UPDATE media SET burst_id = NULL WHERE id = ?1", [top])?;
+    tx.execute(
+        "UPDATE bursts SET top_media_id = ?1 WHERE top_media_id = ?2",
+        params![id, top],
+    )?;
     tx.commit()?;
     Ok(())
 }

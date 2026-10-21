@@ -4086,3 +4086,39 @@ input.locate-offset {
   gap: var(--ad-space-1) var(--ad-space-3);
   padding-top: var(--ad-space-2);
 }
+
+/* Rafale : badge en haut à gauche, photos reliées quand elle est dépliée. */
+.burst-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+  padding: 0 6px 0 5px;
+  font: var(--ad-font-meta);
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--ad-text);
+  background: color-mix(in srgb, var(--ad-panel) 85%, transparent);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.burst-badge svg {
+  width: 11px;
+  height: 11px;
+}
+
+.burst-badge[data-open] {
+  color: var(--ad-workspace);
+  background: var(--ad-accent);
+  border-color: var(--ad-accent);
+}
+
+.media-cell[data-burst] {
+  box-shadow: inset 0 -2px 0 var(--ad-accent);
+  background: color-mix(in srgb, var(--ad-accent) 8%, transparent);
+}
