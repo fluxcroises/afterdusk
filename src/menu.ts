@@ -180,7 +180,12 @@ export function buildMenuItems(t: TFunction): Item[] {
       { item: "Copy", text: t("menu.copy") },
       { item: "Paste", text: t("menu.paste") },
       separator,
-      { item: "SelectAll", text: t("menu.selectAll") },
+      {
+        id: "select-all",
+        text: t("menu.selectAll"),
+        accelerator: "CmdOrCtrl+A",
+        action: selectAll,
+      },
       {
         id: "find",
         text: t("menu.find"),
@@ -454,6 +459,27 @@ export function isPredefined(entry: Item): entry is PredefinedMenuItemOptions {
   return "item" in entry;
 }
 
+/**
+ * Édition > Tout sélectionner : le texte du champ actif, sinon les photos
+ * affichées (grille, pellicule) ou celles de la carte à importer.
+ */
+export function selectAll(): void {
+  const el = document.activeElement;
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+    el.select();
+    return;
+  }
+  if (el instanceof HTMLElement && el.isContentEditable) {
+    document.execCommand("selectAll");
+    return;
+  }
+  const screen = useNavigation.getState().screen;
+  if (screen === "import") useImport.getState().selectAll(true);
+  else if (screen !== "settings" && screen !== "map" && screen !== "gear") {
+    useLibrary.getState().selectAll();
+  }
+}
+
 export function isSeparator(entry: Item): boolean {
   return isPredefined(entry) && entry.item === "Separator";
 }
@@ -473,7 +499,7 @@ export async function runPredefined(entry: PredefinedMenuItemOptions): Promise<v
       document.execCommand(item.toLowerCase());
       return;
     case "SelectAll":
-      document.execCommand("selectAll");
+      selectAll();
       return;
     case "Minimize":
       return win.minimize();

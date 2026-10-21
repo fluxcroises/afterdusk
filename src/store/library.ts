@@ -301,6 +301,8 @@ interface LibraryState {
   select: (mediaId: number, mode?: SelectMode) => Promise<void>;
   /** Change la photo active sans toucher à la sélection (panneaux de comparaison). */
   activate: (mediaId: number) => Promise<void>;
+  /** Édition > Tout sélectionner : toutes les photos affichées. */
+  selectAll: () => void;
   /** `at` : horodatage de la frappe, pour mesurer l'affichage de la suivante. */
   move: (delta: number, at?: number) => void;
   previewReady: (mediaId: number) => void;
@@ -548,6 +550,15 @@ export const useLibrary = create<LibraryState>((set, get) => {
       // Une autre photo s'affiche ajustée, comme dans Lightroom.
       set(mode === "replace" ? { selectedIds: ids, zoom: null } : { selectedIds: ids });
       await get().activate(active);
+    },
+
+    selectAll: () => {
+      const { media, selectedId, showAlbums } = get();
+      if (showAlbums || media.length === 0) return;
+      const ids = media.map((m) => m.id);
+      set({ selectedIds: ids });
+      // La photo active reste la même si elle est affichée.
+      if (selectedId === null || !ids.includes(selectedId)) void get().activate(ids[0]);
     },
 
     activate: async (mediaId) => {

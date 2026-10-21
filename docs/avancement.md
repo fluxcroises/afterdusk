@@ -427,3 +427,9 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Tests : rapprochement (interpolation, trous de la trace, fenêtre), lecture GPX, aller-retour XMP des coordonnées, et de bout en bout sur de vrais RAW : trace GPX puis XMP, réanalyse qui retrouve le lieu, photo de téléphone générée ; originaux, trace et photo de téléphone inchangés. Boîte testée dans l'interface (Vitest).
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises) : trois RAW de 2018, 2019 et 2021 aux fuseaux différents, Photo > Localiser… avec une trace GPX choisie dans la boîte de Windows : « 3 photos localisées » aux positions attendues, XMP écrits, originaux et trace identiques ; second passage : « 3 déjà localisées ». Corrigé à cette occasion : la ligne « Lieu » affichait sa clé de traduction (variable `ns` réservée par i18next ; test ajouté), la sélection retombait à une photo après la localisation, et la boîte annonçait un seul fuseau quand les photos en portent plusieurs. L'origine du lieu a désormais sa propre ligne, la valeur ne tenant pas dans le panneau.
 - Restent pour ce critère : saisie manuelle (après le géocodage et la carte) et correction du fuseau horaire proposée d'après le lieu.
+
+### 2026-10-21 (suite) : Tout sélectionner dans les grilles
+
+- Édition > Tout sélectionner (Ctrl+A, ⌘A) ne sélectionnait que du texte : il sélectionne désormais toutes les photos affichées dans Trier, Bibliothèque, Retoucher (pellicule) et Livrer, la photo active restant la même ; toute la carte dans Importer ; le texte d'un champ quand il a le focus. Rien quand la Bibliothèque montre les albums. Tests ajoutés (Vitest). Non vu à l'écran : l'utilisateur se servait de la machine.
+- Reste : « Ne rien sélectionner » est une entrée inactive ; le modèle de sélection garde toujours une photo active, ce qui est à trancher avant de l'activer.
+
