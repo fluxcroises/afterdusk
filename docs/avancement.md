@@ -609,4 +609,8 @@ Critères (cahier des charges, section 7) :
   - de bout en bout : les six RAW nets et bien exposés, une prise floutée et une prise brûlée signalées, filtre, seconde analyse sans travail, source intacte ;
   - choix du dessus par la netteté ;
   - côté interface : magasin, ordre ratés puis rafales après l'import, préférences, pastille, bouton du filtre.
-- Reste pour le critère : les yeux fermés (prototype ONNX, licences à vérifier, téléchargements à autoriser). Le critère de performance (1 000 photos en moins de 10 minutes) sera mesuré sur l'analyse complète. Pas encore vérifié dans l'application compilée.
+- Reste pour le critère : les yeux fermés (prototype ONNX, licences à vérifier, téléchargements à autoriser). Le critère de performance (1 000 photos en moins de 10 minutes) sera mesuré sur l'analyse complète.
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises, originaux d'essai intacts) :
+  - une prise floutée (bouge.jpg) et une prise éclaircie à l'extrême (brulee.jpg), tirées du RAW du Nikon, ajoutées à la bibliothèque d'essai et inscrites par la réanalyse ;
+  - Photo > Rechercher les ratés : en quelques secondes, seules ces deux photos portent la pastille, avec « Floue ou bougée probable » et « Surexposée probable » ; les RAW nets n'en ont aucune ;
+  - « Ratés probables » ne garde qu'elles (« 2 sur 9 photos »), et Ctrl+A puis X les rejette en lot.
