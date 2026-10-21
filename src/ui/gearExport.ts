@@ -30,8 +30,8 @@ export interface InventoryPdf {
 export interface GearExportData {
   record: GearRecord;
   journal: MaintenanceEntry[];
-  /** Déclenchements estimés (boîtiers). */
-  shutter: number | null;
+  /** Déclenchements (boîtiers) : lus dans une photo, ou estimés d'après les photos. */
+  shutter: { count: number; read: boolean } | null;
 }
 
 /** Matériel visible, avec fiche, journal et compteur. */
@@ -47,7 +47,12 @@ export async function collectGear(items: GearItem[]): Promise<GearExportData[]> 
             ? invoke<GearStats>("gear_stats", { id: g.id })
             : Promise.resolve(null),
         ]);
-        return { record, journal, shutter: stats?.shutter?.estimate ?? null };
+        const s = stats?.shutter;
+        return {
+          record,
+          journal,
+          shutter: s ? { count: s.estimate, read: s.read !== null } : null,
+        };
       }),
   );
 }
@@ -66,11 +71,6 @@ function name(t: TFunction, r: GearRecord): string {
 
 function price(r: GearRecord, language: string): string {
   return r.priceCents === null ? "" : formatMoney(r.priceCents, r.currency, language);
-}
-
-function lastMaintenance(t: TFunction, journal: MaintenanceEntry[], language: string): string {
-  const last = journal[0];
-  return last ? `${formatDay(last.date, language)} · ${t(`maintenance.kinds.${last.kind}`)}` : "";
 }
 
 /** Tableur : toutes les colonnes, nombres et dates bruts pour le calcul. */
@@ -114,7 +114,8 @@ export function inventoryCsv(t: TFunction, data: GearExportData[], language: str
       r.autoDetected ? String(r.photoCount) : "",
       r.firstUsed?.slice(0, 10) ?? "",
       r.lastUsed?.slice(0, 10) ?? "",
-      shutter === null ? "" : String(shutter),
+      // Une estimation répète la colonne Photos : seul un compteur lu y figure.
+      shutter?.read ? String(shutter.count) : "",
       journal[0]?.date ?? "",
       r.notes ?? "",
     ]),
@@ -148,9 +149,10 @@ export function inventoryPdf(
         t("gear.fields.price"),
         t("gear.fields.condition"),
         t("gear.photos"),
-        t("gearExport.lastMaintenance"),
+        // Colonne étroite : la date de la dernière intervention suffit.
+        t("maintenance.title"),
       ],
-      widths: [1, 2.6, 1.3, 1.2, 1.1, 1, 0.7, 1.9],
+      widths: [1, 2.4, 1.6, 1.2, 1.1, 1, 0.7, 1.3],
       rows: data.map(({ record: r, journal }) => [
         t(`gear.kinds.${r.kind}`),
         name(t, r),
@@ -159,7 +161,7 @@ export function inventoryPdf(
         price(r, language),
         r.condition ? t(`gear.conditions.${r.condition}`) : "",
         r.autoDetected ? number.format(r.photoCount) : "",
-        lastMaintenance(t, journal, language),
+        journal[0] ? formatDay(journal[0].date, language) : "",
       ]),
     },
     sections: data.map(({ record: r, journal, shutter }) => {
@@ -177,7 +179,14 @@ export function inventoryPdf(
         [t("gear.photos"), r.autoDetected ? number.format(r.photoCount) : null],
         [t("gear.firstUsed"), formatCaptureTime(r.firstUsed, language)],
         [t("gear.lastUsed"), formatCaptureTime(r.lastUsed, language)],
-        [t("gear.stats.shutter"), shutter === null ? null : number.format(shutter)],
+        [
+          t("gear.stats.shutter"),
+          shutter === null
+            ? null
+            : shutter.read
+              ? number.format(shutter.count)
+              : t("gear.stats.shutterAtLeast", { n: number.format(shutter.count) }),
+        ],
         [t("gear.fields.notes"), r.notes],
       ];
       return {

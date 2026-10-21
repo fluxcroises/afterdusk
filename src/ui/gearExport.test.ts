@@ -49,7 +49,7 @@ const data: GearExportData[] = [
         reminderMonths: 6,
       },
     ],
-    shutter: 12480,
+    shutter: { count: 12480, read: true },
   },
   {
     record: record({
@@ -70,6 +70,11 @@ const data: GearExportData[] = [
     }),
     journal: [],
     shutter: null,
+  },
+  {
+    record: record({ id: 3, make: "Canon", model: "EOS R6", displayName: "Canon EOS R6" }),
+    journal: [],
+    shutter: { count: 1254, read: false },
   },
 ];
 
@@ -93,6 +98,8 @@ describe("export de l'inventaire", () => {
       "Dernier entretien": "2026-01-10",
       État: "Très bon",
     });
+    // Compteur estimé : absent du tableur, qui a déjà la colonne Photos.
+    expect(csv.rows[2][14]).toBe("");
     // Un accessoire saisi à la main : pas de photos, pas de prix.
     expect(csv.rows[1][0]).toBe("Trépied");
     expect(csv.rows[1][7]).toBe("");
@@ -102,13 +109,16 @@ describe("export de l'inventaire", () => {
   it("PDF : tableau, fiches avec les seuls champs renseignés, journal", () => {
     const doc = inventoryPdf(t, data, "fr", "Photos");
     expect(doc.title).toBe("Inventaire du matériel");
-    expect(doc.subtitle).toMatch(/^Photos · .* · 2 appareils$/);
+    expect(doc.subtitle).toMatch(/^Photos · .* · 3 appareils$/);
     expect(doc.footer).toBe("Page {page} sur {pages}");
     expect(doc.table.rows[0][1]).toBe("Nikon Z 6");
     expect(doc.table.rows[0][4]).toMatch(/1\s899,00\s€/);
     expect(doc.table.rows[1][1]).toBe("Trépied");
 
-    const [nikon, tripod] = doc.sections;
+    // Le tableau garde la date du dernier entretien ; l'intervention est dans la fiche.
+    expect(doc.table.rows[0][7]).toBe("10 janv. 2026");
+    const [nikon, tripod, canon] = doc.sections;
+    expect(canon.fields.find(([l]) => l === "Déclenchements")?.[1]).toMatch(/^au moins 1\s254$/);
     const labels = nikon.fields.map(([l]) => l);
     expect(labels).toContain("Déclenchements");
     expect(labels).not.toContain("Garantie jusqu'au");
