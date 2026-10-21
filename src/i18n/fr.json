@@ -1131,6 +1131,24 @@
     "mergeWith": "Fusionner avec…",
     "merge": "Fusionner",
     "delete": "Supprimer",
-    "confirmDelete": "Supprimer la fiche « {{name}} » ? Ses notes et sa photo sont perdues."
+    "confirmDelete": "Supprimer la fiche « {{name}} » ? Ses notes et sa photo sont perdues.",
+    "stats": {
+      "title": "Statistiques",
+      "focal": "Focales",
+      "aperture": "Ouvertures",
+      "iso": "ISO",
+      "months": "Photos dans le temps",
+      "lenses": "Objectifs utilisés avec",
+      "bodies": "Boîtiers utilisés avec",
+      "albums": "Albums",
+      "photoCount_one": "{{n}} photo",
+      "photoCount_other": "{{n}} photos",
+      "shutter": "Déclenchements",
+      "shutterAtLeast": "au moins {{n}}",
+      "shutterEstimated": "Compté d'après les photos importées : ce boîtier n'écrit pas son compteur dans ses fichiers.",
+      "shutterRead_one": "{{n}} lus dans la photo du {{date}}, plus {{count}} photo prise depuis.",
+      "shutterRead_other": "{{n}} lus dans la photo du {{date}}, plus {{count}} photos prises depuis.",
+      "shutterReadLatest": "{{n}} lus dans la photo du {{date}}."
+    }
   }
 }

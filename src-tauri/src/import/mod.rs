@@ -920,8 +920,9 @@ pub(crate) fn insert_media(
     )?;
     tx.execute(
         "INSERT OR REPLACE INTO media_exif (media_id, focal_length, focal_length_35mm, aperture,
-                 shutter, iso, exposure_compensation, exposure_program, flash, body_serial, raw_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                 shutter, iso, exposure_compensation, exposure_program, flash, body_serial, shutter_count,
+                 raw_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
         params![
             media_id,
             m.focal_length,
@@ -933,6 +934,7 @@ pub(crate) fn insert_media(
             m.exposure_program,
             m.flash,
             m.body_serial,
+            m.shutter_count,
             m.tags_json()
         ],
     )?;

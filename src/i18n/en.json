@@ -1131,6 +1131,24 @@
     "mergeWith": "Merge with…",
     "merge": "Merge",
     "delete": "Delete",
-    "confirmDelete": "Delete the record “{{name}}”? Its notes and photo are lost."
+    "confirmDelete": "Delete the record “{{name}}”? Its notes and photo are lost.",
+    "stats": {
+      "title": "Statistics",
+      "focal": "Focal lengths",
+      "aperture": "Apertures",
+      "iso": "ISO",
+      "months": "Photos over time",
+      "lenses": "Lenses used with it",
+      "bodies": "Bodies used with it",
+      "albums": "Albums",
+      "photoCount_one": "{{n}} photo",
+      "photoCount_other": "{{n}} photos",
+      "shutter": "Shutter count",
+      "shutterAtLeast": "at least {{n}}",
+      "shutterEstimated": "Counted from imported photos: this camera does not write its counter into its files.",
+      "shutterRead_one": "{{n}} read from the photo of {{date}}, plus {{count}} photo taken since.",
+      "shutterRead_other": "{{n}} read from the photo of {{date}}, plus {{count}} photos taken since.",
+      "shutterReadLatest": "{{n}} read from the photo of {{date}}."
+    }
   }
 }

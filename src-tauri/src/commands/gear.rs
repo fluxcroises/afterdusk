@@ -7,6 +7,7 @@ use tauri::ipc::Response;
 
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
+use crate::gear::stats::GearStats;
 use crate::gear::{self, GearError, GearItem, GearKind, GearRecord, GearUpdate};
 
 impl From<GearError> for CommandError {
@@ -44,6 +45,12 @@ pub async fn gear_list(
 pub async fn gear_get(state: State<'_, AppState>, id: i64) -> CommandResult<GearRecord> {
     let conn = state.connect()?;
     blocking(move || Ok(gear::get(&conn, id)?)).await
+}
+
+#[tauri::command]
+pub async fn gear_stats(state: State<'_, AppState>, id: i64) -> CommandResult<GearStats> {
+    let conn = state.connect()?;
+    blocking(move || Ok(gear::stats::stats(&conn, id)?)).await
 }
 
 #[tauri::command]

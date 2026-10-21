@@ -51,12 +51,39 @@ const record = (id: number) => ({
   aliases: id === 1 ? ["NIKON CORPORATION NIKON Z 6 (6012345)"] : [],
 });
 
+const stats = {
+  photos: 12,
+  focal: [
+    { value: 24, count: 7 },
+    { value: 70, count: 5 },
+  ],
+  aperture: [{ value: 4, count: 12 }],
+  iso: [
+    { value: 100, count: 8 },
+    { value: 3200, count: 4 },
+  ],
+  months: [
+    { month: "2026-07", count: 10 },
+    { month: "2026-09", count: 2 },
+  ],
+  partners: [{ id: 3, name: "NIKKOR Z 24-70mm f/4 S", count: 12 }],
+  albums: [{ albumId: 9, name: "Islande", count: 12, favoriteLens: "NIKKOR Z 24-70mm f/4 S" }],
+  shutter: { read: 739, readAt: "2026-07-14T10:00:00", since: 11, estimate: 750 },
+};
+
+function closest(text: string, selector: string): HTMLElement {
+  const el = screen.getByText(text).closest(selector);
+  if (!(el instanceof HTMLElement)) throw new Error(`${text} hors de ${selector}`);
+  return el;
+}
+
 describe("écran Matériel", () => {
   beforeEach(() => {
     invoke.mockReset().mockImplementation((cmd, args) => {
       if (cmd === "gear_list") return Promise.resolve(items);
       if (cmd === "gear_get") return Promise.resolve(record(args?.id as number));
       if (cmd === "gear_create") return Promise.resolve(4);
+      if (cmd === "gear_stats") return Promise.resolve(stats);
       return Promise.resolve(null);
     });
     useGear.setState({ items: [], selectedId: null, record: null, showHidden: false });
@@ -113,5 +140,31 @@ describe("écran Matériel", () => {
     await act(async () => render(<GearView />));
     expect(screen.getByRole("heading", { name: "Trépied" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Trépied" })).toBeInTheDocument();
+  });
+
+  it("statistiques et compteur de déclenchements", async () => {
+    await act(async () => render(<GearView />));
+    expect(screen.getByRole("heading", { name: "Statistiques" })).toBeInTheDocument();
+    // Sans survol, la barre la plus haute ; au survol, celle sous la souris.
+    const focal = closest("Focales", "figure");
+    expect(within(focal).getByText("24 mm · 7 photos")).toBeInTheDocument();
+    fireEvent.mouseEnter(focal.querySelectorAll("svg g")[1]);
+    expect(within(focal).getByText("70 mm · 5 photos")).toBeInTheDocument();
+    // Le mois sans photo compte, à zéro.
+    const months = closest("Photos dans le temps", "figure");
+    expect(months.querySelectorAll("svg path")).toHaveLength(3);
+    expect(screen.getByText("Déclenchements").nextSibling).toHaveTextContent("750");
+    expect(
+      screen.getByText(/^739 lus dans la photo du .*, plus 11 photos prises depuis\.$/),
+    ).toBeInTheDocument();
+    // Un objectif associé ouvre sa fiche.
+    await act(async () =>
+      fireEvent.click(
+        within(closest("Objectifs utilisés avec", "div")).getByRole("button", {
+          name: /NIKKOR Z 24-70mm f\/4 S.*12/,
+        }),
+      ),
+    );
+    expect(invoke).toHaveBeenCalledWith("gear_get", { id: 3 });
   });
 });

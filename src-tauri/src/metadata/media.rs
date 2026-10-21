@@ -9,6 +9,7 @@ use std::path::Path;
 use exif::{In, Reader, Tag, Value};
 use serde::Serialize;
 
+use super::makernote;
 use crate::raw::{Gps, Ifd, RawFile};
 
 /// Extensions RAW reconnues (en minuscules).
@@ -54,6 +55,8 @@ pub struct MediaMetadata {
     pub exposure_compensation: Option<f32>,
     pub exposure_program: Option<u32>,
     pub flash: Option<u32>,
+    /// Compteur de déclenchements, quand la marque l'écrit en clair.
+    pub shutter_count: Option<u32>,
     /// `AAAA-MM-JJTHH:MM:SS`, heure du boîtier.
     pub captured_at: Option<String>,
     pub utc_offset: Option<String>,
@@ -120,6 +123,9 @@ fn read_raw(path: &Path) -> Option<MediaMetadata> {
         exposure_compensation: info.exposure_compensation,
         exposure_program: uint(Ifd::Exif, 0x8822),
         flash: uint(Ifd::Exif, 0x9209),
+        shutter_count: makernote::read_raw(path)
+            .as_deref()
+            .and_then(makernote::shutter_count),
         captured_at: info.captured_at,
         utc_offset: info.utc_offset,
         width: Some(u32::from(info.width)),
@@ -194,6 +200,10 @@ fn read_image(path: &Path) -> Option<MediaMetadata> {
         exposure_compensation: num(Tag::ExposureBiasValue),
         exposure_program: uint(Tag::ExposureProgram),
         flash: uint(Tag::Flash),
+        shutter_count: match field(Tag::MakerNote) {
+            Some(Value::Undefined(b, _)) => makernote::shutter_count(b),
+            _ => None,
+        },
         captured_at,
         utc_offset: text(Tag::OffsetTimeOriginal),
         width: uint(Tag::PixelXDimension).or_else(|| uint(Tag::ImageWidth)),

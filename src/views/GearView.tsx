@@ -2,6 +2,7 @@ import { open as chooseFile } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
+import { BarChart } from "../components/BarChart";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { GearSilhouette } from "../components/GearSilhouette";
@@ -18,6 +19,7 @@ import {
 import { useLibrary } from "../store/library";
 import { confirmWarning } from "../ui/confirm";
 import { formatCaptureTime } from "../ui/format";
+import { apertureBars, focalBars, isoBars, monthBars } from "../ui/gearStats";
 import { Camera } from "lucide-react";
 
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD", "JPY"];
@@ -287,6 +289,82 @@ function NotesField({ record }: { record: GearRecord }) {
   );
 }
 
+function GearStatsView({ record }: { record: GearRecord }) {
+  const { t, i18n } = useTranslation();
+  const stats = useGear((s) => s.stats);
+  if (!stats || stats.photos === 0) return null;
+  const number = new Intl.NumberFormat(i18n.language);
+  const photos = (count: number) => t("gear.stats.photoCount", { count, n: number.format(count) });
+  return (
+    <section className="gear-stats">
+      <h2 className="gear-section-title">{t("gear.stats.title")}</h2>
+      <BarChart title={t("gear.stats.focal")} bars={focalBars(stats.focal)} />
+      <BarChart title={t("gear.stats.aperture")} bars={apertureBars(stats.aperture)} />
+      <BarChart title={t("gear.stats.iso")} bars={isoBars(stats.iso)} />
+      <BarChart title={t("gear.stats.months")} bars={monthBars(stats.months, i18n.language)} />
+      {stats.partners.length > 0 && (
+        <div className="gear-stats-list">
+          <h3 className="bar-chart-title">
+            {t(record.kind === "body" ? "gear.stats.lenses" : "gear.stats.bodies")}
+          </h3>
+          {stats.partners.map((p) => (
+            <ListRow
+              key={p.id}
+              label={p.name}
+              count={p.count}
+              onClick={() => void useGear.getState().select(p.id)}
+            />
+          ))}
+        </div>
+      )}
+      {stats.albums.length > 0 && (
+        <div className="gear-stats-list">
+          <h3 className="bar-chart-title">{t("gear.stats.albums")}</h3>
+          <table className="gear-stats-table">
+            <tbody>
+              {stats.albums.map((a) => (
+                <tr key={a.albumId}>
+                  <th scope="row">{a.name}</th>
+                  <td>{photos(a.count)}</td>
+                  {record.kind === "body" && <td>{a.favoriteLens ?? ""}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ShutterRow() {
+  const { t, i18n } = useTranslation();
+  const shutter = useGear((s) => s.stats?.shutter);
+  if (!shutter) return null;
+  const number = new Intl.NumberFormat(i18n.language);
+  return (
+    <>
+      <FieldRow
+        label={t("gear.stats.shutter")}
+        value={
+          shutter.read === null
+            ? t("gear.stats.shutterAtLeast", { n: number.format(shutter.estimate) })
+            : number.format(shutter.estimate)
+        }
+      />
+      <PanelNote>
+        {shutter.read === null
+          ? t("gear.stats.shutterEstimated")
+          : t(shutter.since === 0 ? "gear.stats.shutterReadLatest" : "gear.stats.shutterRead", {
+              count: shutter.since,
+              n: number.format(shutter.read),
+              date: formatCaptureTime(shutter.readAt, i18n.language) ?? "",
+            })}
+      </PanelNote>
+    </>
+  );
+}
+
 function GearActions({ record }: { record: GearRecord }) {
   const { t, i18n } = useTranslation();
   const items = useGear((s) => s.items);
@@ -327,6 +405,7 @@ function GearActions({ record }: { record: GearRecord }) {
               label={t("gear.lastUsed")}
               value={formatCaptureTime(record.lastUsed, i18n.language) ?? undefined}
             />
+            <ShutterRow />
           </>
         ) : (
           <PanelNote>{t("gear.manual")}</PanelNote>
@@ -445,6 +524,7 @@ export function GearView() {
           <GearPicture record={record} />
           <h1 className="gear-title">{nameOf(record)}</h1>
           <GearForm key={record.id} record={record} />
+          <GearStatsView record={record} />
         </div>
       ) : (
         <EmptyState icon={Camera} title={t("gear.emptyTitle")} />

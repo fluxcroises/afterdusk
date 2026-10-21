@@ -3847,3 +3847,92 @@ input.locate-offset {
   color: var(--ad-text-secondary);
   overflow-wrap: anywhere;
 }
+
+.gear-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-4);
+  padding-top: var(--ad-space-3);
+  border-top: 1px solid var(--ad-border);
+}
+
+.gear-section-title {
+  margin: 0;
+  font: var(--ad-font-panel-title);
+  color: var(--ad-text);
+}
+
+.bar-chart {
+  margin: 0;
+}
+
+.bar-chart-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ad-space-3);
+  margin-bottom: var(--ad-space-1);
+}
+
+.bar-chart-title {
+  margin: 0;
+  font: var(--ad-font-section);
+  color: var(--ad-text-secondary);
+}
+
+.bar-chart-value {
+  font: var(--ad-font-value);
+  color: var(--ad-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bar-chart-axis {
+  stroke: var(--ad-border);
+  stroke-width: 1;
+}
+
+.bar-chart-bar {
+  fill: var(--ad-accent);
+}
+
+.bar-chart-bar.is-hover {
+  fill: var(--ad-accent-hover);
+}
+
+.bar-chart-hit {
+  fill: transparent;
+}
+
+.bar-chart-label {
+  font: var(--ad-font-meta);
+  fill: var(--ad-text-muted);
+  text-anchor: middle;
+}
+
+.gear-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+}
+
+.gear-stats-table {
+  border-collapse: collapse;
+  font: var(--ad-font-ui);
+  color: var(--ad-text-secondary);
+}
+
+.gear-stats-table th {
+  font-weight: 400;
+  color: var(--ad-text);
+  text-align: left;
+}
+
+.gear-stats-table th,
+.gear-stats-table td {
+  padding: 2px var(--ad-space-3) 2px 0;
+}

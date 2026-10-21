@@ -50,6 +50,24 @@ export interface GearRecord extends GearItem {
   aliases: string[];
 }
 
+export interface ValueCount {
+  value: number;
+  count: number;
+}
+
+/** Statistiques d'usage, miroir de `gear::stats::GearStats`. */
+export interface GearStats {
+  photos: number;
+  focal: ValueCount[];
+  aperture: ValueCount[];
+  iso: ValueCount[];
+  months: { month: string; count: number }[];
+  partners: { id: number; name: string; count: number }[];
+  albums: { albumId: number; name: string; count: number; favoriteLens: string | null }[];
+  /** Boîtiers seulement : dernière valeur lue, photos prises depuis, estimation. */
+  shutter: { read: number | null; readAt: string | null; since: number; estimate: number } | null;
+}
+
 /** Champs d'une fiche, tels que le formulaire les envoie. */
 export type GearUpdate = Partial<
   Pick<
@@ -75,6 +93,7 @@ interface GearState {
   showHidden: boolean;
   selectedId: number | null;
   record: GearRecord | null;
+  stats: GearStats | null;
   /** Image déposée sur la fiche, en adresse locale (`blob:`). */
   photoUrl: string | null;
   error: CommandError | null;
@@ -111,12 +130,20 @@ export const useGear = create<GearState>()((set, get) => {
     set({ photoUrl: bytes.byteLength > 0 ? URL.createObjectURL(new Blob([bytes])) : null });
   }
 
+  async function loadStats(record: GearRecord | null) {
+    const stats =
+      record?.autoDetected === true
+        ? await invoke<GearStats>("gear_stats", { id: record.id })
+        : null;
+    set({ stats });
+  }
+
   async function refresh(id: number | null) {
     const items = await invoke<GearItem[]>("gear_list", { includeHidden: get().showHidden });
     const keep = id !== null && items.some((g) => g.id === id) ? id : (items[0]?.id ?? null);
     const record = keep === null ? null : await invoke<GearRecord>("gear_get", { id: keep });
     set({ items, selectedId: keep, record });
-    await loadPhoto(record);
+    await Promise.all([loadPhoto(record), loadStats(record)]);
   }
 
   return {
@@ -124,6 +151,7 @@ export const useGear = create<GearState>()((set, get) => {
     showHidden: false,
     selectedId: null,
     record: null,
+    stats: null,
     photoUrl: null,
     error: null,
 
@@ -140,7 +168,7 @@ export const useGear = create<GearState>()((set, get) => {
         set({ selectedId: id });
         const record = id === null ? null : await invoke<GearRecord>("gear_get", { id });
         set({ record });
-        await loadPhoto(record);
+        await Promise.all([loadPhoto(record), loadStats(record)]);
       }),
 
     save: (update) =>

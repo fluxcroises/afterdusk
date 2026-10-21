@@ -66,6 +66,31 @@ fn inventaire_fusion_masquage_accessoires_et_fiche() {
         Some("mirrorless")
     );
 
+    // Statistiques : compteur lu chez Nikon et Fujifilm, estimé ailleurs.
+    // Compteur effacé, comme pour une photo importée avant sa lecture : il
+    // est relevé dans l'original à l'ouverture des statistiques.
+    conn.execute("UPDATE media_exif SET shutter_count = NULL", [])
+        .unwrap();
+    let stats = gear::stats::stats(&conn, nikon).unwrap();
+    assert_eq!(stats.photos, 1);
+    let shutter = stats.shutter.clone().unwrap();
+    assert_eq!((shutter.read, shutter.estimate), (Some(739), 739));
+    assert_eq!(stats.focal.len(), 1);
+    assert_eq!(stats.months.len(), 1);
+    assert_eq!(stats.albums[0].name, "Matériel");
+    assert!(stats.albums[0].favorite_lens.is_some(), "{stats:#?}");
+    assert_eq!(stats.partners.len(), 1);
+    let shutter_of = |model: &str| {
+        let id = bodies.iter().find(|b| b.model.contains(model)).unwrap().id;
+        gear::stats::stats(&conn, id).unwrap().shutter.unwrap()
+    };
+    assert_eq!(shutter_of("X-T3").read, Some(3850));
+    let canon = shutter_of("R6");
+    assert_eq!((canon.read, canon.estimate), (None, 1));
+    let lens_stats = gear::stats::stats(&conn, stats.partners[0].id).unwrap();
+    assert!(lens_stats.shutter.is_none());
+    assert_eq!(lens_stats.partners[0].id, nikon);
+
     // Fusion : les photos et les noms EXIF du Sony passent au Nikon.
     let merged = gear::merge(&mut conn, sony, nikon).unwrap();
     assert_eq!(merged.item.photo_count, 2);

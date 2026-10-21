@@ -2,6 +2,8 @@
 //! fiches complètes, accessoires saisis à la main, fusion des doublons et
 //! masquage des appareils d'autrui.
 
+pub mod stats;
+
 use std::path::Path;
 
 use rusqlite::{Connection, OptionalExtension, params};

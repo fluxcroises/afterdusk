@@ -209,6 +209,7 @@ pub fn run() {
             commands::geo::geo_album_tracks,
             commands::gear::gear_list,
             commands::gear::gear_get,
+            commands::gear::gear_stats,
             commands::gear::gear_update,
             commands::gear::gear_create,
             commands::gear::gear_delete,
