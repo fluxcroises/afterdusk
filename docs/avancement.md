@@ -42,7 +42,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] Inventaire alimenté automatiquement, fusion des doublons, masquage
 - [x] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
 - [x] Journal d'entretien et rappels
-- [ ] Export d'inventaire PDF et CSV
+- [x] Export d'inventaire PDF et CSV
 - [ ] Albums intelligents
 
 ## Journal
@@ -508,3 +508,4 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 - Limite connue : Excel retire le zéro initial d'un numéro de série comme « 093022004357 », qu'il prend pour un nombre. Le CSV garde la valeur exacte ; d'autres tableurs, ou l'import de texte d'Excel, la lisent correctement.
 - Idée de l'utilisateur, à inscrire au cahier des charges : des planches contact en PDF, qui réutiliseraient cette mise en page. Leur place logique est l'étape Livrer, en V0.4.
 - Critères de l'inventaire, des fiches avec statistiques et du journal d'entretien cochés : CI verte sous Windows et macOS (run 39636780190, commit f709996).
+- Critère de l'export d'inventaire PDF et CSV coché : CI verte sous Windows et macOS (run 39641509658, commit e57229c). Reste pour la V0.3 : les albums intelligents.
