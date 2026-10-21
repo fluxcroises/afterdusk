@@ -1,0 +1,509 @@
+/* Site d'Afterdusk. Couleurs et rayons repris de docs/charte-graphique.md :
+   le site doit ressembler au logiciel qu'il présente. */
+
+/* Inter, le fichier embarqué dans l'application (licence OFL, voir fonts/OFL.txt). */
+@font-face {
+  font-family: Inter;
+  src: url("fonts/InterVariable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --ad-bg: #17191c;
+  --ad-workspace: #111214;
+  --ad-panel: #22252a;
+  --ad-surface: #2c3036;
+  --ad-border: #383d44;
+  --ad-field-border: #6d737c;
+
+  --ad-text: #f0f2f5;
+  --ad-text-secondary: #aab0b9;
+  --ad-text-muted: #959ba5;
+
+  --ad-accent: #7598e8;
+  --ad-accent-hover: #92acf0;
+  --ad-on-accent: #17191c;
+  --ad-success: #6ebc94;
+  --ad-warning: #dbad69;
+
+  --ad-radius-sm: 4px;
+  --ad-radius-md: 6px;
+  --ad-radius-lg: 10px;
+
+  --ad-font:
+    Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    sans-serif;
+  --ad-transition: 150ms ease;
+
+  --page: 1120px;
+  --gutter: clamp(16px, 4vw, 40px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  scroll-padding-top: 16px;
+}
+
+body {
+  margin: 0;
+  background: var(--ad-bg);
+  color: var(--ad-text);
+  font: 400 16px/1.6 var(--ad-font);
+  -webkit-text-size-adjust: 100%;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--ad-accent);
+  text-underline-offset: 3px;
+  transition: color var(--ad-transition);
+}
+
+a:hover {
+  color: var(--ad-accent-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ad-accent);
+  outline-offset: 3px;
+  border-radius: var(--ad-radius-sm);
+}
+
+.skip {
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  padding: 10px 14px;
+  background: var(--ad-accent);
+  color: var(--ad-on-accent);
+  border-radius: var(--ad-radius-md);
+  z-index: 10;
+}
+
+.skip:focus {
+  top: 12px;
+}
+
+.wrap {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* En-tête */
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 24px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--ad-text);
+  font-weight: 600;
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--ad-text);
+}
+
+/* Le logo officiel en blanc, sans retoucher le SVG (charte, section 6). */
+.logo {
+  width: 28px;
+  height: 28px;
+  background: var(--ad-text);
+  -webkit-mask: url("img/logo.svg") center / contain no-repeat;
+  mask: url("img/logo.svg") center / contain no-repeat;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  margin: 0 -12px;
+  padding: 0;
+  list-style: none;
+}
+
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ad-text-secondary);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: var(--ad-text);
+}
+
+.nav .lang {
+  color: var(--ad-text);
+}
+
+/* Photo d'ouverture : la plage de Cabourg à la tombée du jour, qui donne son nom au logiciel. */
+
+.dusk {
+  margin: 0;
+  background: var(--ad-workspace);
+}
+
+.dusk img {
+  width: 100%;
+  height: clamp(200px, 33vw, 480px);
+  object-fit: cover;
+  object-position: 58% 50%;
+}
+
+.dusk figcaption {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 8px var(--gutter) 0;
+  color: var(--ad-text-muted);
+  font-size: 13px;
+}
+
+/* Présentation */
+
+.intro {
+  padding-top: clamp(32px, 6vw, 72px);
+  padding-bottom: clamp(48px, 8vw, 96px);
+}
+
+.intro h1 {
+  max-width: 17em;
+  margin: 0;
+  font-size: clamp(32px, 5.2vw, 56px);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.lead {
+  max-width: 38em;
+  margin: 20px 0 0;
+  color: var(--ad-text-secondary);
+  font-size: clamp(17px, 1.6vw, 19px);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--ad-field-border);
+  border-radius: var(--ad-radius-md);
+  color: var(--ad-text);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background var(--ad-transition),
+    border-color var(--ad-transition);
+}
+
+.button:hover {
+  color: var(--ad-text);
+  background: var(--ad-surface);
+}
+
+/* Le seul bouton bleu de la page : le code source, puisqu'il n'y a pas encore d'installateur. */
+.button.primary {
+  background: var(--ad-accent);
+  border-color: var(--ad-accent);
+  color: var(--ad-on-accent);
+}
+
+.button.primary:hover {
+  background: var(--ad-accent-hover);
+  border-color: var(--ad-accent-hover);
+  color: var(--ad-on-accent);
+}
+
+.status {
+  max-width: 38em;
+  margin: 24px 0 0;
+  color: var(--ad-text-muted);
+  font-size: 14px;
+}
+
+/* Sections */
+
+section {
+  padding-top: clamp(48px, 7vw, 88px);
+  padding-bottom: clamp(48px, 7vw, 88px);
+  border-top: 1px solid var(--ad-border);
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.section-lead {
+  max-width: 36em;
+  margin: 12px 0 0;
+  color: var(--ad-text-secondary);
+}
+
+ul.plain {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.plain li {
+  padding: 10px 0;
+  border-top: 1px solid var(--ad-border);
+  color: var(--ad-text-secondary);
+}
+
+ul.plain li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.soon {
+  color: var(--ad-warning);
+  font-weight: 500;
+}
+
+/* Le parcours : quatre étapes numérotées comme les vignettes d'une planche contact. */
+
+.steps {
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 28px 0;
+  border-top: 1px solid var(--ad-border);
+}
+
+.step-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.frame {
+  color: var(--ad-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-head p {
+  margin: 4px 0 0;
+  color: var(--ad-text-muted);
+  font-size: 15px;
+}
+
+.shot {
+  margin: 40px 0 0;
+}
+
+.shot img {
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-lg);
+}
+
+.shot figcaption {
+  margin-top: 10px;
+  color: var(--ad-text-muted);
+  font-size: 14px;
+}
+
+/* Après coup : deux sujets de même poids, côte à côte sur grand écran. */
+
+.later {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  margin-top: 36px;
+}
+
+.later h3 {
+  margin-bottom: 12px;
+}
+
+.later p {
+  margin: 0 0 16px;
+  color: var(--ad-text-secondary);
+}
+
+/* Principes : une liste de définitions, plus proche d'une notice que d'une grille de cartes. */
+
+.principles {
+  margin: 36px 0 0;
+}
+
+.principles div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 20px 0;
+  border-top: 1px solid var(--ad-border);
+}
+
+.principles dt {
+  font-weight: 600;
+}
+
+.principles dd {
+  margin: 0;
+  max-width: 40em;
+  color: var(--ad-text-secondary);
+}
+
+/* Avancement */
+
+.versions {
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.version {
+  padding: 22px 0;
+  border-top: 1px solid var(--ad-border);
+}
+
+.version-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.count {
+  color: var(--ad-text-secondary);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  height: 6px;
+  margin: 12px 0 14px;
+  background: var(--ad-surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--ad-accent);
+}
+
+.version p {
+  margin: 0;
+  max-width: 44em;
+  color: var(--ad-text-secondary);
+  font-size: 15px;
+}
+
+.note {
+  margin: 24px 0 0;
+  color: var(--ad-text-muted);
+  font-size: 14px;
+}
+
+/* Pied de page */
+
+footer {
+  padding-top: 32px;
+  padding-bottom: 40px;
+  border-top: 1px solid var(--ad-border);
+  background: var(--ad-workspace);
+  color: var(--ad-text-muted);
+  font-size: 14px;
+}
+
+footer p {
+  margin: 0 0 8px;
+  max-width: 48em;
+}
+
+/* Grand écran : les colonnes s'ouvrent quand le texte garde une longueur de ligne lisible. */
+
+@media (min-width: 720px) {
+  .step {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .step-head {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .later {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 56px;
+  }
+
+  .principles div {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 32px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .step {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

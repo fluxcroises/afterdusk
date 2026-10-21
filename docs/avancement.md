@@ -652,3 +652,11 @@ Critères (cahier des charges, section 7) :
   - vignettes tirées des aperçus retouchés (600 px), progression dans la boîte ; 20 photos par page en 4 colonnes A4, 72 en 8 colonnes.
 - Logo du studio (idée de l'utilisateur), dans Réglages > Identité : copié et vérifié dans les données d'Afterdusk, aperçu sur damier, remplaçable et retirable. Il sert en tête des planches contact et de l'inventaire du matériel, et comme filigrane des exports (« Logo du studio », à côté de texte et image) et des planches.
 - Tests : pagination et filigranes de la planche, formats de page, copie et retrait du logo, boîte de dialogue (photos retenues, sélection, réglages envoyés). Une planche d'exemple de 26 photos, rendue puis regardée page par page, avec filigrane texte puis logo.
+
+### 2026-10-21 (suite) : site de présentation
+
+- Demande de l'utilisateur : un site pour le logiciel. Dossier `site/`, HTML et CSS statiques, sans JavaScript ni ressource externe : une page en français (`site/index.html`) et une en anglais (`site/en/index.html`).
+- Couleurs, rayons et police (Inter, le fichier de l'application) repris de la charte graphique. Photo de Cabourg en ouverture, capture de l'écran d'accueil sous Windows.
+- Contenu tiré du cahier des charges et de cette page : seules les fonctions livrées sont décrites, celles en cours portent la mention « En cours ». La section Avancement recopie le nombre de critères cochés au 21 octobre 2026 : à mettre à jour avec chaque version.
+- Vérifié dans le navigateur à 800 px et à 375 px (aucun débordement, cibles de 44 px), au clavier (lien d'évitement, focus visible), ancres et fichiers chargés, console sans erreur. Contrastes calculés : 6,3:1 au minimum.
+- Pas encore publié : l'hébergement (GitHub Pages ou autre) reste à choisir.
