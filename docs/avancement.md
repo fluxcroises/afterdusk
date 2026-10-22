@@ -742,3 +742,7 @@ Critères (cahier des charges, section 7) :
 ### 2026-10-22 (suite) : profils d'interface au cahier des charges
 
 - Idée de l'utilisateur : une interface Simplifiée, De base ou Complète selon le profil du photographe, proposée par l'assistant de bienvenue. Ajoutée au cahier des charges (section 6, avec le découpage par profil validé, et critère de la V0.5). Les fonctions sont masquées, jamais retirées ; les installations existantes restent en interface complète.
+
+### 2026-10-22 (suite) : signature des installateurs (décision 0011)
+
+- Comparatif des options (non signé, SignPath Foundation, Certum Open Source, certificat classique, Azure Artifact Signing, OSSign ; pour macOS, non signé ou Apple Developer Program). Choix de l'utilisateur : SignPath Foundation pour Windows ; macOS non signé au début avec une page d'aide, Apple Developer Program plus tard ; clé de mise à jour Tauri propre au projet. Point ouvert de la section 9 refermé.
