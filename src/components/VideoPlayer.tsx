@@ -250,6 +250,23 @@ export function VideoPlayer({ media }: { media: MediaSummary }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [toggle, step, addClip]);
   const clips = useClips((s) => s.clips);
+  const keyframes = useClips((s) => s.keyframes);
+  // Extraits, puis l'extrait en cours depuis son entrée réelle (recalée).
+  const start = inMs === null ? null : snap(keyframes, inMs);
+  const pendingFrom = start ?? outMs;
+  const marks = [
+    ...clips.map((c) => ({ key: `c${c.id}`, from: c.startMs, to: c.endMs, pending: false })),
+    ...(pendingFrom === null
+      ? []
+      : [
+          {
+            key: "pending",
+            from: pendingFrom,
+            to: outMs !== null && outMs > pendingFrom ? outMs : pendingFrom,
+            pending: true,
+          },
+        ]),
+  ];
 
   const src = source?.path ? videoUrl(source.path) : null;
   const poster = media.hasPreview ? (previewUrl(media.id, 2048) ?? undefined) : undefined;
@@ -330,27 +347,7 @@ export function VideoPlayer({ media }: { media: MediaSummary }) {
         <div className="video-seek-wrap">
           {/* Extraits et entrée ou sortie en cours, sous la barre de position. */}
           {duration > 0 &&
-            [
-              ...clips.map((c) => ({
-                key: `c${c.id}`,
-                from: c.startMs,
-                to: c.endMs,
-                pending: false,
-              })),
-              ...(inMs !== null || outMs !== null
-                ? [
-                    {
-                      key: "pending",
-                      from: inMs ?? outMs ?? 0,
-                      to:
-                        outMs !== null && inMs !== null && outMs > inMs
-                          ? outMs
-                          : (inMs ?? outMs ?? 0),
-                      pending: true,
-                    },
-                  ]
-                : []),
-            ].map((m) => (
+            marks.map((m) => (
               <span
                 key={m.key}
                 className="video-clip-mark"
