@@ -4,6 +4,7 @@ pub mod db;
 pub mod develop;
 pub mod devices;
 pub mod export;
+pub mod fonts;
 pub mod ftp;
 pub mod gear;
 pub mod geo;
@@ -277,6 +278,7 @@ pub fn run() {
             commands::export::delivery_framing_set,
             commands::export::delivery_framing_reset,
             commands::export::design_list,
+            commands::export::fonts_list,
             commands::export::design_save,
             commands::export::design_delete,
             commands::export::design_focus,

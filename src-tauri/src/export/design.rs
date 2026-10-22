@@ -1,8 +1,12 @@
 //! Éditeur de livraison simple (cahier des charges, V0.5) : une page au
 //! format d'un modèle, de une à quatre photos, avec fond, marge, cadre,
-//! textes et logo. Pas de calques libres ni de dessin. Le document est un
-//! JSON versionné ; la page se rend ici à pleine résolution, l'interface
-//! n'en montre qu'un aperçu.
+//! textes et logo ; en grille, en bande photomaton ou en Polaroid. Pas de
+//! calques libres ni de dessin. Le document est un JSON versionné ; la page
+//! se rend ici à pleine résolution, l'interface n'en montre qu'un aperçu.
+//!
+//! Versions : 1, grille seule et textes en Inter ; 2, disposition et police
+//! de chaque texte. Un document en version 1 se relit comme une grille en
+//! Inter (`migrate`).
 
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
@@ -12,9 +16,23 @@ use super::render::Rendered;
 use super::watermark;
 
 /// Version du format des documents.
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 /// Une composition tient de une à quatre photos.
 pub const MAX_PHOTOS: usize = 4;
+
+/// Disposition des photos sur la page.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Layout {
+    /// Une à quatre photos en grille.
+    #[default]
+    Grid,
+    /// Bande photomaton : les photos l'une sous l'autre, un bandeau libre en
+    /// bas ; une page deux fois plus large porte deux bandes identiques.
+    Strip,
+    /// Polaroid : une photo carrée, bord large en bas pour la légende.
+    Polaroid,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,6 +40,9 @@ pub struct Design {
     pub version: u32,
     /// Modèle de départ (format et usage).
     pub template: String,
+    /// Absente en version 1 : grille.
+    #[serde(default)]
+    pub layout: Layout,
     /// Taille de la page, en pixels (le modèle, tourné au besoin).
     pub width: u32,
     pub height: u32,
@@ -72,7 +93,10 @@ pub struct DesignText {
     pub y: f64,
     /// Corps, en % de la hauteur de la page.
     pub size: f64,
-    /// Graisse d'Inter, de 100 à 900.
+    /// Famille de police (livrée ou installée) ; absente en version 1 : Inter.
+    #[serde(default = "default_font")]
+    pub font: String,
+    /// Graisse, de 100 à 900.
     pub weight: u16,
     pub color: String,
     pub align: Align,
@@ -90,6 +114,26 @@ pub struct DesignLogo {
     pub opacity: f64,
 }
 
+fn default_font() -> String {
+    crate::fonts::DEFAULT.to_owned()
+}
+
+/// Bandeau libre en bas d'une bande photomaton, en fraction de la hauteur.
+pub const STRIP_BAND: f64 = 0.12;
+
+/// Photo d'un Polaroid 600 (cadre de 88 × 107 mm, image de 79 × 79 mm) :
+/// bords de 4,5 mm sur les côtés, 6 mm en haut, 22 mm en bas.
+pub const POLAROID_CELL: [f64; 4] = [4.5 / 88.0, 6.0 / 107.0, 83.5 / 88.0, 85.0 / 107.0];
+
+/// Document relu d'une version antérieure, mis à la version courante (les
+/// champs nouveaux ont déjà pris leur valeur par défaut à la lecture).
+pub fn migrate(mut design: Design) -> Design {
+    if design.version < VERSION {
+        design.version = VERSION;
+    }
+    design
+}
+
 impl Design {
     pub fn check(&self) -> Result<(), ExportError> {
         if self.version == 0 || self.version > VERSION {
@@ -103,6 +147,11 @@ impl Design {
                 "{} photos : une composition en tient de 1 à {MAX_PHOTOS}",
                 self.photos.len()
             )));
+        }
+        if self.layout == Layout::Polaroid && self.photos.len() != 1 {
+            return Err(ExportError::Settings(
+                "un Polaroid ne tient qu'une photo".into(),
+            ));
         }
         if self.width == 0 || self.height == 0 || self.width > 12_000 || self.height > 12_000 {
             return Err(ExportError::TooLarge);
@@ -127,11 +176,11 @@ pub fn parse_color(hex: &str) -> [f32; 3] {
 }
 
 /// Cases des photos (gauche, haut, droite, bas, en fractions de la page)
-/// pour `n` photos, une page de rapport `aspect` (largeur sur hauteur) et
-/// une marge en % du petit côté. Deux photos côte à côte sur une page en
-/// largeur, l'une sous l'autre sur une page en hauteur ; trois : une grande
-/// et deux petites ; quatre : deux sur deux. Même calcul que `ui/design.ts`.
-pub fn cells(n: usize, aspect: f64, margin: f64) -> Vec<[f64; 4]> {
+/// pour `n` photos, une disposition, une page de rapport `aspect` (largeur
+/// sur hauteur) et une marge en % du petit côté. La case `k` reçoit la
+/// photo `k % n` (une bande doublée répète ses photos). Même calcul que
+/// `ui/design.ts`.
+pub fn cells(layout: Layout, n: usize, aspect: f64, margin: f64) -> Vec<[f64; 4]> {
     let aspect = if aspect.is_finite() && aspect > 0.0 {
         aspect
     } else {
@@ -144,6 +193,36 @@ pub fn cells(n: usize, aspect: f64, margin: f64) -> Vec<[f64; 4]> {
     } else {
         (m, m * aspect)
     };
+    match layout {
+        Layout::Grid => grid(n, aspect, mx, my),
+        Layout::Strip => strip(n, aspect, mx, my),
+        Layout::Polaroid if n > 0 => vec![POLAROID_CELL],
+        Layout::Polaroid => Vec::new(),
+    }
+}
+
+/// Bande : une colonne par tiers de hauteur de largeur (5 × 15 : une ;
+/// 10 × 15 : deux), les photos l'une sous l'autre au-dessus du bandeau.
+fn strip(n: usize, aspect: f64, mx: f64, my: f64) -> Vec<[f64; 4]> {
+    if n == 0 {
+        return Vec::new();
+    }
+    let columns = ((aspect * 3.0).round() as usize).max(1);
+    let width = (1.0 - mx * (columns as f64 + 1.0)) / columns as f64;
+    let bottom = 1.0 - STRIP_BAND;
+    let height = (bottom - my * n as f64) / n as f64;
+    let mut out = Vec::with_capacity(columns * n);
+    for c in 0..columns {
+        let left = mx + c as f64 * (width + mx);
+        for i in 0..n {
+            let top = my + i as f64 * (height + my);
+            out.push([left, top, left + width, top + height]);
+        }
+    }
+    out
+}
+
+fn grid(n: usize, aspect: f64, mx: f64, my: f64) -> Vec<[f64; 4]> {
     let (l, t, r, b) = (mx, my, 1.0 - mx, 1.0 - my);
     let mid_x = (l + r) / 2.0;
     let mid_y = (t + b) / 2.0;
@@ -221,11 +300,12 @@ pub fn compose(
     };
     let short = f64::from(w.min(h));
     let aspect = f64::from(w) / f64::from(h);
-    for (p, cell) in design
-        .photos
-        .iter()
-        .zip(cells(design.photos.len(), aspect, design.margin))
+    let n = design.photos.len();
+    for (k, cell) in cells(design.layout, n, aspect, design.margin)
+        .into_iter()
+        .enumerate()
     {
+        let p = &design.photos[k % n];
         let (x, y, cw, ch) = pixels(cell, w, h);
         let part = photo(p, cw, ch)?;
         paste(&mut page, &part, x, y);
@@ -261,7 +341,7 @@ pub fn compose(
         for line in text.text.lines() {
             // Hauteur de ligne : 1,2 fois le corps, comme dans l'éditeur.
             let advance = (f64::from(px) * 1.2).round() as i64;
-            if let Some(stamp) = watermark::text_line(line, px, f32::from(text.weight), ink)? {
+            if let Some(stamp) = watermark::text_line(line, px, &text.font, text.weight, ink)? {
                 let anchor = (text.x * f64::from(w)).round() as i64;
                 let left = match text.align {
                     Align::Left => anchor,
@@ -292,7 +372,7 @@ fn row(r: &rusqlite::Row<'_>) -> rusqlite::Result<(i64, String, String, String)>
 
 fn decode((id, name, json, updated_at): (i64, String, String, String)) -> Option<Saved> {
     // Un document illisible (version future) est ignoré plutôt que bloquant.
-    let document: Design = serde_json::from_str(&json).ok()?;
+    let document = migrate(serde_json::from_str::<Design>(&json).ok()?);
     document.check().ok()?;
     Some(Saved {
         id,
@@ -371,6 +451,7 @@ mod tests {
         Design {
             version: VERSION,
             template: "square".into(),
+            layout: Layout::Grid,
             width: 200,
             height: 100,
             photos: (0..n)
@@ -401,16 +482,16 @@ mod tests {
     #[test]
     fn cases_selon_le_nombre_et_l_orientation() {
         // Page 2:1, marge de 10 % du petit côté : 5 % de la largeur, 10 % de la hauteur.
-        let c = cells(2, 2.0, 10.0);
+        let c = cells(Layout::Grid, 2, 2.0, 10.0);
         assert_eq!(c.len(), 2);
         let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
         assert!(close(c[0][0], 0.05) && close(c[0][1], 0.1) && close(c[0][2], 0.475));
         assert!(close(c[1][0], 0.525) && close(c[1][2], 0.95) && close(c[1][3], 0.9));
         // Page en hauteur : l'une sous l'autre.
-        let c = cells(2, 0.5, 10.0);
+        let c = cells(Layout::Grid, 2, 0.5, 10.0);
         assert!(close(c[0][2], 0.9) && close(c[0][3], 0.475) && close(c[1][1], 0.525));
-        assert_eq!(cells(3, 1.5, 0.0).len(), 3);
-        let four = cells(4, 1.0, 0.0);
+        assert_eq!(cells(Layout::Grid, 3, 1.5, 0.0).len(), 3);
+        let four = cells(Layout::Grid, 4, 1.0, 0.0);
         assert_eq!(four[3], [0.5, 0.5, 1.0, 1.0]);
     }
 
@@ -447,6 +528,7 @@ mod tests {
             x: 0.5,
             y: 0.4,
             size: 20.0,
+            font: "Inter".into(),
             weight: 700,
             color: "#000000".into(),
             align: Align::Center,
@@ -463,6 +545,35 @@ mod tests {
         let ink = |x0: u32, x1: u32| (x0..x1).any(|x| (40..65).any(|y| at(&page, x, y)[0] < 0.5));
         assert!(ink(60, 100) && ink(100, 140));
         assert!(!ink(0, 30) && !ink(170, 200));
+    }
+
+    #[test]
+    fn bande_et_polaroid() {
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
+        // Bande 1:3, quatre photos, sans marge : quatre cases de 0,22 de haut.
+        let c = cells(Layout::Strip, 4, 1.0 / 3.0, 0.0);
+        assert_eq!(c.len(), 4);
+        assert!(close(c[3][3], 1.0 - STRIP_BAND) && close(c[0][2], 1.0));
+        // Bande doublée (2:3) : deux colonnes qui répètent les photos.
+        let d = cells(Layout::Strip, 3, 2.0 / 3.0, 3.0);
+        assert_eq!(d.len(), 6);
+        assert!(close(d[0][1], d[3][1]) && d[3][0] > 0.5);
+        assert_eq!(cells(Layout::Polaroid, 1, 0.82, 10.0), vec![POLAROID_CELL]);
+        let mut p = design(2);
+        p.layout = Layout::Polaroid;
+        assert!(p.check().is_err());
+    }
+
+    #[test]
+    fn document_en_version_1_relu() {
+        let json = r##"{"version":1,"template":"square","width":100,"height":100,
+            "photos":[{"item":3,"focus":[0.5,0.5]}],"background":"#ffffff","margin":0,
+            "frame":null,"texts":[{"text":"A","x":0,"y":0,"size":5,"weight":400,
+            "color":"#000000","align":"left"}],"logo":null}"##;
+        let d = migrate(serde_json::from_str::<Design>(json).unwrap());
+        assert_eq!(d.version, VERSION);
+        assert_eq!(d.layout, Layout::Grid);
+        assert_eq!(d.texts[0].font, "Inter");
     }
 
     #[test]

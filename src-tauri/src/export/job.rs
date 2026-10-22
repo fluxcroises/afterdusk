@@ -565,7 +565,7 @@ pub(crate) fn render_cover(
 pub fn group_preset(group: templates::Group) -> &'static str {
     match group {
         templates::Group::Social => "instagram",
-        templates::Group::Print => "full",
+        templates::Group::Print | templates::Group::Creative => "full",
         templates::Group::Web => "web",
     }
 }

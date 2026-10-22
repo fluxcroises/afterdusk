@@ -63,6 +63,7 @@ unftp-core = "0.1"
 async-trait = "0.1"
 sha2 = "0.11"
 tokio = { version = "1", features = ["sync"] }
+fontdb = { version = "0.24.0", default-features = false, features = ["std", "fs", "memmap"] }
 
 # HEIF par l'encodeur du système (décision 0007) : WIC sous Windows, avec les
 # extensions HEIF/HEVC de Microsoft ; ImageIO sous macOS.

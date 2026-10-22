@@ -240,6 +240,12 @@ pub async fn delivery_framing_reset(
     .await
 }
 
+/// Polices des compositions : livrées, puis installées sur l'ordinateur.
+#[tauri::command]
+pub async fn fonts_list() -> CommandResult<crate::fonts::FontList> {
+    blocking(|| Ok(crate::fonts::list())).await
+}
+
 /// Compositions de l'éditeur de livraison, les plus récentes d'abord.
 #[tauri::command]
 pub async fn design_list(state: State<'_, AppState>) -> CommandResult<Vec<design::Saved>> {

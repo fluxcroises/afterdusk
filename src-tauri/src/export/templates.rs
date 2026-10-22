@@ -21,6 +21,8 @@ pub enum Group {
     Social,
     Print,
     Web,
+    /// Pages de l'éditeur de compositions (bande photomaton, Polaroid).
+    Creative,
 }
 
 /// Un modèle : identifiant (clé de traduction), usage, taille en pixels.
@@ -57,6 +59,9 @@ pub const TEMPLATES: &[Template] = &[
     t("print-20x30", Group::Print, 3543, 2362),
     t("print-a4", Group::Print, 3508, 2480),
     t("web-fullscreen", Group::Web, 2560, 1440),
+    // Bande de 5 × 15 cm et Polaroid 600 (88 × 107 mm), à 300 dpi.
+    t("photo-strip", Group::Creative, 600, 1800),
+    t("polaroid", Group::Creative, 1040, 1264),
 ];
 
 pub fn find(id: &str) -> Option<&'static Template> {
@@ -77,7 +82,7 @@ impl Template {
 
     pub fn sharpen(&self) -> Sharpen {
         match self.group {
-            Group::Print => Sharpen::Paper,
+            Group::Print | Group::Creative => Sharpen::Paper,
             Group::Social | Group::Web => Sharpen::Screen,
         }
     }

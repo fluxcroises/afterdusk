@@ -10,7 +10,7 @@ use std::sync::atomic::AtomicBool;
 
 use afterdusk_lib::develop::settings::DevelopSettings;
 use afterdusk_lib::develop::store;
-use afterdusk_lib::export::design::{self, Align, Design, DesignPhoto, DesignText};
+use afterdusk_lib::export::design::{self, Align, Design, DesignPhoto, DesignText, Layout};
 use afterdusk_lib::export::job::{self, ExportRequest, Target};
 use afterdusk_lib::export::presets::{ExportSettings, Output};
 use afterdusk_lib::export::templates;
@@ -519,6 +519,7 @@ fn composition_de_deux_photos() {
     let doc = Design {
         version: design::VERSION,
         template: "facebook-post".into(),
+        layout: Layout::Grid,
         width: 1200,
         height: 630,
         photos: ids
@@ -536,6 +537,7 @@ fn composition_de_deux_photos() {
             x: 0.5,
             y: 0.45,
             size: 8.0,
+            font: "Playfair Display".into(),
             weight: 700,
             color: "#000000".into(),
             align: Align::Center,
@@ -560,6 +562,37 @@ fn composition_de_deux_photos() {
     assert!(px(5, 5).iter().all(|&c| c > 240), "{:?}", px(5, 5));
     assert!(px(200, 100)[0] > 180 && px(200, 100)[2] < 70);
     assert!(px(1000, 100)[2] > 180 && px(1000, 100)[0] < 70);
+
+    // Bande photomaton doublée (10 × 15) : deux colonnes identiques, le
+    // rouge puis le bleu, bandeau noir en bas.
+    let strip = Design {
+        template: "photo-strip".into(),
+        layout: Layout::Strip,
+        width: 1200,
+        height: 1800,
+        background: "#000000".into(),
+        margin: 4.0,
+        texts: Vec::new(),
+        ..doc.clone()
+    };
+    let file =
+        job::export_design(&conn, &ExportSettings::default(), &strip, &out, "Bande").unwrap();
+    let img = image::open(&file).unwrap().into_rgb8();
+    assert_eq!((img.width(), img.height()), (1200, 1800));
+    let px = |x: u32, y: u32| img.get_pixel(x, y).0;
+    for x in [300, 900] {
+        assert!(
+            px(x, 400)[0] > 180 && px(x, 400)[2] < 70,
+            "{x} : {:?}",
+            px(x, 400)
+        );
+        assert!(
+            px(x, 1100)[2] > 180 && px(x, 1100)[0] < 70,
+            "{x} : {:?}",
+            px(x, 1100)
+        );
+        assert!(px(x, 1750).iter().all(|&c| c < 20));
+    }
     for (orig, hash) in &originals {
         assert_eq!(&common::sha256(orig), hash);
     }

@@ -4,7 +4,7 @@
 
 use std::path::PathBuf;
 
-use ab_glyph::{Font, FontRef, PxScale, ScaleFont, VariableFont, point};
+use ab_glyph::{Font, FontRef, FontVec, PxScale, ScaleFont, VariableFont, point};
 use serde::{Deserialize, Serialize};
 
 use super::ExportError;
@@ -102,7 +102,7 @@ fn font(weight: f32) -> Result<FontRef<'static>, ExportError> {
 }
 
 /// Largeur d'une ligne à l'échelle donnée.
-fn measure(font: &FontRef<'_>, scale: PxScale, text: &str) -> f32 {
+fn measure(font: &impl Font, scale: PxScale, text: &str) -> f32 {
     let f = font.as_scaled(scale);
     let mut x = 0.0f32;
     let mut previous = None;
@@ -118,7 +118,7 @@ fn measure(font: &FontRef<'_>, scale: PxScale, text: &str) -> f32 {
 }
 
 /// Une ligne de texte tracée à l'échelle donnée, dans la couleur `ink`.
-fn rasterize(font: &FontRef<'_>, scale: PxScale, text: &str, ink: [f32; 3]) -> Stamp {
+fn rasterize(font: &impl Font, scale: PxScale, text: &str, ink: [f32; 3]) -> Stamp {
     let f = font.as_scaled(scale);
     let width = measure(font, scale, text).ceil() as u32 + 2;
     let height = (f.ascent() - f.descent()).ceil() as u32 + 2;
@@ -174,18 +174,27 @@ fn text_stamp(text: &str, dark: bool, target_width: f32) -> Result<Option<Stamp>
     Ok(Some(rasterize(&font, scale, text, [ink; 3])))
 }
 
-/// Ligne de texte en Inter, de `px` pixels de corps et de graisse `weight`
-/// (100 à 900), pour les compositions de Livrer.
+/// Ligne de texte de `px` pixels de corps, dans la police `family` (livrée
+/// ou installée ; Inter si elle manque) et la graisse `weight` (100 à 900),
+/// pour les compositions de Livrer.
 pub(crate) fn text_line(
     text: &str,
     px: f32,
-    weight: f32,
+    family: &str,
+    weight: u16,
     ink: [f32; 3],
 ) -> Result<Option<Stamp>, ExportError> {
     if text.trim().is_empty() || !px.is_finite() || px < 1.0 {
         return Ok(None);
     }
-    let font = font(weight.clamp(100.0, 900.0))?;
+    let weight = weight.clamp(100, 900);
+    let face = crate::fonts::load(family, weight)
+        .or_else(|| crate::fonts::load(crate::fonts::DEFAULT, weight))
+        .ok_or_else(|| ExportError::Watermark(format!("police introuvable : {family}")))?;
+    let mut font = FontVec::try_from_vec_and_index(face.data.into_owned(), face.index)
+        .map_err(|e| ExportError::Watermark(format!("{family} : {e}")))?;
+    // Police variable : la graisse demandée ; sinon la face choisie la porte.
+    font.set_variation(b"wght", f32::from(weight));
     Ok(Some(rasterize(&font, PxScale::from(px), text, ink)))
 }
 
