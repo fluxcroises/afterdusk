@@ -69,8 +69,8 @@ describe("Livrer > Planche contact…", () => {
     // Le nom du photographe arrive de la base.
     await act(async () => {});
     expect(screen.getByText("Toutes les photos · 3 photos")).toBeInTheDocument();
-    // Sans logo du studio, ni en-tête ni filigrane logo.
-    expect(screen.getByLabelText("Logo du studio en tête de page")).toBeDisabled();
+    // Sans logo, ni en-tête ni filigrane logo.
+    expect(screen.getByLabelText("Logo en tête de page")).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Colonnes"), { target: { value: "6" } });
     fireEvent.change(screen.getByLabelText("Orientation"), { target: { value: "landscape" } });
     fireEvent.change(screen.getByLabelText("Filigrane"), { target: { value: "text" } });

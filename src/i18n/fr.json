@@ -233,7 +233,7 @@
     "mapOnlineNote": "Désactivé : la carte n'affiche que les frontières embarquées et ne fait aucune requête.",
     "autoBursts": "Regrouper les rafales après chaque import",
     "autoAnalysis": "Rechercher les ratés après chaque import",
-    "logo": "Logo du studio",
+    "logo": "Logo",
     "noLogo": "Aucun logo",
     "logoNote": "En tête des planches contact et de l'inventaire du matériel, et comme filigrane. Un PNG transparent rend le mieux.",
     "logoChoose": "Choisir un logo…",
@@ -925,7 +925,7 @@
     "watermarkKind": {
       "text": "Texte",
       "image": "Logo PNG",
-      "studioLogo": "Logo du studio"
+      "studioLogo": "Logo"
     },
     "watermarkText": "Texte",
     "watermarkDark": "Texte sombre",
@@ -975,7 +975,7 @@
     "previewLoading": "Calcul de l'aperçu…",
     "previewFailed": "Aperçu impossible pour cette photo.",
     "previewSize": "Fichier de {{width}} × {{height}} px",
-    "noStudioLogo": "Aucun logo du studio : il se choisit dans Réglages > Identité."
+    "noStudioLogo": "Aucun logo : il se choisit dans Réglages > Identité."
   },
   "rescan": {
     "title": "Réanalyse de la bibliothèque",
@@ -1270,7 +1270,7 @@
     "orientation": "Orientation",
     "portrait": "Portrait",
     "landscape": "Paysage",
-    "headerLogo": "Logo du studio en tête de page",
+    "headerLogo": "Logo en tête de page",
     "watermark": "Filigrane",
     "watermarkNone": "Aucun",
     "watermarkText": "Texte",

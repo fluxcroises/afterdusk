@@ -233,7 +233,7 @@
     "mapOnlineNote": "Off: the map only shows the built-in borders and makes no request.",
     "autoBursts": "Group bursts after each import",
     "autoAnalysis": "Find misses after each import",
-    "logo": "Studio logo",
+    "logo": "Logo",
     "noLogo": "No logo",
     "logoNote": "At the top of contact sheets and the gear inventory, and as a watermark. A transparent PNG works best.",
     "logoChoose": "Choose a logo…",
@@ -925,7 +925,7 @@
     "watermarkKind": {
       "text": "Text",
       "image": "PNG logo",
-      "studioLogo": "Studio logo"
+      "studioLogo": "Logo"
     },
     "watermarkText": "Text",
     "watermarkDark": "Dark text",
@@ -975,7 +975,7 @@
     "previewLoading": "Computing the preview…",
     "previewFailed": "No preview for this photo.",
     "previewSize": "File of {{width}} × {{height}} px",
-    "noStudioLogo": "No studio logo: choose one in Settings > Identity."
+    "noStudioLogo": "No logo: choose one in Settings > Identity."
   },
   "rescan": {
     "title": "Library rescan",
@@ -1270,7 +1270,7 @@
     "orientation": "Orientation",
     "portrait": "Portrait",
     "landscape": "Landscape",
-    "headerLogo": "Studio logo at the top of each page",
+    "headerLogo": "Logo at the top of each page",
     "watermark": "Watermark",
     "watermarkNone": "None",
     "watermarkText": "Text",
