@@ -116,7 +116,7 @@ export function Onboarding() {
           <h2 id="onboarding-title">{t(`onboarding.${step}.title`)}</h2>
           {text && <p className="onboarding-text">{text}</p>}
           {step === "usage" && (
-            <ProfileChoice value={c.profile} onChange={(profile) => update({ profile })} />
+            <ProfileChoice columns value={c.profile} onChange={(profile) => update({ profile })} />
           )}
           {step === "library" && (
             <div className="settings-form">

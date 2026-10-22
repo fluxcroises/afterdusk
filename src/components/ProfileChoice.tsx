@@ -8,13 +8,21 @@ import { PROFILES, type Profile } from "../ui/profiles";
 export function ProfileChoice({
   value,
   onChange,
+  columns = false,
 }: {
   value: Profile;
   onChange: (profile: Profile) => void;
+  /** Côte à côte (assistant de bienvenue), sinon l'une sous l'autre. */
+  columns?: boolean;
 }) {
   const { t } = useTranslation();
   return (
-    <div className="profile-choice" role="radiogroup" aria-label={t("profiles.label")}>
+    <div
+      className="profile-choice"
+      data-columns={columns || undefined}
+      role="radiogroup"
+      aria-label={t("profiles.label")}
+    >
       {PROFILES.map((p) => (
         <label key={p} className="profile-card" data-checked={value === p || undefined}>
           <input

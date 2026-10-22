@@ -5029,6 +5029,10 @@ input.locate-offset {
   gap: var(--ad-space-2);
 }
 
+.profile-choice[data-columns] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .profile-card {
   display: grid;
   grid-template-columns: auto 1fr;

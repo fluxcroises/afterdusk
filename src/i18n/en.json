@@ -571,7 +571,7 @@
     "finish": "Create the library",
     "usage": {
       "title": "How do you plan to use Afterdusk?",
-      "text": "Afterdusk shows what you need. You can change this at any time in Settings or the View menu."
+      "text": "You can change this later in Settings > General."
     }
   },
   "devices": {
@@ -1611,21 +1611,21 @@
   },
   "profiles": {
     "label": "Interface",
-    "note": "The profile hides features without stopping anything: miss detection, backup and automatic import keep running, and nothing is lost.",
+    "note": "Hidden features keep running: miss detection, backup, automatic import.",
     "names": {
       "simple": "Simplified",
       "basic": "Basic",
       "complete": "Complete"
     },
     "for": {
-      "simple": "To get started: cull, make the essential edits, deliver.",
-      "basic": "For regular use: library, map, more adjustments.",
-      "complete": "For a studio: all of Afterdusk, backup and automatic import included."
+      "simple": "To get started.",
+      "basic": "For regular use.",
+      "complete": "For a studio."
     },
     "shows": {
-      "simple": "Import, Cull, Develop, Deliver; ratings, flags, likely misses; light, colour, crop, presets; social and print formats.",
-      "basic": "Plus: Library and Map, renaming and keywords, colour labels, filters and bursts, curves and HSL, contact sheets, web gallery, compositions, video clips.",
-      "complete": "Plus: Gear, backup, automatic import and FTP reception, smart albums, virtual copies and healing, detailed export options, clients, computer fonts."
+      "simple": "Import, cull, make the essential edits, deliver.",
+      "basic": "Plus: library, map, detailed adjustments, contact sheets, web gallery, compositions.",
+      "complete": "All of Afterdusk: backup, automatic import, clients, gear."
     },
     "showAdvanced_one": "Show the hidden advanced setting",
     "showAdvanced_other": "Show the {{count}} hidden advanced settings",

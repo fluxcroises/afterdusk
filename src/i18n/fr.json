@@ -54,7 +54,7 @@
     "empty": "Aucune photo",
     "source": "Source : {{source}}",
     "count_one": "{{items}} / {{count}} sélectionnée",
-    "count_other": "{{items}} / {{count}} sélectionnée(s)",
+    "count_other": "{{items}} / {{count}} sélectionnées",
     "filter": "Filtre :",
     "noFilter": "Aucun filtre"
   },
@@ -348,9 +348,9 @@
   },
   "status": {
     "selection_one": "{{items}} · {{count}} sélectionnée",
-    "selection_other": "{{items}} · {{count}} sélectionnée(s)",
+    "selection_other": "{{items}} · {{count}} sélectionnées",
     "filtered_one": "{{items}} sur {{total}} · {{count}} sélectionnée",
-    "filtered_other": "{{items}} sur {{total}} · {{count}} sélectionnée(s)",
+    "filtered_other": "{{items}} sur {{total}} · {{count}} sélectionnées",
     "albums_one": "{{count}} album",
     "albums_other": "{{count}} albums",
     "xmpFailed_one": "XMP non écrit pour {{count}} photo, notes gardées dans la base",
@@ -571,7 +571,7 @@
     "finish": "Créer la bibliothèque",
     "usage": {
       "title": "Comment comptez-vous utiliser Afterdusk ?",
-      "text": "Afterdusk montre ce dont vous avez besoin. Vous pourrez changer à tout moment dans Réglages ou le menu Affichage."
+      "text": "Modifiable plus tard dans Réglages > Général."
     }
   },
   "devices": {
@@ -1611,21 +1611,21 @@
   },
   "profiles": {
     "label": "Interface",
-    "note": "Le profil masque des fonctions sans rien arrêter : l'analyse des ratés, la sauvegarde, l'import automatique continuent de tourner, et rien n'est perdu.",
+    "note": "Les fonctions masquées continuent de tourner : analyse des ratés, sauvegarde, import automatique.",
     "names": {
       "simple": "Simplifiée",
       "basic": "De base",
       "complete": "Complète"
     },
     "for": {
-      "simple": "Pour débuter : trier, retoucher l'essentiel, livrer.",
-      "basic": "Pour un usage régulier : bibliothèque, carte, plus de réglages.",
-      "complete": "Pour un studio : tout Afterdusk, sauvegarde et import automatique compris."
+      "simple": "Pour débuter.",
+      "basic": "Pour un usage régulier.",
+      "complete": "Pour un studio."
     },
     "shows": {
-      "simple": "Importer, Trier, Retoucher, Livrer ; notes, drapeaux, ratés probables ; lumière, couleur, recadrage, presets ; formats des réseaux et tirages.",
-      "basic": "En plus : Bibliothèque et Carte, renommage et mots-clés, couleurs, filtres et rafales, courbes et TSL, planches contact, galerie web, compositions, extraits vidéo.",
-      "complete": "En plus : Matériel, sauvegarde, import automatique et réception FTP, albums intelligents, copies virtuelles et correcteur, options d'export détaillées, clients, polices de l'ordinateur."
+      "simple": "Importer, trier, retoucher l'essentiel, livrer.",
+      "basic": "En plus : bibliothèque, carte, réglages détaillés, planches, galerie web, compositions.",
+      "complete": "Tout Afterdusk : sauvegarde, import automatique, clients, matériel."
     },
     "showAdvanced_one": "Afficher le réglage avancé masqué",
     "showAdvanced_other": "Afficher les {{count}} réglages avancés masqués",
