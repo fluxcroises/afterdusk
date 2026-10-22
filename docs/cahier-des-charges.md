@@ -413,8 +413,8 @@ Objectif : livrer aux bons formats, habiller une photo sans quitter Afterdusk, e
 
 - [x] Modèles de livraison présentés en vignettes, groupés par usage, avec recadrage ajustable par format
 - [x] Éditeur de livraison simple : texte, logo, cadre, fond, collage de 2 à 4 photos, export à pleine résolution
-- [ ] Dérushage vidéo : entrée, sortie, découpe, export sans réencodage
-- [ ] Profils d'interface Simplifiée, De base et Complète, proposés par l'assistant de bienvenue et modifiables à tout moment
+- [x] Dérushage vidéo : entrée, sortie, découpe, export sans réencodage
+- [x] Profils d'interface Simplifiée, De base et Complète, proposés par l'assistant de bienvenue et modifiables à tout moment
 
 ### Distribution : en dernier
 
