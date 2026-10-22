@@ -4377,3 +4377,27 @@ input.locate-offset {
 .gallery-dialog .selection-text {
   width: 100%;
 }
+
+/* Réglages > Import : boîtiers en import automatique. */
+.auto-import-rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  max-width: 560px;
+}
+
+.auto-import-rules ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auto-import-rules li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ad-space-3);
+}

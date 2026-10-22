@@ -115,7 +115,11 @@
     "dayImported_other": "{{count}} already imported",
     "pairs": "RAW + JPEG pairs",
     "pairJpegs": "Also import the JPEG of each pair",
-    "pairJpegsHint": "Unticked: only the RAW is copied."
+    "pairJpegsHint": "Unticked: only the RAW is copied.",
+    "autoOffer_one": "Import the next {{camera}} cards automatically",
+    "autoOffer_other": "Import these cameras' next cards automatically ({{camera}})",
+    "autoAdded_one": "This camera's next cards will be imported automatically.",
+    "autoAdded_other": "These {{count}} cameras' next cards will be imported automatically."
   },
   "catalog": {
     "title": "Catalog",
@@ -241,7 +245,13 @@
     "logoRemove": "Remove",
     "logoImages": "Images",
     "sessions": "Sessions",
-    "identityEmail": "Email"
+    "identityEmail": "Email",
+    "autoImport": "Automatic import",
+    "autoImportNone": "No cameras. After importing a card, Afterdusk offers to import its cameras' next cards on its own.",
+    "autoImportRule": "{{camera}} cards (no. {{serial}})",
+    "autoImportUsed": "last import on {{date}}",
+    "autoImportRemove": "Stop importing {{camera}} cards automatically",
+    "autoImportNote": "A card from these cameras is imported as soon as it is inserted, with the settings of its first import and a default album name, unless insertion is set to “Do nothing”. The card is only read."
   },
   "menu": {
     "app": "Afterdusk",
@@ -520,7 +530,12 @@
     "card": "Card ({{volume}})",
     "cardOf": "{{camera}} card ({{volume}})",
     "detected": "{{device}} detected.",
-    "import": "Import"
+    "import": "Import",
+    "autoRunning": "Importing the {{camera}} card automatically: {{done}} / {{total}}",
+    "autoDone_one": "{{count}} photo added from the {{camera}} card.",
+    "autoDone_other": "{{count}} photos added from the {{camera}} card.",
+    "autoNothingNew": "{{camera}} card: nothing new, everything is already imported.",
+    "autoFailed": "The automatic import of the {{camera}} card stopped: it can be resumed from Import."
   },
   "offline": {
     "title": "“{{name}}” is offline.",

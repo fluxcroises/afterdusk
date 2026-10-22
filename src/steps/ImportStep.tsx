@@ -1,6 +1,7 @@
 import { sessionLabel, useClients } from "../store/clients";
 import { FolderOpen, HardDriveDownload, RefreshCw } from "lucide-react";
-import { useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { newLibrary, pickFolder } from "../actions";
 import { EmptyState } from "../components/EmptyState";
@@ -324,6 +325,72 @@ function ImportFooter() {
   );
 }
 
+/** Boîtier à numéro de série d'un import (`import::auto::Body`). */
+interface Body {
+  serial: string;
+  camera: string;
+}
+
+/**
+ * Après l'import d'une carte : « Importer seules les prochaines cartes de ce
+ * boîtier », avec les réglages de cet import (sauf le nom d'album).
+ */
+function AutoImportOffer() {
+  const { t } = useTranslation();
+  const lastResult = useImport((s) => s.lastResult);
+  const source = useImport((s) => s.source);
+  const fromCard = useDevices((s) => s.devices.some((d) => d.root === source?.root));
+  const [bodies, setBodies] = useState<Body[]>([]);
+  const [added, setAdded] = useState<{ importId: number; count: number } | null>(null);
+  const importId = lastResult?.outcome === "done" && fromCard ? lastResult.importId : null;
+
+  useEffect(() => {
+    if (importId === null) return;
+    let current = true;
+    invoke<Body[]>("auto_import_candidates", { importId })
+      .then((b) => current && setBodies(b))
+      .catch(() => current && setBodies([]));
+    return () => {
+      current = false;
+    };
+  }, [importId]);
+
+  if (importId === null) return null;
+  if (added?.importId === importId) {
+    return <span className="toolbar-status">{t("import.autoAdded", { count: added.count })}</span>;
+  }
+  if (bodies.length === 0) return null;
+  const add = async () => {
+    const form = useImport.getState().form;
+    const library = useImport
+      .getState()
+      .libraries.find((l) => l.id === useImport.getState().libraryId);
+    const count = await invoke<number>("auto_import_rule_add", {
+      importId,
+      settings: {
+        albumPerDay: form.albumPerDay,
+        rename: form.rename,
+        backup: form.backup && !!library?.backupPath,
+        keywords: form.keywords
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean),
+        rights: form.rights.trim() || null,
+        skipPairJpegs: !form.pairJpegs,
+      },
+    }).catch(() => 0);
+    setAdded({ importId, count });
+  };
+  return (
+    <button type="button" className="button button-small" onClick={() => void add()}>
+      {t("import.autoOffer", {
+        count: bodies.length,
+        camera: bodies.map((b) => b.camera).join(", "),
+      })}
+    </button>
+  );
+}
+
 function StatusLine() {
   const { t } = useTranslation();
   const running = useImport((s) => s.running);
@@ -368,6 +435,7 @@ function StatusLine() {
       <span className="toolbar-status" title={status}>
         {status}
       </span>
+      {!running && <AutoImportOffer />}
       {!running && unlocated.length > 0 && (
         <button
           type="button"

@@ -12,7 +12,9 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use super::error::{CommandError, CommandResult};
 use super::previews::PreviewQueue;
 use super::{AppState, blocking};
-use crate::import::{self, ImportOptions, ImportOutcome, RecentImport, ResumableImport, scan};
+use crate::import::{
+    self, ImportOptions, ImportOutcome, RecentImport, ResumableImport, auto, scan,
+};
 use crate::library::pairs;
 use crate::metadata::media::MediaFormat;
 
@@ -257,4 +259,108 @@ pub async fn imports_recent(
 ) -> CommandResult<Vec<RecentImport>> {
     let conn = state.connect()?;
     blocking(move || Ok(import::recent_imports(&conn, library_id, 5, 24)?)).await
+}
+
+/// Boîtiers à numéro de série d'un import, proposés pour l'import automatique.
+#[tauri::command]
+pub async fn auto_import_candidates(
+    state: State<'_, AppState>,
+    import_id: i64,
+) -> CommandResult<Vec<auto::Body>> {
+    let conn = state.connect()?;
+    blocking(move || Ok(auto::candidates(&conn, import_id)?)).await
+}
+
+/// Les prochaines cartes de ces boîtiers s'importeront seules, avec ces réglages.
+#[tauri::command]
+pub async fn auto_import_rule_add(
+    state: State<'_, AppState>,
+    import_id: i64,
+    settings: auto::AutoSettings,
+) -> CommandResult<usize> {
+    let conn = state.connect()?;
+    blocking(move || Ok(auto::add_from_import(&conn, import_id, &settings)?)).await
+}
+
+#[tauri::command]
+pub async fn auto_import_rules(state: State<'_, AppState>) -> CommandResult<Vec<auto::Rule>> {
+    let conn = state.connect()?;
+    blocking(move || Ok(auto::list(&conn)?)).await
+}
+
+#[tauri::command]
+pub async fn auto_import_rule_delete(state: State<'_, AppState>, id: i64) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || Ok(auto::delete(&conn, id)?)).await
+}
+
+/// Issue de l'insertion d'une carte, pour l'interface.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase", tag = "kind")]
+pub enum AutoCard {
+    /// Aucun boîtier connu : comportement habituel.
+    Unknown,
+    /// Un import est déjà en cours : comportement habituel.
+    Busy,
+    NothingNew {
+        camera: String,
+    },
+    Started {
+        camera: String,
+        import_id: i64,
+        files: usize,
+    },
+}
+
+/// Carte insérée : si elle vient d'un boîtier connu, l'import part seul.
+/// La carte n'est que lue ; l'import garde toutes ses garanties.
+#[tauri::command]
+pub async fn auto_import_card(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    root: PathBuf,
+    source_label: String,
+) -> CommandResult<AutoCard> {
+    let conn = state.connect()?;
+    let card = blocking(move || Ok(auto::plan_for_card(&conn, &root, &source_label)?)).await?;
+    let (camera, rule_id, options) = match card {
+        auto::CardPlan::Unknown => return Ok(AutoCard::Unknown),
+        auto::CardPlan::NothingNew { camera } => return Ok(AutoCard::NothingNew { camera }),
+        auto::CardPlan::Import {
+            camera,
+            rule_id,
+            options,
+        } => (camera, rule_id, options),
+    };
+    let Ok(cancel) = take_slot(&state) else {
+        return Ok(AutoCard::Busy);
+    };
+    let mut conn = match state.connect() {
+        Ok(conn) => conn,
+        Err(e) => {
+            release_slot(&app);
+            return Err(e);
+        }
+    };
+    let files = options.files.len();
+    let planned = blocking(move || {
+        let id = import::plan(&mut conn, &options)?;
+        auto::touch(&conn, rule_id)?;
+        Ok(id)
+    })
+    .await;
+    match planned {
+        Ok(import_id) => {
+            spawn_run(app, import_id, cancel);
+            Ok(AutoCard::Started {
+                camera,
+                import_id,
+                files,
+            })
+        }
+        Err(e) => {
+            release_slot(&app);
+            Err(e)
+        }
+    }
 }

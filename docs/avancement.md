@@ -697,3 +697,13 @@ Critères (cahier des charges, section 7) :
   - Livrer > Galerie web… : six photos, titre de l'album, texte d'accueil, filigrane texte ; dossier `Essai` créé avec `index.html`, CSS, JS, photos (2 048 px au plus, ni EXIF ni XMP) et vignettes ; l'en-tête reprend client, séance, dates et photographe, le pied de page le code ;
   - Livrer > Sélection client… : texte collé avec la ligne `[AD-…: 1 4 9]`, galerie et client reconnus, numéro 9 signalé ; la collection « Sélection – Famille Dupont » (2 photos, « Retenue ») est créée et ouverte.
 - Corrigé : les champs courriel et téléphone gardaient la police du navigateur ; la zone de sélection utilisait la police des valeurs, en gras.
+
+### 2026-10-22 (suite) : V0.4, import automatique d'une carte connue (migration 0017)
+
+- Choix de l'utilisateur : une carte est reconnue par le numéro de série du boîtier lu dans ses photos, pas par celui du volume, qui change à chaque formatage.
+- Table `auto_import_rules` : numéro de série, boîtier, bibliothèque, réglages en JSON versionné (rangement par jour, renommage, sauvegarde, mots-clés, copyright, paires RAW + JPEG). Le nom d'album n'est pas gardé : chaque import automatique prend le nom par défaut.
+- Après l'import manuel d'une carte, la ligne d'état propose « Importer seules les prochaines cartes du … » pour les boîtiers à numéro de série de cet import.
+- À l'insertion d'une carte (sauf réglage « Ne rien faire ») : la carte est lue sans rien y écrire ; si un boîtier connu y figure, ses photos nouvelles partent à l'import, dans le même fil que l'import manuel (copie vérifiée, sauvegarde, une seule importation à la fois). Les fichiers sans numéro suivent ; ceux d'un autre boîtier restent. Un bandeau suit la progression puis annonce le nombre de photos ajoutées, ou « rien de nouveau » ; la fenêtre attire l'attention. Une carte inconnue, ou un import déjà en cours, garde le comportement habituel.
+- Réglages > Import : liste des boîtiers (bibliothèque, dernier import), retrait d'un boîtier.
+- Tests : réglages versionnés ; de bout en bout, règle créée d'après un import, carte réinsérée sans rien de nouveau, nouvelle photo du même boîtier importée seule avec les réglages, carte jamais écrite, carte redevenue inconnue sans règle ; interface (import lancé, rien de nouveau, « Ne rien faire » respecté).
+- Pas de notification du système : elle demanderait un module de plus, à décider plus tard.

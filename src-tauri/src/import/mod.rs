@@ -6,6 +6,7 @@
 //! rejouée sans dommage, ce qui permet de reprendre un import interrompu
 //! là où il s'était arrêté. La source n'est jamais ouverte en écriture.
 
+pub mod auto;
 pub mod copy;
 pub mod rescan;
 pub mod scan;

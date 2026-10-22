@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { type SessionType, sessionLabel, useClients } from "../store/clients";
 import { confirmWarning } from "../ui/confirm";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -126,6 +127,72 @@ function BurstsField() {
 }
 
 /** Réglages > Import : modèles de rangement et de renommage de la bibliothèque. */
+/** Règle d'import automatique (`import::auto::Rule`). */
+interface AutoRule {
+  id: number;
+  bodySerial: string;
+  camera: string;
+  libraryName: string;
+  lastUsedAt: string | null;
+}
+
+/** Boîtiers dont les cartes s'importent seules, avec les réglages de leur premier import. */
+function AutoImportRules() {
+  const { t, i18n } = useTranslation();
+  const [rules, setRules] = useState<AutoRule[] | null>(null);
+  const load = () =>
+    invoke<AutoRule[]>("auto_import_rules")
+      .then(setRules)
+      .catch(() => setRules([]));
+  useEffect(() => {
+    void load();
+  }, []);
+  if (rules === null) return null;
+  const remove = async (rule: AutoRule) => {
+    await invoke("auto_import_rule_delete", { id: rule.id }).catch(() => undefined);
+    await load();
+  };
+  const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" });
+  return (
+    <div className="auto-import-rules">
+      <span className="field-row-label">{t("settings.autoImport")}</span>
+      {rules.length === 0 ? (
+        <p className="panel-note">{t("settings.autoImportNone")}</p>
+      ) : (
+        <ul>
+          {rules.map((r) => (
+            <li key={r.id}>
+              <span>
+                {t("settings.autoImportRule", { camera: r.camera, serial: r.bodySerial })}
+                <span className="panel-note">
+                  {" · "}
+                  {[
+                    r.libraryName,
+                    r.lastUsedAt
+                      ? t("settings.autoImportUsed", { date: date.format(new Date(r.lastUsedAt)) })
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </span>
+              <button
+                type="button"
+                className="button button-small"
+                aria-label={t("settings.autoImportRemove", { camera: r.camera })}
+                onClick={() => void remove(r)}
+              >
+                {t("sessions.delete")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="panel-note">{t("settings.autoImportNote")}</p>
+    </div>
+  );
+}
+
 export function ImportSettings() {
   const { t } = useTranslation();
   const library = useCurrentLibrary();
@@ -145,6 +212,7 @@ export function ImportSettings() {
       />
       <p className="panel-note">{t("settings.templatesHint")}</p>
       <InsertBehaviorField />
+      <AutoImportRules />
       <AnalysisField />
       <BurstsField />
       <div className="settings-actions">

@@ -16,11 +16,25 @@ export interface Device {
 
 export type InsertBehavior = "propose" | "open" | "nothing";
 
+/** Issue de l'insertion d'une carte, miroir de `commands::import::AutoCard`. */
+export type AutoCard =
+  | { kind: "unknown" }
+  | { kind: "busy" }
+  | { kind: "nothingNew"; camera: string }
+  | { kind: "started"; camera: string; importId: number; files: number };
+
+/** Import automatique en cours ou terminé, affiché dans le bandeau. */
+export type AutoImport =
+  | { kind: "nothingNew"; camera: string }
+  | { kind: "started"; camera: string; importId: number; files: number };
+
 export const devicesApi = {
   list: () => invoke<Device[]>("devices_list"),
   behavior: () => invoke<InsertBehavior>("insert_behavior_get"),
   setBehavior: (behavior: InsertBehavior) => invoke<null>("insert_behavior_set", { behavior }),
   attention: (label: WindowLabel) => invoke<null>("request_attention", { label }),
+  autoCard: (root: string, sourceLabel: string) =>
+    invoke<AutoCard>("auto_import_card", { root, sourceLabel }),
 };
 
 /** « Carte FUJI (E:) », « Carte (E:) ». */
@@ -43,6 +57,9 @@ interface DevicesState {
   devices: Device[];
   /** Carte insérée dont l'import est proposé (bandeau). */
   pending: Device | null;
+  /** Carte d'un boîtier connu, importée seule (bandeau). */
+  auto: AutoImport | null;
+  dismissAuto: () => void;
   behavior: InsertBehavior;
   load: () => Promise<void>;
   attached: (device: Device, label: WindowLabel) => Promise<void>;
@@ -58,6 +75,8 @@ interface DevicesState {
 export const useDevices = create<DevicesState>((set, get) => ({
   devices: [],
   pending: null,
+  auto: null,
+  dismissAuto: () => set({ auto: null }),
   behavior: "propose",
 
   load: async () => {
@@ -78,6 +97,22 @@ export const useDevices = create<DevicesState>((set, get) => ({
     set({ behavior });
     if (behavior === "nothing") return;
     const importing = useImport.getState().running;
+    // Carte d'un boîtier connu : l'import part seul, depuis une seule fenêtre.
+    if (!importing && (await answers(label))) {
+      const card = await devicesApi
+        .autoCard(device.root, deviceLabel(device))
+        .catch((): AutoCard => ({ kind: "unknown" }));
+      if (card?.kind === "started" || card?.kind === "nothingNew") {
+        if (card.kind === "started") {
+          useImport.setState({ running: true, progress: null, lastResult: null, error: null });
+        }
+        set({ auto: card, pending: null });
+        if (isTauri() && !document.hasFocus()) {
+          void devicesApi.attention(label).catch(() => undefined);
+        }
+        return;
+      }
+    }
     if (behavior === "open" && !importing) {
       if (await answers(label)) await get().openImport(device, label);
       return;

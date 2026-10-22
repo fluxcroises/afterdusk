@@ -115,7 +115,11 @@
     "dayImported_other": "{{count}} déjà importées",
     "pairs": "Paires RAW + JPEG",
     "pairJpegs": "Importer aussi le JPEG des paires",
-    "pairJpegsHint": "Décoché : seul le RAW est copié."
+    "pairJpegsHint": "Décoché : seul le RAW est copié.",
+    "autoOffer_one": "Importer seules les prochaines cartes du {{camera}}",
+    "autoOffer_other": "Importer seules les prochaines cartes de ces boîtiers ({{camera}})",
+    "autoAdded_one": "Les prochaines cartes de ce boîtier s'importeront seules.",
+    "autoAdded_other": "Les prochaines cartes de ces {{count}} boîtiers s'importeront seules."
   },
   "catalog": {
     "title": "Catalogue",
@@ -241,7 +245,13 @@
     "logoRemove": "Retirer",
     "logoImages": "Images",
     "sessions": "Séances",
-    "identityEmail": "Courriel"
+    "identityEmail": "Courriel",
+    "autoImport": "Import automatique",
+    "autoImportNone": "Aucun boîtier. Après l'import d'une carte, Afterdusk propose d'importer seules les prochaines cartes de ses boîtiers.",
+    "autoImportRule": "Cartes du {{camera}} (n° {{serial}})",
+    "autoImportUsed": "dernier import le {{date}}",
+    "autoImportRemove": "Ne plus importer seules les cartes du {{camera}}",
+    "autoImportNote": "Une carte de ces boîtiers s'importe dès son insertion, avec les réglages de son premier import et un nom d'album par défaut, sauf si l'insertion est réglée sur « Ne rien faire ». La carte n'est que lue."
   },
   "menu": {
     "app": "Afterdusk",
@@ -520,7 +530,12 @@
     "card": "Carte ({{volume}})",
     "cardOf": "Carte {{camera}} ({{volume}})",
     "detected": "{{device}} détectée.",
-    "import": "Importer"
+    "import": "Importer",
+    "autoRunning": "Import automatique de la carte du {{camera}} : {{done}} / {{total}}",
+    "autoDone_one": "{{count}} photo ajoutée depuis la carte du {{camera}}.",
+    "autoDone_other": "{{count}} photos ajoutées depuis la carte du {{camera}}.",
+    "autoNothingNew": "Carte du {{camera}} : rien de nouveau, tout est déjà importé.",
+    "autoFailed": "L'import automatique de la carte du {{camera}} s'est arrêté : il pourra être repris depuis Importer."
   },
   "offline": {
     "title": "« {{name}} » est hors ligne.",
