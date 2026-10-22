@@ -1,11 +1,12 @@
 use std::path::{Path, PathBuf};
 
-use tauri::State;
+use tauri::{Emitter, State};
 
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
 use crate::library::cloud::{self, CloudFolder};
 use crate::library::identity::{self, Identity};
+use crate::library::profile::{self, Profile};
 use crate::library::{self, Library, paths, template};
 
 #[tauri::command]
@@ -279,4 +280,30 @@ pub async fn library_rescan(
     }
     let _ = app.emit("library-status", ());
     Ok(report)
+}
+
+/// Profil d'interface : Simplifiée, De base ou Complète.
+#[tauri::command]
+pub async fn interface_profile_get(state: State<'_, AppState>) -> CommandResult<Profile> {
+    let conn = state.connect()?;
+    blocking(move || Ok(profile::get(&conn).map_err(library::LibraryError::from)?)).await
+}
+
+pub const EVENT_PROFILE: &str = "profile://changed";
+
+/// Enregistre le profil et prévient toutes les fenêtres (accueil, fenêtre
+/// principale, second écran).
+#[tauri::command]
+pub async fn interface_profile_set(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    profile: Profile,
+) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || {
+        profile::set(&conn, profile).map_err(library::LibraryError::from)?;
+        let _ = app.emit(EVENT_PROFILE, profile);
+        Ok(())
+    })
+    .await
 }

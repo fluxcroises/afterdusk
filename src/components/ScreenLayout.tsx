@@ -1,6 +1,31 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLayout } from "../store/layout";
+import { useNavigation } from "../store/navigation";
+import { useProfile } from "../store/profile";
+import { hiddenSections } from "../ui/profiles";
+
+/**
+ * « Afficher les réglages avancés » : les sections que le profil masque
+ * sur cet écran, montrées pour la session sans changer de profil.
+ */
+function AdvancedToggle() {
+  const { t } = useTranslation();
+  const screen = useNavigation((s) => s.screen);
+  const hidden = useProfile((s) => hiddenSections(s.profile, screen).length);
+  const revealed = useProfile((s) => s.revealed);
+  if (hidden === 0) return null;
+  return (
+    <button
+      type="button"
+      className="link-button advanced-toggle"
+      aria-pressed={revealed}
+      onClick={() => useProfile.getState().setRevealed(!revealed)}
+    >
+      {t(revealed ? "profiles.hideAdvanced" : "profiles.showAdvanced", { count: hidden })}
+    </button>
+  );
+}
 
 interface ScreenLayoutProps {
   left?: ReactNode;
@@ -48,7 +73,10 @@ export function ScreenLayout({
         </div>
         {right && visible.right && !immersive && (
           <aside className="side-panel side-panel-right" aria-label={t("panels.right")}>
-            <div className="side-panel-scroll">{right}</div>
+            <div className="side-panel-scroll">
+              {right}
+              <AdvancedToggle />
+            </div>
             {rightFooter && <div className="side-panel-footer">{rightFooter}</div>}
           </aside>
         )}

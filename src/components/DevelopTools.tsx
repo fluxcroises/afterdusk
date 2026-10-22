@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { Bandage, Crop, type LucideIcon, SlidersHorizontal, SwatchBook } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { type DevelopTool, useDevelop } from "../store/develop";
@@ -22,33 +23,36 @@ export function DevelopToolRail() {
   const disabled = useDevelop((s) => s.settings === null);
   const panelVisible = useLayout((s) => s.visible.right);
   const togglePanel = useLayout((s) => s.togglePanel);
+  const spots = useAllows("develop.spots");
 
   return (
     <nav className="tool-rail" aria-label={t("develop.tools.label")}>
-      {TOOLS.map(({ tool: id, icon: Icon, shortcut }) => {
-        const label = t(`develop.tools.${id}`);
-        return (
-          <button
-            key={id}
-            type="button"
-            className="tool-rail-button"
-            aria-label={label}
-            aria-pressed={tool === id}
-            title={shortcut ? `${label} (${shortcut})` : label}
-            disabled={disabled && id !== "adjust"}
-            onClick={() => {
-              if (tool === id) {
-                togglePanel("right");
-                return;
-              }
-              if (!panelVisible) togglePanel("right");
-              void useDevelop.getState().setTool(id);
-            }}
-          >
-            <Icon aria-hidden="true" strokeWidth={1.75} />
-          </button>
-        );
-      })}
+      {TOOLS.filter((x) => x.tool !== "spots" || spots).map(
+        ({ tool: id, icon: Icon, shortcut }) => {
+          const label = t(`develop.tools.${id}`);
+          return (
+            <button
+              key={id}
+              type="button"
+              className="tool-rail-button"
+              aria-label={label}
+              aria-pressed={tool === id}
+              title={shortcut ? `${label} (${shortcut})` : label}
+              disabled={disabled && id !== "adjust"}
+              onClick={() => {
+                if (tool === id) {
+                  togglePanel("right");
+                  return;
+                }
+                if (!panelVisible) togglePanel("right");
+                void useDevelop.getState().setTool(id);
+              }}
+            >
+              <Icon aria-hidden="true" strokeWidth={1.75} />
+            </button>
+          );
+        },
+      )}
     </nav>
   );
 }

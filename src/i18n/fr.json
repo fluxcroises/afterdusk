@@ -543,7 +543,8 @@
       "library": "Bibliothèque",
       "backup": "Sauvegarde",
       "folders": "Rangement",
-      "identity": "Identité"
+      "identity": "Identité",
+      "usage": "Usage"
     },
     "library": {
       "title": "Où ranger vos photos ?",
@@ -567,7 +568,11 @@
     },
     "back": "Précédent",
     "next": "Suivant",
-    "finish": "Créer la bibliothèque"
+    "finish": "Créer la bibliothèque",
+    "usage": {
+      "title": "Comment comptez-vous utiliser Afterdusk ?",
+      "text": "Afterdusk montre ce dont vous avez besoin. Vous pourrez changer à tout moment dans Réglages ou le menu Affichage."
+    }
   },
   "devices": {
     "card": "Carte ({{volume}})",
@@ -1603,5 +1608,28 @@
     "exported_one": "{{count}} fichier exporté dans la destination de Livrer",
     "exported_other": "{{count}} fichiers exportés dans la destination de Livrer",
     "noReencode": "Sans réencodage : chaque extrait commence sur une image clé."
+  },
+  "profiles": {
+    "label": "Interface",
+    "note": "Le profil masque des fonctions sans rien arrêter : l'analyse des ratés, la sauvegarde, l'import automatique continuent de tourner, et rien n'est perdu.",
+    "names": {
+      "simple": "Simplifiée",
+      "basic": "De base",
+      "complete": "Complète"
+    },
+    "for": {
+      "simple": "Pour débuter : trier, retoucher l'essentiel, livrer.",
+      "basic": "Pour un usage régulier : bibliothèque, carte, plus de réglages.",
+      "complete": "Pour un studio : tout Afterdusk, sauvegarde et import automatique compris."
+    },
+    "shows": {
+      "simple": "Importer, Trier, Retoucher, Livrer ; notes, drapeaux, ratés probables ; lumière, couleur, recadrage, presets ; formats des réseaux et tirages.",
+      "basic": "En plus : Bibliothèque et Carte, renommage et mots-clés, couleurs, filtres et rafales, courbes et TSL, planches contact, galerie web, compositions, extraits vidéo.",
+      "complete": "En plus : Matériel, sauvegarde, import automatique et réception FTP, albums intelligents, copies virtuelles et correcteur, options d'export détaillées, clients, polices de l'ordinateur."
+    },
+    "showAdvanced_one": "Afficher le réglage avancé masqué",
+    "showAdvanced_other": "Afficher les {{count}} réglages avancés masqués",
+    "hideAdvanced_one": "Masquer le réglage avancé",
+    "hideAdvanced_other": "Masquer les réglages avancés"
   }
 }

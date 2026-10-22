@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import {
   BookImage,
   ChevronsRight,
@@ -80,6 +81,7 @@ function MarkTools({ disabled }: { disabled: boolean }) {
   const autoAdvance = useLibrary((s) => s.autoAdvance);
   const setAutoAdvance = useLibrary((s) => s.setAutoAdvance);
   const off = disabled || !selected;
+  const colors = useAllows("cull.colors");
   const rating = selected?.rating ?? 0;
   const flag = selected?.flag ?? 0;
 
@@ -119,7 +121,12 @@ function MarkTools({ disabled }: { disabled: boolean }) {
           />
         ))}
       </div>
-      <div className="toolbar-group" role="group" aria-label={t("toolbar.colorLabel")}>
+      <div
+        className="toolbar-group"
+        role="group"
+        aria-label={t("toolbar.colorLabel")}
+        hidden={!colors}
+      >
         {COLOR_LABELS.map((c, i) => (
           <button
             key={c}

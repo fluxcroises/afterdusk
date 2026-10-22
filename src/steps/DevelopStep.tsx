@@ -1,3 +1,4 @@
+import { profileAllows } from "../store/profile";
 import { ImageOff, Images, SlidersHorizontal } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -336,7 +337,7 @@ export function DevelopStep() {
       // Q : correcteur de défauts. Suppr retire la correction choisie, [ et ]
       // changent la taille du pinceau, Échap quitte la correction choisie
       // puis l'outil.
-      if (plain && letter("q")) {
+      if (plain && letter("q") && profileAllows("develop.spots")) {
         void state.setTool(state.tool === "spots" ? "adjust" : "spots");
         e.preventDefault();
         return;

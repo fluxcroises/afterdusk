@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { useGallery } from "../store/gallery";
 import { useContactSheet } from "../store/contactSheet";
 import { Images } from "lucide-react";
@@ -43,6 +44,9 @@ export function DeliverStep() {
   const templatesError = useTemplates((s) => s.error);
   const chosenTemplates = useTemplates((s) => s.chosen.length);
   const designing = useDesigns((s) => s.draft !== null);
+  const contactSheet = useAllows("deliver.contactSheet");
+  const gallery = useAllows("deliver.gallery");
+  const clients = useAllows("deliver.clients");
 
   useEffect(() => {
     void useDeliver.getState().load();
@@ -89,29 +93,35 @@ export function DeliverStep() {
           )}
           <span className="toolbar-spacer" />
           <ExportStatus />
-          <button
-            type="button"
-            className="button button-small"
-            disabled={count === 0}
-            onClick={() => useContactSheet.getState().show()}
-          >
-            {t("contactSheet.open")}
-          </button>
-          <button
-            type="button"
-            className="button button-small"
-            disabled={count === 0}
-            onClick={() => useGallery.getState().show()}
-          >
-            {t("gallery.open")}
-          </button>
-          <button
-            type="button"
-            className="button button-small"
-            onClick={() => useGallery.getState().showImport()}
-          >
-            {t("gallery.import.open")}
-          </button>
+          {contactSheet && (
+            <button
+              type="button"
+              className="button button-small"
+              disabled={count === 0}
+              onClick={() => useContactSheet.getState().show()}
+            >
+              {t("contactSheet.open")}
+            </button>
+          )}
+          {gallery && (
+            <button
+              type="button"
+              className="button button-small"
+              disabled={count === 0}
+              onClick={() => useGallery.getState().show()}
+            >
+              {t("gallery.open")}
+            </button>
+          )}
+          {clients && (
+            <button
+              type="button"
+              className="button button-small"
+              onClick={() => useGallery.getState().showImport()}
+            >
+              {t("gallery.import.open")}
+            </button>
+          )}
         </>
       }
     >

@@ -1,3 +1,4 @@
+import { useProfile } from "../store/profile";
 import type { MenuItemOptions, SubmenuOptions } from "@tauri-apps/api/menu";
 import { ChevronRight } from "lucide-react";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
@@ -118,6 +119,8 @@ export function MenuBar() {
   const { t } = useTranslation();
   const [open, setOpen] = useState<number | null>(null);
   const bar = useRef<HTMLDivElement>(null);
+  // Reconstruits aussi quand le profil d'interface change.
+  useProfile((s) => s.profile);
   const menus = buildMenuItems(t).filter(isSubmenu) as SubmenuOptions[];
 
   useEffect(() => {

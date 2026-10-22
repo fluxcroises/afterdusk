@@ -179,6 +179,8 @@ pub fn run() {
             commands::library::cloud_folders,
             commands::library::library_offline_info,
             commands::library::identity_get,
+            commands::library::interface_profile_get,
+            commands::library::interface_profile_set,
             commands::library::identity_set,
             commands::import::source_scan,
             commands::import::import_start,

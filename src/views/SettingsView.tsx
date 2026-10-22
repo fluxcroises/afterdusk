@@ -1,3 +1,5 @@
+import { ProfileChoice } from "../components/ProfileChoice";
+import { useProfile } from "../store/profile";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FieldRow, ListRow, PanelSection } from "../components/PanelSection";
@@ -66,6 +68,7 @@ export function SettingsView() {
   );
 
   const online = useMap((s) => s.online);
+  const profile = useProfile((s) => s.profile);
 
   return (
     <ScreenLayout left={left}>
@@ -87,6 +90,11 @@ export function SettingsView() {
               </select>
             </label>
             <FieldRow label={t("settings.theme")} value={t("settings.themeDarkOnly")} />
+            <fieldset className="form-fieldset">
+              <legend className="field-row-label">{t("profiles.label")}</legend>
+              <ProfileChoice value={profile} onChange={(p) => void useProfile.getState().set(p)} />
+              <p className="panel-note">{t("profiles.note")}</p>
+            </fieldset>
             <label className="check-row">
               <input
                 type="checkbox"

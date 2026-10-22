@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { FtpReception } from "./FtpReception";
 import { invoke } from "@tauri-apps/api/core";
 import { type SessionType, sessionLabel, useClients } from "../store/clients";
@@ -329,6 +330,7 @@ export function ImportSettings() {
   const library = useCurrentLibrary();
   const [draft, setDraft] = useState<{ folder: string; rename: string | null } | null>(null);
   const { error, saved, save, dismiss } = useSave();
+  const autoImport = useAllows("settings.autoImport");
   if (!library) return <p className="panel-note">{t("app.noLibrary")}</p>;
   const folder = draft?.folder ?? library.folderTemplate;
   const rename = draft ? draft.rename : library.renameTemplate;
@@ -343,9 +345,13 @@ export function ImportSettings() {
       />
       <p className="panel-note">{t("settings.templatesHint")}</p>
       <InsertBehaviorField />
-      <AutoImportRules />
-      <WatchFolders />
-      <FtpReception />
+      {autoImport && (
+        <>
+          <AutoImportRules />
+          <WatchFolders />
+          <FtpReception />
+        </>
+      )}
       <AnalysisField />
       <BurstsField />
       <div className="settings-actions">

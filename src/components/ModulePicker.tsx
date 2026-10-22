@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { dueCount, useReminders } from "../store/maintenance";
+import { useProfile } from "../store/profile";
+import { allows } from "../ui/profiles";
 import {
   AVAILABLE_IN,
   STEPS,
@@ -16,6 +18,9 @@ export function ModulePicker() {
   const screen = useNavigation((s) => s.screen);
   const goTo = useNavigation((s) => s.goTo);
   const due = useReminders((s) => dueCount(s.reminders));
+  const profile = useProfile((s) => s.profile);
+  // Profil d'interface : les modules qu'il masque n'apparaissent pas.
+  const shown = (target: Screen) => allows(profile, `module.${target}`);
 
   useEffect(() => {
     void useReminders.getState().load();
@@ -57,9 +62,13 @@ export function ModulePicker() {
 
   return (
     <nav className="module-picker" aria-label={t("modules.label")}>
-      <ol className="module-group">{STEPS.map(item)}</ol>
-      <span className="module-separator" aria-hidden="true" />
-      <ul className="module-group">{VIEWS.map(item)}</ul>
+      <ol className="module-group">{STEPS.filter(shown).map(item)}</ol>
+      {VIEWS.some(shown) && (
+        <>
+          <span className="module-separator" aria-hidden="true" />
+          <ul className="module-group">{VIEWS.filter(shown).map(item)}</ul>
+        </>
+      )}
     </nav>
   );
 }

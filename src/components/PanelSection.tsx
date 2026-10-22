@@ -2,6 +2,8 @@ import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLayout } from "../store/layout";
+import { useProfile } from "../store/profile";
+import { SECTION_FEATURES, allows } from "../ui/profiles";
 
 interface PanelSectionProps {
   /** Identifiant stable, pour mémoriser l'état replié. */
@@ -24,7 +26,12 @@ export function PanelSection({
 }: PanelSectionProps) {
   const collapsed = useLayout((s) => s.collapsed[id] ?? defaultCollapsed);
   const toggle = useLayout((s) => s.toggleSection);
+  // Profil d'interface : section masquée, sauf réglages avancés montrés.
+  const shown = useProfile(
+    (s) => allows(s.profile, id) || (s.revealed && SECTION_FEATURES.has(id)),
+  );
   const bodyId = `section-${id}`;
+  if (!shown) return null;
 
   return (
     <section className="panel-section">

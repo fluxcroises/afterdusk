@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import type Konva from "konva";
 import { Plus, RotateCw, Type, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -295,6 +296,7 @@ function TextControls({ index, text }: { index: number; text: DesignText }) {
   const st = useDesigns.getState();
   const texts = useDesigns((s) => s.draft?.document.texts ?? []);
   const fonts = useDesigns((s) => s.fonts);
+  const systemFonts = useAllows("design.systemFonts");
   const set = (patch: Partial<DesignText>) => {
     const next = [...texts];
     next[index] = { ...text, ...patch };
@@ -325,7 +327,7 @@ function TextControls({ index, text }: { index: number; text: DesignText }) {
               </option>
             ))}
           </optgroup>
-          {fonts && fonts.system.length > 0 && (
+          {systemFonts && fonts && fonts.system.length > 0 && (
             <optgroup label={t("design.systemFonts")}>
               {fonts.system.map((f) => (
                 <option key={f} value={f}>

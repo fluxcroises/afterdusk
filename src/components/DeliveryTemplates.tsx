@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { Crop, LayoutPanelLeft, LayoutTemplate, Pencil, TriangleAlert } from "lucide-react";
 import {
   type CSSProperties,
@@ -57,6 +58,7 @@ function TemplateCard({
 }) {
   const { t } = useTranslation();
   const chosen = useTemplates((s) => s.chosen.includes(template.id));
+  const designs = useAllows("deliver.designs");
   const st = useTemplates.getState();
   const name = t(`templates.names.${template.id}`);
   const width = framing?.width ?? template.width;
@@ -76,6 +78,7 @@ function TemplateCard({
   };
   // Bande photomaton et Polaroid : des pages à composer, pas des cadrages.
   if (template.group === "creative") {
+    if (!designs) return null;
     return (
       <li className="template-card">
         <button type="button" className="template-pick" onClick={compose}>
@@ -123,11 +126,13 @@ function TemplateCard({
       </button>
       <span className="template-edit">
         <IconButton icon={Crop} label={t("templates.frame", { name })} onClick={open} />
-        <IconButton
-          icon={LayoutPanelLeft}
-          label={t("design.compose", { name })}
-          onClick={compose}
-        />
+        {designs && (
+          <IconButton
+            icon={LayoutPanelLeft}
+            label={t("design.compose", { name })}
+            onClick={compose}
+          />
+        )}
       </span>
     </li>
   );
@@ -137,7 +142,8 @@ function TemplateCard({
 function SavedDesigns() {
   const { t } = useTranslation();
   const saved = useDesigns((s) => s.saved);
-  if (saved.length === 0) return null;
+  const designs = useAllows("deliver.designs");
+  if (saved.length === 0 || !designs) return null;
   return (
     <section className="templates-group" aria-labelledby="templates-designs">
       <h2 id="templates-designs" className="templates-group-title">

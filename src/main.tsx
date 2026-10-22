@@ -8,6 +8,7 @@ import { installMenu } from "./menu";
 import { applyPlatform } from "./platform";
 import { hideSplash, removeSplash } from "./splash";
 import { SecondaryApp } from "./secondary/SecondaryApp";
+import { watchProfile } from "./store/profile";
 import { WelcomeApp } from "./welcome/WelcomeApp";
 import { currentWindow, showSelf, welcomeOnStartup } from "./windows";
 
@@ -19,6 +20,7 @@ const opensFirst = label !== "secondary" && (label === "welcome") === welcomeOnS
 applyPlatform();
 installDesktopBehavior(label);
 if (label === "main") installMenu();
+if (isTauri()) void watchProfile();
 if (opensFirst) void showSelf();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

@@ -34,13 +34,20 @@ describe("fenêtre d'accueil", () => {
   it("sans bibliothèque : salue et ouvre l'assistant de première ouverture", () => {
     render(<WelcomeApp />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Bonjour|Bonsoir/);
-    expect(screen.getByRole("heading", { name: "Où ranger vos photos ?" })).toBeInTheDocument();
-    // Quatre étapes, la première en cours.
+    // Cinq étapes, la première en cours : l'usage, profil De base proposé.
     expect(
       within(screen.getByRole("list"))
         .getAllByRole("listitem")
         .map((li) => li.textContent),
-    ).toEqual(["1Bibliothèque", "2Sauvegarde", "3Rangement", "4Identité"]);
+    ).toEqual(["1Usage", "2Bibliothèque", "3Sauvegarde", "4Rangement", "5Identité"]);
+    expect(
+      screen.getByRole("heading", { name: "Comment comptez-vous utiliser Afterdusk ?" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /^De base/ })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: /^Simplifiée/ }));
+    expect(screen.getByRole("radio", { name: /^Simplifiée/ })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Suivant" }));
+    expect(screen.getByRole("heading", { name: "Où ranger vos photos ?" })).toBeInTheDocument();
     // Sans dossier choisi (pas de dossier Images hors de l'application), pas de suite.
     expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled();
     // Sans bibliothèque, les actions de l'en-tête n'ont pas lieu d'être.

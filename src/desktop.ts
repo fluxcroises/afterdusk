@@ -1,3 +1,4 @@
+import { profileAllows } from "./store/profile";
 import { handleMenuShortcut } from "./menu";
 import { purgeSelection } from "./trash";
 import { isMac } from "./platform";
@@ -116,7 +117,10 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     return false;
   }
 
-  if (e.code === "KeyS" || (e.code === "" && e.key.toLowerCase() === "s")) {
+  if (
+    profileAllows("cull.bursts") &&
+    (e.code === "KeyS" || (e.code === "" && e.key.toLowerCase() === "s"))
+  ) {
     void library.toggleStack();
     return true;
   }
@@ -126,7 +130,7 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     void library.setRating(Number(d));
     return true;
   }
-  const color = d !== null ? COLOR_KEYS[d] : undefined;
+  const color = d !== null && profileAllows("cull.colors") ? COLOR_KEYS[d] : undefined;
   if (color) {
     void library.toggleColor(color);
     return true;

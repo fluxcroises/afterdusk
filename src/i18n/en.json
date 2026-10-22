@@ -543,7 +543,8 @@
       "library": "Library",
       "backup": "Backup",
       "folders": "Folders",
-      "identity": "Identity"
+      "identity": "Identity",
+      "usage": "Use"
     },
     "library": {
       "title": "Where should your photos go?",
@@ -567,7 +568,11 @@
     },
     "back": "Back",
     "next": "Next",
-    "finish": "Create the library"
+    "finish": "Create the library",
+    "usage": {
+      "title": "How do you plan to use Afterdusk?",
+      "text": "Afterdusk shows what you need. You can change this at any time in Settings or the View menu."
+    }
   },
   "devices": {
     "card": "Card ({{volume}})",
@@ -1603,5 +1608,28 @@
     "exported_one": "{{count}} file exported to the Deliver destination",
     "exported_other": "{{count}} files exported to the Deliver destination",
     "noReencode": "No re-encoding: each clip starts on a keyframe."
+  },
+  "profiles": {
+    "label": "Interface",
+    "note": "The profile hides features without stopping anything: miss detection, backup and automatic import keep running, and nothing is lost.",
+    "names": {
+      "simple": "Simplified",
+      "basic": "Basic",
+      "complete": "Complete"
+    },
+    "for": {
+      "simple": "To get started: cull, make the essential edits, deliver.",
+      "basic": "For regular use: library, map, more adjustments.",
+      "complete": "For a studio: all of Afterdusk, backup and automatic import included."
+    },
+    "shows": {
+      "simple": "Import, Cull, Develop, Deliver; ratings, flags, likely misses; light, colour, crop, presets; social and print formats.",
+      "basic": "Plus: Library and Map, renaming and keywords, colour labels, filters and bursts, curves and HSL, contact sheets, web gallery, compositions, video clips.",
+      "complete": "Plus: Gear, backup, automatic import and FTP reception, smart albums, virtual copies and healing, detailed export options, clients, computer fonts."
+    },
+    "showAdvanced_one": "Show the hidden advanced setting",
+    "showAdvanced_other": "Show the {{count}} hidden advanced settings",
+    "hideAdvanced_one": "Hide the advanced setting",
+    "hideAdvanced_other": "Hide the advanced settings"
   }
 }

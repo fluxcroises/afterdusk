@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { invoke } from "@tauri-apps/api/core";
 import {
   ChevronLeft,
@@ -160,6 +161,7 @@ export function VideoPlayer({ media }: { media: MediaSummary }) {
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [time, setTime] = useState(0);
+  const clipsAllowed = useAllows("video.clips");
   const [inMs, setIn] = useState<number | null>(null);
   const [outMs, setOut] = useState<number | null>(null);
   /** Lecture d'un extrait : pause à sa fin. */
@@ -240,15 +242,15 @@ export function VideoPlayer({ media }: { media: MediaSummary }) {
       if (e.key === " ") toggle();
       else if (e.key === ",") step(-1);
       else if (e.key === ".") step(1);
-      else if (e.key === "i" || e.key === "I") setIn(now);
-      else if (e.key === "o" || e.key === "O") setOut(now);
-      else if (e.key === "Enter") addClip();
+      else if (clipsAllowed && (e.key === "i" || e.key === "I")) setIn(now);
+      else if (clipsAllowed && (e.key === "o" || e.key === "O")) setOut(now);
+      else if (clipsAllowed && e.key === "Enter") addClip();
       else return;
       e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggle, step, addClip]);
+  }, [toggle, step, addClip, clipsAllowed]);
   const clips = useClips((s) => s.clips);
   const keyframes = useClips((s) => s.keyframes);
   // Extraits, puis l'extrait en cours depuis son entrée réelle (recalée).
@@ -385,7 +387,7 @@ export function VideoPlayer({ media }: { media: MediaSummary }) {
         />
       </div>
       {info && <p className="video-info">{info}</p>}
-      {src && source?.ffmpeg && (
+      {clipsAllowed && src && source?.ffmpeg && (
         <ClipsPanel inMs={inMs} outMs={outMs} onAdd={addClip} onPlay={playClip} />
       )}
     </div>

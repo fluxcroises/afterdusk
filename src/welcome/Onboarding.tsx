@@ -1,4 +1,13 @@
-import { Check, FolderTree, HardDrive, Images, type LucideIcon, UserRound } from "lucide-react";
+import {
+  Check,
+  FolderTree,
+  HardDrive,
+  Images,
+  LayoutDashboard,
+  type LucideIcon,
+  UserRound,
+} from "lucide-react";
+import { ProfileChoice } from "../components/ProfileChoice";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toCommandError } from "../api/core";
@@ -14,11 +23,12 @@ import { DEFAULT_FOLDER_TEMPLATE } from "../settings/presets";
 import { useImport } from "../store/import";
 import { type OnboardingChoices, applyChoices, defaultRoot } from "../settings/onboarding";
 
-const STEPS = ["library", "backup", "folders", "identity"] as const;
+const STEPS = ["usage", "library", "backup", "folders", "identity"] as const;
 type Step = (typeof STEPS)[number];
 
 /** Illustration de chaque étape, dans l'espace à droite de l'assistant. */
 const STEP_ICONS: Record<Step, LucideIcon> = {
+  usage: LayoutDashboard,
   library: Images,
   backup: HardDrive,
   folders: FolderTree,
@@ -35,17 +45,19 @@ function StepIllustration({ step }: { step: Step }) {
 }
 
 /**
- * Première ouverture guidée (cahier des charges §6) : bibliothèque, sauvegarde,
- * rangement et identité en quatre écrans, avec des valeurs par défaut.
+ * Première ouverture guidée (cahier des charges §6) : usage (profil
+ * d'interface), bibliothèque, sauvegarde, rangement et identité en cinq
+ * écrans, avec des valeurs par défaut.
  */
 export function Onboarding() {
   const { t } = useTranslation();
-  const [step, setStep] = useState<Step>("library");
+  const [step, setStep] = useState<Step>("usage");
   // Une étape sans texte n'affiche que son titre et ses champs.
   const text = t(`onboarding.${step}.text`);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ReturnType<typeof toCommandError> | null>(null);
   const [c, setChoices] = useState<OnboardingChoices>({
+    profile: "basic",
     name: t("onboarding.defaultName"),
     root: null,
     backup: null,
@@ -103,6 +115,9 @@ export function Onboarding() {
         <div className="onboarding-body">
           <h2 id="onboarding-title">{t(`onboarding.${step}.title`)}</h2>
           {text && <p className="onboarding-text">{text}</p>}
+          {step === "usage" && (
+            <ProfileChoice value={c.profile} onChange={(profile) => update({ profile })} />
+          )}
           {step === "library" && (
             <div className="settings-form">
               <FolderField
@@ -152,7 +167,7 @@ export function Onboarding() {
               type="button"
               className="button button-inline"
               disabled={busy}
-              onClick={() => setStep(STEPS[index - 1] ?? "library")}
+              onClick={() => setStep(STEPS[index - 1] ?? "usage")}
             >
               {t("onboarding.back")}
             </button>

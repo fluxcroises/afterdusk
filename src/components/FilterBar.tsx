@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { sessionLabel, useClients } from "../store/clients";
 import { Flag, FlagOff, Search, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -285,11 +286,13 @@ export function FilterBar() {
   const filtering = useLibrary((s) => isFiltering(s.filter));
   const resetFilter = useLibrary((s) => s.resetFilter);
   const area = useLibrary((s) => s.filter.area !== undefined);
+  // Interface simplifiée : seulement les ratés probables.
+  const full = useAllows("cull.filterBar");
   if (!visible) return null;
   return (
     <div className="filter-bar" role="search">
-      <SearchField />
-      {!showAlbums && <PhotoFilters />}
+      {full && <SearchField />}
+      {full && !showAlbums && <PhotoFilters />}
       {!showAlbums && <MissesToggle />}
       {area && !showAlbums && (
         <button

@@ -37,6 +37,7 @@ describe("première ouverture", () => {
   it("crée la bibliothèque, puis enregistre rangement et identité", async () => {
     const identity = { name: "Lewis Bedar", copyright: "© 2026 Lewis Bedar", website: "" };
     await applyChoices({
+      profile: "simple",
       name: "Photos",
       root: "D:/Photos",
       backup: "E:/Sauvegarde",
@@ -51,6 +52,8 @@ describe("première ouverture", () => {
         { id: 7, folderTemplate: "{yyyy}/{mm}/{dd}", renameTemplate: null },
       ],
       ["identity_set", { identity }],
+      // Le profil choisi à la première étape.
+      ["interface_profile_set", { profile: "simple" }],
     ]);
   });
 

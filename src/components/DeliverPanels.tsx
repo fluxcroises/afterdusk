@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { useStudioLogo } from "../store/studioLogo";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen, SlidersHorizontal, X } from "lucide-react";
@@ -311,6 +312,7 @@ export function ExportPresetsSection() {
   const editing = useDeliver((s) => s.editing);
   const nameOf = usePresetName();
   const summary = useSummary();
+  const options = useAllows("deliver.presetOptions");
   const st = useDeliver.getState();
   return (
     <PanelSection id="deliver.presets" title={t("deliver.presetsTitle")}>
@@ -329,14 +331,16 @@ export function ExportPresetsSection() {
                   <span className="deliver-preset-summary">{summary(p)}</span>
                 </span>
               </label>
-              <IconButton
-                icon={SlidersHorizontal}
-                label={t("deliver.options", { name: nameOf(p) })}
-                pressed={editing === p.id}
-                onClick={() => st.setEditing(p.id)}
-              />
+              {options && (
+                <IconButton
+                  icon={SlidersHorizontal}
+                  label={t("deliver.options", { name: nameOf(p) })}
+                  pressed={editing === p.id}
+                  onClick={() => st.setEditing(p.id)}
+                />
+              )}
             </div>
-            {editing === p.id && <PresetEditor preset={p} />}
+            {options && editing === p.id && <PresetEditor preset={p} />}
           </li>
         ))}
       </ul>

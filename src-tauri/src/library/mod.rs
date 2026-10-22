@@ -12,6 +12,7 @@ pub mod marks;
 pub mod media;
 pub mod pairs;
 pub mod paths;
+pub mod profile;
 pub mod template;
 pub mod trash;
 

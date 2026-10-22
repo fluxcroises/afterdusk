@@ -26,6 +26,8 @@ import { useLibrary } from "./store/library";
 import { useRescan } from "./store/rescan";
 import { COLOR_LABELS } from "./ui/labels";
 import { STEPS, VIEWS, useNavigation } from "./store/navigation";
+import { profileAllows, useProfile } from "./store/profile";
+import { MENU_FEATURES, PROFILES } from "./ui/profiles";
 
 type Item = MenuItemOptions | PredefinedMenuItemOptions | SubmenuOptions;
 
@@ -428,6 +430,17 @@ export function buildMenuItems(t: TFunction): Item[] {
       },
       separator,
       {
+        text: t("profiles.label"),
+        items: PROFILES.map((p) => ({
+          id: `profile-${p}`,
+          text: t(`profiles.names.${p}`),
+          // Le profil en cours est grisé : c'est celui qu'on a.
+          enabled: useProfile.getState().profile !== p,
+          action: () => void useProfile.getState().set(p),
+        })),
+      },
+      separator,
+      {
         id: "fullscreen",
         text: t("menu.fullscreen"),
         accelerator: isMac ? "Ctrl+Cmd+F" : "F11",
@@ -464,9 +477,37 @@ export function buildMenuItems(t: TFunction): Item[] {
     ],
   };
 
-  return isMac
-    ? [appMenu, file, edit, photo, view, windowMenu, help]
-    : [file, edit, photo, view, windowMenu, help];
+  return byProfile(
+    isMac
+      ? [appMenu, file, edit, photo, view, windowMenu, help]
+      : [file, edit, photo, view, windowMenu, help],
+  );
+}
+
+/**
+ * Profil d'interface : retire les commandes des fonctions masquées (et
+ * donc leurs raccourcis), puis les séparateurs devenus inutiles.
+ */
+function byProfile(items: Item[]): Item[] {
+  const kept: Item[] = [];
+  for (const entry of items) {
+    if ("items" in entry && Array.isArray(entry.items)) {
+      const inner = byProfile(entry.items as Item[]);
+      if (inner.length > 0) kept.push({ ...entry, items: inner } as Item);
+      continue;
+    }
+    const id = "id" in entry ? entry.id : undefined;
+    const feature = id ? MENU_FEATURES[id] : undefined;
+    if (feature && !profileAllows(feature)) continue;
+    const separator = "item" in entry && entry.item === "Separator";
+    const previous = kept[kept.length - 1];
+    const afterSeparator = previous && "item" in previous && previous.item === "Separator";
+    if (separator && (kept.length === 0 || afterSeparator)) continue;
+    kept.push(entry);
+  }
+  const last = kept[kept.length - 1];
+  if (last && "item" in last && last.item === "Separator") kept.pop();
+  return kept;
 }
 
 async function toggleFullscreen(): Promise<void> {
@@ -487,6 +528,9 @@ export function installMenu(): void {
   };
   apply();
   i18n.on("languageChanged", apply);
+  useProfile.subscribe((s, prev) => {
+    if (s.profile !== prev.profile) apply();
+  });
 }
 
 /* ---------- Menus dessinés (Windows) ---------- */
