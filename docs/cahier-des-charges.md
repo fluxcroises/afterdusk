@@ -292,6 +292,15 @@ L'interface s'organise autour d'une barre d'étapes toujours visible en haut (Im
 - **Clavier d'abord pour le tri**, souris d'abord pour la retouche.
 - **Retours visibles** : toute action longue affiche sa progression ; toute action destructive est annulable.
 - **Première ouverture guidée** : choix de la bibliothèque, de la sauvegarde, du modèle de rangement et de l'identité du photographe en quatre écrans, avec des valeurs par défaut raisonnables.
+- **Profils d'interface** \[V0.5\] (demande de l'utilisateur, 2026-10-22) : l'assistant de bienvenue demande comment l'utilisateur compte se servir d'Afterdusk et propose trois profils, Simplifiée, De base et Complète, pour qu'un débutant ne soit pas noyé. Un profil masque des fonctions sans les retirer : ce qui est masqué continue de tourner (analyse des ratés, sauvegarde, aperçus) et les données restent intactes. Le profil se change à tout moment (Réglages > Général, menu Affichage) ; une section masquée garde un lien « Afficher les réglages avancés ». Modules, sections de panneaux, entrées de menu et raccourcis suivent le même filtre. Les installations existantes restent en interface complète. Ce choix de l'utilisateur fait exception au principe « pas de modules cachés ».
+
+| | Simplifiée | De base | Complète |
+| --- | --- | --- | --- |
+| Modules | Importer, Trier, Retoucher, Livrer | + Bibliothèque, Carte | + Matériel |
+| Import | Carte ou dossier, album | + Renommage, mots-clés | + Sauvegarde, import automatique, dossiers surveillés, réception FTP |
+| Tri | Notes, drapeaux, ratés probables | + Couleurs, filtres, rafales | + Recherche avancée, albums intelligents |
+| Retouche | Lumière, couleur, recadrage, presets | + Courbes, TSL, détail, corrections d'objectif | + Copies virtuelles, instantanés, correcteur |
+| Livraison | Presets d'export, filigrane simple | + Planches contact, galerie web | + Options d'export détaillées, métadonnées, clients |
 - **Accessibilité** : navigation complète au clavier, contrastes suffisants, tailles de texte réglables.
 
 **Écrans principaux**
@@ -400,11 +409,12 @@ Objectif : gagner du temps au tri et partager avec des clients.
 
 ### V0.5 : Livraison créative
 
-Objectif : livrer aux bons formats et habiller une photo sans quitter Afterdusk (demandes de l'utilisateur, 2026-10-22).
+Objectif : livrer aux bons formats, habiller une photo sans quitter Afterdusk, et adapter l'interface au niveau du photographe (demandes de l'utilisateur, 2026-10-22).
 
 - [ ] Modèles de livraison présentés en vignettes, groupés par usage, avec recadrage ajustable par format
 - [ ] Éditeur de livraison simple : texte, logo, cadre, fond, collage de 2 à 4 photos, export à pleine résolution
 - [ ] Dérushage vidéo : entrée, sortie, découpe, export sans réencodage
+- [ ] Profils d'interface Simplifiée, De base et Complète, proposés par l'assistant de bienvenue et modifiables à tout moment
 
 **Après la V0.5** (pistes pour une V1) : retouches locales (masques, pinceau, dégradés), suppression de défauts, simulations de film, connexion en direct au boîtier (tethering, voir ci-dessous), version Linux, traductions communautaires.
 
