@@ -201,13 +201,23 @@ pub fn cells(layout: Layout, n: usize, aspect: f64, margin: f64) -> Vec<[f64; 4]
     }
 }
 
-/// Bande : une colonne par tiers de hauteur de largeur (5 × 15 : une ;
-/// 10 × 15 : deux), les photos l'une sous l'autre au-dessus du bandeau.
+/// Bandes d'une page : une par tiers de hauteur de largeur pour une bande
+/// photomaton (5 × 15 : une ; 10 × 15 : deux), une seule sinon. Textes et
+/// logo se répètent sur chaque bande, décalés d'une largeur de bande.
+pub fn columns(layout: Layout, aspect: f64) -> usize {
+    match layout {
+        Layout::Strip if aspect.is_finite() => ((aspect * 3.0).round() as usize).max(1),
+        _ => 1,
+    }
+}
+
+/// Bande : les photos l'une sous l'autre au-dessus du bandeau, dans
+/// chaque colonne.
 fn strip(n: usize, aspect: f64, mx: f64, my: f64) -> Vec<[f64; 4]> {
     if n == 0 {
         return Vec::new();
     }
-    let columns = ((aspect * 3.0).round() as usize).max(1);
+    let columns = columns(Layout::Strip, aspect);
     let width = (1.0 - mx * (columns as f64 + 1.0)) / columns as f64;
     let bottom = 1.0 - STRIP_BAND;
     let height = (bottom - my * n as f64) / n as f64;
@@ -321,6 +331,9 @@ pub fn compose(
             }
         }
     }
+    let repeat = columns(design.layout, aspect);
+    // Décalage d'une bande à la suivante, en pixels.
+    let shift = |c: usize| (f64::from(w) * c as f64 / repeat as f64).round() as i64;
     if let Some(logo) = &design.logo
         && let Some(path) = watermark::studio_logo_path()
     {
@@ -331,16 +344,19 @@ pub fn compose(
                 (logo.x * f64::from(w)).round() as i64,
                 (logo.y * f64::from(h)).round() as i64,
             );
-            watermark::blend(&mut page, &stamp, x0, y0, opacity);
+            for c in 0..repeat {
+                watermark::blend(&mut page, &stamp, x0 + shift(c), y0, opacity);
+            }
         }
     }
     for text in &design.texts {
         let px = (f64::from(h) * text.size.clamp(0.5, 50.0) / 100.0) as f32;
         let ink = parse_color(&text.color);
-        let mut top = (text.y * f64::from(h)).round() as i64;
+        // Hauteur de ligne : 1,2 fois le corps, le texte centré sur la ligne,
+        // comme Konva dans l'éditeur.
+        let line_height = f64::from(px) * 1.2;
+        let mut middle = text.y * f64::from(h) + line_height / 2.0;
         for line in text.text.lines() {
-            // Hauteur de ligne : 1,2 fois le corps, comme dans l'éditeur.
-            let advance = (f64::from(px) * 1.2).round() as i64;
             if let Some(stamp) = watermark::text_line(line, px, &text.font, text.weight, ink)? {
                 let anchor = (text.x * f64::from(w)).round() as i64;
                 let left = match text.align {
@@ -348,9 +364,12 @@ pub fn compose(
                     Align::Center => anchor - i64::from(stamp.width) / 2,
                     Align::Right => anchor - i64::from(stamp.width),
                 };
-                watermark::blend(&mut page, &stamp, left, top, 1.0);
+                let top = (middle - f64::from(stamp.height) / 2.0).round() as i64;
+                for c in 0..repeat {
+                    watermark::blend(&mut page, &stamp, left + shift(c), top, 1.0);
+                }
             }
-            top += advance;
+            middle += line_height;
         }
     }
     Ok(page)
@@ -562,6 +581,44 @@ mod tests {
         let mut p = design(2);
         p.layout = Layout::Polaroid;
         assert!(p.check().is_err());
+    }
+
+    #[test]
+    fn corps_au_sens_de_css_et_texte_repete_sur_chaque_bande() {
+        // Inter : cadratin de 2048 unités, hauteur totale de 2472 environ ;
+        // un corps de 100 px donne une ligne d'environ 121 px.
+        let stamp = watermark::text_line("Hg", 100.0, "Inter", 400, [0.0; 3])
+            .unwrap()
+            .unwrap();
+        assert!((115..=128).contains(&stamp.height), "{}", stamp.height);
+        // Bande doublée : le texte posé dans la première bande se retrouve
+        // dans la seconde.
+        let mut d = design(1);
+        d.layout = Layout::Strip;
+        d.width = 200;
+        d.height = 300;
+        d.margin = 0.0;
+        d.texts.push(DesignText {
+            text: "A".into(),
+            x: 0.25,
+            y: 0.9,
+            size: 5.0,
+            font: "Inter".into(),
+            weight: 700,
+            color: "#000000".into(),
+            align: Align::Center,
+        });
+        let page = compose(&d, |_, w, h| {
+            Ok(Rendered {
+                width: w,
+                height: h,
+                rgb: vec![1.0; (w * h * 3) as usize],
+            })
+        })
+        .unwrap();
+        let ink = |x0: u32, x1: u32| (x0..x1).any(|x| (265..295).any(|y| at(&page, x, y)[0] < 0.5));
+        assert!(ink(40, 60) && ink(140, 160));
+        assert!(!ink(0, 30) && !ink(170, 200));
     }
 
     #[test]

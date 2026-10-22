@@ -195,7 +195,11 @@ pub(crate) fn text_line(
         .map_err(|e| ExportError::Watermark(format!("{family} : {e}")))?;
     // Police variable : la graisse demandée ; sinon la face choisie la porte.
     font.set_variation(b"wght", f32::from(weight));
-    Ok(Some(rasterize(&font, PxScale::from(px), text, ink)))
+    // `px` est le corps au sens de CSS (le cadratin), comme dans l'éditeur ;
+    // l'échelle d'ab_glyph porte sur la hauteur totale de la police.
+    let em = font.units_per_em().unwrap_or(1000.0);
+    let scale = PxScale::from(px * font.height_unscaled() / em);
+    Ok(Some(rasterize(&font, scale, text, ink)))
 }
 
 pub(crate) fn image_stamp(

@@ -67,6 +67,23 @@ export const LINE_HEIGHT = 1.2;
 export type Cell = [number, number, number, number];
 
 /**
+ * Bandes d'une page : une par tiers de hauteur de largeur pour une bande
+ * photomaton, une seule sinon. Textes et logo se répètent sur chaque bande.
+ * Même calcul que `export::design::columns`.
+ */
+export function columns(layout: Layout, aspect: number): number {
+  return layout === "strip" && Number.isFinite(aspect) ? Math.max(1, Math.round(aspect * 3)) : 1;
+}
+
+/** Couleur de texte lisible sur un fond `#rrggbb`. */
+export function inkFor(background: string): string {
+  const v = /^#?([0-9a-f]{6})$/i.exec(background.trim())?.[1];
+  if (!v) return "#1a1a1a";
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.5 ? "#1a1a1a" : "#ffffff";
+}
+
+/**
  * Cases des photos, en fractions de la page : même calcul que
  * `export::design::cells` côté Rust (le rendu final). La case `k` reçoit
  * la photo `k % n` (une bande doublée répète ses photos).
@@ -82,11 +99,11 @@ export function cells(layout: Layout, n: number, aspect: number, margin: number)
 
 function strip(n: number, a: number, mx: number, my: number): Cell[] {
   if (n <= 0) return [];
-  const columns = Math.max(1, Math.round(a * 3));
-  const width = (1 - mx * (columns + 1)) / columns;
+  const count = columns("strip", a);
+  const width = (1 - mx * (count + 1)) / count;
   const height = (1 - STRIP_BAND - my * n) / n;
   const out: Cell[] = [];
-  for (let c = 0; c < columns; c++) {
+  for (let c = 0; c < count; c++) {
     const left = mx + c * (width + mx);
     for (let i = 0; i < n; i++) {
       const top = my + i * (height + my);

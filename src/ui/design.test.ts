@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { POLAROID_CELL, STRIP_BAND, cells, cover } from "./design";
+import { POLAROID_CELL, STRIP_BAND, cells, columns, cover, inkFor } from "./design";
 
 describe("cases d'une composition", () => {
   // Mêmes valeurs que le test Rust `cases_selon_le_nombre_et_l_orientation`.
@@ -30,6 +30,15 @@ describe("cases d'une composition", () => {
     expect(d[0][1]).toBeCloseTo(d[3][1]);
     expect(d[3][0]).toBeGreaterThan(0.5);
     expect(cells("polaroid", 1, 0.82, 10)).toEqual([POLAROID_CELL]);
+    expect(columns("strip", 1 / 3)).toBe(1);
+    expect(columns("strip", 2 / 3)).toBe(2);
+    expect(columns("grid", 2 / 3)).toBe(1);
+  });
+
+  it("encre lisible sur le fond", () => {
+    expect(inkFor("#ffffff")).toBe("#1a1a1a");
+    expect(inkFor("#f6f3ea")).toBe("#1a1a1a");
+    expect(inkFor("#101010")).toBe("#ffffff");
   });
 
   it("la photo remplit sa case autour du point choisi, sans en sortir", () => {

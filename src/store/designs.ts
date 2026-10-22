@@ -116,7 +116,7 @@ export const useDesigns = create<DesignsState>()((set, get) => ({
               y: 0.84,
               size: 6,
               font: "Caveat",
-              weight: 500,
+              weight: 400,
               color: "#2a2a2a",
               align: "center",
             },

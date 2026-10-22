@@ -126,8 +126,14 @@ describe("éditeur de livraison", () => {
       await useDesigns.getState().create("photo-strip", 600, 1800, [7, 8, 9], "Bande");
     });
     render(<DesignEditor />);
+    fireEvent.click(screen.getByRole("button", { name: "Ajouter un texte" }));
+    const added = useDesigns.getState().draft?.document.texts[0];
+    // Texte sombre sur fond blanc, petit sur une bande étroite.
+    expect(added).toMatchObject({ color: "#1a1a1a", size: 4, x: 0.5 });
     fireEvent.click(screen.getByRole("checkbox", { name: "Deux bandes sur un tirage 10 × 15" }));
     expect(useDesigns.getState().draft?.document.width).toBe(1200);
+    // Le texte reste au milieu de la première bande.
+    expect(useDesigns.getState().draft?.document.texts[0].x).toBeCloseTo(0.25);
     fireEvent.click(screen.getByRole("checkbox", { name: "Deux bandes sur un tirage 10 × 15" }));
     expect(useDesigns.getState().draft?.document.width).toBe(600);
   });

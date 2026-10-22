@@ -16,7 +16,9 @@ import {
   type DesignText,
   LINE_HEIGHT,
   cells,
+  columns,
   cover,
+  inkFor,
   maxPhotos,
 } from "../ui/design";
 import { Slider } from "./DevelopPanels";
@@ -105,12 +107,15 @@ function TextNode({
   page,
   scale,
   selected,
+  shift = 0,
 }: {
   text: DesignText;
   index: number;
   page: [number, number];
   scale: number;
   selected: boolean;
+  /** Copie sur une autre bande : décalage en pixels, ni sélection ni glisser. */
+  shift?: number;
 }) {
   const ref = useRef<Konva.Text>(null);
   const k = text.align === "center" ? 0.5 : text.align === "right" ? 1 : 0;
@@ -138,17 +143,18 @@ function TextNode({
       key={loaded}
       ref={ref}
       text={text.text || " "}
-      x={text.x * page[0] * scale}
+      x={text.x * page[0] * scale + shift}
       y={text.y * page[1] * scale}
+      listening={shift === 0}
       fontFamily={`"${text.font}", Inter`}
       fontSize={(text.size / 100) * page[1] * scale}
       fontStyle={String(text.weight)}
       lineHeight={LINE_HEIGHT}
       align={text.align}
       fill={text.color}
-      stroke={selected ? "#8ab4ff" : undefined}
-      strokeWidth={selected ? 0.6 : 0}
-      draggable
+      stroke={selected && shift === 0 ? "#8ab4ff" : undefined}
+      strokeWidth={selected && shift === 0 ? 0.6 : 0}
+      draggable={shift === 0}
       onMouseDown={() => st.select(index)}
       onDragEnd={(e) => {
         const texts = [...(st.draft?.document.texts ?? [])];
@@ -163,7 +169,7 @@ function TextNode({
   );
 }
 
-function LogoNode({ design, scale }: { design: Design; scale: number }) {
+function LogoNode({ design, scale, shift = 0 }: { design: Design; scale: number; shift?: number }) {
   const url = useStudioLogo((s) => s.url);
   const img = useImage(url);
   const logo = design.logo;
@@ -174,12 +180,13 @@ function LogoNode({ design, scale }: { design: Design; scale: number }) {
   return (
     <KImage
       image={img}
-      x={logo.x * design.width * scale}
+      x={logo.x * design.width * scale + shift}
       y={logo.y * design.height * scale}
       width={w}
       height={h}
       opacity={logo.opacity / 100}
-      draggable
+      listening={shift === 0}
+      draggable={shift === 0}
       onMouseDown={() => st.select("logo")}
       onDragEnd={(e) =>
         st.update({
@@ -204,6 +211,7 @@ function Page({ design }: { design: Design }) {
   const n = design.photos.length;
   const boxes = cells(design.layout, n, design.width / design.height, design.margin);
   const short = Math.min(design.width, design.height) * scale;
+  const repeat = columns(design.layout, design.width / design.height);
   return (
     <Stage width={w} height={h} className="design-stage">
       <Layer>
@@ -243,16 +251,22 @@ function Page({ design }: { design: Design }) {
               />
             );
           })}
-        <LogoNode design={design} scale={scale} />
-        {design.texts.map((tx, i) => (
-          <TextNode
-            key={i}
-            text={tx}
-            index={i}
-            page={page}
-            scale={scale}
-            selected={selected === i}
-          />
+        {/* Bande doublée : textes et logo répétés sur chaque bande. */}
+        {Array.from({ length: repeat }, (_, c) => (
+          <Group key={c}>
+            <LogoNode design={design} scale={scale} shift={(c * w) / repeat} />
+            {design.texts.map((tx, i) => (
+              <TextNode
+                key={i}
+                text={tx}
+                index={i}
+                page={page}
+                scale={scale}
+                selected={selected === i}
+                shift={(c * w) / repeat}
+              />
+            ))}
+          </Group>
         ))}
       </Layer>
     </Stage>
@@ -516,11 +530,16 @@ export function DesignEditor() {
                 <input
                   type="checkbox"
                   checked={doubled}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    // Textes et logo gardent leur place dans la bande.
+                    const k = e.currentTarget.checked ? 0.5 : 2;
+                    const x = (v: number) => Math.min(Math.max(v * k, 0), 1);
                     st.update({
                       width: Math.round((d.height * (e.currentTarget.checked ? 2 : 1)) / 3),
-                    })
-                  }
+                      texts: d.texts.map((tx) => ({ ...tx, x: x(tx.x) })),
+                      logo: d.logo && { ...d.logo, x: x(d.logo.x), width: d.logo.width * k },
+                    });
+                  }}
                 />
                 {t("design.doubleStrip")}
               </label>
@@ -574,7 +593,19 @@ export function DesignEditor() {
               type="button"
               className="button button-small"
               onClick={() => {
-                st.update({ texts: [...d.texts, { ...NEW_TEXT, text: t("design.newText") }] });
+                st.update({
+                  texts: [
+                    ...d.texts,
+                    {
+                      ...NEW_TEXT,
+                      text: t("design.newText"),
+                      // Lisible sur le fond ; plus petit sur une bande étroite.
+                      color: inkFor(d.background),
+                      size: d.layout === "strip" ? 4 : NEW_TEXT.size,
+                      x: 0.5 / columns(d.layout, d.width / d.height),
+                    },
+                  ],
+                });
                 st.select(d.texts.length);
               }}
             >
