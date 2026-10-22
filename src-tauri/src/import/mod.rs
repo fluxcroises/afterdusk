@@ -680,6 +680,11 @@ fn process_item(
 
     // Les métadonnées sont relues sur la copie vérifiée, pas sur la source.
     let format = format_of(&target).ok_or_else(|| ItemError::File("format inconnu".into()))?;
+    let annexes = if format == MediaFormat::Video {
+        copy_annexes(lib, options, item).map_err(|e| file_err(&e))?
+    } else {
+        Vec::new()
+    };
     let file = scan::describe(&target, format).map_err(|e| file_err(&e))?;
     let sidecar =
         write_sidecar(&target, format, &item.source, options).map_err(|e| file_err(&e))?;
@@ -694,7 +699,64 @@ fn process_item(
         &hash,
         backup_error,
     )?;
+    for (path, original) in annexes {
+        conn.execute(
+            "INSERT OR IGNORE INTO media_annexes (media_id, path, original_name) VALUES (?1, ?2, ?3)",
+            params![media_id, path, original],
+        )?;
+    }
     Ok(media_id)
+}
+
+/// Copie vérifiée (et sauvegarde) des fichiers annexes d'une vidéo, à côté
+/// de sa copie : `C0001M01.XML` suit `C0001.MP4` renommée en
+/// `20260613_0001.MP4` sous le nom `20260613_0001M01.XML`. Renvoie les
+/// chemins relatifs et les noms d'origine.
+fn copy_annexes(
+    lib: &Library,
+    options: &StoredOptions,
+    item: &Item,
+) -> Result<Vec<(String, String)>, String> {
+    let source_stem = item
+        .source
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let (folder, name) = item.target.rsplit_once('/').unwrap_or(("", &item.target));
+    let target_stem = name.rsplit_once('.').map_or(name, |(s, _)| s);
+    let mut out = Vec::new();
+    for annex in scan::annexes(&item.source) {
+        let annex_name = annex
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        // La suite du nom après celui de la vidéo (« M01.XML », « .THM »).
+        let rest = annex_name.get(source_stem.len()..).unwrap_or(&annex_name);
+        let relative = if folder.is_empty() {
+            format!("{target_stem}{rest}")
+        } else {
+            format!("{folder}/{target_stem}{rest}")
+        };
+        let target = paths::to_absolute(&lib.root_path, &relative).map_err(|e| e.to_string())?;
+        // Reprise : une annexe déjà copiée à l'identique est gardée.
+        let source_hash = copy::hash_file(&annex).map_err(|e| e.to_string())?;
+        let hash = if target.exists() {
+            if copy::hash_file(&target).map_err(|e| e.to_string())? != source_hash {
+                return Err(format!(
+                    "{} existe déjà avec un autre contenu",
+                    target.display()
+                ));
+            }
+            source_hash
+        } else {
+            copy::copy_verified(&annex, &target).map_err(|e| e.to_string())?
+        };
+        if let (true, Some(backup_root)) = (options.backup, &lib.backup_path) {
+            backup(backup_root, &relative, &target, &hash)?;
+        }
+        out.push((relative, paths::nfc(&annex_name)));
+    }
+    Ok(out)
 }
 
 /// Copie vérifiée vers la bibliothèque ; gère la reprise quand le fichier
@@ -749,7 +811,8 @@ fn backup(root: &Path, relative: &str, copy: &Path, hash: &str) -> Result<(), St
 /// Nommage validé (décision 0002) : `IMG.xmp` pour les RAW, `IMG.JPG.xmp` sinon.
 pub fn sidecar_naming(format: MediaFormat) -> SidecarNaming {
     match format {
-        MediaFormat::Raw => SidecarNaming::ReplaceExtension,
+        // Vidéo : `C0001.xmp`, comme Lightroom pour les formats qu'il n'écrit pas.
+        MediaFormat::Raw | MediaFormat::Video => SidecarNaming::ReplaceExtension,
         MediaFormat::Image => SidecarNaming::AppendExtension,
     }
 }
@@ -930,7 +993,7 @@ pub(crate) fn insert_media(
                             width, height, orientation, lat, lon, location_source,
                             camera_id, lens_id, import_id, imported_at, updated_at,
                             rating, flag, color, captured_at_camera)
-         VALUES (?1, ?2, 'photo', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
+         VALUES (?1, ?2, ?25, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
                  ?16, ?17, ?18, ?19, ?20, ?20, ?21, ?22, ?23, ?24)
          ON CONFLICT (library_id, path) DO NOTHING",
         params![
@@ -958,6 +1021,11 @@ pub(crate) fn insert_media(
             marks.flag.as_db(),
             marks.label.map(|l| l.as_db()),
             camera_time,
+            if file.format == MediaFormat::Video {
+                "video"
+            } else {
+                "photo"
+            },
         ],
     )?;
     let media_id: i64 = tx.query_row(
@@ -965,6 +1033,13 @@ pub(crate) fn insert_media(
         params![lib.id, new.target],
         |r| r.get(0),
     )?;
+    if let Some(v) = &m.video {
+        tx.execute(
+            "INSERT OR REPLACE INTO media_video (media_id, duration_ms, fps, codec, has_audio)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![media_id, v.duration_ms, v.fps, v.codec, v.has_audio],
+        )?;
+    }
     tx.execute(
         "INSERT OR REPLACE INTO media_exif (media_id, focal_length, focal_length_35mm, aperture,
                  shutter, iso, exposure_compensation, exposure_program, flash, body_serial, shutter_count,

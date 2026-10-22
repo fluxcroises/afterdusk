@@ -55,7 +55,7 @@ impl SourceFile {
 #[serde(rename_all = "camelCase")]
 pub struct ScanResult {
     pub files: Vec<SourceFile>,
-    /// Fichiers visibles non importés (vidéos en V0.1, formats inconnus).
+    /// Fichiers visibles non importés (formats inconnus).
     pub ignored: usize,
 }
 
@@ -69,15 +69,65 @@ fn is_thumbnail_folder(name: &str) -> bool {
     name.eq_ignore_ascii_case("THMBNL")
 }
 
-/// Où chercher les photos : sur une carte ou un boîtier, le dossier `DCIM`
-/// (norme DCF), et rien d'autre ; ailleurs, tout le dossier choisi.
-pub fn photo_root(root: &Path) -> PathBuf {
-    let dcim = root.join("DCIM");
-    if dcim.is_dir() {
-        dcim
-    } else {
-        root.to_path_buf()
+/// Dossiers vidéo des boîtiers hors du `DCIM` : clips Sony (XAVC) et AVCHD.
+const VIDEO_FOLDERS: &[&str] = &["PRIVATE/M4ROOT/CLIP", "PRIVATE/AVCHD/BDMV/STREAM"];
+
+/// Où chercher les médias : sur une carte ou un boîtier, le dossier `DCIM`
+/// (norme DCF) et les dossiers vidéo connus, rien d'autre ; ailleurs, tout
+/// le dossier choisi.
+pub fn media_roots(root: &Path) -> Vec<PathBuf> {
+    let mut roots: Vec<PathBuf> = std::iter::once("DCIM")
+        .chain(VIDEO_FOLDERS.iter().copied())
+        .map(|f| root.join(f))
+        .filter(|p| p.is_dir())
+        .collect();
+    if roots.is_empty() {
+        roots.push(root.to_path_buf());
     }
+    roots
+}
+
+/// Fichiers annexes d'une vidéo de boîtier : même dossier et nom commençant
+/// par celui de la vidéo (`C0001M01.XML`, `MVI_0001.THM`, `DJI_0001.SRT`),
+/// et la basse définition Sony (`../SUB/C0001S03.MP4`).
+pub fn annexes(video: &Path) -> Vec<PathBuf> {
+    let (Some(dir), Some(stem)) = (video.parent(), video.file_stem()) else {
+        return Vec::new();
+    };
+    let stem = stem.to_string_lossy().to_lowercase();
+    let mut out: Vec<PathBuf> = std::fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p != video && p.is_file())
+        .filter(|p| {
+            let name = p.file_stem().map(|s| s.to_string_lossy().to_lowercase());
+            let ext = p.extension().map(|e| e.to_string_lossy().to_lowercase());
+            // `C0001` ne prend pas les annexes de `C00010` : la suite du nom
+            // ne commence pas par un chiffre.
+            matches!((name, ext), (Some(n), Some(e))
+                if n.starts_with(&stem)
+                    && !n[stem.len()..].starts_with(|c: char| c.is_ascii_digit())
+                    && crate::video::ANNEX_EXTENSIONS.contains(&e.as_str()))
+        })
+        .collect();
+    if let Some(clip) = dir.parent() {
+        let sub = clip.join("SUB");
+        if let Ok(entries) = std::fs::read_dir(&sub) {
+            out.extend(
+                entries
+                    .filter_map(Result::ok)
+                    .map(|e| e.path())
+                    .filter(|p| {
+                        p.file_stem()
+                            .is_some_and(|n| n.to_string_lossy().to_lowercase().starts_with(&stem))
+                    }),
+            );
+        }
+    }
+    out.sort();
+    out
 }
 
 /// Parcourt la source et lit chaque média reconnu.
@@ -86,14 +136,16 @@ pub fn scan(root: &Path) -> Result<ScanResult, ScanError> {
         return Err(ScanError::NotADirectory(root.to_path_buf()));
     }
     let mut result = ScanResult::default();
-    let walker = WalkDir::new(photo_root(root))
-        .follow_links(false)
-        .into_iter()
-        .filter_entry(|e| {
-            let name = e.file_name().to_string_lossy();
-            e.depth() == 0
-                || !(is_hidden(&name) || (e.file_type().is_dir() && is_thumbnail_folder(&name)))
-        });
+    let walker = media_roots(root).into_iter().flat_map(|top| {
+        WalkDir::new(top)
+            .follow_links(false)
+            .into_iter()
+            .filter_entry(|e| {
+                let name = e.file_name().to_string_lossy();
+                e.depth() == 0
+                    || !(is_hidden(&name) || (e.file_type().is_dir() && is_thumbnail_folder(&name)))
+            })
+    });
     for entry in walker {
         let Ok(entry) = entry else {
             result.ignored += 1;
@@ -104,7 +156,14 @@ pub fn scan(root: &Path) -> Result<ScanResult, ScanError> {
         }
         let path = entry.path();
         let Some(format) = format_of(path) else {
-            result.ignored += 1;
+            // Les annexes des vidéos partent avec elles : pas « ignorées ».
+            let annex = path.extension().is_some_and(|e| {
+                crate::video::ANNEX_EXTENSIONS
+                    .contains(&e.to_string_lossy().to_lowercase().as_str())
+            });
+            if !annex {
+                result.ignored += 1;
+            }
             continue;
         };
         result.files.push(describe(path, format)?);
@@ -195,7 +254,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ignore_les_fichiers_systeme_et_les_videos() {
+    fn ignore_les_fichiers_systeme_et_inconnus() {
         let dir = tempfile::tempdir().unwrap();
         let dcim = dir.path().join("DCIM").join("100_FUJI");
         std::fs::create_dir_all(&dcim).unwrap();
@@ -204,22 +263,30 @@ mod tests {
         std::fs::write(dcim.join("DSCF0001.RAF"), b"raf").unwrap();
         std::fs::write(dcim.join("DSCF0001.JPG"), b"jpg").unwrap();
         std::fs::write(dcim.join("DSCF0002.MOV"), b"mov").unwrap();
+        std::fs::write(dcim.join("NOTES.PDF"), b"pdf").unwrap();
         std::fs::write(dcim.join(".DS_Store"), b"").unwrap();
 
         let result = scan(dir.path()).unwrap();
-        let names: Vec<_> = result.files.iter().map(|f| f.file_name.as_str()).collect();
-        assert_eq!(names, ["DSCF0001.JPG", "DSCF0001.RAF"]);
-        // Seule la vidéo compte : les fichiers cachés ne sont pas des médias.
+        let mut names: Vec<_> = result.files.iter().map(|f| f.file_name.as_str()).collect();
+        names.sort_unstable();
+        assert_eq!(names, ["DSCF0001.JPG", "DSCF0001.RAF", "DSCF0002.MOV"]);
+        // Seul le PDF compte : les fichiers cachés ne sont pas des médias.
         assert_eq!(result.ignored, 1);
+        let photo = result
+            .files
+            .iter()
+            .find(|f| f.file_name == "DSCF0001.JPG")
+            .unwrap();
         // Sans EXIF, la date de modification sert de date de prise de vue.
-        assert!(!result.files[0].has_capture_date);
-        assert_eq!(result.files[0].captured_at.len(), 19);
+        assert!(!photo.has_capture_date);
+        assert_eq!(photo.captured_at.len(), 19);
     }
 
-    /// Carte d'un boîtier Sony : photos dans DCIM, vidéos et leurs vignettes
-    /// JPEG dans PRIVATE/M4ROOT. Seules les photos sont proposées.
+    /// Carte d'un boîtier Sony : photos dans DCIM, vidéos dans
+    /// PRIVATE/M4ROOT/CLIP et leurs vignettes JPEG dans PRIVATE/M4ROOT/THMBNL.
+    /// Photos et vidéos sont proposées, pas les vignettes.
     #[test]
-    fn carte_sony_seulement_le_dcim() {
+    fn carte_sony_dcim_et_clips() {
         let dir = tempfile::tempdir().unwrap();
         let dcim = dir.path().join("DCIM").join("100MSDCF");
         let m4root = dir.path().join("PRIVATE").join("M4ROOT");
@@ -237,7 +304,7 @@ mod tests {
             .into_iter()
             .map(|f| f.file_name)
             .collect();
-        assert_eq!(names, ["DSC00028.ARW", "DSC00028.JPG"]);
+        assert_eq!(names, ["C0002.MP4", "DSC00028.ARW", "DSC00028.JPG"]);
 
         // Un dossier quelconque est parcouru en entier, sauf les vignettes.
         let folder = tempfile::tempdir().unwrap();

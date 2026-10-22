@@ -26,7 +26,8 @@ struct Setup {
     library_id: i64,
 }
 
-/// Carte factice : deux vrais RAW, un JPEG sans EXIF, un RAW illisible, une vidéo.
+/// Carte factice : deux vrais RAW, un JPEG sans EXIF, un RAW illisible, un
+/// fichier de format inconnu (ignoré).
 fn setup() -> Setup {
     let dir = tempfile::tempdir().unwrap();
     let card = dir.path().join("carte");
@@ -53,7 +54,7 @@ fn setup() -> Setup {
         vec![7u8; 200_000],
     )
     .unwrap();
-    fs::write(dcim.join("100CANON").join("MVI_0004.MP4"), b"video").unwrap();
+    fs::write(dcim.join("100CANON").join("NOTES.PDF"), b"pdf").unwrap();
 
     let root = dir.path().join("Bibliotheque");
     let backup = dir.path().join("Sauvegarde");

@@ -1,5 +1,5 @@
 //! Métadonnées d'un média, quel que soit son format : LibRaw pour les RAW,
-//! kamadak-exif pour les JPEG, HEIF et TIFF.
+//! kamadak-exif pour les JPEG, HEIF et TIFF, ffprobe pour les vidéos.
 
 use std::collections::BTreeMap;
 use std::fs::File;
@@ -27,6 +27,7 @@ pub const IMAGE_EXTENSIONS: &[&str] = &["jpg", "jpeg", "heic", "heif", "hif", "t
 pub enum MediaFormat {
     Raw,
     Image,
+    Video,
 }
 
 pub fn format_of(path: &Path) -> Option<MediaFormat> {
@@ -35,6 +36,8 @@ pub fn format_of(path: &Path) -> Option<MediaFormat> {
         Some(MediaFormat::Raw)
     } else if IMAGE_EXTENSIONS.contains(&ext.as_str()) {
         Some(MediaFormat::Image)
+    } else if crate::video::VIDEO_EXTENSIONS.contains(&ext.as_str()) {
+        Some(MediaFormat::Video)
     } else {
         None
     }
@@ -67,6 +70,9 @@ pub struct MediaMetadata {
     /// Balises relevées, clé `ifd.0xTAG`.
     #[serde(skip)]
     pub tags: BTreeMap<String, String>,
+    /// Vidéo : durée, cadence, codec (ffprobe).
+    #[serde(skip)]
+    pub video: Option<crate::video::VideoInfo>,
 }
 
 impl MediaMetadata {
@@ -91,8 +97,24 @@ pub fn read_metadata(path: &Path, format: MediaFormat) -> MediaMetadata {
     match format {
         MediaFormat::Raw => read_raw(path),
         MediaFormat::Image => read_image(path),
+        MediaFormat::Video => read_video(path),
     }
     .unwrap_or_default()
+}
+
+/// Sans FFmpeg, une vidéo s'importe quand même, sans informations.
+fn read_video(path: &Path) -> Option<MediaMetadata> {
+    let info = crate::video::probe(path)?;
+    Some(MediaMetadata {
+        make: info.make.clone(),
+        model: info.model.clone(),
+        captured_at: info.captured_at.clone(),
+        width: Some(info.width).filter(|w| *w > 0),
+        height: Some(info.height).filter(|h| *h > 0),
+        orientation: 1,
+        video: Some(info),
+        ..Default::default()
+    })
 }
 
 fn read_raw(path: &Path) -> Option<MediaMetadata> {
@@ -133,6 +155,7 @@ fn read_raw(path: &Path) -> Option<MediaMetadata> {
         orientation: info.orientation,
         gps: info.gps,
         tags,
+        video: None,
     })
 }
 
@@ -214,6 +237,7 @@ fn read_image(path: &Path) -> Option<MediaMetadata> {
             .unwrap_or(1),
         gps: gps(&field),
         tags,
+        video: None,
     })
 }
 
@@ -300,7 +324,11 @@ mod tests {
             format_of(Path::new("IMG_0001.JPG")),
             Some(MediaFormat::Image)
         );
-        assert_eq!(format_of(Path::new("MVI_0001.MP4")), None);
+        assert_eq!(
+            format_of(Path::new("MVI_0001.MP4")),
+            Some(MediaFormat::Video)
+        );
+        assert_eq!(format_of(Path::new("C0001M01.XML")), None);
         assert_eq!(format_of(Path::new("SANS_EXTENSION")), None);
     }
 

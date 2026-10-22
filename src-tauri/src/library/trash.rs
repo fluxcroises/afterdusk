@@ -60,6 +60,8 @@ struct Entry {
     path: String,
     sidecar: Option<String>,
     origin: Option<String>,
+    /// Fichiers annexes d'une vidéo (identifiant, chemin relatif).
+    annexes: Vec<(i64, String)>,
 }
 
 fn entry(conn: &Connection, id: i64) -> Result<Entry, TrashError> {
@@ -73,11 +75,38 @@ fn entry(conn: &Connection, id: i64) -> Result<Entry, TrashError> {
                 path: r.get(2)?,
                 sidecar: r.get(3)?,
                 origin: r.get(4)?,
+                annexes: Vec::new(),
             })
         },
     )
     .optional()?
     .ok_or(TrashError::NotFound(id))
+    .and_then(|mut e| {
+        e.annexes = conn
+            .prepare("SELECT id, path FROM media_annexes WHERE media_id = ?1 ORDER BY id")?
+            .query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<Result<_, _>>()?;
+        Ok(e)
+    })
+}
+
+/// Nouvel emplacement d'une annexe : même dossier que le média, nom du
+/// média suivi de la suite d'origine (`C0001.MP4` → `C0001M01.XML`).
+fn annex_for(old_media: &str, old_annex: &str, new_media: &str) -> String {
+    let stem = |p: &str| {
+        let name = p.rsplit('/').next().unwrap_or(p);
+        name.rsplit_once('.').map_or(name, |(s, _)| s).to_owned()
+    };
+    let old_stem = stem(old_media);
+    let annex_name = old_annex.rsplit('/').next().unwrap_or(old_annex);
+    let rest = annex_name
+        .strip_prefix(old_stem.as_str())
+        .unwrap_or(annex_name);
+    let renamed = format!("{}{rest}", stem(new_media));
+    match new_media.rsplit_once('/') {
+        Some((folder, _)) => format!("{folder}/{renamed}"),
+        None => renamed,
+    }
 }
 
 fn online(conn: &Connection, library_id: i64) -> Result<Library, TrashError> {
@@ -129,24 +158,59 @@ fn sidecar_for(old_media: &str, old_sidecar: &str, new_media: &str) -> String {
     }
 }
 
-/// Déplace le média et son XMP ; en cas d'échec du XMP, le média revient.
-fn relocate(root: &Path, e: &Entry, new_path: &str) -> Result<Option<String>, TrashError> {
+/// Déplace le média, son XMP et ses annexes ; si l'un échoue, tout revient.
+fn relocate(
+    conn: &Connection,
+    root: &Path,
+    e: &Entry,
+    new_path: &str,
+) -> Result<Option<String>, TrashError> {
     let from = paths::to_absolute(root, &e.path)?;
     let to = paths::to_absolute(root, new_path)?;
     move_file(&from, &to)?;
-    let Some(sidecar) = &e.sidecar else {
-        return Ok(None);
+    let mut moved: Vec<(PathBuf, PathBuf)> = vec![(from, to)];
+    let undo = |moved: &[(PathBuf, PathBuf)]| {
+        for (from, to) in moved.iter().rev() {
+            let _ = fs::rename(to, from);
+        }
     };
-    let new_sidecar = sidecar_for(&e.path, sidecar, new_path);
-    let side_from = paths::to_absolute(root, sidecar)?;
-    if side_from.exists() {
-        let side_to = paths::to_absolute(root, &new_sidecar)?;
-        if let Err(err) = move_file(&side_from, &side_to) {
-            let _ = fs::rename(&to, &from);
-            return Err(err);
+    let new_sidecar = e
+        .sidecar
+        .as_ref()
+        .map(|sidecar| sidecar_for(&e.path, sidecar, new_path));
+    if let (Some(sidecar), Some(new_sidecar)) = (&e.sidecar, &new_sidecar) {
+        let side_from = paths::to_absolute(root, sidecar)?;
+        if side_from.exists() {
+            let side_to = paths::to_absolute(root, new_sidecar)?;
+            if let Err(err) = move_file(&side_from, &side_to) {
+                undo(&moved);
+                return Err(err);
+            }
+            moved.push((side_from, side_to));
         }
     }
-    Ok(Some(new_sidecar))
+    let mut renamed = Vec::new();
+    for (id, annex) in &e.annexes {
+        let new_annex = annex_for(&e.path, annex, new_path);
+        let annex_from = paths::to_absolute(root, annex)?;
+        if !annex_from.exists() {
+            continue;
+        }
+        let annex_to = paths::to_absolute(root, &new_annex)?;
+        if let Err(err) = move_file(&annex_from, &annex_to) {
+            undo(&moved);
+            return Err(err);
+        }
+        moved.push((annex_from, annex_to));
+        renamed.push((*id, new_annex));
+    }
+    for (id, path) in renamed {
+        conn.execute(
+            "UPDATE media_annexes SET path = ?2 WHERE id = ?1",
+            params![id, path],
+        )?;
+    }
+    Ok(new_sidecar)
 }
 
 /// Envoie des photos à la corbeille.
@@ -160,7 +224,7 @@ pub fn move_to_trash(conn: &mut Connection, ids: &[i64]) -> Result<TrashReport, 
         let lib = online(conn, e.library_id)?;
         let name = e.path.rsplit('/').next().unwrap_or(&e.path).to_owned();
         let trashed = format!("{TRASH_DIR}/{}/{name}", e.id);
-        match relocate(&lib.root_path, &e, &trashed) {
+        match relocate(conn, &lib.root_path, &e, &trashed) {
             Ok(sidecar) => {
                 conn.execute(
                     "UPDATE media SET state = 'trashed', trashed_at = ?2, trash_origin_path = ?3,
@@ -194,7 +258,7 @@ pub fn restore(conn: &mut Connection, ids: &[i64]) -> Result<TrashReport, TrashE
         };
         let lib = online(conn, e.library_id)?;
         let target = free_path(&lib.root_path, &origin)?;
-        match relocate(&lib.root_path, &e, &target) {
+        match relocate(conn, &lib.root_path, &e, &target) {
             Ok(sidecar) => {
                 conn.execute(
                     "UPDATE media SET state = 'normal', trashed_at = NULL, trash_origin_path = NULL,
@@ -282,6 +346,9 @@ pub fn purge(
         if let Some(sidecar) = &e.sidecar {
             files.push(paths::to_absolute(&lib.root_path, sidecar)?);
         }
+        for (_, annex) in &e.annexes {
+            files.push(paths::to_absolute(&lib.root_path, annex)?);
+        }
         let mut ok = true;
         for file in &files {
             ensure_in_trash(&lib.root_path, file)?;
@@ -300,6 +367,8 @@ pub fn purge(
         for size in SIZES {
             let _ = fs::remove_file(cache_path(cache_root, id, size));
         }
+        // Version de lecture d'une vidéo.
+        let _ = fs::remove_file(cache_root.join("video").join(format!("{id}.mp4")));
         let tx = conn.transaction()?;
         tx.execute("DELETE FROM media_search WHERE rowid = ?1", [id])?;
         tx.execute("DELETE FROM media WHERE id = ?1", [id])?;
@@ -393,6 +462,22 @@ pub fn set_retention_days(conn: &Connection, days: u32) -> Result<(), TrashError
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn annexe_suit_le_nom_du_media() {
+        assert_eq!(
+            annex_for(
+                "2026/a/C0001.MP4",
+                "2026/a/C0001M01.XML",
+                ".corbeille/12/C0001.MP4"
+            ),
+            ".corbeille/12/C0001M01.XML"
+        );
+        assert_eq!(
+            annex_for("2026/a/MVI_1.MP4", "2026/a/MVI_1.THM", "2026/a/MVI_1-2.MP4"),
+            "2026/a/MVI_1-2.THM"
+        );
+    }
 
     #[test]
     fn nommage_du_xmp_conserve() {

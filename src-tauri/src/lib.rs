@@ -12,6 +12,7 @@ pub mod library;
 pub mod metadata;
 pub mod pdf;
 pub mod raw;
+pub mod video;
 
 use tauri::Manager;
 
@@ -91,6 +92,10 @@ pub fn run() {
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .register_asynchronous_uri_scheme_protocol(previews::SCHEME, previews::protocol)
+        .register_asynchronous_uri_scheme_protocol(
+            commands::video::SCHEME,
+            commands::video::protocol,
+        )
         .setup(|app| {
             // Base dans le dossier de données de l'application (cahier des charges, section 3).
             let dir = app.path().app_data_dir()?;
@@ -121,6 +126,8 @@ pub fn run() {
                 analysis::eyes::set_library_path(
                     resources.join("onnxruntime").join(analysis::eyes::LIBRARY),
                 );
+                // FFmpeg livré avec l'application (décision 0012).
+                video::set_dir(resources.join("ffmpeg"));
             }
             if let Ok(conn) = db::open(&db_path) {
                 commands::library::refresh_studio_logo(&conn, &dir);
@@ -198,6 +205,8 @@ pub fn run() {
             commands::ftp::ftp_set,
             commands::ftp::ftp_save_certificate,
             commands::ftp::ftp_clear_reception,
+            commands::video::video_source,
+            commands::video::video_prepare,
             commands::watch::watch_folders,
             commands::watch::watch_folder_add,
             commands::watch::watch_folder_update,

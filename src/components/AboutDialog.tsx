@@ -22,6 +22,7 @@ const COMPONENTS: { name: string; license: string; version?: keyof AppInfo }[] =
   { name: "rav1e, ravif", license: "BSD" },
   { name: "printpdf", license: "MIT" },
   { name: "notify", license: "CC0 1.0" },
+  { name: "FFmpeg", license: "GPL 2.0+" },
   { name: "libunftp", license: "Apache 2.0" },
   { name: "rcgen, rustls, ring", license: "MIT / Apache 2.0, ISC" },
   { name: "ONNX Runtime", license: "MIT" },

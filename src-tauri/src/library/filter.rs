@@ -56,6 +56,9 @@ pub struct MediaFilter {
     pub camera_id: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lens_id: Option<i64>,
+    /// « photo » ou « video » ; absent : les deux.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
     /// Albums de ce client.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_id: Option<i64>,
@@ -174,6 +177,14 @@ impl MediaFilter {
         if let Some(id) = self.lens_id {
             clauses.push("m.lens_id = ?".to_owned());
             values.push(id.into());
+        }
+        if let Some(kind) = self
+            .kind
+            .as_deref()
+            .filter(|k| *k == "photo" || *k == "video")
+        {
+            clauses.push("m.kind = ?".to_owned());
+            values.push(kind.to_owned().into());
         }
         if let Some(id) = self.client_id {
             clauses.push("m.album_id IN (SELECT id FROM albums WHERE client_id = ?)".to_owned());

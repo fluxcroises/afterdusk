@@ -72,6 +72,14 @@ fn dossier_surveille() {
     std::thread::sleep(Duration::from_millis(20));
     let start = Instant::now();
     fs::copy(common::sample(new), drop_zone.join(new)).unwrap();
+    // Copie qui garde la date d'origine, comme le Finder sous macOS : la
+    // photo est arrivée quand même.
+    fs::File::options()
+        .write(true)
+        .open(drop_zone.join(new))
+        .unwrap()
+        .set_modified(std::time::SystemTime::UNIX_EPOCH + Duration::from_secs(1_500_000_000))
+        .unwrap();
     let before = hashes(&drop_zone);
     let mut tracker = Tracker::default();
     let ready = loop {

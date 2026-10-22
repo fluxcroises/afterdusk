@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NonRealTimeMeta xmlns="urn:schemas-professionalDisc:nonRealTimeMeta:ver.2.20" lastUpdate="2026-06-13T14:30:02+02:00">
+	<Duration value="50"/>
+	<CreationDate value="2026-06-13T14:30:00+02:00"/>
+	<VideoFormat><VideoFrame videoCodec="AVC_1280_720_HP@L41" captureFps="25p" formatFps="25p"/></VideoFormat>
+	<Device manufacturer="Sony" modelName="ILCE-7M3" serialNo="0000000"/>
+</NonRealTimeMeta>

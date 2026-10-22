@@ -141,6 +141,9 @@ pub fn load(
                 PreviewFormat::JpegXl => return Err(PreviewError::Unsupported(path.to_path_buf())),
             }
         }
+        // Image prise à 10 % de la durée, par ffmpeg.
+        MediaFormat::Video => crate::video::thumbnail(path, min_side.max(256))
+            .ok_or_else(|| PreviewError::Unsupported(path.to_path_buf()))?,
         MediaFormat::Image => {
             let ext = path
                 .extension()

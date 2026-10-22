@@ -50,6 +50,10 @@ pub struct MediaSummary {
     /// Ratés probables : « blur », « under », « over », « eyes », séparés
     /// par des espaces ; vide si rien n'est signalé ou pas encore analysé.
     pub misses: String,
+    /// « photo » ou « video ».
+    pub kind: String,
+    /// Vidéo : durée en millisecondes, si FFmpeg a pu la lire.
+    pub duration_ms: Option<i64>,
 }
 
 const SUMMARY_COLUMNS: &str = "m.id, m.album_id, m.path, m.captured_at, m.rating, m.flag, m.color,
@@ -61,7 +65,8 @@ const SUMMARY_COLUMNS: &str = "m.id, m.album_id, m.path, m.captured_at, m.rating
      coalesce((SELECT trim(CASE WHEN a.blurry = 1 THEN 'blur ' ELSE '' END
                            || coalesce(a.exposure, '')
                            || CASE WHEN a.eyes_closed = 1 THEN ' eyes' ELSE '' END)
-                 FROM analysis a WHERE a.media_id = m.id), '')";
+                 FROM analysis a WHERE a.media_id = m.id), ''),
+     m.kind, (SELECT v.duration_ms FROM media_video v WHERE v.media_id = m.id)";
 
 /// Condition SQL (alias `m`) : photo hors rafale, ou dessus visible de sa
 /// rafale (la photo choisie si elle est encore là, sinon la première).
@@ -92,6 +97,8 @@ fn summary(r: &rusqlite::Row<'_>, stack_size: i64) -> rusqlite::Result<MediaSumm
         burst_id: r.get(13)?,
         burst_size: r.get(14)?,
         misses: r.get(15)?,
+        kind: r.get(16)?,
+        duration_ms: r.get(17)?,
     })
 }
 
@@ -156,7 +163,7 @@ pub fn list_media(
     ))?;
     let heads: Vec<MediaSummary> = stmt
         .query_map(rusqlite::params_from_iter(values), |r| {
-            summary(r, r.get(16)?)
+            summary(r, r.get(18)?)
         })?
         .collect::<Result<_, _>>()?;
     let heads = gather_bursts(heads, &query.expanded);
@@ -520,7 +527,7 @@ pub fn generate_previews(
     let mut generated = preview::generate(&abs, format, orientation, cache_root, media_id)?;
     let mut source = match format {
         MediaFormat::Raw => "embedded",
-        MediaFormat::Image => "decoded",
+        MediaFormat::Image | MediaFormat::Video => "decoded",
     };
     // Aperçu intégré plus petit que le grand palier (Sony, Panasonic) : le
     // JPEG du boîtier, s'il est dans la pile, donne des aperçus nets.

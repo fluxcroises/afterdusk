@@ -32,3 +32,6 @@ src/assets/accueil.JPG
 
 # ONNX Runtime (décision 0010) : récupéré par scripts/fetch-onnxruntime.mjs
 src-tauri/resources/onnxruntime/
+
+# FFmpeg (décision 0012) : récupéré par scripts/fetch-ffmpeg.mjs
+src-tauri/resources/ffmpeg/

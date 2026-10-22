@@ -56,6 +56,15 @@ jobs:
       - name: ONNX Runtime — bibliothèque officielle, vérifiée
         run: node scripts/fetch-onnxruntime.mjs
 
+      - name: FFmpeg (cache)
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/resources/ffmpeg
+          key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/fetch-ffmpeg.mjs') }}
+
+      - name: FFmpeg — binaires vérifiés (décision 0012)
+        run: node scripts/fetch-ffmpeg.mjs
+
       - name: Dépendances de l'interface
         run: npm ci
 

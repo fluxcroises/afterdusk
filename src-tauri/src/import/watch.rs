@@ -11,9 +11,9 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 use walkdir::WalkDir;
@@ -37,15 +37,27 @@ pub struct WatchedFolder {
     pub album_name: String,
     pub settings: AutoSettings,
     pub enabled: bool,
-    /// Activation, au millième de seconde (UTC) : ce qui était là avant est ignoré.
+    /// Activation, au millième de seconde (UTC).
     pub active_since: String,
+    /// Fichiers présents à l'activation (chemins relatifs au dossier) : ignorés.
+    #[serde(skip)]
+    pub existing: HashSet<String>,
 }
 
 impl WatchedFolder {
-    fn since(&self) -> SystemTime {
-        DateTime::parse_from_rfc3339(&self.active_since)
-            .map(|d| SystemTime::from(d.with_timezone(&Utc)))
-            .unwrap_or(SystemTime::UNIX_EPOCH)
+    /// Chemin relatif au dossier, quelle que soit la forme donnée par le
+    /// système (`/var` ou `/private/var` sous macOS).
+    fn relative(&self, path: &Path) -> Option<String> {
+        let rel = path
+            .strip_prefix(&self.path)
+            .ok()
+            .map(Path::to_path_buf)
+            .or_else(|| {
+                let canon = std::fs::canonicalize(&self.path).ok()?;
+                let file = std::fs::canonicalize(path).ok()?;
+                file.strip_prefix(canon).ok().map(Path::to_path_buf)
+            })?;
+        Some(rel.to_string_lossy().replace('\\', "/"))
     }
 }
 
@@ -109,10 +121,46 @@ pub fn list(conn: &Connection) -> Result<Vec<WatchedFolder>, ImportError> {
                 settings: auto::decode(&r.get::<_, String>(5)?),
                 enabled: r.get(6)?,
                 active_since: r.get(7)?,
+                existing: HashSet::new(),
             })
         })?
-        .collect::<Result<_, _>>()?;
+        .collect::<Result<Vec<WatchedFolder>, _>>()?;
+    let mut rows = rows;
+    let mut stmt = conn.prepare("SELECT path FROM watched_existing WHERE folder_id = ?1")?;
+    for folder in &mut rows {
+        folder.existing = stmt
+            .query_map([folder.id], |r| r.get(0))?
+            .collect::<Result<_, _>>()?;
+    }
     Ok(rows)
+}
+
+/// Médias du dossier, chemins relatifs.
+fn media_files(path: &Path) -> Vec<String> {
+    WalkDir::new(path)
+        .follow_links(false)
+        .into_iter()
+        .filter_entry(|e| e.depth() == 0 || !hidden(e.path()))
+        .filter_map(Result::ok)
+        .filter(|e| e.file_type().is_file() && format_of(e.path()).is_some())
+        .filter_map(|e| {
+            e.path()
+                .strip_prefix(path)
+                .ok()
+                .map(|r| r.to_string_lossy().replace('\\', "/"))
+        })
+        .collect()
+}
+
+/// Relève les fichiers présents : ils seront ignorés.
+fn snapshot(conn: &Connection, id: i64, path: &Path) -> Result<(), ImportError> {
+    conn.execute("DELETE FROM watched_existing WHERE folder_id = ?1", [id])?;
+    let mut insert =
+        conn.prepare("INSERT OR IGNORE INTO watched_existing (folder_id, path) VALUES (?1, ?2)")?;
+    for rel in media_files(path) {
+        insert.execute(params![id, rel])?;
+    }
+    Ok(())
 }
 
 /// Ajoute un dossier, actif aussitôt ; ce qu'il contient déjà est ignoré.
@@ -142,7 +190,9 @@ pub fn add(
             now_utc()
         ],
     )?;
-    Ok(conn.last_insert_rowid())
+    let id = conn.last_insert_rowid();
+    snapshot(conn, id, path)?;
+    Ok(id)
 }
 
 pub fn update(
@@ -168,11 +218,20 @@ pub fn update(
 /// Active ou suspend ; une réactivation ignore ce qui est arrivé entre-temps.
 pub fn set_enabled(conn: &Connection, id: i64, enabled: bool) -> Result<(), ImportError> {
     let changed = if enabled {
-        conn.execute(
+        let changed = conn.execute(
             "UPDATE watched_folders SET enabled = 1, active_since = ?2
               WHERE id = ?1 AND enabled = 0",
             params![id, now_precise()],
-        )?
+        )?;
+        if changed > 0 {
+            let path: String = conn.query_row(
+                "SELECT path FROM watched_folders WHERE id = ?1",
+                [id],
+                |r| r.get(0),
+            )?;
+            snapshot(conn, id, Path::new(&path))?;
+        }
+        changed
     } else {
         conn.execute("UPDATE watched_folders SET enabled = 0 WHERE id = ?1", [id])?
     };
@@ -242,21 +301,14 @@ fn hidden(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Fichier média arrivé après l'activation (créé ou modifié après).
+/// Fichier média absent du relevé fait à l'activation.
 pub fn arrived(folder: &WatchedFolder, path: &Path) -> bool {
-    if hidden(path) || format_of(path).is_none() {
+    if hidden(path) || format_of(path).is_none() || !path.is_file() {
         return false;
     }
-    let Ok(meta) = std::fs::metadata(path) else {
-        return false;
-    };
-    if !meta.is_file() {
-        return false;
-    }
-    let since = folder.since();
-    let created = meta.created().ok();
-    let modified = meta.modified().ok();
-    created.max(modified).is_some_and(|t| t > since)
+    folder
+        .relative(path)
+        .is_some_and(|rel| !folder.existing.contains(&rel))
 }
 
 /// Médias arrivés dans le dossier depuis l'activation (relecture complète).
