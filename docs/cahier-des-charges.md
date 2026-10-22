@@ -411,7 +411,7 @@ Objectif : gagner du temps au tri et partager avec des clients.
 
 Objectif : livrer aux bons formats, habiller une photo sans quitter Afterdusk, et adapter l'interface au niveau du photographe (demandes de l'utilisateur, 2026-10-22).
 
-- [ ] Modèles de livraison présentés en vignettes, groupés par usage, avec recadrage ajustable par format
+- [x] Modèles de livraison présentés en vignettes, groupés par usage, avec recadrage ajustable par format
 - [ ] Éditeur de livraison simple : texte, logo, cadre, fond, collage de 2 à 4 photos, export à pleine résolution
 - [ ] Dérushage vidéo : entrée, sortie, découpe, export sans réencodage
 - [ ] Profils d'interface Simplifiée, De base et Complète, proposés par l'assistant de bienvenue et modifiables à tout moment
