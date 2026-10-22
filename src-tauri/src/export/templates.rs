@@ -223,6 +223,14 @@ pub fn framings(
         .collect())
 }
 
+/// Point à garder au centre d'une case : le plus grand visage de l'aperçu
+/// rendu, sinon le milieu de la photo.
+pub fn focus(cache_root: &Path, item: i64) -> [f64; 2] {
+    cached_preview(cache_root, item)
+        .and_then(|img| subject(&img))
+        .map_or([0.5, 0.5], |(x, y)| [x, y])
+}
+
 /// Aperçu 1024 du cache (rendu avec les retouches), s'il existe.
 fn cached_preview(cache_root: &Path, item: i64) -> Option<RgbImage> {
     let data = std::fs::read(preview::cache_path(cache_root, item, 1024)).ok()?;

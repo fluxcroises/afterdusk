@@ -18,11 +18,13 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.8.3",
     "i18next": "^26.5.2",
+    "konva": "10.7.1",
     "lucide-react": "^1.59.0",
     "maplibre-gl": "6.12.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^17.1.0",
+    "react-konva": "19.3.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

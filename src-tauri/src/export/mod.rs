@@ -3,6 +3,7 @@
 
 pub mod color;
 pub mod contact_sheet;
+pub mod design;
 pub mod encode;
 pub mod gallery;
 pub mod heif;

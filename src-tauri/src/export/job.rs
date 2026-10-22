@@ -531,3 +531,89 @@ pub fn preview(
         .map_err(enc)?;
     Ok((size, Some(jpeg)))
 }
+
+/// Photo de la grille rendue pour remplir exactement `w` × `h` : juste assez
+/// grande, découpée autour de `focus` (fractions), accentuée.
+pub(crate) fn render_cover(
+    conn: &Connection,
+    item: i64,
+    w: u32,
+    h: u32,
+    focus: [f64; 2],
+    sharpen: Sharpen,
+) -> Result<super::render::Rendered, ExportError> {
+    let p = photo(conn, item)
+        .map_err(|(file, code, detail)| ExportError::Settings(format!("{file} {code} {detail}")))?;
+    let (fw, fh) = full_size(conn, &p)?;
+    let scale = (f64::from(w) / f64::from(fw.max(1))).max(f64::from(h) / f64::from(fh.max(1)));
+    let width = (f64::from(fw) * scale).ceil() as u32;
+    let options = RenderOptions {
+        resize: Resize::Width(width.max(1)),
+        sharpen: Sharpen::None,
+        color: ColorSpace::Srgb,
+    };
+    let image = render_source(conn, &p, options, None)?;
+    let ratio = f64::from(w) / f64::from(h.max(1));
+    let rect = templates::fit(ratio, image.width, image.height, (focus[0], focus[1]));
+    let framed = super::render::crop_fraction(&image, rect);
+    drop(image);
+    let sized = super::render::resize_exact(framed, w, h);
+    super::render::finish(sized, Resize::Full, sharpen, ColorSpace::Srgb, None)
+}
+
+/// Preset qui donne le format, les couleurs et les métadonnées d'un usage.
+pub fn group_preset(group: templates::Group) -> &'static str {
+    match group {
+        templates::Group::Social => "instagram",
+        templates::Group::Print => "full",
+        templates::Group::Web => "web",
+    }
+}
+
+/// Exporte une composition à pleine résolution dans `dir`, sous `name`.
+/// Format et couleurs du preset de son usage ; métadonnées de sa première
+/// photo (auteur, copyright), filtrées par ce preset.
+pub fn export_design(
+    conn: &Connection,
+    settings: &ExportSettings,
+    design: &super::design::Design,
+    dir: &Path,
+    name: &str,
+) -> Result<PathBuf, ExportError> {
+    let template = templates::find(&design.template)
+        .ok_or_else(|| ExportError::Settings(format!("modèle inconnu : {}", design.template)))?;
+    let preset_id = group_preset(template.group);
+    let preset = settings
+        .presets
+        .iter()
+        .find(|p| p.id == preset_id)
+        .ok_or_else(|| ExportError::Settings(format!("preset absent : {preset_id}")))?;
+    // Un preset réglé sur les originaux n'a pas de format rendu : JPEG.
+    let format = preset
+        .output
+        .format()
+        .unwrap_or(encode::Format::Jpeg { quality: 95 });
+    let color = if matches!(preset.output, Output::Avif { .. }) {
+        ColorSpace::Srgb
+    } else {
+        preset.color
+    };
+    let first = design
+        .photos
+        .first()
+        .ok_or_else(|| ExportError::Settings("composition sans photo".into()))?;
+    let lead = photo(conn, first.item)
+        .map_err(|(file, code, detail)| ExportError::Settings(format!("{file} {code} {detail}")))?;
+    let mut page = super::design::compose(design, |p, w, h| {
+        render_cover(conn, p.item, w, h, p.focus, template.sharpen())
+    })?;
+    color.convert(&mut page.rgb)?;
+    std::fs::create_dir_all(dir)?;
+    let stem = presets::clean_name(name);
+    let stem = if stem.is_empty() {
+        "Composition".to_owned()
+    } else {
+        stem
+    };
+    write_rendered(conn, &lead, &page, preset, format, color, dir, &stem)
+}

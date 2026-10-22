@@ -82,48 +82,45 @@ pub fn set_studio_logo_path(path: Option<PathBuf>) {
     }
 }
 
-fn studio_logo_path() -> Option<PathBuf> {
+pub(crate) fn studio_logo_path() -> Option<PathBuf> {
     STUDIO_LOGO.read().ok()?.clone().filter(|p| p.is_file())
 }
 
 /// Filigrane prêt à poser : couleur et transparence par pixel.
-struct Stamp {
-    width: u32,
-    height: u32,
+pub(crate) struct Stamp {
+    pub width: u32,
+    pub height: u32,
     /// RVB (0 à 1) et alpha (0 à 1), entrelacés.
-    rgba: Vec<f32>,
+    pub rgba: Vec<f32>,
 }
 
-fn text_stamp(text: &str, dark: bool, target_width: f32) -> Result<Option<Stamp>, ExportError> {
+fn font(weight: f32) -> Result<FontRef<'static>, ExportError> {
     let mut font =
         FontRef::try_from_slice(FONT).map_err(|e| ExportError::Watermark(e.to_string()))?;
-    font.set_variation(b"wght", FONT_WEIGHT);
-    let text = text.trim();
-    if text.is_empty() || target_width < 1.0 {
-        return Ok(None);
-    }
-    // Largeur du texte à 100 px, puis l'échelle qui donne la largeur voulue.
-    let measure = |scale: PxScale| {
-        let f = font.as_scaled(scale);
-        let mut x = 0.0f32;
-        let mut previous = None;
-        for c in text.chars() {
-            let id = f.glyph_id(c);
-            if let Some(p) = previous {
-                x += f.kern(p, id);
-            }
-            x += f.h_advance(id);
-            previous = Some(id);
-        }
-        x
-    };
-    let width_at_100 = measure(PxScale::from(100.0));
-    if width_at_100 <= 0.0 {
-        return Ok(None);
-    }
-    let scale = PxScale::from((100.0 * target_width / width_at_100).max(4.0));
+    font.set_variation(b"wght", weight);
+    Ok(font)
+}
+
+/// Largeur d'une ligne à l'échelle donnée.
+fn measure(font: &FontRef<'_>, scale: PxScale, text: &str) -> f32 {
     let f = font.as_scaled(scale);
-    let width = measure(scale).ceil() as u32 + 2;
+    let mut x = 0.0f32;
+    let mut previous = None;
+    for c in text.chars() {
+        let id = f.glyph_id(c);
+        if let Some(p) = previous {
+            x += f.kern(p, id);
+        }
+        x += f.h_advance(id);
+        previous = Some(id);
+    }
+    x
+}
+
+/// Une ligne de texte tracée à l'échelle donnée, dans la couleur `ink`.
+fn rasterize(font: &FontRef<'_>, scale: PxScale, text: &str, ink: [f32; 3]) -> Stamp {
+    let f = font.as_scaled(scale);
+    let width = measure(font, scale, text).ceil() as u32 + 2;
     let height = (f.ascent() - f.descent()).ceil() as u32 + 2;
     let mut alpha = vec![0.0f32; (width * height) as usize];
     let mut x = 1.0f32;
@@ -150,16 +147,52 @@ fn text_stamp(text: &str, dark: bool, target_width: f32) -> Result<Option<Stamp>
             });
         }
     }
-    let ink = if dark { 0.0 } else { 1.0 };
-    let rgba = alpha.iter().flat_map(|a| [ink, ink, ink, *a]).collect();
-    Ok(Some(Stamp {
+    let rgba = alpha
+        .iter()
+        .flat_map(|a| [ink[0], ink[1], ink[2], *a])
+        .collect();
+    Stamp {
         width,
         height,
         rgba,
-    }))
+    }
 }
 
-fn image_stamp(path: &std::path::Path, target_width: u32) -> Result<Option<Stamp>, ExportError> {
+fn text_stamp(text: &str, dark: bool, target_width: f32) -> Result<Option<Stamp>, ExportError> {
+    let font = font(FONT_WEIGHT)?;
+    let text = text.trim();
+    if text.is_empty() || target_width < 1.0 {
+        return Ok(None);
+    }
+    // Largeur du texte à 100 px, puis l'échelle qui donne la largeur voulue.
+    let width_at_100 = measure(&font, PxScale::from(100.0), text);
+    if width_at_100 <= 0.0 {
+        return Ok(None);
+    }
+    let scale = PxScale::from((100.0 * target_width / width_at_100).max(4.0));
+    let ink = if dark { 0.0 } else { 1.0 };
+    Ok(Some(rasterize(&font, scale, text, [ink; 3])))
+}
+
+/// Ligne de texte en Inter, de `px` pixels de corps et de graisse `weight`
+/// (100 à 900), pour les compositions de Livrer.
+pub(crate) fn text_line(
+    text: &str,
+    px: f32,
+    weight: f32,
+    ink: [f32; 3],
+) -> Result<Option<Stamp>, ExportError> {
+    if text.trim().is_empty() || !px.is_finite() || px < 1.0 {
+        return Ok(None);
+    }
+    let font = font(weight.clamp(100.0, 900.0))?;
+    Ok(Some(rasterize(&font, PxScale::from(px), text, ink)))
+}
+
+pub(crate) fn image_stamp(
+    path: &std::path::Path,
+    target_width: u32,
+) -> Result<Option<Stamp>, ExportError> {
     let logo = image::open(path)
         .map_err(|e| ExportError::Watermark(format!("{} : {e}", path.display())))?
         .to_rgba8();
@@ -232,6 +265,13 @@ pub fn apply(img: &mut Rendered, wm: &Watermark) -> Result<(), ExportError> {
         place(cx, img.width, stamp.width),
         place(cy, img.height, stamp.height),
     );
+    blend(img, &stamp, x0, y0, opacity as f32);
+    Ok(())
+}
+
+/// Pose un tampon en (x0, y0), avec l'opacité donnée (0 à 1) ; ce qui
+/// déborde de l'image est ignoré.
+pub(crate) fn blend(img: &mut Rendered, stamp: &Stamp, x0: i64, y0: i64, opacity: f32) {
     for sy in 0..stamp.height {
         let y = y0 + i64::from(sy);
         if y < 0 || y >= i64::from(img.height) {
@@ -243,7 +283,7 @@ pub fn apply(img: &mut Rendered, wm: &Watermark) -> Result<(), ExportError> {
                 continue;
             }
             let s = ((sy * stamp.width + sx) * 4) as usize;
-            let a = stamp.rgba[s + 3] * opacity as f32;
+            let a = stamp.rgba[s + 3] * opacity;
             if a <= 0.0 {
                 continue;
             }
@@ -253,7 +293,6 @@ pub fn apply(img: &mut Rendered, wm: &Watermark) -> Result<(), ExportError> {
             }
         }
     }
-    Ok(())
 }
 
 #[cfg(test)]

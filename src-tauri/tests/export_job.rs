@@ -10,6 +10,7 @@ use std::sync::atomic::AtomicBool;
 
 use afterdusk_lib::develop::settings::DevelopSettings;
 use afterdusk_lib::develop::store;
+use afterdusk_lib::export::design::{self, Align, Design, DesignPhoto, DesignText};
 use afterdusk_lib::export::job::{self, ExportRequest, Target};
 use afterdusk_lib::export::presets::{ExportSettings, Output};
 use afterdusk_lib::export::templates;
@@ -454,6 +455,114 @@ fn modeles_de_livraison() {
     let both = image::open(print.join("paysage.jpg")).unwrap().into_rgb8();
     assert!(both.get_pixel(10, 600)[0] > 150);
     assert!(both.get_pixel(1790, 600)[2] > 150);
+}
+
+/// Éditeur de livraison : deux photos côte à côte sur un fond, un texte,
+/// exportées à la taille du modèle ; originaux intacts.
+#[test]
+fn composition_de_deux_photos() {
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("carte");
+    fs::create_dir_all(&card).unwrap();
+    image::RgbImage::from_pixel(3000, 2000, image::Rgb([220, 20, 20]))
+        .save(card.join("a_rouge.jpg"))
+        .unwrap();
+    image::RgbImage::from_pixel(2000, 3000, image::Rgb([20, 20, 220]))
+        .save(card.join("b_bleu.jpg"))
+        .unwrap();
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let db_path = dir.path().join("afterdusk.db");
+    let mut conn = db::open(&db_path).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let mut files: Vec<_> = fs::read_dir(&card)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .collect();
+    files.sort();
+    let id = import::plan(
+        &mut conn,
+        &ImportOptions {
+            library_id: lib.id,
+            source_path: card.clone(),
+            source_label: "Carte".into(),
+            files,
+            album_name: "Composition".into(),
+            album_per_day: false,
+            rename: false,
+            backup: false,
+            keywords: vec![],
+            creator: None,
+            rights: None,
+            skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
+        },
+    )
+    .unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+    let ids: Vec<i64> = conn
+        .prepare("SELECT id FROM media ORDER BY path")
+        .unwrap()
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    let originals: Vec<_> = fs::read_dir(&root)
+        .unwrap()
+        .flat_map(|e| walk(&e.unwrap().path()))
+        .filter(|p| p.extension().is_some_and(|e| e != "xmp"))
+        .map(|p| (p.clone(), common::sha256(&p)))
+        .collect();
+
+    let doc = Design {
+        version: design::VERSION,
+        template: "facebook-post".into(),
+        width: 1200,
+        height: 630,
+        photos: ids
+            .iter()
+            .map(|&item| DesignPhoto {
+                item,
+                focus: [0.5, 0.5],
+            })
+            .collect(),
+        background: "#ffffff".into(),
+        margin: 5.0,
+        frame: None,
+        texts: vec![DesignText {
+            text: "Léa & Hugo".into(),
+            x: 0.5,
+            y: 0.45,
+            size: 8.0,
+            weight: 700,
+            color: "#000000".into(),
+            align: Align::Center,
+        }],
+        logo: None,
+    };
+    let saved = design::save(&conn, None, "Faire-part : juin", &doc).unwrap();
+    let doc = design::get(&conn, saved).unwrap().unwrap().document;
+    let out = dir.path().join("Livraison");
+    let file = job::export_design(
+        &conn,
+        &ExportSettings::default(),
+        &doc,
+        &out,
+        "Faire-part : juin",
+    )
+    .unwrap();
+    let img = image::open(&file).unwrap().into_rgb8();
+    assert_eq!((img.width(), img.height()), (1200, 630));
+    // Fond blanc dans la marge, rouge à gauche, bleu à droite.
+    let px = |x: u32, y: u32| img.get_pixel(x, y).0;
+    assert!(px(5, 5).iter().all(|&c| c > 240), "{:?}", px(5, 5));
+    assert!(px(200, 100)[0] > 180 && px(200, 100)[2] < 70);
+    assert!(px(1000, 100)[2] > 180 && px(1000, 100)[0] < 70);
+    for (orig, hash) in &originals {
+        assert_eq!(&common::sha256(orig), hash);
+    }
 }
 
 fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {

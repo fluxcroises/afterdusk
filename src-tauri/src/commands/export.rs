@@ -11,6 +11,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
 use crate::export::ExportError;
+use crate::export::design;
 use crate::export::job::{self, ExportRequest, Progress};
 use crate::export::presets::{self, ExportPreset, ExportSettings, FILE};
 use crate::export::templates::{self, Framing, Template};
@@ -236,5 +237,62 @@ pub async fn delivery_framing_reset(
     blocking(
         move || Ok(templates::reset(&conn, item, &template).map_err(crate::db::DbError::from)?),
     )
+    .await
+}
+
+/// Compositions de l'éditeur de livraison, les plus récentes d'abord.
+#[tauri::command]
+pub async fn design_list(state: State<'_, AppState>) -> CommandResult<Vec<design::Saved>> {
+    let conn = state.connect()?;
+    blocking(move || Ok(design::list(&conn).map_err(crate::db::DbError::from)?)).await
+}
+
+#[tauri::command]
+pub async fn design_save(
+    state: State<'_, AppState>,
+    id: Option<i64>,
+    name: String,
+    document: design::Design,
+) -> CommandResult<i64> {
+    let conn = state.connect()?;
+    blocking(move || Ok(design::save(&conn, id, &name, &document)?)).await
+}
+
+#[tauri::command]
+pub async fn design_delete(state: State<'_, AppState>, id: i64) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || Ok(design::delete(&conn, id).map_err(crate::db::DbError::from)?)).await
+}
+
+/// Point d'une photo à garder au centre de sa case (visage, sinon milieu).
+#[tauri::command]
+pub async fn design_focus(state: State<'_, AppState>, item: i64) -> CommandResult<[f64; 2]> {
+    let cache = state.cache_root.clone();
+    blocking(move || Ok(templates::focus(&cache, item))).await
+}
+
+/// Exporte une composition enregistrée dans le dossier de destination de
+/// Livrer ; renvoie le fichier écrit.
+#[tauri::command]
+pub async fn design_export(state: State<'_, AppState>, id: i64) -> CommandResult<PathBuf> {
+    let conn = state.connect()?;
+    let path = settings_file(&state);
+    blocking(move || {
+        let settings = presets::load(&path)?;
+        let destination = settings
+            .destination
+            .clone()
+            .ok_or_else(|| CommandError::new("noDestination", "aucun dossier de destination"))?;
+        let saved = design::get(&conn, id)
+            .map_err(crate::db::DbError::from)?
+            .ok_or_else(|| CommandError::new("designNotFound", id))?;
+        Ok(job::export_design(
+            &conn,
+            &settings,
+            &saved.document,
+            &destination,
+            &saved.name,
+        )?)
+    })
     .await
 }
