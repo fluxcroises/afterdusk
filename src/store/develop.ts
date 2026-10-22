@@ -1507,25 +1507,19 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       let crop = c;
       if (base !== null) {
         const want = base;
-        // Plus grand cadre de ce ratio centré sur l'actuel, dans le canevas.
-        const cx = (c.left + c.right) / 2;
-        const cy = (c.top + c.bottom) / 2;
-        let w = c.right - c.left;
-        let h = (w * canvas) / want;
-        if (h > c.bottom - c.top) {
-          h = c.bottom - c.top;
-          w = (h * want) / canvas;
+        // Comme dans Photos : le plus grand cadre de ce ratio dans l'image,
+        // centré sur l'actuel et décalé s'il déborderait.
+        let w = 1;
+        let h = canvas / want;
+        if (h > 1) {
+          h = 1;
+          w = want / canvas;
         }
-        const half = (v: number, lo: number) => Math.min(v / 2, lo, 1 - lo);
-        const hw = half(w, cx);
-        const hh = half(h, cy);
-        const k = Math.min(hw / (w / 2), hh / (h / 2));
-        crop = {
-          left: cx - (w / 2) * k,
-          right: cx + (w / 2) * k,
-          top: cy - (h / 2) * k,
-          bottom: cy + (h / 2) * k,
-        };
+        const center = (mid: number, size: number) =>
+          Math.min(Math.max(mid, size / 2), 1 - size / 2);
+        const cx = center((c.left + c.right) / 2, w);
+        const cy = center((c.top + c.bottom) / 2, h);
+        crop = { left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2 };
       }
       const next = await constrained({ ...g, aspect, crop });
       changeGeometry(next, "geometry.aspect");

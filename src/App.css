@@ -4447,14 +4447,13 @@ input.locate-offset {
 }
 
 .aspect-choice[aria-pressed="true"] {
-  color: var(--ad-text);
+  color: var(--ad-accent);
   background: var(--ad-surface);
-  box-shadow: inset 0 0 0 1px var(--ad-accent);
   font-weight: 600;
 }
 
 .aspect-choice:focus-visible {
-  outline: 2px solid var(--ad-accent);
+  outline: 2px solid var(--ad-text-secondary);
   outline-offset: -2px;
 }
 
