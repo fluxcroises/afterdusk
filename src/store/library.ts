@@ -686,7 +686,9 @@ export const useLibrary = create<LibraryState>((set, get) => {
       const libraryId = get().libraryId;
       if (libraryId === null) return;
       try {
-        set({ albums: await libraryApi.albumsList(libraryId) });
+        const albums = await libraryApi.albumsList(libraryId);
+        // Le total du catalogue suit : une photo arrivée d'un dossier surveillé y compte.
+        set({ albums, total: albums.reduce((n, a) => n + a.count, 0) });
       } catch (e) {
         set({ error: toCommandError(e) });
       }
