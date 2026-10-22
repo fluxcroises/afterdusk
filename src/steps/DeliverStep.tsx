@@ -1,7 +1,7 @@
 import { useGallery } from "../store/gallery";
 import { useContactSheet } from "../store/contactSheet";
 import { Images } from "lucide-react";
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { CatalogPanel } from "../components/CatalogPanels";
 import {
@@ -19,7 +19,13 @@ import { MediaGrid } from "../components/MediaGrid";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { useDeliver } from "../store/deliver";
 import { useLibrary } from "../store/library";
+import { useDesigns } from "../store/designs";
 import { useTemplates } from "../store/templates";
+
+// L'éditeur et Konva ne se chargent qu'à l'ouverture d'une composition.
+const DesignEditor = lazy(() =>
+  import("../components/DesignEditor").then((m) => ({ default: m.DesignEditor })),
+);
 
 /**
  * Livrer : la sélection au centre, les presets d'export cochés à droite
@@ -36,6 +42,7 @@ export function DeliverStep() {
   const view = useTemplates((s) => s.view);
   const templatesError = useTemplates((s) => s.error);
   const chosenTemplates = useTemplates((s) => s.chosen.length);
+  const designing = useDesigns((s) => s.draft !== null);
 
   useEffect(() => {
     void useDeliver.getState().load();
@@ -119,6 +126,11 @@ export function DeliverStep() {
         <TemplatesView />
       ) : (
         <MediaGrid />
+      )}
+      {designing && (
+        <Suspense fallback={null}>
+          <DesignEditor />
+        </Suspense>
       )}
     </ScreenLayout>
   );

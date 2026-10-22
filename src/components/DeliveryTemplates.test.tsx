@@ -51,7 +51,13 @@ describe("modèles de livraison", () => {
     invoke.mockReset();
     invoke.mockImplementation((cmd) =>
       Promise.resolve(
-        cmd === "delivery_templates" ? templates : cmd === "delivery_framings" ? framings : null,
+        cmd === "delivery_templates"
+          ? templates
+          : cmd === "delivery_framings"
+            ? framings
+            : cmd === "design_list"
+              ? []
+              : null,
       ),
     );
     useTemplates.setState({ templates: [], framings: [], chosen: [], editing: null, item: null });

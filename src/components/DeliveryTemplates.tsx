@@ -1,4 +1,4 @@
-import { Crop, LayoutTemplate, TriangleAlert } from "lucide-react";
+import { Crop, LayoutPanelLeft, LayoutTemplate, Pencil, TriangleAlert } from "lucide-react";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
+import { useDesigns } from "../store/designs";
 import type { CropRect } from "../store/develop";
 import { useLibrary } from "../store/library";
 import { type Grip, dragged } from "../ui/crop";
@@ -64,6 +65,15 @@ function TemplateCard({
     st.choose(template.id);
     st.setEditing(template.id);
   };
+  // Composition : la photo active d'abord, puis le reste de la sélection.
+  const compose = () => {
+    const lib = useLibrary.getState();
+    const items =
+      lib.selectedId === null
+        ? lib.selectedIds
+        : [lib.selectedId, ...lib.selectedIds.filter((i) => i !== lib.selectedId)];
+    void useDesigns.getState().create(template.id, width, height, items, name);
+  };
   return (
     <li className="template-card" data-chosen={chosen || undefined}>
       <button
@@ -88,8 +98,43 @@ function TemplateCard({
       </button>
       <span className="template-edit">
         <IconButton icon={Crop} label={t("templates.frame", { name })} onClick={open} />
+        <IconButton
+          icon={LayoutPanelLeft}
+          label={t("design.compose", { name })}
+          onClick={compose}
+        />
       </span>
     </li>
+  );
+}
+
+/** Compositions enregistrées : rouvrir pour modifier ou exporter. */
+function SavedDesigns() {
+  const { t } = useTranslation();
+  const saved = useDesigns((s) => s.saved);
+  if (saved.length === 0) return null;
+  return (
+    <section className="templates-group" aria-labelledby="templates-designs">
+      <h2 id="templates-designs" className="templates-group-title">
+        {t("design.saved")}
+      </h2>
+      <ul className="design-saved">
+        {saved.map((d) => (
+          <li key={d.id}>
+            <span className="design-saved-name">{d.name}</span>
+            <span className="template-size">
+              {t(`templates.names.${d.document.template}`)} ·{" "}
+              {t("design.photos", { count: d.document.photos.length })}
+            </span>
+            <IconButton
+              icon={Pencil}
+              label={t("design.open", { name: d.name })}
+              onClick={() => useDesigns.getState().open(d)}
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -110,6 +155,9 @@ export function TemplatesView() {
   useEffect(() => {
     void useTemplates.getState().load(item);
   }, [item, version]);
+  useEffect(() => {
+    void useDesigns.getState().load();
+  }, []);
 
   if (item === null) {
     return <EmptyState icon={LayoutTemplate} title={t("templates.needPhoto")} />;
@@ -122,6 +170,7 @@ export function TemplatesView() {
       <p className="panel-note templates-hint">
         {t(many ? "templates.hintMany" : "templates.hint")}
       </p>
+      <SavedDesigns />
       {GROUPS.map((group) => {
         const list = templates.filter((tp) => tp.group === group);
         if (list.length === 0) return null;
