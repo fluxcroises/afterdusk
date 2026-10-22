@@ -1,3 +1,4 @@
+import { GalleryDialog, SelectionImportDialog } from "./components/GalleryDialogs";
 import { ClientDialog } from "./components/ClientsPanels";
 import { ContactSheetDialog } from "./components/ContactSheetDialog";
 import { AppDialog } from "./components/AppDialog";
@@ -54,6 +55,8 @@ export default function App() {
       <TimeFixDialog />
       <ContactSheetDialog />
       <ClientDialog />
+      <GalleryDialog />
+      <SelectionImportDialog />
       <AppDialog />
     </div>
   );

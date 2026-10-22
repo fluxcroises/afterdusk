@@ -240,7 +240,8 @@
     "logoReplace": "Remplacer le logo…",
     "logoRemove": "Retirer",
     "logoImages": "Images",
-    "sessions": "Séances"
+    "sessions": "Séances",
+    "identityEmail": "Courriel"
   },
   "menu": {
     "app": "Afterdusk",
@@ -364,7 +365,10 @@
     "logo": "Ce fichier ne peut pas servir de logo.",
     "contactSheet": "La planche contact n'a pas pu être enregistrée.",
     "clientNotFound": "Ce client n'existe plus.",
-    "sessionTypeNotFound": "Ce type de séance n'existe plus."
+    "sessionTypeNotFound": "Ce type de séance n'existe plus.",
+    "gallery": "La galerie n'a pas pu être créée.",
+    "selectionUnreadable": "Aucune sélection Afterdusk dans ce texte : il manque la ligne entre crochets qui commence par [AD-.",
+    "galleryUnknown": "Cette sélection vient d'une galerie inconnue de cette bibliothèque."
   },
   "home": {
     "morning": "Bonjour",
@@ -1330,5 +1334,65 @@
     "confirmDelete": "Retirer le type « {{name}} » ? Ses albums restent, sans type de séance.",
     "newName": "Nouveau type de séance",
     "add": "Ajouter"
+  },
+  "gallery": {
+    "open": "Galerie web…",
+    "title": "Galerie web",
+    "name": "Titre",
+    "intro": "Texte d'accueil",
+    "theme": "Thème",
+    "light": "Clair",
+    "dark": "Sombre",
+    "selection": "Le client choisit ses photos et vous renvoie sa sélection",
+    "noEmail": "Sans courriel dans Réglages > Identité, le client vous renverra un fichier ou un texte copié.",
+    "allowDownload": "Les visiteurs peuvent télécharger les photos",
+    "privacy": "Photos en 2 048 px, retouches comprises, sans aucune métadonnée (ni lieu, ni boîtier). La page n'appelle aucun site extérieur.",
+    "chooseFolder": "Dossier où créer la galerie",
+    "create": "Créer…",
+    "progress": "Photos : {{done}} / {{total}}",
+    "done_one": "Galerie créée : {{count}} photo, code {{code}}.",
+    "done_other": "Galerie créée : {{count}} photos, code {{code}}.",
+    "missing_one": "{{count}} photo sans image a été laissée de côté.",
+    "missing_other": "{{count}} photos sans image ont été laissées de côté.",
+    "hosting": "Déposez ce dossier sur votre hébergement, puis envoyez l'adresse au client. Il s'ouvre aussi tel quel, d'un double-clic sur index.html.",
+    "reveal": "Ouvrir le dossier",
+    "close": "Fermer",
+    "page": {
+      "photo": "Photo {n}",
+      "pick": "Choisir la photo {n}",
+      "unpick": "Retirer la photo {n} de la sélection",
+      "send": "Envoyer ma sélection",
+      "sendHint": "Envoyez la liste par courriel, ou enregistrez-la en fichier pour la joindre à votre réponse.",
+      "sendHintFile": "Enregistrez la liste en fichier ou copiez-la, puis envoyez-la à votre photographe.",
+      "mail": "Préparer le courriel",
+      "file": "Enregistrer la liste",
+      "copy": "Copier la liste",
+      "copied": "Liste copiée",
+      "close": "Fermer",
+      "previous": "Photo précédente",
+      "next": "Photo suivante",
+      "download": "Télécharger",
+      "emptySelection": "Touchez le cœur d'une photo pour la choisir.",
+      "selectionOne": "{count} photo choisie",
+      "selectionOther": "{count} photos choisies",
+      "listIntro": "Photos choisies ({count}) :",
+      "mailSubject": "Ma sélection – {title}",
+      "footer": "Code de la galerie : {code}"
+    },
+    "import": {
+      "open": "Sélection client…",
+      "title": "Sélection client",
+      "hint": "Collez le courriel du client, ou ouvrez le fichier qu'il vous a envoyé. Afterdusk retrouve la galerie grâce à son code.",
+      "paste": "Texte de la sélection",
+      "openFile": "Ouvrir un fichier…",
+      "textFiles": "Texte",
+      "found_one": "Galerie « {{title}} » : {{count}} photo choisie",
+      "found_other": "Galerie « {{title}} » : {{count}} photos choisies",
+      "unknown_one": "Le numéro {{numbers}} n'existe pas dans cette galerie.",
+      "unknown_other": "Les numéros {{numbers}} n'existent pas dans cette galerie.",
+      "otherLibrary": "Cette galerie vient d'une autre bibliothèque : la collection y sera créée.",
+      "apply": "Retenir et créer la collection",
+      "collectionName": "Sélection – {{name}}"
+    }
   }
 }

@@ -10,20 +10,12 @@ import {
   type Paper,
   useContactSheet,
 } from "../store/contactSheet";
-import { type MediaSummary, useLibrary } from "../store/library";
+import { deliveryPhotos, useLibrary } from "../store/library";
 import { useStudioLogo } from "../store/studioLogo";
 import { albumDates } from "../ui/format";
 import { ErrorBanner } from "./ErrorBanner";
 
 const COLUMNS = [2, 3, 4, 5, 6, 7, 8];
-
-/** Photos de la planche : la sélection s'il y en a une, sinon toute la grille. */
-function sheetPhotos(): MediaSummary[] {
-  const { media, selectedIds } = useLibrary.getState();
-  const chosen = selectedIds.length > 1 ? new Set(selectedIds) : null;
-  // Le fichier du dessous d'une paire RAW + JPEG n'est pas une autre photo.
-  return media.filter((m) => m.companionOf === null && (!chosen || chosen.has(m.id)));
-}
 
 /**
  * Livrer > Planche contact… : PDF numéroté d'un album, d'une collection ou
@@ -55,7 +47,7 @@ export function ContactSheetDialog() {
   }, [open]);
 
   if (!open) return null;
-  const photos = sheetPhotos();
+  const photos = deliveryPhotos();
   const { albums, albumId, collectionId, selectedIds } = useLibrary.getState();
   const album = albums.find((a) => a.id === albumId);
   const collection = useCollections.getState().collections.find((c) => c.id === collectionId);

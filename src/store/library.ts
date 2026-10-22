@@ -123,6 +123,17 @@ export function isFiltering(filter: MediaFilter): boolean {
   );
 }
 
+/**
+ * Photos d'une livraison (planche contact, galerie web) : la sélection s'il y
+ * en a une, sinon toute la grille, sans le fichier du dessous d'une paire
+ * RAW + JPEG.
+ */
+export function deliveryPhotos(): MediaSummary[] {
+  const { media, selectedIds } = useLibrary.getState();
+  const chosen = selectedIds.length > 1 ? new Set(selectedIds) : null;
+  return media.filter((m) => m.companionOf === null && (!chosen || chosen.has(m.id)));
+}
+
 /** Texte comparable : minuscules, sans accents. */
 export function fold(text: string): string {
   return text

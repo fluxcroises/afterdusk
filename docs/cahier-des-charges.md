@@ -198,7 +198,7 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - **Filigrane** texte, image (logo PNG) ou logo du studio (Réglages > Identité), position sur une grille de 9 points, taille relative à l'image, opacité, marge.
 - **Nettoyage des métadonnées** : tout garder, retirer le GPS, retirer le numéro de série du boîtier, ne garder que le copyright, ou tout retirer.
 - **Export multiple** : plusieurs presets en une seule opération (par exemple Web et Instagram), dans des sous-dossiers.
-- **Galerie web** \[V0.4\] : génération d'un site statique (HTML, CSS, images) d'un album ou d'une collection, avec thème clair ou sombre, titre, texte d'introduction, téléchargement optionnel des images, à héberger où l'utilisateur le souhaite. Option de sélection client : le client coche ses photos préférées et renvoie la liste par lien ou fichier, qu'Afterdusk sait réimporter comme drapeaux.
+- **Galerie web** \[V0.4\] : génération d'un site statique (HTML, CSS, images) d'un album ou d'une collection, avec thème clair ou sombre, titre, texte d'introduction, téléchargement optionnel des images, à héberger où l'utilisateur le souhaite. Option de sélection client : le client coche ses photos préférées et renvoie la liste par courriel préparé ou par fichier, qu'Afterdusk sait réimporter comme drapeaux « Retenue », réunies dans une collection. Photos en 2 048 px tirées des aperçus retouchés, sans aucune métadonnée, filigrane en option ; la page n'appelle aucune ressource extérieure.
 - **Planches contact** \[V0.4\] (idée de l'utilisateur, décision 0009) : PDF d'un album ou d'une collection, pour un client ou pour l'archive. Grille de 2 à 8 colonnes, A4 ou Lettre, portrait ou paysage (par défaut 4 colonnes en A4 portrait). Sous chaque vignette, son numéro d'ordre et le nom du fichier. En-tête : nom de l'album ou de la collection, client et séance, date de la séance, photographe. Vignettes tirées des aperçus rendus, retouches comprises. Filigrane en option, désactivé par défaut : texte ou logo du studio. Logo du studio en tête de page s'il y en a un.
 
 ### 4.7 Localisation et carte du monde \[V0.3\]
@@ -391,7 +391,7 @@ Objectif : gagner du temps au tri et partager avec des clients.
 - [ ] Vidéos : import, rangement, tri, lecture, fichiers annexes
 - [ ] Galerie web statique avec sélection client et réimport des choix
 - [x] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option
-- [ ] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
+- [x] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
 - [ ] Import automatique : carte connue, dossier surveillé et réception FTP sur le réseau local, chaque photo affichée dans le tri moins de 5 secondes après son arrivée
 - [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques
 

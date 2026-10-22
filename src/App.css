@@ -4339,3 +4339,38 @@ input.locate-offset {
   min-width: 0;
   max-width: 320px;
 }
+
+/* Galerie web et sélection client. */
+.gallery-dialog {
+  width: min(460px, calc(100vw - 32px));
+}
+
+.gallery-dialog .field-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.gallery-dialog .gallery-intro {
+  align-items: flex-start;
+}
+
+.gallery-dialog textarea {
+  flex: 1;
+  min-width: 0;
+  padding: var(--ad-space-2);
+  font: inherit;
+  color: var(--ad-text);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-field-border);
+  border-radius: var(--ad-radius-sm);
+  resize: vertical;
+}
+
+.gallery-dialog textarea:focus {
+  border-color: var(--ad-accent);
+}
+
+.gallery-dialog .selection-text {
+  width: 100%;
+  font: var(--ad-font-value);
+}

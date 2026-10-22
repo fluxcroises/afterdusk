@@ -4,6 +4,7 @@
 pub mod color;
 pub mod contact_sheet;
 pub mod encode;
+pub mod gallery;
 pub mod heif;
 pub mod heif_meta;
 pub mod job;

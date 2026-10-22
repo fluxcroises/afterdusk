@@ -240,7 +240,8 @@
     "logoReplace": "Replace logo…",
     "logoRemove": "Remove",
     "logoImages": "Images",
-    "sessions": "Sessions"
+    "sessions": "Sessions",
+    "identityEmail": "Email"
   },
   "menu": {
     "app": "Afterdusk",
@@ -364,7 +365,10 @@
     "logo": "This file cannot be used as a logo.",
     "contactSheet": "The contact sheet could not be saved.",
     "clientNotFound": "This client no longer exists.",
-    "sessionTypeNotFound": "This session type no longer exists."
+    "sessionTypeNotFound": "This session type no longer exists.",
+    "gallery": "The gallery could not be created.",
+    "selectionUnreadable": "No Afterdusk selection in this text: the bracketed line starting with [AD- is missing.",
+    "galleryUnknown": "This selection comes from a gallery this library does not know."
   },
   "home": {
     "morning": "Hello",
@@ -1330,5 +1334,65 @@
     "confirmDelete": "Remove the “{{name}}” type? Its albums stay, without a session type.",
     "newName": "New session type",
     "add": "Add"
+  },
+  "gallery": {
+    "open": "Web gallery…",
+    "title": "Web gallery",
+    "name": "Title",
+    "intro": "Welcome text",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "selection": "The client picks photos and sends you their selection",
+    "noEmail": "Without an email in Settings > Identity, the client will send you a file or copied text.",
+    "allowDownload": "Visitors can download the photos",
+    "privacy": "Photos at 2,048 px, edits included, without any metadata (no location, no camera). The page calls no outside site.",
+    "chooseFolder": "Folder to create the gallery in",
+    "create": "Create…",
+    "progress": "Photos: {{done}} / {{total}}",
+    "done_one": "Gallery created: {{count}} photo, code {{code}}.",
+    "done_other": "Gallery created: {{count}} photos, code {{code}}.",
+    "missing_one": "{{count}} photo without an image was left out.",
+    "missing_other": "{{count}} photos without an image were left out.",
+    "hosting": "Upload this folder to your web host, then send the address to your client. It also opens as is, by double-clicking index.html.",
+    "reveal": "Open folder",
+    "close": "Close",
+    "page": {
+      "photo": "Photo {n}",
+      "pick": "Pick photo {n}",
+      "unpick": "Remove photo {n} from the selection",
+      "send": "Send my selection",
+      "sendHint": "Send the list by email, or save it as a file to attach to your reply.",
+      "sendHintFile": "Save the list as a file or copy it, then send it to your photographer.",
+      "mail": "Prepare the email",
+      "file": "Save the list",
+      "copy": "Copy the list",
+      "copied": "List copied",
+      "close": "Close",
+      "previous": "Previous photo",
+      "next": "Next photo",
+      "download": "Download",
+      "emptySelection": "Tap a photo's heart to pick it.",
+      "selectionOne": "{count} photo picked",
+      "selectionOther": "{count} photos picked",
+      "listIntro": "Picked photos ({count}):",
+      "mailSubject": "My selection – {title}",
+      "footer": "Gallery code: {code}"
+    },
+    "import": {
+      "open": "Client selection…",
+      "title": "Client selection",
+      "hint": "Paste the client's email, or open the file they sent you. Afterdusk finds the gallery from its code.",
+      "paste": "Selection text",
+      "openFile": "Open a file…",
+      "textFiles": "Text",
+      "found_one": "Gallery “{{title}}”: {{count}} photo picked",
+      "found_other": "Gallery “{{title}}”: {{count}} photos picked",
+      "unknown_one": "Number {{numbers}} does not exist in this gallery.",
+      "unknown_other": "Numbers {{numbers}} do not exist in this gallery.",
+      "otherLibrary": "This gallery comes from another library: the collection will be created there.",
+      "apply": "Pick and create the collection",
+      "collectionName": "Selection – {{name}}"
+    }
   }
 }

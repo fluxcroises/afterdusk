@@ -260,6 +260,15 @@ export function IdentityFields({
           onChange={(e) => onChange({ ...identity, website: e.target.value })}
         />
       </label>
+      <label className="field-row">
+        <span className="field-row-label">{t("settings.identityEmail")}</span>
+        <input
+          type="email"
+          autoComplete="email"
+          value={identity.email ?? ""}
+          onChange={(e) => onChange({ ...identity, email: e.target.value })}
+        />
+      </label>
     </div>
   );
 }

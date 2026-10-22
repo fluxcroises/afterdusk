@@ -1,3 +1,4 @@
+import { useGallery } from "../store/gallery";
 import { useContactSheet } from "../store/contactSheet";
 import { Images } from "lucide-react";
 import { useEffect } from "react";
@@ -59,6 +60,21 @@ export function DeliverStep() {
             onClick={() => useContactSheet.getState().show()}
           >
             {t("contactSheet.open")}
+          </button>
+          <button
+            type="button"
+            className="button button-small"
+            disabled={count === 0}
+            onClick={() => useGallery.getState().show()}
+          >
+            {t("gallery.open")}
+          </button>
+          <button
+            type="button"
+            className="button button-small"
+            onClick={() => useGallery.getState().showImport()}
+          >
+            {t("gallery.import.open")}
           </button>
         </>
       }

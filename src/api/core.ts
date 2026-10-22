@@ -162,6 +162,8 @@ export interface Identity {
   name: string;
   copyright: string;
   website: string;
+  /** Adresse où les clients renvoient leur sélection (galerie web). */
+  email?: string;
 }
 
 export const events = {

@@ -30,6 +30,7 @@ fn l_identite_signe_les_photos_importees() {
             name: "Lewis Bedar".into(),
             copyright: "© 2026 Lewis Bedar".into(),
             website: "https://example.org".into(),
+            email: String::new(),
         },
     )
     .unwrap();

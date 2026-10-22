@@ -26,6 +26,8 @@ pub struct Identity {
     /// « © 2026 Prénom Nom » par exemple ; vide : aucun copyright écrit.
     pub copyright: String,
     pub website: String,
+    /// Adresse où les clients renvoient leur sélection (galerie web).
+    pub email: String,
 }
 
 impl Identity {
@@ -34,6 +36,7 @@ impl Identity {
             name: self.name.trim().to_owned(),
             copyright: self.copyright.trim().to_owned(),
             website: self.website.trim().to_owned(),
+            email: self.email.trim().to_owned(),
         }
     }
 }
@@ -124,6 +127,7 @@ mod tests {
                 name: "  Lewis Bedar ".into(),
                 copyright: "© 2026 Lewis Bedar".into(),
                 website: String::new(),
+                email: String::new(),
             },
         )
         .unwrap();
