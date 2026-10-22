@@ -75,35 +75,37 @@ export function SettingsView() {
       <div className="settings-page">
         <h1 className="settings-title">{t(`settings.${category}`)}</h1>
         {category === "general" ? (
-          <div className="settings-form">
-            <label className="field-row">
-              <span className="field-row-label">{t("settings.language")}</span>
-              <select
-                value={i18n.language}
-                onChange={(e) => void i18n.changeLanguage(e.target.value as Language)}
-              >
-                {Object.keys(resources).map((lng) => (
-                  <option key={lng} value={lng}>
-                    {t(`settings.languages.${lng}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <FieldRow label={t("settings.theme")} value={t("settings.themeDarkOnly")} />
-            <fieldset className="form-fieldset">
+          <div className="settings-columns">
+            <div className="settings-form">
+              <label className="field-row">
+                <span className="field-row-label">{t("settings.language")}</span>
+                <select
+                  value={i18n.language}
+                  onChange={(e) => void i18n.changeLanguage(e.target.value as Language)}
+                >
+                  {Object.keys(resources).map((lng) => (
+                    <option key={lng} value={lng}>
+                      {t(`settings.languages.${lng}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <FieldRow label={t("settings.theme")} value={t("settings.themeDarkOnly")} />
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={online}
+                  onChange={(e) => useMap.getState().setOnline(e.currentTarget.checked)}
+                />
+                {t("settings.mapOnline")}
+              </label>
+              <p className="panel-note">{t("settings.mapOnlineNote")}</p>
+            </div>
+            <fieldset className="form-fieldset settings-form">
               <legend className="field-row-label">{t("profiles.label")}</legend>
               <ProfileChoice value={profile} onChange={(p) => void useProfile.getState().set(p)} />
               <p className="panel-note">{t("profiles.note")}</p>
             </fieldset>
-            <label className="check-row">
-              <input
-                type="checkbox"
-                checked={online}
-                onChange={(e) => useMap.getState().setOnline(e.currentTarget.checked)}
-              />
-              {t("settings.mapOnline")}
-            </label>
-            <p className="panel-note">{t("settings.mapOnlineNote")}</p>
           </div>
         ) : category === "library" ? (
           <LibrarySettings />

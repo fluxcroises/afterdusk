@@ -173,11 +173,6 @@
   "library": {
     "emptyTitle": "The library is empty"
   },
-  "upcoming": {
-    "title": "{{module}} is coming in version {{version}}",
-    "map": "A world map of your albums.",
-    "gear": "Inventory, statistics and maintenance of your gear."
-  },
   "settings": {
     "general": "General",
     "library": "Libraries",
@@ -190,7 +185,7 @@
       "en": "English"
     },
     "theme": "Theme",
-    "themeDarkOnly": "Dark (light theme coming later)",
+    "themeDarkOnly": "Dark",
     "trashRetention": "Delete permanently after",
     "days_one": "day",
     "days_other": "days",
@@ -239,7 +234,6 @@
     "autoAnalysis": "Find misses after each import",
     "logo": "Logo",
     "noLogo": "No logo",
-    "logoNote": "At the top of contact sheets and the gear inventory, and as a watermark. A transparent PNG works best.",
     "logoChoose": "Choose a logo…",
     "logoReplace": "Replace logo…",
     "logoRemove": "Remove",
@@ -247,22 +241,22 @@
     "sessions": "Sessions",
     "identityEmail": "Email",
     "autoImport": "Automatic import",
-    "autoImportNone": "No cameras. After importing a card, Afterdusk offers to import its cameras' next cards on its own.",
+    "autoImportNone": "No cameras.",
     "autoImportRule": "{{camera}} cards (no. {{serial}})",
     "autoImportUsed": "last import on {{date}}",
     "autoImportRemove": "Stop importing {{camera}} cards automatically",
-    "autoImportNote": "A card from these cameras is imported as soon as it is inserted, with the settings of its first import and a default album name, unless insertion is set to “Do nothing”. The card is only read.",
+    "autoImportNote": "A card from these cameras is imported as soon as it is inserted, with the settings of its first import.",
     "watchFolders": "Watched folders",
-    "watchNone": "No folders. Add the one where your camera software (USB or Wi-Fi) saves photos.",
+    "watchNone": "No watched folders.",
     "watchAdd": "Add a folder…",
     "watchChoose": "Folder to watch",
     "watchDefaultAlbum": "Current session",
     "watchAlbum": "Album for photos from {{path}}",
     "watchRemove": "Stop watching {{path}}",
-    "watchNote": "Each complete photo is copied and verified into the album shown, in the current library, and appears in Cull within seconds. The folder is never modified; what it already contains when added is ignored.",
+    "watchNote": "The folder is never modified; what it already contains is ignored.",
     "ftp": "FTP reception",
     "ftpEnable": "Receive photos from cameras over FTP on the local network",
-    "ftpOffNote": "Off. For cameras that transfer over FTP via Wi-Fi or Ethernet: photos arrive in Cull during the shoot.",
+    "ftpOffNote": "Off.",
     "ftpRunning": "Listening on the local network.",
     "ftpStopped": "Server stopped. {{error}}",
     "ftpAddress": "Server address",
@@ -283,7 +277,7 @@
     "ftpClearConfirm": "Delete the files already imported from the reception folder? Files not yet in the library are kept.",
     "ftpCleared_one": "{{count}} file deleted, {{kept}} kept.",
     "ftpCleared_other": "{{count}} files deleted, {{kept}} kept.",
-    "ftpNote": "On the camera: FTP server, address and port above, passive mode, FTPS (explicit TLS). If the camera asks you to confirm the certificate, compare its fingerprint; if it asks you to import it, save it to a card. Only the local network can connect; Windows may ask to allow Afterdusk on private networks. Received files are kept until you empty the reception."
+    "ftpNote": "On the camera: address and port above, passive mode, FTPS. Only the local network can connect."
   },
   "menu": {
     "app": "Afterdusk",
@@ -358,7 +352,7 @@
     "xmpFailedHint": "Afterdusk retries every minute. Check that the library folder is connected and writable.",
     "previewFailed_one": "{{count}} preview could not be created",
     "previewFailed_other": "{{count}} previews could not be created",
-    "previewFailedHint": "The file may be damaged or in an unsupported format. Click to hide."
+    "previewFailedHint": "Damaged file or unsupported format. Click: hide."
   },
   "navigator": {
     "title": "Navigator",
@@ -1357,7 +1351,7 @@
     "title": "Clients",
     "new": "New client",
     "newOption": "New client…",
-    "none": "No clients yet. Link one to an album from the right-hand panel.",
+    "none": "No clients.",
     "albumCount_one": "{{count}} album",
     "albumCount_other": "{{count}} albums",
     "edit": "{{name}}'s details",
@@ -1392,7 +1386,7 @@
       "sport": "Sport",
       "concert": "Concert"
     },
-    "note": "Types offered for albums and at import. A renamed or added type keeps its name in every language; removing a type leaves its albums without one.",
+    "note": "Removing a type leaves its albums without one.",
     "rename": "Rename {{name}}",
     "delete": "Remove",
     "confirmDelete": "Remove the “{{name}}” type? Its albums stay, without a session type.",
@@ -1418,7 +1412,7 @@
     "done_other": "Gallery created: {{count}} photos, code {{code}}.",
     "missing_one": "{{count}} photo without an image was left out.",
     "missing_other": "{{count}} photos without an image were left out.",
-    "hosting": "Upload this folder to your web host, then send the address to your client. It also opens as is, by double-clicking index.html.",
+    "hosting": "Upload this folder to your web host, then send the address to your client.",
     "reveal": "Open folder",
     "close": "Close",
     "page": {
@@ -1440,13 +1434,13 @@
       "selectionOne": "{count} photo picked",
       "selectionOther": "{count} photos picked",
       "listIntro": "Picked photos ({count}):",
-      "mailSubject": "My selection – {title}",
+      "mailSubject": "My selection: {title}",
       "footer": "Gallery code: {code}"
     },
     "import": {
       "open": "Client selection…",
       "title": "Client selection",
-      "hint": "Paste the client's email, or open the file they sent you. Afterdusk finds the gallery from its code.",
+      "hint": "Paste the client's email, or open the file they sent you.",
       "paste": "Selection text",
       "openFile": "Open a file…",
       "textFiles": "Text",
@@ -1456,7 +1450,7 @@
       "unknown_other": "Numbers {{numbers}} do not exist in this gallery.",
       "otherLibrary": "This gallery comes from another library: the collection will be created there.",
       "apply": "Pick and create the collection",
-      "collectionName": "Selection – {{name}}"
+      "collectionName": "Selection: {{name}}"
     }
   },
   "video": {
@@ -1514,13 +1508,13 @@
     "frame": "Frame “{{name}}”",
     "frameTitle": "Framing: {{name}}",
     "frameArea": "Frame, arrow keys move it",
-    "frameHint": "Drag the frame to move it, a corner to resize it. Arrow keys: 1%, Shift + arrow keys: 10%.",
+    "frameHint": "Drag: move · Corner: resize · Arrow keys: 1% · Shift + arrow keys: 10%",
     "resetFrame": "Automatic framing",
     "cancel": "Cancel",
     "save": "Save",
     "needPhoto": "Choose a photo to see it in each format.",
-    "hint": "Click: check for export. Double-click: frame. Without a chosen framing, the frame centres on the largest face.",
-    "hintMany": "Framings of the active photo. The other selected photos keep theirs, or centre on the largest face.",
+    "hint": "Click: check for export · Double-click: frame",
+    "hintMany": "Framings of the active photo; the other photos keep theirs.",
     "chosen_one": "{{count}} template checked",
     "chosen_other": "{{count}} templates checked"
   },
@@ -1529,7 +1523,7 @@
     "title": "Composition: {{name}}",
     "rotate": "Rotate the page",
     "close": "Close the editor",
-    "hint": "Drag a photo inside its cell to reframe it, a text or the logo to place it.",
+    "hint": "Drag a photo: reframe · Drag a text or the logo: place",
     "name": "Name",
     "photos_one": "{{count}} photo",
     "photos_other": "{{count}} photos",
@@ -1544,7 +1538,6 @@
     "texts": "Texts",
     "addText": "Add a text",
     "newText": "Your text",
-    "pickText": "Click a text on the page to edit it.",
     "text": "Text",
     "textPlaceholder": "One line per line break",
     "textSize": "Size",
@@ -1596,7 +1589,7 @@
     "snapped": "(keyframe; asked for {{asked}})",
     "add": "Add the clip",
     "enter": "Enter",
-    "empty": "No clips: I for the in point, O for the out point, Enter to add it.",
+    "empty": "I: in point · O: out point · Enter: add",
     "play": "Play the clip from {{from}} to {{to}}",
     "name": "Clip name",
     "unnamed": "Untitled",

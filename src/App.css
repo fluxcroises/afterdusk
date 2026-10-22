@@ -735,8 +735,25 @@ button.color-chip:disabled {
 /* ---------- Réglages ---------- */
 
 .settings-page {
-  max-width: 560px;
+  max-width: 1180px;
   padding: var(--ad-space-5);
+}
+
+/* Une colonne lisible par bloc ; les blocs indépendants côte à côte quand
+   la fenêtre est assez large. */
+.settings-page > .settings-form {
+  max-width: 560px;
+}
+
+.settings-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: var(--ad-space-5);
+  align-items: start;
+}
+
+.settings-columns > * {
+  max-width: 560px;
 }
 
 .settings-title {

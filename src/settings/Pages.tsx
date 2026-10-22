@@ -335,7 +335,7 @@ export function ImportSettings() {
   const folder = draft?.folder ?? library.folderTemplate;
   const rename = draft ? draft.rename : library.renameTemplate;
   const changed = folder !== library.folderTemplate || rename !== library.renameTemplate;
-  return (
+  const main = (
     <div className="settings-form">
       <ErrorBanner error={error} onDismiss={dismiss} />
       <TemplateChoice
@@ -345,13 +345,6 @@ export function ImportSettings() {
       />
       <p className="panel-note">{t("settings.templatesHint")}</p>
       <InsertBehaviorField />
-      {autoImport && (
-        <>
-          <AutoImportRules />
-          <WatchFolders />
-          <FtpReception />
-        </>
-      )}
       <AnalysisField />
       <BurstsField />
       <div className="settings-actions">
@@ -369,6 +362,18 @@ export function ImportSettings() {
           {t("settings.save")}
         </button>
         {saved && !changed && <span className="settings-saved">{t("settings.saved")}</span>}
+      </div>
+    </div>
+  );
+  if (!autoImport) return main;
+  // Import automatique, dossiers surveillés et réception FTP : à côté.
+  return (
+    <div className="settings-columns">
+      {main}
+      <div className="settings-form">
+        <AutoImportRules />
+        <WatchFolders />
+        <FtpReception />
       </div>
     </div>
   );
@@ -397,7 +402,6 @@ function StudioLogoField() {
       <div className="studio-logo-preview">
         {url ? <img src={url} alt={t("settings.logo")} /> : <span>{t("settings.noLogo")}</span>}
       </div>
-      <p className="panel-note">{t("settings.logoNote")}</p>
       <div className="settings-actions">
         <button type="button" className="button button-small" onClick={() => void choose()}>
           {t(url ? "settings.logoReplace" : "settings.logoChoose")}

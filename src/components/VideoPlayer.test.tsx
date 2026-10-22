@@ -110,7 +110,7 @@ describe("Lecture d'une vidéo dans la loupe", () => {
     const { container } = render(<VideoPlayer media={clip} />);
     await act(async () => {});
     const el = container.querySelector("video") as HTMLVideoElement;
-    expect(screen.getByText(/Aucun extrait/)).toBeInTheDocument();
+    expect(screen.getByText("I : entrée · O : sortie · Entrée : ajouter")).toBeInTheDocument();
     el.currentTime = 1.2;
     fireEvent.keyDown(window, { key: "i" });
     // L'entrée affichée est celle de l'export : l'image clé de 0,96 s.

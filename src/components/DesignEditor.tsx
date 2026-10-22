@@ -614,10 +614,8 @@ export function DesignEditor() {
               <Type aria-hidden="true" strokeWidth={1.75} />
               {t("design.addText")}
             </button>
-            {text && typeof selected === "number" ? (
+            {text && typeof selected === "number" && (
               <TextControls key={selected} index={selected} text={text} />
-            ) : (
-              d.texts.length > 0 && <p className="panel-note">{t("design.pickText")}</p>
             )}
 
             <h3 className="design-section">{t("design.logo")}</h3>

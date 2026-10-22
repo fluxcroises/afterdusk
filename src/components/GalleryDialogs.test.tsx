@@ -153,7 +153,7 @@ describe("Livrer > Galerie web", () => {
     );
     expect(invoke).toHaveBeenCalledWith("gallery_apply_selection", {
       text: mail,
-      collectionName: "Sélection – Famille Dupont",
+      collectionName: "Sélection : Famille Dupont",
     });
     expect(showCollection).toHaveBeenCalledWith(14);
     expect(useGallery.getState().importOpen).toBe(false);

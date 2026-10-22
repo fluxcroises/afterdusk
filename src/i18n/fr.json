@@ -173,11 +173,6 @@
   "library": {
     "emptyTitle": "La bibliothèque est vide"
   },
-  "upcoming": {
-    "title": "{{module}} arrive en version {{version}}",
-    "map": "Carte du monde de vos albums.",
-    "gear": "Inventaire, statistiques et entretien de votre matériel."
-  },
   "settings": {
     "general": "Général",
     "library": "Bibliothèques",
@@ -190,7 +185,7 @@
       "en": "English"
     },
     "theme": "Thème",
-    "themeDarkOnly": "Sombre (thème clair à venir)",
+    "themeDarkOnly": "Sombre",
     "trashRetention": "Supprimer définitivement après",
     "days_one": "jour",
     "days_other": "jours",
@@ -239,7 +234,6 @@
     "autoAnalysis": "Rechercher les ratés après chaque import",
     "logo": "Logo",
     "noLogo": "Aucun logo",
-    "logoNote": "En tête des planches contact et de l'inventaire du matériel, et comme filigrane. Un PNG transparent rend le mieux.",
     "logoChoose": "Choisir un logo…",
     "logoReplace": "Remplacer le logo…",
     "logoRemove": "Retirer",
@@ -247,22 +241,22 @@
     "sessions": "Séances",
     "identityEmail": "Courriel",
     "autoImport": "Import automatique",
-    "autoImportNone": "Aucun boîtier. Après l'import d'une carte, Afterdusk propose d'importer seules les prochaines cartes de ses boîtiers.",
+    "autoImportNone": "Aucun boîtier.",
     "autoImportRule": "Cartes du {{camera}} (n° {{serial}})",
     "autoImportUsed": "dernier import le {{date}}",
     "autoImportRemove": "Ne plus importer seules les cartes du {{camera}}",
-    "autoImportNote": "Une carte de ces boîtiers s'importe dès son insertion, avec les réglages de son premier import et un nom d'album par défaut, sauf si l'insertion est réglée sur « Ne rien faire ». La carte n'est que lue.",
+    "autoImportNote": "Une carte de ces boîtiers s'importe dès son insertion, avec les réglages de son premier import.",
     "watchFolders": "Dossiers surveillés",
-    "watchNone": "Aucun dossier. Ajoutez celui où le logiciel de votre boîtier (connexion USB ou Wi-Fi) dépose les photos.",
+    "watchNone": "Aucun dossier surveillé.",
     "watchAdd": "Ajouter un dossier…",
     "watchChoose": "Dossier à surveiller",
     "watchDefaultAlbum": "Séance en cours",
     "watchAlbum": "Album des photos de {{path}}",
     "watchRemove": "Ne plus surveiller {{path}}",
-    "watchNote": "Chaque photo complète est copiée et vérifiée dans l'album indiqué, de la bibliothèque affichée, et apparaît dans Trier en quelques secondes. Le dossier n'est jamais modifié ; ce qu'il contient déjà au moment de l'ajout est ignoré.",
+    "watchNote": "Le dossier n'est jamais modifié ; ce qu'il contient déjà est ignoré.",
     "ftp": "Réception FTP",
     "ftpEnable": "Recevoir les photos des boîtiers par FTP sur le réseau local",
-    "ftpOffNote": "Désactivée. Pour les boîtiers qui transfèrent en FTP par Wi-Fi ou Ethernet : les photos arrivent dans Trier pendant la séance.",
+    "ftpOffNote": "Désactivée.",
     "ftpRunning": "En écoute sur le réseau local.",
     "ftpStopped": "Serveur arrêté. {{error}}",
     "ftpAddress": "Adresse du serveur",
@@ -283,7 +277,7 @@
     "ftpClearConfirm": "Supprimer du dossier de réception les fichiers déjà importés ? Ceux qui ne sont pas encore dans la bibliothèque sont gardés.",
     "ftpCleared_one": "{{count}} fichier supprimé, {{kept}} gardé(s).",
     "ftpCleared_other": "{{count}} fichiers supprimés, {{kept}} gardé(s).",
-    "ftpNote": "Sur le boîtier : serveur FTP, adresse et port ci-dessus, mode passif, FTPS (TLS explicite). Si le boîtier demande de confirmer le certificat, comparez son empreinte ; s'il demande de l'importer, enregistrez-le sur une carte. Seul le réseau local peut se connecter ; Windows peut demander d'autoriser Afterdusk sur les réseaux privés. Les fichiers reçus sont gardés jusqu'à ce que vous vidiez la réception."
+    "ftpNote": "Sur le boîtier : adresse et port ci-dessus, mode passif, FTPS. Seul le réseau local peut se connecter."
   },
   "menu": {
     "app": "Afterdusk",
@@ -358,7 +352,7 @@
     "xmpFailedHint": "Afterdusk réessaie chaque minute. Vérifiez que le dossier de la bibliothèque est branché et modifiable.",
     "previewFailed_one": "{{count}} aperçu n'a pas pu être créé",
     "previewFailed_other": "{{count}} aperçus n'ont pas pu être créés",
-    "previewFailedHint": "Le fichier est peut-être endommagé ou dans un format non pris en charge. Cliquez pour masquer."
+    "previewFailedHint": "Fichier endommagé ou format non pris en charge. Clic : masquer."
   },
   "navigator": {
     "title": "Navigateur",
@@ -1357,7 +1351,7 @@
     "title": "Clients",
     "new": "Nouveau client",
     "newOption": "Nouveau client…",
-    "none": "Aucun client. Une fiche se rattache à un album depuis le panneau de droite.",
+    "none": "Aucun client.",
     "albumCount_one": "{{count}} album",
     "albumCount_other": "{{count}} albums",
     "edit": "Fiche de {{name}}",
@@ -1392,7 +1386,7 @@
       "sport": "Sport",
       "concert": "Concert"
     },
-    "note": "Types proposés pour les albums et à l'import. Un type renommé ou ajouté garde son nom dans toutes les langues ; un type retiré laisse ses albums sans type.",
+    "note": "Un type retiré laisse ses albums sans type.",
     "rename": "Renommer {{name}}",
     "delete": "Retirer",
     "confirmDelete": "Retirer le type « {{name}} » ? Ses albums restent, sans type de séance.",
@@ -1418,7 +1412,7 @@
     "done_other": "Galerie créée : {{count}} photos, code {{code}}.",
     "missing_one": "{{count}} photo sans image a été laissée de côté.",
     "missing_other": "{{count}} photos sans image ont été laissées de côté.",
-    "hosting": "Déposez ce dossier sur votre hébergement, puis envoyez l'adresse au client. Il s'ouvre aussi tel quel, d'un double-clic sur index.html.",
+    "hosting": "Déposez ce dossier sur votre hébergement, puis envoyez l'adresse au client.",
     "reveal": "Ouvrir le dossier",
     "close": "Fermer",
     "page": {
@@ -1440,13 +1434,13 @@
       "selectionOne": "{count} photo choisie",
       "selectionOther": "{count} photos choisies",
       "listIntro": "Photos choisies ({count}) :",
-      "mailSubject": "Ma sélection – {title}",
+      "mailSubject": "Ma sélection : {title}",
       "footer": "Code de la galerie : {code}"
     },
     "import": {
       "open": "Sélection client…",
       "title": "Sélection client",
-      "hint": "Collez le courriel du client, ou ouvrez le fichier qu'il vous a envoyé. Afterdusk retrouve la galerie grâce à son code.",
+      "hint": "Collez le courriel du client, ou ouvrez le fichier qu'il vous a envoyé.",
       "paste": "Texte de la sélection",
       "openFile": "Ouvrir un fichier…",
       "textFiles": "Texte",
@@ -1456,7 +1450,7 @@
       "unknown_other": "Les numéros {{numbers}} n'existent pas dans cette galerie.",
       "otherLibrary": "Cette galerie vient d'une autre bibliothèque : la collection y sera créée.",
       "apply": "Retenir et créer la collection",
-      "collectionName": "Sélection – {{name}}"
+      "collectionName": "Sélection : {{name}}"
     }
   },
   "video": {
@@ -1514,13 +1508,13 @@
     "frame": "Cadrer « {{name}} »",
     "frameTitle": "Cadrage : {{name}}",
     "frameArea": "Cadre, flèches pour le déplacer",
-    "frameHint": "Glissez le cadre pour le déplacer, un coin pour l'agrandir. Flèches : 1 %, Maj + flèches : 10 %.",
+    "frameHint": "Glisser : déplacer · Coin : agrandir · Flèches : 1 % · Maj + flèches : 10 %",
     "resetFrame": "Cadrage automatique",
     "cancel": "Annuler",
     "save": "Enregistrer",
     "needPhoto": "Choisissez une photo pour la voir dans chaque format.",
-    "hint": "Clic : cocher pour l'export. Double-clic : cadrer. Sans cadrage choisi, le cadre se centre sur le plus grand visage.",
-    "hintMany": "Cadrages de la photo active. Les autres photos de la sélection gardent le leur, ou se centrent sur le plus grand visage.",
+    "hint": "Clic : cocher pour l'export · Double-clic : cadrer",
+    "hintMany": "Cadrages de la photo active ; les autres photos gardent le leur.",
     "chosen_one": "{{count}} modèle coché",
     "chosen_other": "{{count}} modèles cochés"
   },
@@ -1529,7 +1523,7 @@
     "title": "Composition : {{name}}",
     "rotate": "Tourner la page",
     "close": "Fermer l'éditeur",
-    "hint": "Glissez une photo dans sa case pour la recadrer, un texte ou le logo pour le placer.",
+    "hint": "Glisser une photo : recadrer · Glisser un texte ou le logo : placer",
     "name": "Nom",
     "photos_one": "{{count}} photo",
     "photos_other": "{{count}} photos",
@@ -1544,7 +1538,6 @@
     "texts": "Textes",
     "addText": "Ajouter un texte",
     "newText": "Votre texte",
-    "pickText": "Cliquez sur un texte de la page pour le modifier.",
     "text": "Texte",
     "textPlaceholder": "Une ligne par retour à la ligne",
     "textSize": "Corps",
@@ -1596,7 +1589,7 @@
     "snapped": "(image clé ; demandée à {{asked}})",
     "add": "Ajouter l'extrait",
     "enter": "Entrée",
-    "empty": "Aucun extrait : I pour l'entrée, O pour la sortie, Entrée pour l'ajouter.",
+    "empty": "I : entrée · O : sortie · Entrée : ajouter",
     "play": "Lire l'extrait de {{from}} à {{to}}",
     "name": "Nom de l'extrait",
     "unnamed": "Sans nom",
