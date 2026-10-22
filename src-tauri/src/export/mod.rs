@@ -1,6 +1,7 @@
 //! Export (cahier des charges, 4.6) : rendu des photos retouchées, formats,
 //! espaces colorimétriques, et copie vérifiée des originaux.
 
+pub mod clips;
 pub mod color;
 pub mod contact_sheet;
 pub mod design;

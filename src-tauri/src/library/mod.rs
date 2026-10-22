@@ -2,6 +2,7 @@
 
 pub mod bursts;
 pub mod clients;
+pub mod clips;
 pub mod cloud;
 pub mod collections;
 pub mod copies;

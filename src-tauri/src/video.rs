@@ -240,6 +240,139 @@ pub fn proxy(path: &Path, out: &Path) -> bool {
     ok && std::fs::rename(&tmp, out).is_ok()
 }
 
+/// Instants des images clés de la première piste vidéo, en millisecondes,
+/// dans l'ordre. Lus dans les paquets, sans décoder : rapide même sur un
+/// long clip. Une coupe sans réencodage ne peut commencer que sur l'une
+/// d'elles.
+pub fn keyframes(path: &Path) -> Option<Vec<u64>> {
+    let ffprobe = tool("ffprobe")?;
+    let out = command(&ffprobe)
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "packet=pts_time,flags",
+            "-of",
+            "csv=p=0",
+        ])
+        .arg(path)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())?;
+    let mut times: Vec<u64> = String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter_map(|line| {
+            let (time, flags) = line.split_once(',')?;
+            flags.contains('K').then_some(())?;
+            let t: f64 = time.trim().parse().ok()?;
+            (t.is_finite() && t >= 0.0).then(|| (t * 1000.0).round() as u64)
+        })
+        .collect();
+    times.sort_unstable();
+    times.dedup();
+    Some(times)
+}
+
+/// Image clé au plus tard à `at_ms` (0 s'il n'y en a pas avant).
+pub fn snap(keyframes: &[u64], at_ms: u64) -> u64 {
+    keyframes
+        .iter()
+        .copied()
+        .take_while(|&k| k <= at_ms)
+        .last()
+        .unwrap_or(0)
+}
+
+/// Extrait de `start_ms` à `end_ms` copié sans réencodage (vidéo et son)
+/// dans `out`, par un fichier temporaire renommé à la fin. `start_ms` doit
+/// tomber sur une image clé (`snap`) pour que l'extrait commence là.
+pub fn cut(path: &Path, start_ms: u64, end_ms: u64, out: &Path) -> bool {
+    let Some(ffmpeg) = tool("ffmpeg") else {
+        return false;
+    };
+    if end_ms <= start_ms {
+        return false;
+    }
+    let tmp = temporary(out);
+    let seconds = |ms: u64| format!("{:.3}", ms as f64 / 1000.0);
+    let ok = command(&ffmpeg)
+        .args(["-v", "error", "-y", "-ss", &seconds(start_ms), "-i"])
+        .arg(path)
+        .args([
+            "-t",
+            &seconds(end_ms - start_ms),
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a?",
+            "-c",
+            "copy",
+            "-map_metadata",
+            "0",
+            "-avoid_negative_ts",
+            "make_zero",
+        ])
+        .arg(&tmp)
+        .status()
+        .is_ok_and(|s| s.success());
+    finish(ok, &tmp, out)
+}
+
+/// Réunit des extraits de même source en un seul fichier, sans réencodage.
+pub fn concat(parts: &[PathBuf], out: &Path) -> bool {
+    let Some(ffmpeg) = tool("ffmpeg") else {
+        return false;
+    };
+    if parts.is_empty() {
+        return false;
+    }
+    let list = out.with_extension("liste.txt");
+    let lines: String = parts
+        .iter()
+        .map(|p| {
+            // Syntaxe du démultiplexeur concat : apostrophes échappées.
+            let path = p
+                .to_string_lossy()
+                .replace('\\', "/")
+                .replace('\'', r"'\''");
+            format!("file '{path}'\n")
+        })
+        .collect();
+    if std::fs::write(&list, lines).is_err() {
+        return false;
+    }
+    let tmp = temporary(out);
+    let ok = command(&ffmpeg)
+        .args(["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i"])
+        .arg(&list)
+        .args(["-map", "0", "-c", "copy"])
+        .arg(&tmp)
+        .status()
+        .is_ok_and(|s| s.success());
+    let _ = std::fs::remove_file(&list);
+    finish(ok, &tmp, out)
+}
+
+/// Fichier temporaire à côté de `out`, de même extension (ffmpeg choisit le
+/// format d'après elle).
+fn temporary(out: &Path) -> PathBuf {
+    let ext = out
+        .extension()
+        .map(|e| e.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "mp4".into());
+    out.with_extension(format!("tmp.{ext}"))
+}
+
+fn finish(ok: bool, tmp: &Path, out: &Path) -> bool {
+    if ok && std::fs::rename(tmp, out).is_ok() {
+        return true;
+    }
+    let _ = std::fs::remove_file(tmp);
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,6 +405,48 @@ mod tests {
             ("hevc", 50.0, false)
         );
         assert!(probe(&fixture("C0001M01.XML")).is_none());
+    }
+
+    #[test]
+    fn coupe_sans_reencodage_sur_les_images_cles() {
+        if !available() {
+            return;
+        }
+        let source = fixture("rushes_gop12.mp4");
+        let before = std::fs::read(&source).unwrap();
+        let keys = keyframes(&source).unwrap();
+        assert_eq!(keys, (0..9).map(|i| i * 480).collect::<Vec<u64>>());
+        assert_eq!(snap(&keys, 1000), 960);
+        assert_eq!(snap(&keys, 480), 480);
+        assert_eq!(snap(&[], 1000), 0);
+
+        let dir = tempfile::tempdir().unwrap();
+        let a = dir.path().join("a.mp4");
+        let b = dir.path().join("b.mp4");
+        assert!(cut(&source, 960, 2400, &a));
+        assert!(cut(&source, 2880, 3840, &b));
+        let (ia, ib) = (probe(&a).unwrap(), probe(&b).unwrap());
+        // Sans réencodage, la fin peut déborder de quelques images (et le son
+        // d'une trame) : jamais plus court, au plus un quart de seconde de plus.
+        let close = |got: i64, want: i64| got + 40 >= want && got <= want + 250;
+        assert!(close(ia.duration_ms, 1440), "{}", ia.duration_ms);
+        assert!(close(ib.duration_ms, 960), "{}", ib.duration_ms);
+        assert!(ia.has_audio && ia.codec == "h264");
+        // L'extrait s'ouvre sur une image clé (décalée d'une trame de son au
+        // plus, le son commençant un peu avant).
+        assert!(keyframes(&a).unwrap().first().is_some_and(|&k| k <= 120));
+
+        let both = dir.path().join("ensemble.mp4");
+        assert!(concat(&[a.clone(), b.clone()], &both));
+        let joined = probe(&both).unwrap().duration_ms;
+        assert!(
+            (joined - ia.duration_ms - ib.duration_ms).abs() <= 60,
+            "{joined}"
+        );
+        assert!(!dir.path().join("ensemble.liste.txt").exists());
+        // Rien d'écrit à côté de l'original, original intact.
+        assert_eq!(std::fs::read(&source).unwrap(), before);
+        assert!(!cut(&source, 2000, 1000, &dir.path().join("vide.mp4")));
     }
 
     #[test]

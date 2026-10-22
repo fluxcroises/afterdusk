@@ -14,10 +14,11 @@ use std::path::{Path, PathBuf};
 use rusqlite::{Connection, OptionalExtension};
 use serde::Serialize;
 use tauri::http::{Request, Response, StatusCode, header};
-use tauri::{Manager, State, UriSchemeContext, Wry};
+use tauri::{Emitter, Manager, State, UriSchemeContext, Wry};
 
 use super::error::{CommandError, CommandResult};
 use super::{AppState, blocking};
+use crate::library::clips::{self, Clip};
 use crate::library::{get_library, paths};
 use crate::video;
 
@@ -224,6 +225,120 @@ pub async fn video_prepare(state: State<'_, AppState>, media_id: i64) -> Command
         } else {
             Err(CommandError::new("videoUnavailable", source.display()))
         }
+    })
+    .await
+}
+
+/// Images clés relues une fois par vidéo (le fichier ne change pas).
+fn keyframes_of(media_id: i64, source: &Path) -> Vec<u64> {
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<i64, Vec<u64>>>> =
+        std::sync::OnceLock::new();
+    let cache = CACHE.get_or_init(Default::default);
+    if let Some(keys) = cache.lock().ok().and_then(|c| c.get(&media_id).cloned()) {
+        return keys;
+    }
+    let keys = video::keyframes(source).unwrap_or_default();
+    if let Ok(mut c) = cache.lock() {
+        c.insert(media_id, keys.clone());
+    }
+    keys
+}
+
+fn sql(e: rusqlite::Error) -> CommandError {
+    crate::library::LibraryError::from(e).into()
+}
+
+/// Images clés d'une vidéo, en millisecondes : là où un extrait peut
+/// commencer sans réencodage.
+#[tauri::command]
+pub async fn video_keyframes(state: State<'_, AppState>, media_id: i64) -> CommandResult<Vec<u64>> {
+    let conn = state.connect()?;
+    blocking(move || {
+        let source = original(&conn, media_id)
+            .ok_or_else(|| CommandError::new("videoUnavailable", media_id))?;
+        Ok(keyframes_of(media_id, &source))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn clips_list(state: State<'_, AppState>, media_id: i64) -> CommandResult<Vec<Clip>> {
+    let conn = state.connect()?;
+    blocking(move || clips::list(&conn, media_id).map_err(sql)).await
+}
+
+/// Nouvel extrait, début recalé sur l'image clé qui le précède.
+#[tauri::command]
+pub async fn clips_add(
+    state: State<'_, AppState>,
+    media_id: i64,
+    start_ms: u64,
+    end_ms: u64,
+) -> CommandResult<Option<Clip>> {
+    let conn = state.connect()?;
+    blocking(move || {
+        let source = original(&conn, media_id)
+            .ok_or_else(|| CommandError::new("videoUnavailable", media_id))?;
+        let keys = keyframes_of(media_id, &source);
+        clips::add(&conn, media_id, &keys, start_ms, end_ms).map_err(sql)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn clips_rename(state: State<'_, AppState>, id: i64, name: String) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || clips::rename(&conn, id, &name).map_err(sql)).await
+}
+
+#[tauri::command]
+pub async fn clips_delete(state: State<'_, AppState>, id: i64) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || clips::delete(&conn, id).map_err(sql)).await
+}
+
+pub const EVENT_CLIPS_PROGRESS: &str = "clips://progress";
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ClipsProgress {
+    media_id: i64,
+    done: usize,
+    total: usize,
+}
+
+/// Exporte les extraits d'une vidéo sans réencodage dans le dossier de
+/// destination de Livrer, un par fichier ou réunis (`join`). Progression
+/// envoyée par événements ; renvoie les fichiers écrits.
+#[tauri::command]
+pub async fn clips_export(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    media_id: i64,
+    join: bool,
+) -> CommandResult<Vec<PathBuf>> {
+    let conn = state.connect()?;
+    let settings_file = super::export::settings_file(&state);
+    blocking(move || {
+        let settings = crate::export::presets::load(&settings_file)?;
+        let destination = settings
+            .destination
+            .ok_or_else(|| CommandError::new("noDestination", "aucun dossier de destination"))?;
+        let source = original(&conn, media_id)
+            .ok_or_else(|| CommandError::new("videoUnavailable", media_id))?;
+        let list = clips::list(&conn, media_id).map_err(sql)?;
+        let written =
+            crate::export::clips::export(&source, &list, &destination, join, |done, total| {
+                let _ = app.emit(
+                    EVENT_CLIPS_PROGRESS,
+                    ClipsProgress {
+                        media_id,
+                        done,
+                        total,
+                    },
+                );
+            })?;
+        Ok(written)
     })
     .await
 }

@@ -42,7 +42,7 @@ pub struct ExportState {
     running: Mutex<Option<Arc<AtomicBool>>>,
 }
 
-fn settings_file(state: &AppState) -> PathBuf {
+pub(crate) fn settings_file(state: &AppState) -> PathBuf {
     state
         .db_path
         .parent()

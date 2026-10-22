@@ -160,3 +160,67 @@ fn videos_importees_avec_leurs_annexes() {
     // Règle absolue : la carte n'a pas été écrite.
     assert_eq!(card_before, hashes(&card));
 }
+
+/// Dérushage : deux extraits exportés sans réencodage, chacun dans son
+/// fichier puis réunis en un seul ; noms lisibles, original intact, rien
+/// d'écrit à côté de lui.
+#[test]
+fn extraits_exportes_sans_reencodage() {
+    if !video::available() {
+        eprintln!("FFmpeg absent : test sauté (node scripts/fetch-ffmpeg.mjs)");
+        return;
+    }
+    use afterdusk_lib::export::clips::export;
+    use afterdusk_lib::library::clips::Clip;
+
+    let dir = tempfile::tempdir().unwrap();
+    let source_dir = dir.path().join("source");
+    fs::create_dir_all(&source_dir).unwrap();
+    let source = source_dir.join("C0002.MP4");
+    fs::copy(fixture("rushes_gop12.mp4"), &source).unwrap();
+    let before = common::sha256(&source);
+    let clip = |id, start_ms, end_ms, name: &str| Clip {
+        id,
+        media_id: 1,
+        start_ms,
+        end_ms,
+        name: name.into(),
+    };
+    // Un début hors image clé est recalé à l'export (960 ms).
+    let clips = [
+        clip(1, 1000, 2400, ""),
+        clip(2, 2880, 3840, "Discours : fin"),
+    ];
+    let out = dir.path().join("Livraison");
+    let mut steps = Vec::new();
+    let files = export(&source, &clips, &out, false, |d, t| steps.push((d, t))).unwrap();
+    assert_eq!(steps, [(1, 2), (2, 2)]);
+    let names: Vec<_> = files
+        .iter()
+        .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(
+        names,
+        ["C0002 - 00m00s-00m02s.mp4", "C0002 - Discours _ fin.mp4"]
+    );
+    let first = video::probe(&files[0]).unwrap();
+    assert!(
+        first.duration_ms >= 1400 && first.duration_ms <= 1700,
+        "{}",
+        first.duration_ms
+    );
+
+    let joined = export(&source, &clips, &out, true, |_, _| {}).unwrap();
+    assert_eq!(joined.len(), 1);
+    assert!(joined[0].ends_with("C0002 - extraits.mp4"));
+    let total = video::probe(&joined[0]).unwrap().duration_ms;
+    let parts: i64 = files
+        .iter()
+        .map(|f| video::probe(f).unwrap().duration_ms)
+        .sum();
+    assert!((total - parts).abs() <= 80, "{total} / {parts}");
+
+    // Règles absolues : original intact, dossier source inchangé.
+    assert_eq!(common::sha256(&source), before);
+    assert_eq!(fs::read_dir(&source_dir).unwrap().count(), 1);
+}

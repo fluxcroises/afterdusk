@@ -44,6 +44,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0020_dossiers_releve.sql"),
     include_str!("migrations/0021_cadrages_livraison.sql"),
     include_str!("migrations/0022_compositions.sql"),
+    include_str!("migrations/0023_extraits_video.sql"),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
