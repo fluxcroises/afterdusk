@@ -35,6 +35,9 @@ impl From<ImportError> for CommandError {
             ImportError::Scan(_) => "sourceUnreadable",
             ImportError::Template(_) => "invalidTemplate",
             ImportError::Library(LibraryError::MissingRoot(_)) => "missingFolder",
+            ImportError::WatchFolder("insideLibrary", _) => "watchInsideLibrary",
+            ImportError::WatchFolder("duplicate", _) => "watchDuplicate",
+            ImportError::WatchFolder(_, _) => "watchMissing",
             _ => "internal",
         };
         Self::new(code, e)

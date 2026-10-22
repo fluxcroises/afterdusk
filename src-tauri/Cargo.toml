@@ -55,6 +55,7 @@ flate2 = "1"
 chrono-tz = { version = "0.10", default-features = false, features = ["std"] }
 printpdf = { version = "0.12.8", default-features = false, features = ["jpeg"] }
 ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "load-dynamic", "api-22"] }
+notify = { version = "8", default-features = false, features = ["macos_fsevent"] }
 
 # HEIF par l'encodeur du système (décision 0007) : WIC sous Windows, avec les
 # extensions HEIF/HEVC de Microsoft ; ImageIO sous macOS.

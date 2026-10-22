@@ -131,6 +131,7 @@ pub fn run() {
                 app.state::<AppState>().db_path.clone(),
             );
             app.manage(commands::devices::DeviceWatch::start(app.handle().clone()));
+            app.manage(commands::watch::WatchService::start(app.handle().clone()));
             previews::enqueue_missing(app.handle());
             // Essai de lancement (CI) : échec si l'interface ne s'affiche pas à temps.
             if std::env::var_os(commands::SMOKE_ENV).is_some() {
@@ -182,6 +183,11 @@ pub fn run() {
             commands::import::auto_import_rules,
             commands::import::auto_import_rule_delete,
             commands::import::auto_import_card,
+            commands::watch::watch_folders,
+            commands::watch::watch_folder_add,
+            commands::watch::watch_folder_update,
+            commands::watch::watch_folder_set_enabled,
+            commands::watch::watch_folder_delete,
             commands::gallery::gallery_create,
             commands::gallery::gallery_read_selection,
             commands::gallery::gallery_apply_selection,

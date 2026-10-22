@@ -142,7 +142,7 @@ struct Finished {
     error: Option<CommandError>,
 }
 
-fn take_slot(state: &AppState) -> CommandResult<Arc<AtomicBool>> {
+pub(super) fn take_slot(state: &AppState) -> CommandResult<Arc<AtomicBool>> {
     let mut slot = state
         .running_import
         .lock()
@@ -158,7 +158,7 @@ fn take_slot(state: &AppState) -> CommandResult<Arc<AtomicBool>> {
     Ok(cancel)
 }
 
-fn release_slot(app: &AppHandle) {
+pub(super) fn release_slot(app: &AppHandle) {
     if let Ok(mut slot) = app.state::<AppState>().running_import.lock() {
         *slot = None;
     }

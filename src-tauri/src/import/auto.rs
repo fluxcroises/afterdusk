@@ -37,7 +37,7 @@ struct Stored {
     settings: AutoSettings,
 }
 
-fn encode(settings: &AutoSettings) -> String {
+pub(crate) fn encode(settings: &AutoSettings) -> String {
     serde_json::to_string(&Stored {
         version: SETTINGS_VERSION,
         settings: settings.clone(),
@@ -47,7 +47,7 @@ fn encode(settings: &AutoSettings) -> String {
 
 /// Réglages enregistrés ; un texte illisible donne les réglages par défaut,
 /// pour que la liste des règles reste affichable.
-fn decode(json: &str) -> AutoSettings {
+pub(crate) fn decode(json: &str) -> AutoSettings {
     match serde_json::from_str::<Stored>(json) {
         // Version 1 : format actuel.
         Ok(stored) if stored.version <= SETTINGS_VERSION => stored.settings,

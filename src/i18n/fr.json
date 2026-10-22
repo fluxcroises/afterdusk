@@ -251,7 +251,15 @@
     "autoImportRule": "Cartes du {{camera}} (n° {{serial}})",
     "autoImportUsed": "dernier import le {{date}}",
     "autoImportRemove": "Ne plus importer seules les cartes du {{camera}}",
-    "autoImportNote": "Une carte de ces boîtiers s'importe dès son insertion, avec les réglages de son premier import et un nom d'album par défaut, sauf si l'insertion est réglée sur « Ne rien faire ». La carte n'est que lue."
+    "autoImportNote": "Une carte de ces boîtiers s'importe dès son insertion, avec les réglages de son premier import et un nom d'album par défaut, sauf si l'insertion est réglée sur « Ne rien faire ». La carte n'est que lue.",
+    "watchFolders": "Dossiers surveillés",
+    "watchNone": "Aucun dossier. Ajoutez celui où le logiciel de votre boîtier (connexion USB ou Wi-Fi) dépose les photos.",
+    "watchAdd": "Ajouter un dossier…",
+    "watchChoose": "Dossier à surveiller",
+    "watchDefaultAlbum": "Séance en cours",
+    "watchAlbum": "Album des photos de {{path}}",
+    "watchRemove": "Ne plus surveiller {{path}}",
+    "watchNote": "Chaque photo complète est copiée et vérifiée dans l'album indiqué, de la bibliothèque affichée, et apparaît dans Trier en quelques secondes. Le dossier n'est jamais modifié ; ce qu'il contient déjà au moment de l'ajout est ignoré."
   },
   "menu": {
     "app": "Afterdusk",
@@ -378,7 +386,10 @@
     "sessionTypeNotFound": "Ce type de séance n'existe plus.",
     "gallery": "La galerie n'a pas pu être créée.",
     "selectionUnreadable": "Aucune sélection Afterdusk dans ce texte : il manque la ligne entre crochets qui commence par [AD-.",
-    "galleryUnknown": "Cette sélection vient d'une galerie inconnue de cette bibliothèque."
+    "galleryUnknown": "Cette sélection vient d'une galerie inconnue de cette bibliothèque.",
+    "watchMissing": "Ce dossier n'existe pas ou n'est pas accessible.",
+    "watchInsideLibrary": "Ce dossier est mêlé à une bibliothèque : Afterdusk s'importerait lui-même.",
+    "watchDuplicate": "Ce dossier est déjà surveillé."
   },
   "home": {
     "morning": "Bonjour",

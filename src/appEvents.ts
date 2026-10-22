@@ -102,6 +102,14 @@ export function useAppEvents(label: WindowLabel): void {
         useDeliver.getState().onFinished(e.payload),
       ),
       events.onImportFinished(imp.onFinished),
+      // Photos arrivées d'un dossier surveillé : ajoutées à la grille, la
+      // photo affichée ne change pas.
+      listen<{ libraryId: number; mediaIds: number[] }>("watch-imported", (e) => {
+        const library = useLibrary.getState();
+        if (library.libraryId !== e.payload.libraryId) return;
+        void library.reloadAlbums().then(() => library.reloadMedia());
+        if (useAnalysis.getState().auto) void useAnalysis.getState().run(null);
+      }),
       listen<{ mediaId: number }>("preview-ready", (e) =>
         useLibrary.getState().previewReady(e.payload.mediaId),
       ),

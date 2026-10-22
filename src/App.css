@@ -4461,3 +4461,17 @@ input.locate-offset {
   align-items: center;
   gap: var(--ad-space-2);
 }
+
+/* Réglages > Import : dossiers surveillés. */
+.watch-folders li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) auto;
+}
+
+.watch-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}

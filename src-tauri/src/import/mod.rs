@@ -10,6 +10,7 @@ pub mod auto;
 pub mod copy;
 pub mod rescan;
 pub mod scan;
+pub mod watch;
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -52,6 +53,8 @@ pub enum ImportError {
     NotFound(i64),
     #[error("options d'import illisibles : {0}")]
     Options(#[from] serde_json::Error),
+    #[error("dossier surveillé refusé ({0}) : {1}")]
+    WatchFolder(&'static str, PathBuf),
 }
 
 /// Ce que l'utilisateur a choisi dans l'écran Importer.

@@ -251,7 +251,15 @@
     "autoImportRule": "{{camera}} cards (no. {{serial}})",
     "autoImportUsed": "last import on {{date}}",
     "autoImportRemove": "Stop importing {{camera}} cards automatically",
-    "autoImportNote": "A card from these cameras is imported as soon as it is inserted, with the settings of its first import and a default album name, unless insertion is set to “Do nothing”. The card is only read."
+    "autoImportNote": "A card from these cameras is imported as soon as it is inserted, with the settings of its first import and a default album name, unless insertion is set to “Do nothing”. The card is only read.",
+    "watchFolders": "Watched folders",
+    "watchNone": "No folders. Add the one where your camera software (USB or Wi-Fi) saves photos.",
+    "watchAdd": "Add a folder…",
+    "watchChoose": "Folder to watch",
+    "watchDefaultAlbum": "Current session",
+    "watchAlbum": "Album for photos from {{path}}",
+    "watchRemove": "Stop watching {{path}}",
+    "watchNote": "Each complete photo is copied and verified into the album shown, in the current library, and appears in Cull within seconds. The folder is never modified; what it already contains when added is ignored."
   },
   "menu": {
     "app": "Afterdusk",
@@ -378,7 +386,10 @@
     "sessionTypeNotFound": "This session type no longer exists.",
     "gallery": "The gallery could not be created.",
     "selectionUnreadable": "No Afterdusk selection in this text: the bracketed line starting with [AD- is missing.",
-    "galleryUnknown": "This selection comes from a gallery this library does not know."
+    "galleryUnknown": "This selection comes from a gallery this library does not know.",
+    "watchMissing": "This folder does not exist or cannot be reached.",
+    "watchInsideLibrary": "This folder overlaps a library: Afterdusk would import its own files.",
+    "watchDuplicate": "This folder is already watched."
   },
   "home": {
     "morning": "Hello",

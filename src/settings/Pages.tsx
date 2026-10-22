@@ -142,7 +142,7 @@ function AutoImportRules() {
   const [rules, setRules] = useState<AutoRule[] | null>(null);
   const load = () =>
     invoke<AutoRule[]>("auto_import_rules")
-      .then(setRules)
+      .then((r) => setRules(Array.isArray(r) ? r : []))
       .catch(() => setRules([]));
   useEffect(() => {
     void load();
@@ -193,6 +193,136 @@ function AutoImportRules() {
   );
 }
 
+/** Dossier surveillé (`import::watch::WatchedFolder`). */
+interface WatchedFolder {
+  id: number;
+  path: string;
+  libraryId: number;
+  libraryName: string;
+  albumName: string;
+  settings: { rename: boolean; backup: boolean; keywords: string[]; rights: string | null };
+  enabled: boolean;
+}
+
+/** Album d'un dossier surveillé : enregistré à la sortie du champ. */
+function WatchAlbumField({ folder, onSaved }: { folder: WatchedFolder; onSaved: () => void }) {
+  const { t } = useTranslation();
+  const [album, setAlbum] = useState(folder.albumName);
+  const commit = async () => {
+    if (!album.trim() || album.trim() === folder.albumName) {
+      setAlbum(folder.albumName);
+      return;
+    }
+    await invoke("watch_folder_update", {
+      id: folder.id,
+      albumName: album,
+      settings: folder.settings,
+    }).catch(() => setAlbum(folder.albumName));
+    onSaved();
+  };
+  return (
+    <input
+      type="text"
+      aria-label={t("settings.watchAlbum", { path: folder.path })}
+      value={album}
+      maxLength={120}
+      onChange={(e) => setAlbum(e.currentTarget.value)}
+      onBlur={() => void commit()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+      }}
+    />
+  );
+}
+
+/**
+ * Dossiers surveillés : le logiciel d'un boîtier ou un transfert sans fil y
+ * dépose les photos, copiées aussitôt dans l'album choisi.
+ */
+function WatchFolders() {
+  const { t } = useTranslation();
+  const library = useCurrentLibrary();
+  const [folders, setFolders] = useState<WatchedFolder[] | null>(null);
+  const [error, setError] = useState<CommandError | null>(null);
+  const load = () =>
+    invoke<WatchedFolder[]>("watch_folders")
+      .then((f) => setFolders(Array.isArray(f) ? f : []))
+      .catch(() => setFolders([]));
+  useEffect(() => {
+    void load();
+  }, []);
+  if (folders === null) return null;
+  const guard = async (run: () => Promise<unknown>) => {
+    try {
+      await run();
+      setError(null);
+    } catch (e) {
+      setError(toCommandError(e));
+    }
+    await load();
+  };
+  const add = async () => {
+    if (!library) return;
+    const path = await open({ directory: true, title: t("settings.watchChoose") });
+    if (typeof path !== "string") return;
+    await guard(() =>
+      invoke("watch_folder_add", {
+        path,
+        libraryId: library.id,
+        albumName: t("settings.watchDefaultAlbum"),
+        settings: { backup: !!library.backupPath, keywords: [], rights: null },
+      }),
+    );
+  };
+  return (
+    <div className="auto-import-rules watch-folders">
+      <span className="field-row-label">{t("settings.watchFolders")}</span>
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
+      {folders.length === 0 ? (
+        <p className="panel-note">{t("settings.watchNone")}</p>
+      ) : (
+        <ul>
+          {folders.map((f) => (
+            <li key={f.id}>
+              <label className="check-row" title={f.path}>
+                <input
+                  type="checkbox"
+                  checked={f.enabled}
+                  onChange={(e) => {
+                    const enabled = e.currentTarget.checked;
+                    void guard(() => invoke("watch_folder_set_enabled", { id: f.id, enabled }));
+                  }}
+                />
+                <span className="watch-path">{f.path}</span>
+              </label>
+              <WatchAlbumField folder={f} onSaved={() => void load()} />
+              <button
+                type="button"
+                className="button button-small"
+                aria-label={t("settings.watchRemove", { path: f.path })}
+                onClick={() => void guard(() => invoke("watch_folder_delete", { id: f.id }))}
+              >
+                {t("sessions.delete")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="settings-actions">
+        <button
+          type="button"
+          className="button button-small"
+          disabled={!library}
+          onClick={() => void add()}
+        >
+          {t("settings.watchAdd")}
+        </button>
+      </div>
+      <p className="panel-note">{t("settings.watchNote")}</p>
+    </div>
+  );
+}
+
 export function ImportSettings() {
   const { t } = useTranslation();
   const library = useCurrentLibrary();
@@ -213,6 +343,7 @@ export function ImportSettings() {
       <p className="panel-note">{t("settings.templatesHint")}</p>
       <InsertBehaviorField />
       <AutoImportRules />
+      <WatchFolders />
       <AnalysisField />
       <BurstsField />
       <div className="settings-actions">
