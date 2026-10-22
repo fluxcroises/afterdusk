@@ -2,13 +2,23 @@ import {
   Crop,
   FlipHorizontal2,
   FlipVertical2,
+  Image,
   RotateCcw,
   RotateCcwSquare,
   RotateCwSquare,
+  SquareDashed,
 } from "lucide-react";
 import { type PointerEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ASPECTS, type CropRect, FULL_CROP, aspectRatio, useDevelop } from "../store/develop";
+import {
+  ASPECTS,
+  type CropRect,
+  FULL_CROP,
+  aspectRatio,
+  orientedAspect,
+  useDevelop,
+} from "../store/develop";
+import { aspectLabel } from "../ui/aspects";
 import { Slider } from "./DevelopPanels";
 import { IconButton } from "./IconButton";
 import { PanelSection } from "./PanelSection";
@@ -108,13 +118,8 @@ export function CropOverlay({ box }: { box: Box }) {
   const boxAspect = box.width / Math.max(1, box.height);
   // Pendant un glissé, le cadre en cours ; sinon celui des réglages.
   const current = drag ? draft : stored;
-  const ratio = (() => {
-    const base = aspectRatio(aspect, boxAspect);
-    if (base === null) return null;
-    const w = (current.right - current.left) * box.width;
-    const h = (current.bottom - current.top) * box.height;
-    return h > w ? 1 / base : base;
-  })();
+  // Ratio exact ; un ratio enregistré avant les ratios orientés suit le cadre.
+  const ratio = aspectRatio(orientedAspect(aspect, current, boxAspect), boxAspect);
 
   const down = (grip: Grip) => (e: PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -169,6 +174,46 @@ export function CropOverlay({ box }: { box: Box }) {
   );
 }
 
+/** Forme d'un ratio, dessinée dans un carré de 18 px, comme dans Photos. */
+function AspectShape({ aspect }: { aspect: string }) {
+  if (aspect === "free") return <SquareDashed aria-hidden="true" strokeWidth={1.5} />;
+  if (aspect === "original") return <Image aria-hidden="true" strokeWidth={1.5} />;
+  const [a, b] = aspect.split(":").map(Number);
+  const ratio = a && b ? a / b : 1;
+  const w = ratio >= 1 ? 16 : 16 * ratio;
+  const h = ratio >= 1 ? 16 / ratio : 16;
+  return (
+    <svg viewBox="0 0 18 18" aria-hidden="true">
+      <rect x={9 - w / 2} y={9 - h / 2} width={w} height={h} rx={2} />
+    </svg>
+  );
+}
+
+/** Ratios en barre d'icônes : le cadre prend la forme choisie. */
+function AspectStrip() {
+  const { t } = useTranslation();
+  const geometry = useDevelop((s) => s.settings?.geometry);
+  const frame = useDevelop((s) => s.frame);
+  const canvas = frame ? frame.width / frame.height : 1;
+  const current = orientedAspect(geometry?.aspect, geometry?.crop ?? FULL_CROP, canvas);
+  return (
+    <div className="aspect-strip" role="group" aria-label={t("develop.crop.aspect")}>
+      {ASPECTS.map((a) => (
+        <button
+          key={a}
+          type="button"
+          className="aspect-choice"
+          aria-pressed={current === a}
+          onClick={() => void useDevelop.getState().setAspect(a)}
+        >
+          <AspectShape aspect={a} />
+          <span>{aspectLabel(t, a)}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Panneau de l'outil : ouvrir, ratios, quarts de tour, miroirs, redresser. */
 export function CropSection() {
   const { t, i18n } = useTranslation();
@@ -184,8 +229,6 @@ export function CropSection() {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });
-  const c = geometry?.crop ?? FULL_CROP;
-
   return (
     <PanelSection id="develop.crop" title={t("develop.crop.title")}>
       {!cropping ? (
@@ -200,24 +243,16 @@ export function CropSection() {
         </button>
       ) : (
         <>
-          <div className="develop-wb">
-            <label className="develop-wb-select">
-              <span>{t("develop.crop.aspect")}</span>
-              <select value={aspect} onChange={(e) => void st.setAspect(e.currentTarget.value)}>
-                {ASPECTS.map((a) => (
-                  <option key={a} value={a}>
-                    {a === "free" || a === "original" ? t(`develop.crop.aspects.${a}`) : a}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <AspectStrip />
+          <div className="toolbar-group develop-crop-swap">
             <IconButton
               icon={RotateCcw}
               label={t("develop.crop.swap")}
               shortcut="X"
-              disabled={aspect === "free"}
-              onClick={() => void st.setAspect(aspect, !(c.bottom - c.top > c.right - c.left))}
+              disabled={aspect === "free" || aspect === "original" || aspect === "1:1"}
+              onClick={() => void st.swapAspect()}
             />
+            <span className="panel-note">{t("develop.crop.swap")}</span>
           </div>
           <div className="toolbar-group develop-crop-tools">
             <IconButton

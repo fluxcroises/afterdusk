@@ -738,7 +738,8 @@
       "aspect": "Aspect",
       "aspects": {
         "free": "Free",
-        "original": "Original"
+        "original": "Original",
+        "square": "Square"
       },
       "swap": "Portrait or landscape",
       "rotateLeft": "Rotate left",

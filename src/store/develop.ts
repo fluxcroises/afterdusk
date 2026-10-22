@@ -76,9 +76,48 @@ export interface Geometry {
   aspect?: string;
 }
 
-/** Ratios proposés par l'outil de recadrage (largeur:hauteur, en paysage). */
-export const ASPECTS = ["free", "original", "1:1", "4:5", "3:2", "16:9"] as const;
+/**
+ * Ratios proposés par l'outil de recadrage, comme dans l'application Photos
+ * de Windows : largeur:hauteur exacts, « 4:5 » en portrait, « 5:4 » en paysage.
+ */
+export const ASPECTS = [
+  "free",
+  "original",
+  "1:1",
+  "9:16",
+  "16:9",
+  "4:5",
+  "5:4",
+  "3:4",
+  "4:3",
+  "2:3",
+  "3:2",
+  "5:7",
+  "7:5",
+  "1:2",
+  "2:1",
+] as const;
 export type Aspect = (typeof ASPECTS)[number];
+
+/** Le même ratio dans l'autre sens : « 4:5 » donne « 5:4 » ; libre, original et carré restent. */
+export function swapAspect(aspect: string): string {
+  const [a, b] = aspect.split(":");
+  return a && b && a !== b ? `${b}:${a}` : aspect;
+}
+
+/**
+ * Ratio orienté comme le cadre. Avant les ratios orientés, « 3:2 » valait
+ * aussi pour un cadre en portrait : un tel ratio enregistré est lu dans le
+ * sens du cadre. Le rendu ne dépend que du cadre, il ne change pas.
+ */
+export function orientedAspect(aspect: string | undefined, crop: CropRect, canvas: number): string {
+  const ratio = aspectRatio(aspect, canvas);
+  if (!aspect || ratio === null || ratio === 1 || aspect === "original") return aspect ?? "free";
+  const width = (crop.right - crop.left) * canvas;
+  const height = crop.bottom - crop.top;
+  if (width === height) return aspect;
+  return width > height === ratio > 1 ? aspect : swapAspect(aspect);
+}
 
 /** Rapport largeur / hauteur d'un ratio, `original` étant celui du canevas. */
 export function aspectRatio(aspect: string | undefined, canvas: number): number | null {
@@ -528,7 +567,10 @@ interface DevelopState {
   /** Quart de tour : +1 dans le sens horaire, -1 dans l'autre. */
   rotateQuarter: (direction: 1 | -1) => void;
   flip: (axis: "h" | "v") => void;
-  setAspect: (aspect: string, portrait?: boolean) => Promise<void>;
+  /** Cadre au ratio demandé (largeur:hauteur exacts), le plus grand possible autour de l'actuel. */
+  setAspect: (aspect: string) => Promise<void>;
+  /** Portrait ou paysage : le ratio courant dans l'autre sens (X). */
+  swapAspect: () => Promise<void>;
   resetGeometry: () => void;
   /** Zoom 100 % centré sur un point de la photo (fractions de 0 à 1). */
   zoomAt: (fx: number, fy: number) => Promise<void>;
@@ -1454,7 +1496,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       changeGeometry(next, "geometry.flip");
     },
 
-    setAspect: async (aspect, portrait) => {
+    setAspect: async (aspect) => {
       const { settings, frame } = get();
       if (!settings || !frame) return;
       const g = settings.geometry ?? {};
@@ -1464,8 +1506,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       const base = aspectRatio(aspect, canvas);
       let crop = c;
       if (base !== null) {
-        const tall = portrait ?? (c.bottom - c.top) * (1 / canvas) > c.right - c.left;
-        const want = tall ? 1 / base : base;
+        const want = base;
         // Plus grand cadre de ce ratio centré sur l'actuel, dans le canevas.
         const cx = (c.left + c.right) / 2;
         const cy = (c.top + c.bottom) / 2;
@@ -1488,6 +1529,15 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       }
       const next = await constrained({ ...g, aspect, crop });
       changeGeometry(next, "geometry.aspect");
+    },
+
+    swapAspect: async () => {
+      const { settings, frame } = get();
+      if (!settings || !frame) return;
+      const g = settings.geometry ?? {};
+      const current = orientedAspect(g.aspect, g.crop ?? FULL_CROP, frame.width / frame.height);
+      const next = swapAspect(current);
+      if (next !== current) await get().setAspect(next);
     },
 
     resetGeometry: () => changeGeometry({}, "geometry.reset"),

@@ -4401,3 +4401,64 @@ input.locate-offset {
   justify-content: space-between;
   gap: var(--ad-space-3);
 }
+
+/* Recadrage : ratios en barre d'icônes, comme dans Photos. */
+.aspect-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.aspect-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 2px 4px;
+  border-radius: var(--ad-radius-sm);
+  color: var(--ad-text-secondary);
+  font: var(--ad-font-ui);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aspect-choice svg {
+  width: 18px;
+  height: 18px;
+}
+
+.aspect-choice rect {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.aspect-choice span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aspect-choice:hover {
+  color: var(--ad-text);
+  background: var(--ad-hover);
+}
+
+.aspect-choice[aria-pressed="true"] {
+  color: var(--ad-text);
+  background: var(--ad-surface);
+  box-shadow: inset 0 0 0 1px var(--ad-accent);
+  font-weight: 600;
+}
+
+.aspect-choice:focus-visible {
+  outline: 2px solid var(--ad-accent);
+  outline-offset: -2px;
+}
+
+.develop-crop-swap {
+  align-items: center;
+  gap: var(--ad-space-2);
+}

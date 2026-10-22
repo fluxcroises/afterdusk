@@ -708,3 +708,9 @@ Critères (cahier des charges, section 7) :
 - Tests : réglages versionnés ; de bout en bout, règle créée d'après un import, carte réinsérée sans rien de nouveau, nouvelle photo du même boîtier importée seule avec les réglages, carte jamais écrite, carte redevenue inconnue sans règle ; interface (import lancé, rien de nouveau, « Ne rien faire » respecté).
 - Pas de notification du système : elle demanderait un module de plus, à décider plus tard.
 - Critère « Galerie web statique avec sélection client et réimport des choix » coché : CI verte sous Windows et macOS (commit e8d694b, qui contient aussi l'import automatique d'une carte connue).
+
+### 2026-10-22 (suite) : idées de l'utilisateur au cahier des charges ; recadrage en 15 ratios
+
+- Ajoutés au cahier des charges, dans l'ordre convenu : recadrage façon Photos (4.5), modèles de livraison façon Canva et éditeur de livraison simple (4.6, nouvelle V0.5 « Livraison créative », bibliothèque pressentie Konva, MIT), dérushage vidéo par FFmpeg (4.9, après la V0.4), tethering (pistes de la V1 : dossier surveillé en attendant, libgphoto2 sous macOS et Linux, références darktable et digiCamControl pour Windows).
+- Recadrage : les 6 ratios d'une liste deviennent 15 ratios en barre d'icônes à la forme du cadre (libre, original, carré, 9:16, 16:9, 4:5, 5:4, 3:4, 4:3, 2:3, 3:2, 5:7, 7:5, 1:2, 2:1). Un ratio est désormais exact (« 4:5 » en portrait) ; X ou le bouton « Portrait ou paysage » l'inverse. Le format des réglages ne change pas : le cœur ne fait que conserver ce champ, le rendu ne dépend que du cadre. Un ratio enregistré avant (« 3:2 » sur un cadre en portrait) est lu dans le sens du cadre. Corrigé au passage : le sens retenu pour « 4:5 » était inversé par rapport au cadre.
+- Tests : ratios, inversion, lecture des ratios anciens ; historique (« Carré »).

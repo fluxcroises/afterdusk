@@ -376,8 +376,7 @@ export function DevelopStep() {
       }
       const aspect = state.settings?.geometry?.aspect;
       if (state.cropping && plain && letter("x") && aspect && aspect !== "free") {
-        const c = state.settings?.geometry?.crop ?? { left: 0, top: 0, right: 1, bottom: 1 };
-        void state.setAspect(aspect, !(c.bottom - c.top > c.right - c.left));
+        void state.swapAspect();
         e.preventDefault();
         return;
       }

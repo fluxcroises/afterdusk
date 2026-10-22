@@ -738,7 +738,8 @@
       "aspect": "Ratio",
       "aspects": {
         "free": "Libre",
-        "original": "Original"
+        "original": "Original",
+        "square": "Carré"
       },
       "swap": "Portrait ou paysage",
       "rotateLeft": "Quart de tour à gauche",

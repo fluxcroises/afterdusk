@@ -1,3 +1,4 @@
+import { aspectLabel } from "./aspects";
 import type { TFunction } from "i18next";
 import {
   type DevelopSettings,
@@ -91,12 +92,7 @@ export function describeStep(
     }).format(s.geometry?.angle ?? 0);
     const aspect = s.geometry?.aspect ?? "free";
     return t(`develop.history.geometry.${key}`, {
-      value:
-        key === "aspect"
-          ? aspect.includes(":")
-            ? aspect
-            : t(`develop.crop.aspects.${aspect}`)
-          : angle,
+      value: key === "aspect" ? aspectLabel(t, aspect) : angle,
     });
   }
   if (section === "lens" && key) {
