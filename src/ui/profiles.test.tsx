@@ -16,6 +16,7 @@ const { PanelSection } = await import("../components/PanelSection");
 const { ScreenLayout } = await import("../components/ScreenLayout");
 const { ModulePicker } = await import("../components/ModulePicker");
 const { buildMenuItems } = await import("../menu");
+const { GridToolbar } = await import("../components/GridToolbar");
 const { handleShortcut } = await import("../desktop");
 const { useLibrary } = await import("../store/library");
 
@@ -145,5 +146,19 @@ describe("profils d'interface", () => {
     useProfile.setState({ profile: "basic" });
     expect(handleShortcut(new KeyboardEvent("keydown", { key: "6", code: "Digit6" }))).toBe(true);
     expect(toggleColor).toHaveBeenCalledWith("red");
+  });
+
+  it("clients et pastilles de couleur suivent le profil sur tous les écrans", () => {
+    // Le panneau de catalogue de chaque écran : clients en Complète seulement.
+    expect(allows("basic", "develop.clients")).toBe(false);
+    expect(allows("basic", "deliver.collections")).toBe(false);
+    expect(hiddenSections("simple", "develop")).toContain("develop.clients");
+    expect(allows("complete", "map.albumClient")).toBe(true);
+    useProfile.setState({ profile: "simple" });
+    const { rerender } = render(<GridToolbar count={3} culling />);
+    expect(screen.queryByRole("group", { name: "Étiquette de couleur" })).toBeNull();
+    act(() => useProfile.setState({ profile: "basic" }));
+    rerender(<GridToolbar count={3} culling />);
+    expect(screen.getByRole("group", { name: "Étiquette de couleur" })).toBeInTheDocument();
   });
 });

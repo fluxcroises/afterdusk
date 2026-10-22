@@ -10,6 +10,9 @@ export const PROFILES: Profile[] = ["simple", "basic", "complete"];
 
 const RANK: Record<Profile, number> = { simple: 0, basic: 1, complete: 2 };
 
+/** Écrans qui affichent le panneau de catalogue (`CatalogPanel scope`). */
+const CATALOG_SCOPES = ["import", "cull", "library", "develop", "deliver", "map"];
+
 /** Profil minimal qui affiche chaque fonction (modules, sections, outils). */
 export const FEATURES: Record<string, Profile> = {
   // Modules.
@@ -27,12 +30,7 @@ export const FEATURES: Record<string, Profile> = {
   "cull.filterBar": "basic",
   "cull.bursts": "basic",
   "cull.locate": "basic",
-  "cull.collections": "complete",
-  "library.collections": "complete",
-  "cull.clients": "complete",
-  "library.clients": "complete",
-  "cull.albumClient": "complete",
-  "library.albumClient": "complete",
+  "cull.clientFilters": "complete",
   // Retouche : lumière, couleur, recadrage, presets en Simplifiée.
   "develop.curve": "basic",
   "develop.hsl": "basic",
@@ -43,17 +41,22 @@ export const FEATURES: Record<string, Profile> = {
   "develop.versions": "complete",
   "develop.snapshots": "complete",
   "develop.spots": "complete",
-  "develop.collections": "complete",
   // Livraison : presets, filigrane simple et formats en Simplifiée.
   "deliver.contactSheet": "basic",
   "deliver.gallery": "basic",
   "deliver.designs": "basic",
   "deliver.presetOptions": "complete",
   "deliver.clients": "complete",
-  "deliver.collections": "complete",
   "design.systemFonts": "complete",
   // Vidéo.
   "video.clips": "basic",
+  // Clients, client d'un album, albums intelligents : sections du panneau
+  // de catalogue, sur chaque écran qui l'affiche.
+  ...Object.fromEntries(
+    CATALOG_SCOPES.flatMap((scope) =>
+      ["clients", "albumClient", "collections"].map((part) => [`${scope}.${part}`, "complete"]),
+    ),
+  ),
 };
 
 export function allows(profile: Profile, feature: string): boolean {
@@ -77,12 +80,6 @@ export const SECTION_FEATURES = new Set([
   "import.metadata",
   "import.pairs",
   "import.backup",
-  "cull.collections",
-  "library.collections",
-  "cull.clients",
-  "library.clients",
-  "cull.albumClient",
-  "library.albumClient",
   "develop.curve",
   "develop.hsl",
   "develop.detail",
@@ -91,8 +88,9 @@ export const SECTION_FEATURES = new Set([
   "develop.history",
   "develop.versions",
   "develop.snapshots",
-  "develop.collections",
-  "deliver.collections",
+  ...CATALOG_SCOPES.flatMap((scope) =>
+    ["clients", "albumClient", "collections"].map((part) => `${scope}.${part}`),
+  ),
 ]);
 
 /** Commandes de menu (identifiant) et la fonction qui les porte. */

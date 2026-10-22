@@ -1,3 +1,4 @@
+import { useAllows } from "../store/profile";
 import { mediaCount } from "../ui/counts";
 import { Flag, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -18,6 +19,7 @@ export function Filmstrip() {
       ? t("catalog.allPhotos")
       : (albums.find((a) => a.id === albumId)?.name ?? t("catalog.allPhotos"));
 
+  const colors = useAllows("cull.colors");
   return (
     <>
       <div className="filmstrip-header">
@@ -42,11 +44,13 @@ export function Filmstrip() {
               <Star key={n} strokeWidth={1.75} />
             ))}
           </span>
-          <span className="color-labels" aria-hidden="true">
-            {COLOR_LABELS.map((c) => (
-              <span key={c} className={`color-chip color-${c}`} />
-            ))}
-          </span>
+          {colors && (
+            <span className="color-labels" aria-hidden="true">
+              {COLOR_LABELS.map((c) => (
+                <span key={c} className={`color-chip color-${c}`} />
+              ))}
+            </span>
+          )}
           <span className="filmstrip-filter-value">{t("filmstrip.noFilter")}</span>
         </span>
       </div>

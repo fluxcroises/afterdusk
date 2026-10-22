@@ -121,27 +121,24 @@ function MarkTools({ disabled }: { disabled: boolean }) {
           />
         ))}
       </div>
-      <div
-        className="toolbar-group"
-        role="group"
-        aria-label={t("toolbar.colorLabel")}
-        hidden={!colors}
-      >
-        {COLOR_LABELS.map((c, i) => (
-          <button
-            key={c}
-            type="button"
-            className={"color-chip color-" + c}
-            aria-label={t("toolbar.colors." + c)}
-            aria-pressed={selected?.color === c}
-            title={
-              i < 4 ? t("toolbar.colors." + c) + " (" + (i + 6) + ")" : t("toolbar.colors." + c)
-            }
-            disabled={off}
-            onClick={() => void toggleColor(c)}
-          />
-        ))}
-      </div>
+      {colors && (
+        <div className="toolbar-group" role="group" aria-label={t("toolbar.colorLabel")}>
+          {COLOR_LABELS.map((c, i) => (
+            <button
+              key={c}
+              type="button"
+              className={"color-chip color-" + c}
+              aria-label={t("toolbar.colors." + c)}
+              aria-pressed={selected?.color === c}
+              title={
+                i < 4 ? t("toolbar.colors." + c) + " (" + (i + 6) + ")" : t("toolbar.colors." + c)
+              }
+              disabled={off}
+              onClick={() => void toggleColor(c)}
+            />
+          ))}
+        </div>
+      )}
       <span className="toolbar-divider" />
       <IconButton
         icon={ChevronsRight}

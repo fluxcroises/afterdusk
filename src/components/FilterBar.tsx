@@ -89,6 +89,7 @@ function PhotoFilters() {
     });
   const rating = filter.rating ? `${filter.rating.op}:${filter.rating.value}` : "";
 
+  const clientFilters = useAllows("cull.clientFilters");
   return (
     <>
       <span className="toolbar-divider" />
@@ -212,7 +213,7 @@ function PhotoFilters() {
           </option>
         ))}
       </select>
-      {clients.length > 0 && (
+      {clientFilters && clients.length > 0 && (
         <select
           aria-label={t("filter.client")}
           value={filter.clientId ?? ""}
@@ -228,20 +229,22 @@ function PhotoFilters() {
           ))}
         </select>
       )}
-      <select
-        aria-label={t("filter.session")}
-        value={filter.sessionTypeId ?? ""}
-        onChange={(e) =>
-          void setFilter({ sessionTypeId: e.target.value ? Number(e.target.value) : undefined })
-        }
-      >
-        <option value="">{t("filter.anySession")}</option>
-        {sessionTypes.map((s) => (
-          <option key={s.id} value={s.id}>
-            {sessionLabel(t, s)}
-          </option>
-        ))}
-      </select>
+      {clientFilters && (
+        <select
+          aria-label={t("filter.session")}
+          value={filter.sessionTypeId ?? ""}
+          onChange={(e) =>
+            void setFilter({ sessionTypeId: e.target.value ? Number(e.target.value) : undefined })
+          }
+        >
+          <option value="">{t("filter.anySession")}</option>
+          {sessionTypes.map((s) => (
+            <option key={s.id} value={s.id}>
+              {sessionLabel(t, s)}
+            </option>
+          ))}
+        </select>
+      )}
       <select
         aria-label={t("filter.focal")}
         value={filter.focal ? String(filter.focal[0]) : ""}
