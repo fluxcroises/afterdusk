@@ -658,3 +658,10 @@ Critères (cahier des charges, section 7) :
 - Sous macOS 26 (CI), ONNX Runtime 1.22.0 plantait (SIGSEGV) à l'ouverture de la première session de modèle, après la création de l'environnement : traces posées sur une branche de diagnostic, supprimée ensuite.
 - Passage à la 1.23.2, toujours universelle (Apple Silicon et Intel) : sur la CI macOS, les deux sessions s'ouvrent, les portraits d'essai sont analysés et toute la suite du cœur passe. 14,2 Mo sous Windows, 74,9 Mo sous macOS ; empreintes publiées par GitHub, reprises dans le script. La décision 0010 est mise à jour.
 - CI verte sous Windows et macOS (commit 130cc28) : critères « Détection locale du flou, des yeux fermés et des problèmes d'exposition » et « Planches contact en PDF » cochés. La boîte « Planche contact » reste à voir à l'écran dans l'application compilée.
+
+### 2026-10-22 (suite) : planche contact et logo du studio vérifiés à l'écran
+
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises, originaux d'essai intacts) :
+  - Réglages > Identité : le logo choisi est copié dans les données d'Afterdusk et s'affiche ; « Remplacer le logo… » et « Retirer » apparaissent ensuite ;
+  - Livrer > Planche contact… : 9 photos de la grille, 4 colonnes en A4 portrait par défaut, logo en tête coché, filigrane « Logo du studio » choisi ; le PDF enregistré (une page) porte le titre, le nom du studio, le logo en haut à droite, les numéros et noms de fichiers, le filigrane translucide et les retouches des aperçus.
+- Corrigé : le bouton « Choisir un logo… » s'étirait sur toute la largeur ; l'aperçu du logo passe sur un damier clair, comme le papier, où un logo foncé reste lisible. Correction non revue à l'écran : l'utilisateur était revenu sur la machine.

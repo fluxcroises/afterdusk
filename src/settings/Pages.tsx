@@ -190,7 +190,7 @@ function StudioLogoField() {
       </div>
       <p className="panel-note">{t("settings.logoNote")}</p>
       <div className="settings-actions">
-        <button type="button" className="button button-secondary" onClick={() => void choose()}>
+        <button type="button" className="button button-small" onClick={() => void choose()}>
           {t(url ? "settings.logoReplace" : "settings.logoChoose")}
         </button>
         {url && (

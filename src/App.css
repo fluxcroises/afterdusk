@@ -4229,10 +4229,10 @@ input.locate-offset {
   min-height: 72px;
   padding: var(--ad-space-3);
   border-radius: var(--ad-radius-md);
-  /* Damier : la transparence du logo se voit. */
-  background: repeating-conic-gradient(var(--ad-surface) 0 25%, var(--ad-panel) 0 50%) 0 0 / 16px
-    16px;
-  color: var(--ad-text-muted);
+  /* Damier clair, comme le papier des PDF : un logo foncé y reste lisible,
+     et sa transparence se voit. */
+  background: repeating-conic-gradient(#f4f4f5 0 25%, #e4e4e7 0 50%) 0 0 / 16px 16px;
+  color: #52525b;
   font: var(--ad-font-ui);
 }
 
