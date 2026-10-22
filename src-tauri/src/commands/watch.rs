@@ -30,6 +30,8 @@ enum Message {
     Reload,
     /// Fichier signalé par le système.
     Path(PathBuf),
+    /// Fichier reçu en entier par FTP : importé sans attendre.
+    Received(PathBuf),
 }
 
 /// Fil de surveillance, démarré avec l'application.
@@ -38,7 +40,10 @@ pub struct WatchService {
 }
 
 impl WatchService {
-    pub fn start(app: AppHandle) -> Self {
+    /// `reception` : dossier de réception FTP, importé à la fin de chaque
+    /// envoi plutôt que d'après la taille (un envoi Wi-Fi peut marquer des
+    /// pauses).
+    pub fn start(app: AppHandle, reception: PathBuf) -> Self {
         let (sender, receiver) = mpsc::channel::<Message>();
         let events = sender.clone();
         std::thread::spawn(move || {
@@ -59,10 +64,15 @@ impl WatchService {
                         .into_iter()
                         .filter(|f| f.enabled)
                         .collect();
-                    watcher = start_watcher(&folders, events.clone());
+                    let watched: Vec<WatchedFolder> = folders
+                        .iter()
+                        .filter(|f| f.path != reception)
+                        .cloned()
+                        .collect();
+                    watcher = start_watcher(&watched, events.clone());
                     // Arrivées pendant que l'application était fermée.
                     let now = Instant::now();
-                    for folder in &folders {
+                    for folder in &watched {
                         for path in watch::arrivals(folder) {
                             tracker.note(path, now);
                         }
@@ -71,8 +81,13 @@ impl WatchService {
                 }
                 match receiver.recv_timeout(TICK) {
                     Ok(Message::Reload) => reload = true,
+                    Ok(Message::Received(path)) => {
+                        import_ready(&app, &folders, vec![path], &mut tracker);
+                    }
                     Ok(Message::Path(path)) => {
-                        if let Some(folder) = folders.iter().find(|f| path.starts_with(&f.path))
+                        if let Some(folder) = folders
+                            .iter()
+                            .find(|f| f.path != reception && path.starts_with(&f.path))
                             && watch::arrived(folder, &path)
                         {
                             tracker.note(path, Instant::now());
@@ -84,7 +99,7 @@ impl WatchService {
                 let now = Instant::now();
                 if now.duration_since(last_scan) >= RESCAN {
                     last_scan = now;
-                    for folder in &folders {
+                    for folder in folders.iter().filter(|f| f.path != reception) {
                         for path in watch::arrivals(folder) {
                             tracker.note(path, now);
                         }
@@ -103,9 +118,16 @@ impl WatchService {
         }
     }
 
-    fn reload(&self) {
+    pub fn reload(&self) {
         if let Ok(sender) = self.sender.lock() {
             let _ = sender.send(Message::Reload);
+        }
+    }
+
+    /// Fichier reçu en entier dans le dossier de réception FTP.
+    pub fn received(&self, path: PathBuf) {
+        if let Ok(sender) = self.sender.lock() {
+            let _ = sender.send(Message::Received(path));
         }
     }
 }
@@ -176,7 +198,15 @@ fn import_ready(
 #[tauri::command]
 pub async fn watch_folders(state: State<'_, AppState>) -> CommandResult<Vec<WatchedFolder>> {
     let conn = state.connect()?;
-    blocking(move || Ok(watch::list(&conn)?)).await
+    // Le dossier de réception FTP se règle avec la réception, pas ici.
+    let reception = crate::ftp::reception_dir(&state.data_dir());
+    blocking(move || {
+        Ok(watch::list(&conn)?
+            .into_iter()
+            .filter(|f| f.path != reception)
+            .collect())
+    })
+    .await
 }
 
 #[tauri::command]

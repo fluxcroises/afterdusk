@@ -4,6 +4,7 @@ pub mod db;
 pub mod develop;
 pub mod devices;
 pub mod export;
+pub mod ftp;
 pub mod gear;
 pub mod geo;
 pub mod import;
@@ -131,7 +132,17 @@ pub fn run() {
                 app.state::<AppState>().db_path.clone(),
             );
             app.manage(commands::devices::DeviceWatch::start(app.handle().clone()));
-            app.manage(commands::watch::WatchService::start(app.handle().clone()));
+            let reception = ftp::reception_dir(&app.state::<AppState>().data_dir());
+            app.manage(commands::watch::WatchService::start(
+                app.handle().clone(),
+                reception,
+            ));
+            app.manage(commands::ftp::FtpService::default());
+            // Réception FTP : démarrée seulement si l'utilisateur l'a activée.
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                handle.state::<commands::ftp::FtpService>().restart(&handle)
+            });
             previews::enqueue_missing(app.handle());
             // Essai de lancement (CI) : échec si l'interface ne s'affiche pas à temps.
             if std::env::var_os(commands::SMOKE_ENV).is_some() {
@@ -183,6 +194,10 @@ pub fn run() {
             commands::import::auto_import_rules,
             commands::import::auto_import_rule_delete,
             commands::import::auto_import_card,
+            commands::ftp::ftp_get,
+            commands::ftp::ftp_set,
+            commands::ftp::ftp_save_certificate,
+            commands::ftp::ftp_clear_reception,
             commands::watch::watch_folders,
             commands::watch::watch_folder_add,
             commands::watch::watch_folder_update,

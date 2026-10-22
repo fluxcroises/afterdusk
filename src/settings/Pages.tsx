@@ -1,3 +1,4 @@
+import { FtpReception } from "./FtpReception";
 import { invoke } from "@tauri-apps/api/core";
 import { type SessionType, sessionLabel, useClients } from "../store/clients";
 import { confirmWarning } from "../ui/confirm";
@@ -344,6 +345,7 @@ export function ImportSettings() {
       <InsertBehaviorField />
       <AutoImportRules />
       <WatchFolders />
+      <FtpReception />
       <AnalysisField />
       <BurstsField />
       <div className="settings-actions">

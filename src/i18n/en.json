@@ -259,7 +259,31 @@
     "watchDefaultAlbum": "Current session",
     "watchAlbum": "Album for photos from {{path}}",
     "watchRemove": "Stop watching {{path}}",
-    "watchNote": "Each complete photo is copied and verified into the album shown, in the current library, and appears in Cull within seconds. The folder is never modified; what it already contains when added is ignored."
+    "watchNote": "Each complete photo is copied and verified into the album shown, in the current library, and appears in Cull within seconds. The folder is never modified; what it already contains when added is ignored.",
+    "ftp": "FTP reception",
+    "ftpEnable": "Receive photos from cameras over FTP on the local network",
+    "ftpOffNote": "Off. For cameras that transfer over FTP via Wi-Fi or Ethernet: photos arrive in Cull during the shoot.",
+    "ftpRunning": "Listening on the local network.",
+    "ftpStopped": "Server stopped. {{error}}",
+    "ftpAddress": "Server address",
+    "ftpNoAddress": "No local network found",
+    "ftpPort": "Port",
+    "ftpUser": "User name",
+    "ftpPassword": "Password",
+    "ftpNewPassword": "New password",
+    "ftpRemoteFolder": "Remote folder",
+    "ftpAlbum": "Album",
+    "ftpDefaultAlbum": "FTP reception",
+    "ftpAllowPlain": "Also accept unencrypted FTP",
+    "ftpPlainWarning": "With plain FTP, the password and photos travel unencrypted on the local network. Choose FTPS on the camera whenever it allows.",
+    "ftpFingerprint": "Certificate fingerprint",
+    "ftpCertificate": "Certificate",
+    "ftpCertificateSave": "Save the certificate…",
+    "ftpClear": "Empty the reception",
+    "ftpClearConfirm": "Delete the files already imported from the reception folder? Files not yet in the library are kept.",
+    "ftpCleared_one": "{{count}} file deleted, {{kept}} kept.",
+    "ftpCleared_other": "{{count}} files deleted, {{kept}} kept.",
+    "ftpNote": "On the camera: FTP server, address and port above, passive mode, FTPS (explicit TLS). If the camera asks you to confirm the certificate, compare its fingerprint; if it asks you to import it, save it to a card. Only the local network can connect; Windows may ask to allow Afterdusk on private networks. Received files are kept until you empty the reception."
   },
   "menu": {
     "app": "Afterdusk",
@@ -389,7 +413,8 @@
     "galleryUnknown": "This selection comes from a gallery this library does not know.",
     "watchMissing": "This folder does not exist or cannot be reached.",
     "watchInsideLibrary": "This folder overlaps a library: Afterdusk would import its own files.",
-    "watchDuplicate": "This folder is already watched."
+    "watchDuplicate": "This folder is already watched.",
+    "ftp": "FTP reception could not be set up."
   },
   "home": {
     "morning": "Hello",

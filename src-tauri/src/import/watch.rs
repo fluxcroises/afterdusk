@@ -187,6 +187,47 @@ pub fn set_enabled(conn: &Connection, id: i64, enabled: bool) -> Result<(), Impo
     Ok(())
 }
 
+/// Dossier de réception FTP, tenu à jour d'après les réglages de la
+/// réception : créé au besoin, actif ou suspendu avec elle.
+pub fn ensure_reception(
+    conn: &Connection,
+    path: &Path,
+    library_id: i64,
+    album_name: &str,
+    settings: &AutoSettings,
+    enabled: bool,
+) -> Result<i64, ImportError> {
+    let existing: Option<i64> = conn
+        .query_row(
+            "SELECT id FROM watched_folders WHERE path = ?1",
+            [path.to_string_lossy()],
+            |r| r.get(0),
+        )
+        .optional()?;
+    let album = if album_name.trim().is_empty() {
+        "FTP"
+    } else {
+        album_name.trim()
+    };
+    let id = match existing {
+        Some(id) => {
+            conn.execute(
+                "UPDATE watched_folders SET library_id = ?2, album_name = ?3, settings = ?4
+                  WHERE id = ?1",
+                params![id, library_id, album, auto::encode(settings)],
+            )?;
+            id
+        }
+        None => {
+            std::fs::create_dir_all(path)
+                .map_err(|_| ImportError::WatchFolder("missing", path.to_path_buf()))?;
+            add(conn, path, library_id, album, settings)?
+        }
+    };
+    set_enabled(conn, id, enabled)?;
+    Ok(id)
+}
+
 /// Retire le dossier de la surveillance ; il n'est pas touché.
 pub fn delete(conn: &Connection, id: i64) -> Result<(), ImportError> {
     if conn.execute("DELETE FROM watched_folders WHERE id = ?1", [id])? == 0 {

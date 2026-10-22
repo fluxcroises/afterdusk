@@ -9,6 +9,7 @@ pub mod develop;
 pub mod devices;
 pub mod error;
 pub mod export;
+pub mod ftp;
 pub mod gallery;
 pub mod gear;
 pub mod geo;

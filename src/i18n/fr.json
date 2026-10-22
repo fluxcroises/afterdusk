@@ -259,7 +259,31 @@
     "watchDefaultAlbum": "Séance en cours",
     "watchAlbum": "Album des photos de {{path}}",
     "watchRemove": "Ne plus surveiller {{path}}",
-    "watchNote": "Chaque photo complète est copiée et vérifiée dans l'album indiqué, de la bibliothèque affichée, et apparaît dans Trier en quelques secondes. Le dossier n'est jamais modifié ; ce qu'il contient déjà au moment de l'ajout est ignoré."
+    "watchNote": "Chaque photo complète est copiée et vérifiée dans l'album indiqué, de la bibliothèque affichée, et apparaît dans Trier en quelques secondes. Le dossier n'est jamais modifié ; ce qu'il contient déjà au moment de l'ajout est ignoré.",
+    "ftp": "Réception FTP",
+    "ftpEnable": "Recevoir les photos des boîtiers par FTP sur le réseau local",
+    "ftpOffNote": "Désactivée. Pour les boîtiers qui transfèrent en FTP par Wi-Fi ou Ethernet : les photos arrivent dans Trier pendant la séance.",
+    "ftpRunning": "En écoute sur le réseau local.",
+    "ftpStopped": "Serveur arrêté. {{error}}",
+    "ftpAddress": "Adresse du serveur",
+    "ftpNoAddress": "Aucun réseau local détecté",
+    "ftpPort": "Port",
+    "ftpUser": "Identifiant",
+    "ftpPassword": "Mot de passe",
+    "ftpNewPassword": "Nouveau mot de passe",
+    "ftpRemoteFolder": "Dossier distant",
+    "ftpAlbum": "Album",
+    "ftpDefaultAlbum": "Réception FTP",
+    "ftpAllowPlain": "Accepter aussi le FTP non chiffré",
+    "ftpPlainWarning": "En FTP simple, le mot de passe et les photos circulent en clair sur le réseau local. Choisissez FTPS sur le boîtier dès qu'il le permet.",
+    "ftpFingerprint": "Empreinte du certificat",
+    "ftpCertificate": "Certificat",
+    "ftpCertificateSave": "Enregistrer le certificat…",
+    "ftpClear": "Vider la réception",
+    "ftpClearConfirm": "Supprimer du dossier de réception les fichiers déjà importés ? Ceux qui ne sont pas encore dans la bibliothèque sont gardés.",
+    "ftpCleared_one": "{{count}} fichier supprimé, {{kept}} gardé(s).",
+    "ftpCleared_other": "{{count}} fichiers supprimés, {{kept}} gardé(s).",
+    "ftpNote": "Sur le boîtier : serveur FTP, adresse et port ci-dessus, mode passif, FTPS (TLS explicite). Si le boîtier demande de confirmer le certificat, comparez son empreinte ; s'il demande de l'importer, enregistrez-le sur une carte. Seul le réseau local peut se connecter ; Windows peut demander d'autoriser Afterdusk sur les réseaux privés. Les fichiers reçus sont gardés jusqu'à ce que vous vidiez la réception."
   },
   "menu": {
     "app": "Afterdusk",
@@ -389,7 +413,8 @@
     "galleryUnknown": "Cette sélection vient d'une galerie inconnue de cette bibliothèque.",
     "watchMissing": "Ce dossier n'existe pas ou n'est pas accessible.",
     "watchInsideLibrary": "Ce dossier est mêlé à une bibliothèque : Afterdusk s'importerait lui-même.",
-    "watchDuplicate": "Ce dossier est déjà surveillé."
+    "watchDuplicate": "Ce dossier est déjà surveillé.",
+    "ftp": "La réception FTP n'a pas pu être réglée."
   },
   "home": {
     "morning": "Bonjour",
