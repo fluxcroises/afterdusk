@@ -113,6 +113,7 @@ pub fn transform_region(
         height,
         rgb,
         as_shot_white: src.as_shot_white,
+        rendered: src.rendered,
         scale: src.scale,
         crop: (!whole).then_some(Crop {
             left,
@@ -339,6 +340,7 @@ mod tests {
             as_shot_white: D65_WHITE,
             scale: 1.0,
             crop: None,
+            rendered: false,
         }
     }
 

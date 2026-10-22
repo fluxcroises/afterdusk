@@ -158,7 +158,11 @@ pub fn load(
                     decode_jpeg_scaled(&data, min_side)?
                 }
                 "png" | "tif" | "tiff" => image::open(path)?.into_rgb8(),
-                // HEIF : pas de décodeur compatible GPL v3 intégré pour l'instant.
+                // HEIF : décodé par FFmpeg, livré avec Afterdusk (décision 0012).
+                "heic" | "heif" | "hif" => crate::video::still(path)
+                    .and_then(|png| image::load_from_memory(&png).ok())
+                    .ok_or_else(|| PreviewError::Unsupported(path.to_path_buf()))?
+                    .into_rgb8(),
                 _ => return Err(PreviewError::Unsupported(path.to_path_buf())),
             }
         }

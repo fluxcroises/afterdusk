@@ -1,5 +1,6 @@
-//! Image de travail d'une photo de la bibliothèque : l'original est lu par
-//! LibRaw, jamais écrit.
+//! Image de travail d'une photo de la bibliothèque : un RAW est développé
+//! par LibRaw, une photo déjà développée (JPEG, TIFF, PNG, HEIF) décodée
+//! telle quelle (`rendered`). L'original n'est jamais écrit.
 
 use std::path::PathBuf;
 
@@ -7,6 +8,7 @@ use rusqlite::{Connection, OptionalExtension};
 
 use super::lens::Shot;
 use super::pipeline::WorkingImage;
+use super::rendered::{self, RenderedError};
 use crate::library::paths::{self, PathError};
 use crate::library::{LibraryError, get_library};
 use crate::metadata::media::{MediaFormat, format_of};
@@ -21,8 +23,10 @@ pub enum SourceError {
     NotFound(i64),
     #[error("bibliothèque hors ligne : {}", .0.display())]
     Offline(PathBuf),
-    #[error("retouche réservée aux RAW pour l'instant : {0}")]
+    #[error("format non retouchable : {0}")]
     Unsupported(String),
+    #[error(transparent)]
+    Rendered(#[from] RenderedError),
     #[error(transparent)]
     Sqlite(#[from] rusqlite::Error),
     #[error(transparent)]
@@ -33,13 +37,19 @@ pub enum SourceError {
     Raw(#[from] RawError),
 }
 
-/// Original RAW d'une photo de la bibliothèque, ouvert en lecture seule.
-fn open_raw(conn: &Connection, media_id: i64) -> Result<RawFile, SourceError> {
-    let (library_id, path): (i64, String) = conn
+/// Original d'une photo de la bibliothèque, ouvert en lecture seule.
+enum Original {
+    Raw(RawFile),
+    /// Déjà développée : chemin et orientation EXIF.
+    Rendered(PathBuf, u8),
+}
+
+fn open(conn: &Connection, media_id: i64) -> Result<Original, SourceError> {
+    let (library_id, path, orientation): (i64, String, u8) = conn
         .query_row(
-            "SELECT library_id, path FROM media WHERE id = ?1",
+            "SELECT library_id, path, orientation FROM media WHERE id = ?1",
             [media_id],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
         )
         .optional()?
         .ok_or(SourceError::NotFound(media_id))?;
@@ -48,10 +58,11 @@ fn open_raw(conn: &Connection, media_id: i64) -> Result<RawFile, SourceError> {
         return Err(SourceError::Offline(lib.root_path));
     }
     let abs = paths::to_absolute(&lib.root_path, &path)?;
-    if format_of(&abs) != Some(MediaFormat::Raw) {
-        return Err(SourceError::Unsupported(path));
+    match format_of(&abs) {
+        Some(MediaFormat::Raw) => Ok(Original::Raw(RawFile::open(&abs)?)),
+        Some(MediaFormat::Image) => Ok(Original::Rendered(abs, orientation)),
+        _ => Err(SourceError::Unsupported(path)),
     }
-    Ok(RawFile::open(&abs)?)
 }
 
 /// Décode l'original d'une photo et le ramène à `max_side` pixels de côté
@@ -62,22 +73,34 @@ pub fn working_image(
     media_id: i64,
     max_side: u32,
 ) -> Result<WorkingImage, SourceError> {
-    let mut raw = open_raw(conn, media_id)?;
-    let info = raw.info();
-    let half = u32::from(info.width.max(info.height)) / 2 >= max_side;
-    let developed = raw.develop(half)?;
+    let developed = match open(conn, media_id)? {
+        Original::Raw(mut raw) => {
+            let info = raw.info();
+            let half = u32::from(info.width.max(info.height)) / 2 >= max_side;
+            raw.develop(half)?
+        }
+        Original::Rendered(path, orientation) => rendered::develop(&path, orientation)?,
+    };
     Ok(WorkingImage::from_raw(&developed, max_side))
 }
 
 /// Boîtier, objectif, focale et ouverture de la prise de vue, pour les
-/// corrections d'objectif.
+/// corrections d'objectif. Une photo déjà développée n'en reçoit pas : le
+/// boîtier ou le logiciel qui l'a produite l'a souvent déjà corrigée, et les
+/// réglages à zéro doivent la redonner telle quelle.
 pub fn shot(conn: &Connection, media_id: i64) -> Result<Shot, SourceError> {
-    Ok(Shot::from(&open_raw(conn, media_id)?.info()))
+    match open(conn, media_id)? {
+        Original::Raw(raw) => Ok(Shot::from(&raw.info())),
+        Original::Rendered(..) => Ok(Shot::default()),
+    }
 }
 
 /// Original développé en pleine définition, pour le zoom 100 %. Le X-Trans
 /// y est dématricé en une passe (5 s au lieu de 11 s pour 26 Mpx) ; l'export
 /// gardera les trois passes.
 pub fn full_resolution(conn: &Connection, media_id: i64) -> Result<DevelopedRaw, SourceError> {
-    Ok(open_raw(conn, media_id)?.develop_with(false, true)?)
+    match open(conn, media_id)? {
+        Original::Raw(mut raw) => Ok(raw.develop_with(false, true)?),
+        Original::Rendered(path, orientation) => Ok(rendered::develop(&path, orientation)?),
+    }
 }

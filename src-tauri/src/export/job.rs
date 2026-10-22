@@ -18,7 +18,9 @@ use super::presets::{self, ExportPreset, ExportSettings, Output};
 use super::render::{RenderOptions, Resize, Sharpen, render_photo};
 use super::templates::{self, Template};
 use crate::db;
+use crate::develop::geometry;
 use crate::develop::lens::{self, Shot};
+use crate::develop::rendered;
 use crate::develop::store;
 use crate::import::copy::copy_verified;
 use crate::library::copies;
@@ -203,20 +205,31 @@ fn full_size(conn: &Connection, photo: &Photo) -> Result<(u32, u32), ExportError
             let raw = RawFile::open(&photo.path)?;
             Ok(super::render::output_size(&raw, &develop, Resize::Full))
         }
-        Some(MediaFormat::Image) => {
-            let (w, h) = image::image_dimensions(&photo.path)
-                .map_err(|e| ExportError::Unsupported(format!("{} : {e}", photo.name)))?;
-            let orientation: u8 = conn
-                .query_row(
-                    "SELECT orientation FROM media WHERE id = ?1",
-                    [photo.media_id],
-                    |r| r.get(0),
-                )
-                .unwrap_or(1);
-            Ok(if orientation >= 5 { (h, w) } else { (w, h) })
-        }
+        Some(MediaFormat::Image) => rendered_size(conn, photo),
         _ => Err(ExportError::Unsupported(photo.name.clone())),
     }
+}
+
+/// Taille d'une photo déjà développée, orientée, cadrage de Développer
+/// compris. Le HEIF n'annonce pas ses dimensions à `image` : il est décodé.
+fn rendered_size(conn: &Connection, photo: &Photo) -> Result<(u32, u32), ExportError> {
+    let (w, h) = if rendered::is_heif(&photo.path) {
+        let d = rendered::develop(&photo.path, orientation(conn, photo))
+            .map_err(|e| ExportError::Unsupported(e.to_string()))?;
+        (d.width, d.height)
+    } else {
+        let (w, h) = image::image_dimensions(&photo.path)
+            .map_err(|e| ExportError::Unsupported(format!("{} : {e}", photo.name)))?;
+        if orientation(conn, photo) >= 5 {
+            (h, w)
+        } else {
+            (w, h)
+        }
+    };
+    let develop = store::load(conn, photo.media_id, &photo.version)
+        .map_err(|e| ExportError::Settings(e.to_string()))?;
+    let full = geometry::plan(&develop.geometry, f64::from(w), f64::from(h));
+    Ok((full.width, full.height))
 }
 
 /// Rendu pour un modèle : la photo juste assez grande pour le cadre, le
@@ -272,18 +285,25 @@ pub(crate) fn render_source(
             render_photo(&mut raw, &develop, profile.as_ref(), options, mark)
         }
         Some(MediaFormat::Image) => {
-            let orientation: u8 = conn
-                .query_row(
-                    "SELECT orientation FROM media WHERE id = ?1",
-                    [photo.media_id],
-                    |r| r.get(0),
-                )
-                .unwrap_or(1);
-            let img = super::render::decode_image(&photo.path, orientation)?;
-            super::render::finish(img, options.resize, options.sharpen, options.color, mark)
+            // Photo déjà développée : ses retouches, sans correction d'objectif
+            // (voir `develop::source::shot`).
+            let develop = store::load(conn, photo.media_id, &photo.version)
+                .map_err(|e| ExportError::Settings(e.to_string()))?;
+            let developed = rendered::develop(&photo.path, orientation(conn, photo))
+                .map_err(|e| ExportError::Unsupported(e.to_string()))?;
+            super::render::render_developed(&developed, &develop, None, options, mark)
         }
         _ => Err(ExportError::Unsupported(photo.name.clone())),
     }
+}
+
+fn orientation(conn: &Connection, photo: &Photo) -> u8 {
+    conn.query_row(
+        "SELECT orientation FROM media WHERE id = ?1",
+        [photo.media_id],
+        |r| r.get(0),
+    )
+    .unwrap_or(1)
 }
 
 /// Métadonnées et écriture du fichier rendu.
@@ -499,16 +519,7 @@ pub fn preview(
             super::render::output_size(&raw, &develop, preset.resize)
         }
         Some(MediaFormat::Image) => {
-            let (w, h) = image::image_dimensions(&p.path)
-                .map_err(|e| ExportError::Unsupported(format!("{} : {e}", p.name)))?;
-            let orientation: u8 = conn
-                .query_row(
-                    "SELECT orientation FROM media WHERE id = ?1",
-                    [p.media_id],
-                    |r| r.get(0),
-                )
-                .unwrap_or(1);
-            let (w, h) = if orientation >= 5 { (h, w) } else { (w, h) };
+            let (w, h) = rendered_size(conn, &p)?;
             super::render::target_size(w, h, preset.resize)
         }
         _ => return Ok(((0, 0), None)),

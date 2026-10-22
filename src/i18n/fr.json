@@ -377,7 +377,7 @@
     "noRejected": "Aucune photo rejetée dans cette vue.",
     "mediaNotFound": "Cette photo n'existe plus dans la bibliothèque.",
     "fileMoveFailed": "Un fichier n'a pas pu être déplacé ; rien n'a été modifié.",
-    "developUnsupported": "Seuls les fichiers RAW se retouchent.",
+    "developUnsupported": "Ce fichier ne se retouche pas.",
     "historyStepMissing": "Cette étape n'existe plus dans l'historique.",
     "versionMissing": "Cette version n'existe plus.",
     "snapshotMissing": "Cet instantané n'existe plus.",

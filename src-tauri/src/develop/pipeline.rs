@@ -39,6 +39,8 @@ pub struct WorkingImage {
     /// entière, pour que vignetage et grain y soient les mêmes. `None` :
     /// l'image entière.
     pub crop: Option<Crop>,
+    /// Image déjà développée (voir [`DevelopedRaw::rendered`]).
+    pub rendered: bool,
 }
 
 /// Place d'une région dans l'image entière, en pixels de la région.
@@ -127,6 +129,8 @@ pub const FLAG_VIGNETTE: u32 = 32;
 pub const FLAG_GRAIN: u32 = 64;
 pub const FLAG_DENOISE: u32 = 128;
 pub const FLAG_SHARPEN: u32 = 256;
+/// Source déjà développée : courbe neutre réduite à l'identité (bornée).
+pub const FLAG_RENDERED: u32 = 512;
 
 /// Couleurs des avertissements d'écrêtage peints sur l'image.
 pub const CLIP_HIGHLIGHT_RGB: [u8; 3] = [255, 40, 40];
@@ -271,6 +275,7 @@ impl WorkingImage {
             height: oh as u32,
             rgb,
             as_shot_white: raw.as_shot_white,
+            rendered: raw.rendered,
             scale: ow.max(oh) as f32 / raw.full_long_side.max(1) as f32,
             crop: None,
         }
@@ -296,6 +301,7 @@ impl WorkingImage {
             height: h,
             rgb,
             as_shot_white: raw.as_shot_white,
+            rendered: raw.rendered,
             scale: raw.width.max(raw.height) as f32 / raw.full_long_side.max(1) as f32,
             crop: Some(Crop {
                 left,
@@ -324,6 +330,7 @@ impl WorkingImage {
             height: h,
             rgb,
             as_shot_white: self.as_shot_white,
+            rendered: self.rendered,
             scale: self.scale,
             crop: Some(Crop {
                 left: l,
@@ -429,6 +436,7 @@ impl WorkingImage {
             height: oh as u32,
             rgb,
             as_shot_white: self.as_shot_white,
+            rendered: self.rendered,
             scale: self.scale * ow.max(oh) as f32 / w.max(h).max(1) as f32,
             crop: None,
         }
@@ -505,6 +513,19 @@ pub struct RenderParams {
 }
 
 impl RenderParams {
+    /// Source déjà développée (JPEG, TIFF, PNG, HEIF) : ni décalage
+    /// d'exposition de base ni épaule, pour que les réglages à zéro redonnent
+    /// l'image telle quelle.
+    #[must_use]
+    pub fn rendered(mut self, rendered: bool) -> Self {
+        if rendered {
+            let undo = (-process1::BASELINE_EV).exp2();
+            self.matrix = self.matrix.map(|r| r.map(|v| v * undo));
+            self.flags |= FLAG_RENDERED;
+        }
+        self
+    }
+
     pub fn from_settings(
         settings: &DevelopSettings,
         as_shot: [f64; 3],
@@ -772,7 +793,11 @@ pub fn render_pixel_at(rgb: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
 /// sRGB, TSL, courbes.
 #[inline]
 pub fn display_of(lin: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
-    let mut v = lin.map(neutral_curve);
+    let mut v = if p.flags & FLAG_RENDERED != 0 {
+        lin.map(|x| x.clamp(0.0, 1.0))
+    } else {
+        lin.map(neutral_curve)
+    };
     if p.flags & FLAG_TONE != 0 {
         let y = LUMA_REC2020[0] * v[0] + LUMA_REC2020[1] * v[1] + LUMA_REC2020[2] * v[2];
         if y > 1e-6 {
@@ -1058,6 +1083,7 @@ mod tests {
             xyz,
             as_shot_white: D65_WHITE,
             full_long_side: w,
+            rendered: false,
         };
         let image = WorkingImage::from_raw(&raw, 40);
         for detail in [false, true] {
@@ -1225,6 +1251,7 @@ mod tests {
             xyz,
             as_shot_white: D65_WHITE,
             full_long_side: w,
+            rendered: false,
         };
         let img = WorkingImage::from_raw(&raw, 128);
         assert_eq!((img.width, img.height), (128, 85));
@@ -1367,6 +1394,7 @@ mod tests {
             xyz,
             as_shot_white: D65_WHITE,
             full_long_side: w,
+            rendered: false,
         };
         let whole = WorkingImage::from_raw(&raw, 40);
         let part = WorkingImage::crop_from_raw(&raw, 10, 5, 12, 8);
@@ -1402,6 +1430,7 @@ mod tests {
             as_shot_white: D65_WHITE,
             scale: 1.0,
             crop: None,
+            rendered: false,
         };
         let mut s = DevelopSettings::default();
         s.light.contrast = 30.0;
@@ -1436,6 +1465,7 @@ mod tests {
             xyz,
             as_shot_white: D65_WHITE,
             full_long_side: w,
+            rendered: false,
         };
         let mut s = DevelopSettings::default();
         s.detail.noise.luminance = 80.0;
@@ -1478,6 +1508,7 @@ mod tests {
             xyz,
             as_shot_white: D65_WHITE,
             full_long_side: w,
+            rendered: false,
         };
         let mut s = DevelopSettings::default();
         s.geometry.angle = 6.0;
@@ -1514,6 +1545,7 @@ mod tests {
             as_shot_white: D65_WHITE,
             scale: 1.0,
             crop: None,
+            rendered: false,
         };
         let r = render(&image, &neutral());
         assert_eq!(histogram_of(&r.rgba), r.histogram);
@@ -1533,6 +1565,7 @@ mod tests {
             as_shot_white: D65_WHITE,
             scale: 1.0,
             crop: None,
+            rendered: false,
         };
         let mut p = neutral();
         p.flags |= FLAG_CLIP_HIGHLIGHTS | FLAG_CLIP_SHADOWS;

@@ -345,7 +345,8 @@ pub async fn develop_render(
             session.thumb = None;
         }
         let clipping = clipping.unwrap_or_default();
-        let params = RenderParams::from_settings(&settings, session.image.as_shot_white, clipping);
+        let params = RenderParams::from_settings(&settings, session.image.as_shot_white, clipping)
+            .rendered(session.image.rendered);
         Ok(render_frame_cut(
             &engine,
             &session.image,
@@ -454,7 +455,8 @@ pub async fn develop_zoom_render(
         };
         let settings = settings.sanitized();
         let clipping = clipping.unwrap_or_default();
-        let params = RenderParams::from_settings(&settings, full.as_shot_white, clipping);
+        let params = RenderParams::from_settings(&settings, full.as_shot_white, clipping)
+            .rendered(full.rendered);
         // Réduction du bruit et netteté regardent les voisins : la région est
         // rendue avec une marge, puis rognée, pour des bords justes.
         let correction = lens_correction(profile.as_ref(), &settings.lens, full.width, full.height);
@@ -935,7 +937,8 @@ pub async fn develop_preset_previews(
                 presets::apply(&settings, &presets::find(&path, id)?, amount)
             };
             let params =
-                RenderParams::from_settings(&applied, small.as_shot_white, Clipping::default());
+                RenderParams::from_settings(&applied, small.as_shot_white, Clipping::default())
+                    .rendered(small.rendered);
             let rendered = render(&small, &params);
             out.extend_from_slice(&small.width.to_le_bytes());
             out.extend_from_slice(&small.height.to_le_bytes());

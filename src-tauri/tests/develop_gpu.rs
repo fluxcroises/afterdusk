@@ -181,6 +181,7 @@ fn degrade_synthetique_identique() {
         as_shot_white: D65_WHITE,
         scale: 1.0,
         crop: None,
+        rendered: false,
     };
     let uploaded = gpu.upload(&image).unwrap();
     for (name, settings, clipping) in cases() {

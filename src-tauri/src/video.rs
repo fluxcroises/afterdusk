@@ -190,6 +190,29 @@ pub fn frame(path: &Path, at: f64, max_side: u32) -> Option<RgbImage> {
         .map(|i| i.to_rgb8())
 }
 
+/// Image fixe HEIF (HEIC des téléphones, mosaïques comprises) décodée par
+/// FFmpeg en PNG 16 bits, profil ICC conservé. L'orientation n'est pas
+/// appliquée : Afterdusk l'applique d'après l'EXIF, comme pour un JPEG.
+pub fn still(path: &Path) -> Option<Vec<u8>> {
+    let output = command(&tool("ffmpeg")?)
+        .args(["-v", "error", "-noautorotate", "-i"])
+        .arg(path)
+        .args([
+            "-frames:v",
+            "1",
+            "-pix_fmt",
+            "rgb48be",
+            "-f",
+            "image2pipe",
+            "-c:v",
+            "png",
+            "-",
+        ])
+        .output()
+        .ok()?;
+    (output.status.success() && !output.stdout.is_empty()).then_some(output.stdout)
+}
+
 /// Miniature : une image prise à 10 % de la durée (pas l'écran noir du début).
 pub fn thumbnail(path: &Path, max_side: u32) -> Option<RgbImage> {
     let at = probe(path).map_or(0.0, |i| i.duration_ms as f64 / 10_000.0);

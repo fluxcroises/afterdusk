@@ -16,7 +16,7 @@ use crate::develop::lens::{LensCorrection, LensProfile};
 use crate::develop::pipeline::{Clipping, RenderParams, WorkingImage, render_encoded};
 use crate::develop::settings::DevelopSettings;
 use crate::develop::spots;
-use crate::raw::RawFile;
+use crate::raw::{DevelopedRaw, RawFile};
 
 /// Taille de sortie ; jamais d'agrandissement au-delà de l'original.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
@@ -132,15 +132,26 @@ pub fn render_photo(
     let (tw, _) = target_size(full.width, full.height, options.resize);
     let half = f64::from(tw) <= f64::from(full.width) * 0.48;
     let developed = raw.develop(half)?;
+    render_developed(&developed, settings, profile, options, mark)
+}
 
+/// Rend une photo déjà décodée (RAW développé par LibRaw, ou photo déjà
+/// développée : JPEG, TIFF, PNG, HEIF) avec ses réglages.
+pub fn render_developed(
+    developed: &DevelopedRaw,
+    settings: &DevelopSettings,
+    profile: Option<&LensProfile>,
+    options: RenderOptions,
+    mark: Option<&Watermark>,
+) -> Result<Rendered, ExportError> {
+    let g = &settings.geometry;
     // Image de travail juste assez grande pour la sortie.
     let out = geometry::plan(g, f64::from(developed.width), f64::from(developed.height));
     let (tw, th) = target_size(out.width, out.height, options.resize);
     let k = f64::from(tw) / f64::from(out.width.max(1));
     let long = developed.width.max(developed.height);
     let side = ((f64::from(long) * k).ceil() as u32 + 2).min(long);
-    let base = WorkingImage::from_raw(&developed, side);
-    drop(developed);
+    let base = WorkingImage::from_raw(developed, side);
 
     let corrected = match profile.and_then(|p| LensCorrection::new(p, &settings.lens)) {
         Some(c) => c.for_image(base.width, base.height).whole(&base),
@@ -156,7 +167,8 @@ pub fn render_photo(
         shaped.resized(tw, th)
     };
 
-    let params = RenderParams::from_settings(settings, sized.as_shot_white, Clipping::default());
+    let params = RenderParams::from_settings(settings, sized.as_shot_white, Clipping::default())
+        .rendered(sized.rendered);
     let mut rgb = render_encoded(&sized, &params);
     sharpen(&mut rgb, tw as usize, th as usize, options.sharpen);
     let mut out = Rendered {
@@ -169,20 +181,6 @@ pub fn render_photo(
     }
     options.color.convert(&mut out.rgb)?;
     Ok(out)
-}
-
-/// Photo non RAW (JPEG, TIFF, PNG) décodée telle quelle, orientation du
-/// boîtier appliquée : valeurs sRGB codées, comme la sortie du rendu.
-pub fn decode_image(path: &std::path::Path, orientation: u8) -> Result<Rendered, ExportError> {
-    let img = image::open(path)
-        .map_err(|e| ExportError::Unsupported(format!("{} : {e}", path.display())))?
-        .into_rgb8();
-    let img = crate::raw::preview::orient(img, orientation);
-    Ok(Rendered {
-        width: img.width(),
-        height: img.height(),
-        rgb: img.as_raw().iter().map(|v| f32::from(*v) / 255.0).collect(),
-    })
 }
 
 /// Partie de l'image, en fractions de sa largeur et de sa hauteur

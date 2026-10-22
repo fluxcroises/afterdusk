@@ -66,6 +66,7 @@ fn sample(image: &WorkingImage) -> WorkingImage {
         height: h,
         rgb,
         as_shot_white: image.as_shot_white,
+        rendered: image.rendered,
         scale: image.scale / stride as f32,
         crop: None,
     }
@@ -76,7 +77,8 @@ struct Luma([u32; 256], f64);
 
 impl Luma {
     fn of(image: &WorkingImage, settings: &DevelopSettings) -> Self {
-        let p = RenderParams::from_settings(settings, image.as_shot_white, Clipping::default());
+        let p = RenderParams::from_settings(settings, image.as_shot_white, Clipping::default())
+            .rendered(image.rendered);
         let h = render(image, &p).histogram;
         let mut bins = [0u32; 256];
         bins.copy_from_slice(&h[768..1024]);
@@ -331,6 +333,7 @@ mod tests {
             as_shot_white: D65_WHITE,
             scale: 1.0,
             crop: None,
+            rendered: false,
         }
     }
 

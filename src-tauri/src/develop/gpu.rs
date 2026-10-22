@@ -12,9 +12,9 @@ use wgpu::util::DeviceExt;
 use super::curve;
 use super::detail::{self, Radii};
 use super::pipeline::{
-    FLAG_CURVE, FLAG_DENOISE, FLAG_GRAIN, FLAG_HSL, FLAG_SHARPEN, FLAG_TONE, FLAG_VIGNETTE,
-    HISTOGRAM_BINS, HUE_CENTERS, LUMA_REC2020, REC2020_TO_SRGB, RenderParams, Rendered,
-    WorkingImage, histogram_of, paint_clipping, process1,
+    FLAG_CURVE, FLAG_DENOISE, FLAG_GRAIN, FLAG_HSL, FLAG_RENDERED, FLAG_SHARPEN, FLAG_TONE,
+    FLAG_VIGNETTE, HISTOGRAM_BINS, HUE_CENTERS, LUMA_REC2020, REC2020_TO_SRGB, RenderParams,
+    Rendered, WorkingImage, histogram_of, paint_clipping, process1,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -80,8 +80,13 @@ const S0 = {s0};
 const S1 = {s1};
 const S2 = {s2};
 const FLAG_TONE: u32 = {flag_tone}u;
+const FLAG_RENDERED: u32 = {flag_rendered}u;
 
 fn neutral_curve(x: f32) -> f32 {{
+    // Source déjà développée : identité bornée, pas d'épaule.
+    if ((params.flags & FLAG_RENDERED) != 0u) {{
+        return clamp(x, 0.0, 1.0);
+    }}
     if (x <= SHOULDER) {{
         return max(x, 0.0);
     }}
@@ -349,6 +354,7 @@ fn main(
         s1 = vec3(m[1]),
         s2 = vec3(m[2]),
         flag_tone = FLAG_TONE,
+        flag_rendered = FLAG_RENDERED,
         wg = WORKGROUP,
     )
 }

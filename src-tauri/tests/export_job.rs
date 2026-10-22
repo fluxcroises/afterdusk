@@ -342,6 +342,52 @@ fn jpeg_et_png_rendus_par_le_preset_web() {
         let img = image::open(p).unwrap();
         assert_eq!((img.width(), img.height()), (2048, 1365), "{p:?}");
     }
+    // Sans retouche, le rendu redonne l'image : même luminosité moyenne.
+    let mean = |p: &std::path::Path| {
+        let img = image::open(p).unwrap().into_rgb8();
+        img.as_raw().iter().map(|v| f64::from(*v)).sum::<f64>() / img.as_raw().len() as f64
+    };
+    let jpeg = web.iter().find(|p| p.ends_with("paysage.jpg")).unwrap();
+    let source = originals
+        .iter()
+        .find(|(p, _)| p.ends_with("paysage.jpg"))
+        .map(|(p, _)| p.clone())
+        .unwrap();
+    assert!(
+        (mean(jpeg) - mean(&source)).abs() < 2.0,
+        "{} / {}",
+        mean(jpeg),
+        mean(&source)
+    );
+
+    // Retouche d'un JPEG : +1 IL éclaircit l'export.
+    let mut settings = DevelopSettings::default();
+    settings.light.exposure = 1.0;
+    store::save(
+        &mut conn,
+        request.media_ids[0],
+        store::ORIGINAL,
+        settings,
+        "light.exposure",
+    )
+    .unwrap();
+    let brighter = dir.path().join("Retouche");
+    let again = ExportRequest {
+        media_ids: vec![request.media_ids[0]],
+        targets: request.targets.clone(),
+        destination: brighter.clone(),
+    };
+    let done = job::run(
+        &db_path,
+        &ExportSettings::default(),
+        &again,
+        &AtomicBool::new(false),
+        &|_| {},
+    )
+    .unwrap();
+    assert!(done.failures.is_empty(), "{:?}", done.failures);
+    let edited = walk(&brighter);
+    assert!(mean(&edited[0]) > mean(jpeg) + 20.0, "{}", mean(&edited[0]));
     for (orig, hash) in &originals {
         assert_eq!(&common::sha256(orig), hash);
     }

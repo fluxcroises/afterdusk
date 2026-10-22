@@ -377,7 +377,7 @@
     "noRejected": "No rejected photos in this view.",
     "mediaNotFound": "This photo no longer exists in the library.",
     "fileMoveFailed": "A file could not be moved; nothing was changed.",
-    "developUnsupported": "Only RAW files can be edited.",
+    "developUnsupported": "This file cannot be edited.",
     "historyStepMissing": "This step is no longer in the history.",
     "versionMissing": "This version no longer exists.",
     "snapshotMissing": "This snapshot no longer exists.",

@@ -402,6 +402,7 @@ mod tests {
             as_shot_white: [0.95, 1.0, 1.09],
             scale: 1.0,
             crop: None,
+            rendered: false,
         }
     }
 
