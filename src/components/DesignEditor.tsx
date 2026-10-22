@@ -10,13 +10,14 @@ import { useStudioLogo } from "../store/studioLogo";
 import { confirmWarning } from "../ui/confirm";
 import {
   type Cell,
+  DEFAULT_FONT,
   type Design,
   type DesignPhoto,
   type DesignText,
   LINE_HEIGHT,
-  MAX_PHOTOS,
   cells,
   cover,
+  maxPhotos,
 } from "../ui/design";
 import { Slider } from "./DevelopPanels";
 import { ErrorBanner } from "./ErrorBanner";
@@ -30,6 +31,7 @@ const NEW_TEXT: DesignText = {
   x: 0.5,
   y: 0.4,
   size: 8,
+  font: DEFAULT_FONT,
   weight: 600,
   color: "#ffffff",
   align: "center",
@@ -112,6 +114,19 @@ function TextNode({
 }) {
   const ref = useRef<Konva.Text>(null);
   const k = text.align === "center" ? 0.5 : text.align === "right" ? 1 : 0;
+  // Konva mesure le texte au dessin : on le redessine une fois la police
+  // chargée par le navigateur intégré.
+  const [loaded, setLoaded] = useState(0);
+  useEffect(() => {
+    if (!("fonts" in document)) return;
+    let live = true;
+    void document.fonts
+      .load(`${text.weight} 32px "${text.font}"`)
+      .then(() => live && setLoaded((n) => n + 1));
+    return () => {
+      live = false;
+    };
+  }, [text.font, text.weight]);
   // L'accroche est le bord ou le milieu de la ligne la plus longue.
   useLayoutEffect(() => {
     const node = ref.current;
@@ -120,11 +135,12 @@ function TextNode({
   const st = useDesigns.getState();
   return (
     <Text
+      key={loaded}
       ref={ref}
       text={text.text || " "}
       x={text.x * page[0] * scale}
       y={text.y * page[1] * scale}
-      fontFamily="Inter"
+      fontFamily={`"${text.font}", Inter`}
       fontSize={(text.size / 100) * page[1] * scale}
       fontStyle={String(text.weight)}
       lineHeight={LINE_HEIGHT}
@@ -185,26 +201,32 @@ function Page({ design }: { design: Design }) {
   const scale = Math.min(STAGE_MAX[0] / design.width, STAGE_MAX[1] / design.height);
   const page: [number, number] = [design.width, design.height];
   const [w, h] = [design.width * scale, design.height * scale];
-  const boxes = cells(design.photos.length, design.width / design.height, design.margin);
+  const n = design.photos.length;
+  const boxes = cells(design.layout, n, design.width / design.height, design.margin);
   const short = Math.min(design.width, design.height) * scale;
   return (
     <Stage width={w} height={h} className="design-stage">
       <Layer>
         <Rect width={w} height={h} fill={design.background} onMouseDown={() => st.select(null)} />
-        {design.photos.map((p, i) => (
-          <PhotoCell
-            key={`${p.item}-${i}`}
-            photo={p}
-            cell={boxes[i]}
-            page={page}
-            scale={scale}
-            onFocus={(focus) => {
-              const photos = [...design.photos];
-              photos[i] = { ...p, focus };
-              st.update({ photos });
-            }}
-          />
-        ))}
+        {boxes.map((cell, k) => {
+          // Une bande doublée répète ses photos dans la seconde colonne.
+          const i = k % n;
+          const p = design.photos[i];
+          return (
+            <PhotoCell
+              key={`${p.item}-${k}`}
+              photo={p}
+              cell={cell}
+              page={page}
+              scale={scale}
+              onFocus={(focus) => {
+                const photos = [...design.photos];
+                photos[i] = { ...p, focus };
+                st.update({ photos });
+              }}
+            />
+          );
+        })}
         {design.frame &&
           boxes.map((c, i) => {
             const t = ((design.frame?.width ?? 0) / 100) * short;
@@ -258,11 +280,15 @@ function TextControls({ index, text }: { index: number; text: DesignText }) {
   const { t } = useTranslation();
   const st = useDesigns.getState();
   const texts = useDesigns((s) => s.draft?.document.texts ?? []);
+  const fonts = useDesigns((s) => s.fonts);
   const set = (patch: Partial<DesignText>) => {
     const next = [...texts];
     next[index] = { ...text, ...patch };
     st.update({ texts: next });
   };
+  const known = (list: string[]) => list.some((f) => f.toLowerCase() === text.font.toLowerCase());
+  // Composition faite sur un autre ordinateur : la police peut manquer ici.
+  const missing = fonts !== null && !known(fonts.bundled) && !known(fonts.system);
   return (
     <div className="design-group">
       <label className="deliver-field design-textarea">
@@ -274,6 +300,29 @@ function TextControls({ index, text }: { index: number; text: DesignText }) {
           onChange={(e) => set({ text: e.currentTarget.value })}
         />
       </label>
+      <label className="deliver-field">
+        <span>{t("design.font")}</span>
+        <select value={text.font} onChange={(e) => set({ font: e.currentTarget.value })}>
+          {missing && <option value={text.font}>{text.font}</option>}
+          <optgroup label={t("design.bundledFonts")}>
+            {(fonts?.bundled ?? [DEFAULT_FONT]).map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </optgroup>
+          {fonts && fonts.system.length > 0 && (
+            <optgroup label={t("design.systemFonts")}>
+              {fonts.system.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </label>
+      {missing && <p className="panel-note">{t("design.missingFont", { font: text.font })}</p>}
       <Slider
         label={t("design.textSize")}
         value={text.size}
@@ -348,6 +397,7 @@ export function DesignEditor() {
 
   useEffect(() => {
     void useStudioLogo.getState().load();
+    void useDesigns.getState().loadFonts();
   }, []);
 
   const close = async () => {
@@ -377,6 +427,9 @@ export function DesignEditor() {
   const d = draft.document;
   const text = typeof selected === "number" ? d.texts[selected] : undefined;
   const print = d.template.startsWith("print-");
+  const polaroid = d.layout === "polaroid";
+  // Bande photomaton : 5 × 15 cm, ou deux bandes sur un 10 × 15.
+  const doubled = d.layout === "strip" && Math.round((d.width / d.height) * 3) >= 2;
 
   return (
     <div className="modal-backdrop">
@@ -436,7 +489,7 @@ export function DesignEditor() {
             <button
               type="button"
               className="button button-small"
-              disabled={d.photos.length >= MAX_PHOTOS || !hasSelection}
+              disabled={d.photos.length >= maxPhotos(d.layout) || !hasSelection}
               onClick={() => {
                 const lib = useLibrary.getState();
                 const ids =
@@ -458,17 +511,33 @@ export function DesignEditor() {
               value={d.background}
               onChange={(background) => st.update({ background })}
             />
-            <Slider
-              label={t("design.margin")}
-              value={d.margin}
-              min={0}
-              max={20}
-              step={0.5}
-              display={`${d.margin} %`}
-              onChange={(margin) => st.update({ margin })}
-              onReset={() => st.update({ margin: 3 })}
-            />
-            <label className="check-row">
+            {d.layout === "strip" && (
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={doubled}
+                  onChange={(e) =>
+                    st.update({
+                      width: Math.round((d.height * (e.currentTarget.checked ? 2 : 1)) / 3),
+                    })
+                  }
+                />
+                {t("design.doubleStrip")}
+              </label>
+            )}
+            {!polaroid && (
+              <Slider
+                label={t("design.margin")}
+                value={d.margin}
+                min={0}
+                max={20}
+                step={0.5}
+                display={`${d.margin} %`}
+                onChange={(margin) => st.update({ margin })}
+                onReset={() => st.update({ margin: 3 })}
+              />
+            )}
+            <label className="check-row" hidden={polaroid}>
               <input
                 type="checkbox"
                 checked={d.frame !== null}

@@ -5,7 +5,7 @@ import { type CommandError, toCommandError } from "../api/core";
 /** Miroir de `export::templates::Template`. */
 export interface DeliveryTemplate {
   id: string;
-  group: "social" | "print" | "web";
+  group: "social" | "print" | "web" | "creative";
   width: number;
   height: number;
 }
@@ -20,13 +20,14 @@ export interface Framing {
   sharpEnough: boolean;
 }
 
-export const GROUPS: DeliveryTemplate["group"][] = ["social", "print", "web"];
+export const GROUPS: DeliveryTemplate["group"][] = ["social", "print", "web", "creative"];
 
 /** Preset qui donne le format, les couleurs et les métadonnées d'un usage. */
 export const GROUP_PRESET: Record<DeliveryTemplate["group"], string> = {
   social: "instagram",
   print: "full",
   web: "web",
+  creative: "full",
 };
 
 const CHOSEN_KEY = "afterdusk.export.templates";

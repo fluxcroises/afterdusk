@@ -10,6 +10,35 @@
   font-display: swap;
 }
 
+/* Polices des compositions de Livrer (OFL), les mêmes fichiers que le rendu. */
+@font-face {
+  font-family: Caveat;
+  src: url("../src-tauri/assets/fonts/Caveat.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("../src-tauri/assets/fonts/PlayfairDisplay.ttf") format("truetype");
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("../src-tauri/assets/fonts/CormorantGaramond.ttf") format("truetype");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("../src-tauri/assets/fonts/BebasNeue.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --ad-bg: #17191c;
   --ad-workspace: #111214;

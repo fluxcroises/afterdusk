@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { type CommandError, toCommandError } from "../api/core";
-import { DESIGN_VERSION, type Design, MAX_PHOTOS } from "../ui/design";
+import { DESIGN_VERSION, type Design, type DesignText, layoutOf, maxPhotos } from "../ui/design";
 
 /** Miroir de `export::design::Saved`. */
 export interface SavedDesign {
@@ -9,6 +9,12 @@ export interface SavedDesign {
   name: string;
   document: Design;
   updatedAt: string;
+}
+
+/** Miroir de `fonts::FontList` : polices livrées, puis installées. */
+export interface FontList {
+  bundled: string[];
+  system: string[];
 }
 
 /** Composition ouverte dans l'éditeur. */
@@ -20,6 +26,7 @@ export interface Draft {
 
 interface DesignsState {
   saved: SavedDesign[];
+  fonts: FontList | null;
   draft: Draft | null;
   /** Modifiée depuis l'ouverture ou le dernier enregistrement. */
   dirty: boolean;
@@ -30,13 +37,18 @@ interface DesignsState {
   exported: string | null;
   error: CommandError | null;
   load: () => Promise<void>;
-  /** Nouvelle composition au format `width` × `height` d'un modèle. */
+  loadFonts: () => Promise<void>;
+  /**
+   * Nouvelle composition au format `width` × `height` d'un modèle ; un
+   * Polaroid reçoit `caption` comme légende de départ.
+   */
   create: (
     template: string,
     width: number,
     height: number,
     items: number[],
     name: string,
+    caption?: string,
   ) => Promise<void>;
   open: (saved: SavedDesign) => void;
   close: () => void;
@@ -65,6 +77,7 @@ async function focusOf(items: number[]) {
 
 export const useDesigns = create<DesignsState>()((set, get) => ({
   saved: [],
+  fonts: null,
   draft: null,
   dirty: false,
   selected: null,
@@ -80,9 +93,35 @@ export const useDesigns = create<DesignsState>()((set, get) => ({
     }
   },
 
-  create: async (template, width, height, items, name) => {
-    const photos = await focusOf(items.slice(0, MAX_PHOTOS));
+  loadFonts: async () => {
+    if (get().fonts) return;
+    try {
+      set({ fonts: await invoke<FontList>("fonts_list") });
+    } catch (e) {
+      set({ error: toCommandError(e) });
+    }
+  },
+
+  create: async (template, width, height, items, name, caption = "") => {
+    const layout = layoutOf(template);
+    const photos = await focusOf(items.slice(0, maxPhotos(layout)));
     if (photos.length === 0) return;
+    // Polaroid : fond crème, légende manuscrite dans le bord du bas.
+    const texts: DesignText[] =
+      layout === "polaroid"
+        ? [
+            {
+              text: caption,
+              x: 0.5,
+              y: 0.84,
+              size: 6,
+              font: "Caveat",
+              weight: 500,
+              color: "#2a2a2a",
+              align: "center",
+            },
+          ]
+        : [];
     set({
       exported: null,
       selected: null,
@@ -93,13 +132,14 @@ export const useDesigns = create<DesignsState>()((set, get) => ({
         document: {
           version: DESIGN_VERSION,
           template,
+          layout,
           width,
           height,
           photos,
-          background: "#ffffff",
-          margin: photos.length > 1 ? 3 : 0,
+          background: layout === "polaroid" ? "#f6f3ea" : "#ffffff",
+          margin: layout === "strip" ? 4 : photos.length > 1 ? 3 : 0,
           frame: null,
-          texts: [],
+          texts,
           logo: null,
         },
       },
@@ -132,7 +172,7 @@ export const useDesigns = create<DesignsState>()((set, get) => ({
     const { draft } = get();
     if (!draft) return;
     const present = new Set(draft.document.photos.map((p) => p.item));
-    const room = MAX_PHOTOS - draft.document.photos.length;
+    const room = maxPhotos(draft.document.layout) - draft.document.photos.length;
     const added = await focusOf(items.filter((i) => !present.has(i)).slice(0, room));
     const current = get().draft;
     if (current && added.length > 0) {

@@ -1483,7 +1483,8 @@
     "groups": {
       "social": "Social media",
       "print": "Prints",
-      "web": "Web"
+      "web": "Web",
+      "creative": "Creative"
     },
     "names": {
       "instagram-portrait": "Instagram 4:5",
@@ -1498,7 +1499,9 @@
       "print-13x18": "5 × 7 in print",
       "print-20x30": "8 × 12 in print",
       "print-a4": "A4 print",
-      "web-fullscreen": "Full screen"
+      "web-fullscreen": "Full screen",
+      "photo-strip": "Photo booth strip",
+      "polaroid": "Polaroid"
     },
     "size": "{{width}} × {{height}} px",
     "lowResolution": "Low resolution",
@@ -1572,6 +1575,13 @@
     "save": "Save",
     "export": "Export",
     "saved": "Compositions",
-    "open": "Open “{{name}}”"
+    "open": "Open “{{name}}”",
+    "caption": "Your caption",
+    "composeHint": "Compose with the selection",
+    "font": "Font",
+    "bundledFonts": "Afterdusk fonts",
+    "systemFonts": "Fonts on this computer",
+    "missingFont": "The font “{{font}}” is missing on this computer: Inter will replace it on export.",
+    "doubleStrip": "Two strips on a 4 × 6 in print"
   }
 }

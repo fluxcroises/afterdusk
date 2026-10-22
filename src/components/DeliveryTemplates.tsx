@@ -72,8 +72,33 @@ function TemplateCard({
       lib.selectedId === null
         ? lib.selectedIds
         : [lib.selectedId, ...lib.selectedIds.filter((i) => i !== lib.selectedId)];
-    void useDesigns.getState().create(template.id, width, height, items, name);
+    void useDesigns.getState().create(template.id, width, height, items, name, t("design.caption"));
   };
+  // Bande photomaton et Polaroid : des pages à composer, pas des cadrages.
+  if (template.group === "creative") {
+    return (
+      <li className="template-card">
+        <button type="button" className="template-pick" onClick={compose}>
+          <span
+            className="template-frame template-creative"
+            data-layout={template.id}
+            style={{ "--ratio": width / height } as CSSProperties}
+          >
+            {(template.id === "photo-strip" ? [0, 1, 2, 3] : [0]).map((i) => (
+              <span
+                key={i}
+                className="creative-photo"
+                style={src ? { backgroundImage: `url("${src}")` } : undefined}
+              />
+            ))}
+          </span>
+          <span className="template-name">{name}</span>
+          <span className="template-size">{t("templates.size", { width, height })}</span>
+          <span className="template-custom">{t("design.composeHint")}</span>
+        </button>
+      </li>
+    );
+  }
   return (
     <li className="template-card" data-chosen={chosen || undefined}>
       <button

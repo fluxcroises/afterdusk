@@ -50,10 +50,18 @@ describe("éditeur de livraison", () => {
               ? []
               : cmd === "design_export"
                 ? "D:/Livraison/Faire-part.jpg"
-                : null,
+                : cmd === "fonts_list"
+                  ? { bundled: ["Inter", "Caveat"], system: ["Arial"] }
+                  : null,
       ),
     );
-    useDesigns.setState({ draft: null, dirty: false, selected: null, exported: null });
+    useDesigns.setState({
+      draft: null,
+      dirty: false,
+      selected: null,
+      exported: null,
+      fonts: null,
+    });
   });
 
   it("part des photos choisies, centrées sur leur visage", async () => {
@@ -97,5 +105,46 @@ describe("éditeur de livraison", () => {
     expect(useDialog.getState().current?.title).toBe("Fermer sans enregistrer ?");
     await act(async () => useDialog.getState().answer(false));
     expect(useDesigns.getState().draft).not.toBeNull();
+  });
+
+  it("Polaroid : une seule photo, légende en Caveat, sans réglage de marge", async () => {
+    await act(async () => {
+      await useDesigns.getState().create("polaroid", 1040, 1264, [7, 8], "Souvenir", "Été 2026");
+    });
+    render(<DesignEditor />);
+    await act(async () => {});
+    const d = useDesigns.getState().draft?.document;
+    expect(d?.layout).toBe("polaroid");
+    expect(d?.photos).toHaveLength(1);
+    expect(d?.texts[0]).toMatchObject({ text: "Été 2026", font: "Caveat" });
+    expect(screen.queryByText("Marge")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ajouter la sélection" })).toBeDisabled();
+  });
+
+  it("bande photomaton doublée sur un 10 × 15", async () => {
+    await act(async () => {
+      await useDesigns.getState().create("photo-strip", 600, 1800, [7, 8, 9], "Bande");
+    });
+    render(<DesignEditor />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Deux bandes sur un tirage 10 × 15" }));
+    expect(useDesigns.getState().draft?.document.width).toBe(1200);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Deux bandes sur un tirage 10 × 15" }));
+    expect(useDesigns.getState().draft?.document.width).toBe(600);
+  });
+
+  it("polices livrées et installées ; une police absente est signalée", async () => {
+    await open();
+    await act(async () => {});
+    fireEvent.click(screen.getByRole("button", { name: "Ajouter un texte" }));
+    const select = screen.getByRole("combobox", { name: "Police" });
+    expect(screen.getByRole("group", { name: "Polices d'Afterdusk" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Arial" })).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: "Caveat" } });
+    expect(useDesigns.getState().draft?.document.texts[0].font).toBe("Caveat");
+    act(() => {
+      const d = useDesigns.getState().draft?.document;
+      if (d) useDesigns.getState().update({ texts: [{ ...d.texts[0], font: "Garamond Pro" }] });
+    });
+    expect(screen.getByText(/« Garamond Pro » manque sur cet ordinateur/)).toBeInTheDocument();
   });
 });

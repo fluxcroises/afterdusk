@@ -1483,7 +1483,8 @@
     "groups": {
       "social": "Réseaux sociaux",
       "print": "Tirages",
-      "web": "Web"
+      "web": "Web",
+      "creative": "Créatif"
     },
     "names": {
       "instagram-portrait": "Instagram 4:5",
@@ -1498,7 +1499,9 @@
       "print-13x18": "Tirage 13 × 18",
       "print-20x30": "Tirage 20 × 30",
       "print-a4": "Tirage A4",
-      "web-fullscreen": "Plein écran"
+      "web-fullscreen": "Plein écran",
+      "photo-strip": "Bande photomaton",
+      "polaroid": "Polaroid"
     },
     "size": "{{width}} × {{height}} px",
     "lowResolution": "Définition juste",
@@ -1572,6 +1575,13 @@
     "save": "Enregistrer",
     "export": "Exporter",
     "saved": "Compositions",
-    "open": "Ouvrir « {{name}} »"
+    "open": "Ouvrir « {{name}} »",
+    "caption": "Votre légende",
+    "composeHint": "Composer avec la sélection",
+    "font": "Police",
+    "bundledFonts": "Polices d'Afterdusk",
+    "systemFonts": "Polices de cet ordinateur",
+    "missingFont": "La police « {{font}} » manque sur cet ordinateur : Inter la remplacera à l'export.",
+    "doubleStrip": "Deux bandes sur un tirage 10 × 15"
   }
 }

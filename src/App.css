@@ -4927,3 +4927,24 @@ input.locate-offset {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* Vignettes des pages créatives : bande photomaton, Polaroid. */
+.template-creative {
+  display: flex;
+  flex-direction: column;
+  gap: 3%;
+  padding: 4% 4% 12%;
+  background: #ffffff;
+}
+
+.template-creative[data-layout="polaroid"] {
+  padding: 5% 5% 20%;
+  background: #f6f3ea;
+}
+
+.creative-photo {
+  flex: 1;
+  background-color: var(--ad-inset);
+  background-position: center 30%;
+  background-size: cover;
+}
