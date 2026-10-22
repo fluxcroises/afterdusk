@@ -285,13 +285,18 @@ pub(crate) fn render_source(
             render_photo(&mut raw, &develop, profile.as_ref(), options, mark)
         }
         Some(MediaFormat::Image) => {
-            // Photo déjà développée : ses retouches, sans correction d'objectif
-            // (voir `develop::source::shot`).
+            // Photo déjà développée : ses retouches ; correction d'objectif
+            // d'après l'EXIF, seulement si elle a été activée.
             let develop = store::load(conn, photo.media_id, &photo.version)
                 .map_err(|e| ExportError::Settings(e.to_string()))?;
             let developed = rendered::develop(&photo.path, orientation(conn, photo))
                 .map_err(|e| ExportError::Unsupported(e.to_string()))?;
-            super::render::render_developed(&developed, &develop, None, options, mark)
+            let profile = if develop.lens.active(true) {
+                lens::find_profile(&Shot::from(&read_metadata(&photo.path, MediaFormat::Image)))
+            } else {
+                None
+            };
+            super::render::render_developed(&developed, &develop, profile.as_ref(), options, mark)
         }
         _ => Err(ExportError::Unsupported(photo.name.clone())),
     }

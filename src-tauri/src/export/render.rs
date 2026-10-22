@@ -153,10 +153,11 @@ pub fn render_developed(
     let side = ((f64::from(long) * k).ceil() as u32 + 2).min(long);
     let base = WorkingImage::from_raw(developed, side);
 
-    let corrected = match profile.and_then(|p| LensCorrection::new(p, &settings.lens)) {
-        Some(c) => c.for_image(base.width, base.height).whole(&base),
-        None => base,
-    };
+    let corrected =
+        match profile.and_then(|p| LensCorrection::new(p, &settings.lens, base.rendered)) {
+            Some(c) => c.for_image(base.width, base.height).whole(&base),
+            None => base,
+        };
     let healed = spots::healed(&corrected, &settings.spots);
     drop(corrected);
     let shaped = geometry::transform(&healed, g);

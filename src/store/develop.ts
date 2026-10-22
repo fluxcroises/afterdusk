@@ -152,6 +152,7 @@ function sparseGeometry(g: Geometry): Geometry | undefined {
 
 /** Corrections d'objectif, miroir de `develop::settings::LensSettings`. */
 export interface LensSettings {
+  /** Absent : défaut de la source (RAW : activé ; JPEG, TIFF, PNG, HEIF : désactivé). */
   enabled: boolean;
   distortion: number;
   vignetting: number;
@@ -326,6 +327,8 @@ interface DevelopOpened {
   sourceWidth: number;
   sourceHeight: number;
   lens: string | null;
+  /** Photo déjà développée : corrections d'objectif désactivées par défaut. */
+  rendered: boolean;
   settings: DevelopSettings;
   asShot: WhitePoint;
   presets: WhitePreset[];
@@ -481,6 +484,8 @@ interface DevelopState {
   presetThumbs: Record<string, PresetThumb>;
   /** Objectif reconnu dans la base lensfun, ou rien. */
   lensName: string | null;
+  /** Photo ouverte déjà développée (JPEG, TIFF, PNG, HEIF). */
+  rendered: boolean;
   /** Outil choisi dans la barre de droite. */
   tool: DevelopTool;
   /** Image avant géométrie (aperçu), repère des corrections de défauts. */
@@ -941,6 +946,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     presetGroups: null,
     presetThumbs: {},
     lensName: null,
+    rendered: false,
     sourceSize: null,
     spotBrush: { radius: 0.01, feather: SPOT_FEATHER_DEFAULT, mode: "heal" },
     selectedSpot: null,
@@ -988,6 +994,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
           decodeMs: opened.decodeMs,
           sourceSize: { width: opened.sourceWidth, height: opened.sourceHeight },
           lensName: opened.lens,
+          rendered: opened.rendered,
         });
         await Promise.all([render(), loadState(mediaId)]);
         if (version !== ORIGINAL && token === openToken) await get().selectVersion(version);
@@ -1046,7 +1053,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       const section = put(
         { ...settings.lens } as Record<string, unknown>,
         key,
-        v === LENS_DEFAULTS[key] ? undefined : v,
+        // Activation : le défaut dépend de la source.
+        v === (key === "enabled" ? !get().rendered : LENS_DEFAULTS[key]) ? undefined : v,
       ) as Partial<LensSettings>;
       change(put(settings, "lens", prune(section)), `lens.${key}`);
     },

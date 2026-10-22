@@ -453,10 +453,6 @@ impl Geometry {
     }
 }
 
-fn is_true(v: &bool) -> bool {
-    *v
-}
-
 fn hundred() -> f64 {
     100.0
 }
@@ -465,14 +461,16 @@ fn is_hundred(v: &f64) -> bool {
     *v == 100.0
 }
 
-/// Corrections d'objectifs (décision 0006) : actives par défaut quand
-/// l'objectif est reconnu, distorsion et vignetage dosés de 0 à 200 % du
-/// profil ; les aberrations chromatiques suivent `enabled`.
+/// Corrections d'objectifs (décision 0006) : distorsion et vignetage dosés
+/// de 0 à 200 % du profil ; les aberrations chromatiques suivent `enabled`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct LensSettings {
-    #[serde(skip_serializing_if = "is_true")]
-    pub enabled: bool,
+    /// Absent : le choix par défaut de la source (voir [`Self::active`]). Un
+    /// document antérieur sans ce champ voulait dire « activé » : c'est le
+    /// défaut des RAW, seuls retouchables alors, et il se relit à l'identique.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
     #[serde(default = "hundred", skip_serializing_if = "is_hundred")]
     pub distortion: f64,
     #[serde(default = "hundred", skip_serializing_if = "is_hundred")]
@@ -482,7 +480,7 @@ pub struct LensSettings {
 impl Default for LensSettings {
     fn default() -> Self {
         Self {
-            enabled: true,
+            enabled: None,
             distortion: 100.0,
             vignetting: 100.0,
         }
@@ -490,6 +488,13 @@ impl Default for LensSettings {
 }
 
 impl LensSettings {
+    /// Corrections appliquées ? Par défaut oui pour un RAW, non pour une
+    /// photo déjà développée (`rendered`), souvent déjà corrigée par le
+    /// boîtier ou le logiciel qui l'a produite.
+    pub fn active(&self, rendered: bool) -> bool {
+        self.enabled.unwrap_or(!rendered)
+    }
+
     pub fn is_default(&self) -> bool {
         *self == Self::default()
     }
@@ -795,6 +800,24 @@ impl DevelopSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn correction_d_objectif_par_defaut_selon_la_source() {
+        let d = LensSettings::default();
+        assert!(d.active(false), "RAW : activée par défaut");
+        assert!(!d.active(true), "photo déjà développée : désactivée par défaut");
+        let on = LensSettings {
+            enabled: Some(true),
+            ..LensSettings::default()
+        };
+        assert!(on.active(true));
+        // Documents antérieurs : champ absent (activé) ou désactivé, relus tels quels.
+        let old: LensSettings = serde_json::from_str("{}").unwrap();
+        assert_eq!(old.enabled, None);
+        let off: LensSettings = serde_json::from_str(r#"{"enabled":false}"#).unwrap();
+        assert_eq!(off.enabled, Some(false));
+        assert_eq!(serde_json::to_string(&LensSettings::default()).unwrap(), "{}");
+    }
 
     #[test]
     fn json_creux_et_aller_retour() {

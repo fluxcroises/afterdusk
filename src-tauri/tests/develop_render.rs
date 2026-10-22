@@ -183,7 +183,7 @@ fn corrections_d_objectif_sur_les_echantillons() {
         assert_eq!(profile.is_some(), expected, "{file}");
         let Some(profile) = profile else { continue };
         let image = WorkingImage::from_raw(&raw.develop(true).unwrap(), 2048);
-        let correction = LensCorrection::new(&profile, &LensSettings::default())
+        let correction = LensCorrection::new(&profile, &LensSettings::default(), false)
             .unwrap()
             .for_image(image.width, image.height);
         let started = Instant::now();

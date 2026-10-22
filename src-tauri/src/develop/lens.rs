@@ -65,6 +65,19 @@ impl From<&RawInfo> for Shot {
     }
 }
 
+/// D'après l'EXIF d'une photo déjà développée (JPEG, TIFF, PNG, HEIF).
+impl From<&crate::metadata::media::MediaMetadata> for Shot {
+    fn from(m: &crate::metadata::media::MediaMetadata) -> Self {
+        Self {
+            make: m.make.clone().unwrap_or_default(),
+            model: m.model.clone().unwrap_or_default(),
+            lens: m.lens.clone(),
+            focal: m.focal_length,
+            aperture: m.aperture,
+        }
+    }
+}
+
 /// Objectif reconnu et paramètres de la prise de vue.
 #[derive(Debug, Clone)]
 pub struct LensProfile {
@@ -152,9 +165,10 @@ pub struct LensCorrection {
 }
 
 impl LensCorrection {
-    /// `None` : corrections désactivées, ou rien à corriger.
-    pub fn new(profile: &LensProfile, settings: &LensSettings) -> Option<Self> {
-        if !settings.enabled {
+    /// `None` : corrections désactivées, ou rien à corriger. `rendered` :
+    /// photo déjà développée (corrections désactivées par défaut).
+    pub fn new(profile: &LensProfile, settings: &LensSettings, rendered: bool) -> Option<Self> {
+        if !settings.active(rendered) {
             return None;
         }
         let mut c = Self {
@@ -582,11 +596,11 @@ mod tests {
 
     fn correction(distortion: f64, vignetting: f64) -> LensCorrection {
         let s = LensSettings {
-            enabled: true,
+            enabled: Some(true),
             distortion,
             vignetting,
         };
-        LensCorrection::new(&sony(), &s)
+        LensCorrection::new(&sony(), &s, false)
             .unwrap()
             .for_image(300, 200)
     }
@@ -642,9 +656,9 @@ mod tests {
     #[test]
     fn desactivee_ou_sans_effet() {
         let off = LensSettings {
-            enabled: false,
+            enabled: Some(false),
             ..LensSettings::default()
         };
-        assert!(LensCorrection::new(&sony(), &off).is_none());
+        assert!(LensCorrection::new(&sony(), &off, false).is_none());
     }
 }

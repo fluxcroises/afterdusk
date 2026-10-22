@@ -11,7 +11,7 @@ use super::pipeline::WorkingImage;
 use super::rendered::{self, RenderedError};
 use crate::library::paths::{self, PathError};
 use crate::library::{LibraryError, get_library};
-use crate::metadata::media::{MediaFormat, format_of};
+use crate::metadata::media::{MediaFormat, format_of, read_metadata};
 use crate::raw::{DevelopedRaw, RawError, RawFile};
 
 /// Côté long de l'image de travail affichée à l'écran (décision 0005).
@@ -85,13 +85,13 @@ pub fn working_image(
 }
 
 /// Boîtier, objectif, focale et ouverture de la prise de vue, pour les
-/// corrections d'objectif. Une photo déjà développée n'en reçoit pas : le
-/// boîtier ou le logiciel qui l'a produite l'a souvent déjà corrigée, et les
-/// réglages à zéro doivent la redonner telle quelle.
+/// corrections d'objectif : celles du RAW, ou l'EXIF d'une photo déjà
+/// développée (corrections alors désactivées par défaut, voir
+/// `LensSettings::active`).
 pub fn shot(conn: &Connection, media_id: i64) -> Result<Shot, SourceError> {
     match open(conn, media_id)? {
         Original::Raw(raw) => Ok(Shot::from(&raw.info())),
-        Original::Rendered(..) => Ok(Shot::default()),
+        Original::Rendered(path, _) => Ok(Shot::from(&read_metadata(&path, MediaFormat::Image))),
     }
 }
 

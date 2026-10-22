@@ -359,7 +359,9 @@ export function LensSection() {
   const name = useDevelop((s) => s.lensName);
   const lens = useDevelop((s) => s.settings?.lens);
   const setLens = useDevelop((s) => s.setLens);
-  const value = { ...LENS_DEFAULTS, ...lens };
+  const rendered = useDevelop((s) => s.rendered);
+  // JPEG, TIFF, PNG, HEIF : souvent déjà corrigés, désactivé par défaut.
+  const value = { ...LENS_DEFAULTS, enabled: !rendered, ...lens };
   return (
     <PanelSection id="develop.lens" title={t("develop.lens.title")} defaultCollapsed>
       {name === null ? (

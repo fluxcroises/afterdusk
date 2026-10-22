@@ -131,6 +131,9 @@ pub struct DevelopOpened {
     pub source_height: u32,
     /// Objectif reconnu (corrections d'objectif possibles), ou rien.
     pub lens: Option<String>,
+    /// Photo déjà développée (JPEG, TIFF, PNG, HEIF) : corrections
+    /// d'objectif désactivées par défaut.
+    pub rendered: bool,
     pub settings: DevelopSettings,
     /// Balance du boîtier, en kelvins et en teinte, pour les curseurs.
     pub as_shot: AsShot,
@@ -190,6 +193,7 @@ pub async fn develop_open(
             source_width: base.width,
             source_height: base.height,
             lens: profile.as_ref().map(|p| p.name.clone()),
+            rendered: base.rendered,
             settings,
             as_shot: AsShot {
                 temperature: temperature.round(),
@@ -239,11 +243,12 @@ pub async fn develop_open(
 fn lens_correction(
     profile: Option<&LensProfile>,
     settings: &LensSettings,
+    rendered: bool,
     w: u32,
     h: u32,
 ) -> Option<LensCorrection> {
     profile
-        .and_then(|p| LensCorrection::new(p, settings))
+        .and_then(|p| LensCorrection::new(p, settings, rendered))
         .map(|c| c.for_image(w, h))
 }
 
@@ -253,7 +258,7 @@ fn lens_corrected(
     profile: Option<&LensProfile>,
     settings: &LensSettings,
 ) -> WorkingImage {
-    match lens_correction(profile, settings, base.width, base.height) {
+    match lens_correction(profile, settings, base.rendered, base.width, base.height) {
         Some(c) => c.whole(base),
         None => base.clone(),
     }
@@ -459,7 +464,13 @@ pub async fn develop_zoom_render(
             .rendered(full.rendered);
         // Réduction du bruit et netteté regardent les voisins : la région est
         // rendue avec une marge, puis rognée, pour des bords justes.
-        let correction = lens_correction(profile.as_ref(), &settings.lens, full.width, full.height);
+        let correction = lens_correction(
+            profile.as_ref(),
+            &settings.lens,
+            full.rendered,
+            full.width,
+            full.height,
+        );
         let (region, cut) = WorkingImage::region_with_margin(
             &full,
             &params,
