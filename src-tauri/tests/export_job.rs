@@ -249,6 +249,98 @@ fn heif_avec_copyright_quand_le_systeme_sait_l_ecrire() {
     assert_eq!(common::sha256(&original), hash);
 }
 
+/// Les JPEG, TIFF et PNG se rendent comme les RAW : taille du preset,
+/// orientation appliquée, original intact.
+#[test]
+fn jpeg_et_png_rendus_par_le_preset_web() {
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("carte");
+    fs::create_dir_all(&card).unwrap();
+    let img = image::RgbImage::from_fn(3000, 2000, |x, y| {
+        image::Rgb([(x % 256) as u8, (y % 256) as u8, 128])
+    });
+    img.save(card.join("paysage.jpg")).unwrap();
+    image::DynamicImage::ImageRgb8(img)
+        .into_rgb16()
+        .save(card.join("paysage16.png"))
+        .unwrap();
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let db_path = dir.path().join("afterdusk.db");
+    let mut conn = db::open(&db_path).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let mut files: Vec<_> = fs::read_dir(&card)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .collect();
+    files.sort();
+    let id = import::plan(
+        &mut conn,
+        &ImportOptions {
+            library_id: lib.id,
+            source_path: card.clone(),
+            source_label: "Carte".into(),
+            files,
+            album_name: "Images".into(),
+            album_per_day: false,
+            rename: false,
+            backup: false,
+            keywords: vec![],
+            creator: None,
+            rights: None,
+            skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
+        },
+    )
+    .unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+    let ids: Vec<i64> = conn
+        .prepare("SELECT id FROM media ORDER BY path")
+        .unwrap()
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(ids.len(), 2);
+    let originals: Vec<_> = fs::read_dir(&root)
+        .unwrap()
+        .flat_map(|e| walk(&e.unwrap().path()))
+        .filter(|p| p.extension().is_some_and(|e| e != "xmp"))
+        .map(|p| (p.clone(), common::sha256(&p)))
+        .collect();
+    assert_eq!(originals.len(), 2);
+
+    let out = dir.path().join("Livraison");
+    let request = ExportRequest {
+        media_ids: ids,
+        targets: vec![Target {
+            preset: "web".into(),
+            folder: None,
+        }],
+        destination: out.clone(),
+    };
+    let done = job::run(
+        &db_path,
+        &ExportSettings::default(),
+        &request,
+        &AtomicBool::new(false),
+        &|_| {},
+    )
+    .unwrap();
+    assert!(done.failures.is_empty(), "{:?}", done.failures);
+    let web = walk(&out);
+    assert_eq!(web.len(), 2, "{web:?}");
+    for p in &web {
+        let img = image::open(p).unwrap();
+        assert_eq!((img.width(), img.height()), (2048, 1365), "{p:?}");
+    }
+    for (orig, hash) in &originals {
+        assert_eq!(&common::sha256(orig), hash);
+    }
+}
+
 fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
     if dir.is_file() {
         return vec![dir.to_path_buf()];

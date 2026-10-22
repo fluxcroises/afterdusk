@@ -171,6 +171,80 @@ pub fn render_photo(
     Ok(out)
 }
 
+/// Photo non RAW (JPEG, TIFF, PNG) décodée telle quelle, orientation du
+/// boîtier appliquée : valeurs sRGB codées, comme la sortie du rendu.
+pub fn decode_image(path: &std::path::Path, orientation: u8) -> Result<Rendered, ExportError> {
+    let img = image::open(path)
+        .map_err(|e| ExportError::Unsupported(format!("{} : {e}", path.display())))?
+        .into_rgb8();
+    let img = crate::raw::preview::orient(img, orientation);
+    Ok(Rendered {
+        width: img.width(),
+        height: img.height(),
+        rgb: img.as_raw().iter().map(|v| f32::from(*v) / 255.0).collect(),
+    })
+}
+
+/// Partie de l'image, en fractions de sa largeur et de sa hauteur
+/// (gauche, haut, droite, bas).
+pub fn crop_fraction(img: &Rendered, rect: [f64; 4]) -> Rendered {
+    let (w, h) = (f64::from(img.width), f64::from(img.height));
+    let left = (rect[0].clamp(0.0, 1.0) * w).floor() as u32;
+    let top = (rect[1].clamp(0.0, 1.0) * h).floor() as u32;
+    let right = ((rect[2].clamp(0.0, 1.0) * w).ceil() as u32).clamp(left + 1, img.width);
+    let bottom = ((rect[3].clamp(0.0, 1.0) * h).ceil() as u32).clamp(top + 1, img.height);
+    let (cw, ch) = (right - left, bottom - top);
+    let mut rgb = Vec::with_capacity((cw * ch * 3) as usize);
+    for y in top..bottom {
+        let start = ((y * img.width + left) * 3) as usize;
+        rgb.extend_from_slice(&img.rgb[start..start + (cw * 3) as usize]);
+    }
+    Rendered {
+        width: cw,
+        height: ch,
+        rgb,
+    }
+}
+
+/// Image ramenée exactement à `w` × `h` (Lanczos), agrandie au besoin.
+pub fn resize_exact(img: Rendered, w: u32, h: u32) -> Rendered {
+    if (img.width, img.height) == (w, h) {
+        return img;
+    }
+    let Some(buffer) = image::Rgb32FImage::from_raw(img.width, img.height, img.rgb) else {
+        return Rendered {
+            width: w,
+            height: h,
+            rgb: vec![0.0; (w * h * 3) as usize],
+        };
+    };
+    let out = image::imageops::resize(&buffer, w, h, image::imageops::FilterType::Lanczos3);
+    Rendered {
+        width: w,
+        height: h,
+        rgb: out.into_raw(),
+    }
+}
+
+/// Fin du rendu d'une image déjà décodée : taille, accentuation, filigrane,
+/// espace colorimétrique.
+pub fn finish(
+    img: Rendered,
+    resize: Resize,
+    options_sharpen: Sharpen,
+    color: ColorSpace,
+    mark: Option<&Watermark>,
+) -> Result<Rendered, ExportError> {
+    let (tw, th) = target_size(img.width, img.height, resize);
+    let mut out = resize_exact(img, tw, th);
+    sharpen(&mut out.rgb, tw as usize, th as usize, options_sharpen);
+    if let Some(mark) = mark {
+        watermark::apply(&mut out, mark)?;
+    }
+    color.convert(&mut out.rgb)?;
+    Ok(out)
+}
+
 /// Flou gaussien séparable d'un plan, bords répétés.
 fn blur(plane: &[f32], w: usize, h: usize, sigma: f32) -> Vec<f32> {
     let r = (sigma * 3.0).ceil() as isize;

@@ -65,7 +65,7 @@ pub struct Progress {
 }
 
 /// Une photo de la bibliothèque, telle que l'export la voit.
-struct Photo {
+pub(crate) struct Photo {
     media_id: i64,
     /// Version exportée : vide pour l'originale, nom d'une copie virtuelle.
     version: String,
@@ -160,13 +160,6 @@ fn export_one(
         }
         return Ok(Some(target));
     };
-    if format_of(&photo.path) != Some(MediaFormat::Raw) {
-        return Err(ExportError::Unsupported(photo.name.clone()));
-    }
-    let develop = store::load(conn, photo.media_id, &photo.version)
-        .map_err(|e| ExportError::Settings(e.to_string()))?;
-    let mut raw = RawFile::open(&photo.path)?;
-    let profile = lens::find_profile(&Shot::from(&raw.info()));
     let color = if matches!(preset.output, Output::Avif { .. }) {
         ColorSpace::Srgb
     } else {
@@ -178,9 +171,55 @@ fn export_one(
         color,
     };
     let mark = settings.watermark.as_ref().filter(|_| preset.watermark);
-    let image = render_photo(&mut raw, &develop, profile.as_ref(), options, mark)?;
-    drop(raw);
-    let mut camera = read_metadata(&photo.path, MediaFormat::Raw);
+    let image = render_source(conn, photo, options, mark)?;
+    write_rendered(conn, photo, &image, preset, format, color, dir, &stem).map(Some)
+}
+
+/// Rend une photo de la bibliothèque : un RAW avec ses réglages, une autre
+/// image (JPEG, TIFF, PNG) telle quelle, orientation appliquée.
+pub(crate) fn render_source(
+    conn: &Connection,
+    photo: &Photo,
+    options: RenderOptions,
+    mark: Option<&super::watermark::Watermark>,
+) -> Result<super::render::Rendered, ExportError> {
+    match format_of(&photo.path) {
+        Some(MediaFormat::Raw) => {
+            let develop = store::load(conn, photo.media_id, &photo.version)
+                .map_err(|e| ExportError::Settings(e.to_string()))?;
+            let mut raw = RawFile::open(&photo.path)?;
+            let profile = lens::find_profile(&Shot::from(&raw.info()));
+            render_photo(&mut raw, &develop, profile.as_ref(), options, mark)
+        }
+        Some(MediaFormat::Image) => {
+            let orientation: u8 = conn
+                .query_row(
+                    "SELECT orientation FROM media WHERE id = ?1",
+                    [photo.media_id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(1);
+            let img = super::render::decode_image(&photo.path, orientation)?;
+            super::render::finish(img, options.resize, options.sharpen, options.color, mark)
+        }
+        _ => Err(ExportError::Unsupported(photo.name.clone())),
+    }
+}
+
+/// Métadonnées et écriture du fichier rendu.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn write_rendered(
+    conn: &Connection,
+    photo: &Photo,
+    image: &super::render::Rendered,
+    preset: &ExportPreset,
+    format: encode::Format,
+    color: ColorSpace,
+    dir: &Path,
+    stem: &str,
+) -> Result<PathBuf, ExportError> {
+    let source_format = format_of(&photo.path).unwrap_or(MediaFormat::Image);
+    let mut camera = read_metadata(&photo.path, source_format);
     // Lieu posé après coup (trace, téléphone, saisie) : il suit la photo,
     // sauf si le preset retire le GPS.
     if camera.gps.is_none() {
@@ -217,9 +256,9 @@ fn export_one(
             .and_then(|p| read_sidecar(p).ok().flatten()),
     };
     let embedded = metadata::embedded(&meta, preset.metadata)?;
-    let target = presets::free_path(dir, &stem, format.extension());
-    encode::write(&image, format, &color.icc()?, &embedded, &target)?;
-    Ok(Some(target))
+    let target = presets::free_path(dir, stem, format.extension());
+    encode::write(image, format, &color.icc()?, &embedded, &target)?;
+    Ok(target)
 }
 
 /// Plusieurs photos à la fois, moins pour les grandes sorties (mémoire).
@@ -358,21 +397,38 @@ pub fn preview(
 ) -> Result<Preview, ExportError> {
     let p = photo(conn, item)
         .map_err(|(_, code, detail)| ExportError::Settings(format!("{code} {detail}")))?;
-    if preset.output.format().is_none() || format_of(&p.path) != Some(MediaFormat::Raw) {
+    if preset.output.format().is_none() {
         return Ok(((0, 0), None));
     }
-    let develop = store::load(conn, p.media_id, &p.version)
-        .map_err(|e| ExportError::Settings(e.to_string()))?;
-    let mut raw = RawFile::open(&p.path)?;
-    let size = super::render::output_size(&raw, &develop, preset.resize);
-    let profile = lens::find_profile(&Shot::from(&raw.info()));
+    let size = match format_of(&p.path) {
+        Some(MediaFormat::Raw) => {
+            let develop = store::load(conn, p.media_id, &p.version)
+                .map_err(|e| ExportError::Settings(e.to_string()))?;
+            let raw = RawFile::open(&p.path)?;
+            super::render::output_size(&raw, &develop, preset.resize)
+        }
+        Some(MediaFormat::Image) => {
+            let (w, h) = image::image_dimensions(&p.path)
+                .map_err(|e| ExportError::Unsupported(format!("{} : {e}", p.name)))?;
+            let orientation: u8 = conn
+                .query_row(
+                    "SELECT orientation FROM media WHERE id = ?1",
+                    [p.media_id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(1);
+            let (w, h) = if orientation >= 5 { (h, w) } else { (w, h) };
+            super::render::target_size(w, h, preset.resize)
+        }
+        _ => return Ok(((0, 0), None)),
+    };
     let options = RenderOptions {
         resize: Resize::LongSide(size.0.max(size.1).min(max_side)),
         sharpen: preset.sharpen,
         color: ColorSpace::Srgb,
     };
     let mark = watermark.filter(|_| preset.watermark);
-    let img = render_photo(&mut raw, &develop, profile.as_ref(), options, mark)?;
+    let img = render_source(conn, &p, options, mark)?;
     let mut jpeg = Vec::new();
     let enc = |e: jpeg_encoder::EncodingError| ExportError::Encode(e.to_string());
     let (w, h) = (
