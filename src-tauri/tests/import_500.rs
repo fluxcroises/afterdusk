@@ -124,6 +124,9 @@ fn import_500_coupure_et_reprise() {
         creator: None,
         rights: None,
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &opts).unwrap();
     drop(conn);

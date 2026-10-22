@@ -51,6 +51,8 @@ fn library_code(e: &LibraryError) -> &'static str {
         LibraryError::NotSmart(_) | LibraryError::NotManual(_) => "collectionKind",
         LibraryError::EmptyName => "emptyName",
         LibraryError::Logo(_) => "logo",
+        LibraryError::ClientNotFound(_) => "clientNotFound",
+        LibraryError::SessionTypeNotFound(_) => "sessionTypeNotFound",
         LibraryError::Sqlite(_) => "internal",
     }
 }

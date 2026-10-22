@@ -40,6 +40,9 @@ fn reglages_en_base_dans_l_historique_et_le_xmp() {
         creator: None,
         rights: None,
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &opts).unwrap();
     import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
@@ -129,6 +132,9 @@ fn annuler_retablir_et_revenir_a_une_etape() {
         creator: None,
         rights: None,
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &opts).unwrap();
     import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
@@ -231,6 +237,9 @@ fn copies_virtuelles_et_instantanes() {
         creator: None,
         rights: None,
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &opts).unwrap();
     import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();

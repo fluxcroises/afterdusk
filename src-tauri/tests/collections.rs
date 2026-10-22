@@ -48,6 +48,9 @@ fn collections_manuelles_et_albums_intelligents() {
             creator: None,
             rights: None,
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();

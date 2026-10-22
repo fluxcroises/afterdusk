@@ -45,6 +45,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         creator: None,
         rights: None,
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &options)?;
     let outcome = import::run(&mut conn, id, &AtomicBool::new(false), |p| {

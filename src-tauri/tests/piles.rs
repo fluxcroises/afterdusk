@@ -140,6 +140,9 @@ fn setup(rename: bool, skip_pair_jpegs: bool) -> Setup {
         creator: None,
         rights: None,
         skip_pair_jpegs,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &opts).unwrap();
     import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();

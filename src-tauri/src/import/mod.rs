@@ -75,6 +75,14 @@ pub struct ImportOptions {
     /// Paires RAW + JPEG : ne copier que le RAW (décision 0003).
     #[serde(default)]
     pub skip_pair_jpegs: bool,
+    /// Client et type de séance des albums créés (décision 0009).
+    #[serde(default)]
+    pub client_id: Option<i64>,
+    #[serde(default)]
+    pub session_type_id: Option<i64>,
+    /// Type de séance tel qu'affiché, pour le jeton `{seance}`.
+    #[serde(default)]
+    pub session_label: String,
 }
 
 /// Options conservées en base pour la reprise (sans la liste des fichiers).
@@ -86,6 +94,10 @@ struct StoredOptions {
     keywords: Vec<String>,
     creator: Option<String>,
     rights: Option<String>,
+    #[serde(default)]
+    client_id: Option<i64>,
+    #[serde(default)]
+    session_type_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -172,7 +184,14 @@ pub fn plan(conn: &mut Connection, options: &ImportOptions) -> Result<i64, Impor
                 .filter(|n| !n.is_empty())
         }),
         rights: options.rights.clone(),
+        client_id: options.client_id,
+        session_type_id: options.session_type_id,
     };
+    let client = options
+        .client_id
+        .map(|id| library::clients::name_of(conn, id))
+        .transpose()?
+        .unwrap_or_default();
 
     let tx = conn.transaction()?;
     tx.execute(
@@ -262,6 +281,8 @@ pub fn plan(conn: &mut Connection, options: &ImportOptions) -> Result<i64, Impor
             let values = TemplateValues {
                 captured_at: folder_date,
                 album: &stored.album_name,
+                client: &client,
+                session: options.session_label.trim(),
                 camera: &camera,
                 original_stem: &stem,
                 sequence,
@@ -551,6 +572,7 @@ fn stop(
     import_id: i64,
     outcome: ImportOutcome,
 ) -> Result<ImportOutcome, ImportError> {
+    link_albums(conn, import_id)?;
     match outcome {
         ImportOutcome::Done => conn.execute(
             "UPDATE imports SET status = 'done', finished_at = ?2 WHERE id = ?1",
@@ -562,6 +584,27 @@ fn stop(
         )?,
     };
     Ok(outcome)
+}
+
+/// Client et type de séance choisis à l'import, posés sur les albums qui
+/// ont reçu des photos ; un album qui en a déjà les garde.
+fn link_albums(conn: &Connection, import_id: i64) -> Result<(), ImportError> {
+    let json: String = conn.query_row(
+        "SELECT options FROM imports WHERE id = ?1",
+        [import_id],
+        |r| r.get(0),
+    )?;
+    let stored: StoredOptions = serde_json::from_str(&json).unwrap_or_default();
+    if stored.client_id.is_none() && stored.session_type_id.is_none() {
+        return Ok(());
+    }
+    conn.execute(
+        "UPDATE albums SET client_id = coalesce(client_id, ?2),
+                           session_type_id = coalesce(session_type_id, ?3)
+          WHERE id IN (SELECT album_id FROM media WHERE import_id = ?1)",
+        params![import_id, stored.client_id, stored.session_type_id],
+    )?;
+    Ok(())
 }
 
 enum ItemError {

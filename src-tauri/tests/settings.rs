@@ -48,6 +48,9 @@ fn l_identite_signe_les_photos_importees() {
         creator: None,
         rights: Some("© 2026 Lewis Bedar".into()),
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &opts).unwrap();
     import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
@@ -99,13 +102,15 @@ fn sauvegarde_et_modeles() {
         template::preview(
             &lib.folder_template,
             lib.rename_template.as_deref(),
-            "Sortie"
+            "Sortie",
+            "",
+            ""
         )
         .unwrap(),
         "2026/10/18/DSCF0042_042.RAF"
     );
     assert_eq!(
-        template::preview(template::DEFAULT_FOLDER_TEMPLATE, None, "Sortie").unwrap(),
+        template::preview(template::DEFAULT_FOLDER_TEMPLATE, None, "Sortie", "", "").unwrap(),
         "2026/2026-10-18 Sortie/DSCF0042.RAF"
     );
     assert_eq!(paths::same_volume(&root, &backup), Some(true));

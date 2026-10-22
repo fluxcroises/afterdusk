@@ -93,6 +93,9 @@ fn options(s: &Setup, files: Vec<PathBuf>) -> ImportOptions {
         creator: Some("Lewis Bedar".into()),
         rights: Some("© 2026 Lewis Bedar".into()),
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     }
 }
 
@@ -423,6 +426,9 @@ fn cinq_cents_fichiers_sans_perte() {
         creator: None,
         rights: None,
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     };
     let id = import::plan(&mut conn, &opts).unwrap();
 

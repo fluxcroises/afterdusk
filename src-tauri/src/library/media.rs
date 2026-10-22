@@ -264,6 +264,9 @@ pub struct AlbumSummary {
     pub cover_chosen: bool,
     /// Saisie libre en V0.1.
     pub place: Option<String>,
+    pub client_id: Option<i64>,
+    pub client_name: Option<String>,
+    pub session_type_id: Option<i64>,
 }
 
 pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummary>, LibraryError> {
@@ -278,8 +281,9 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
                           ORDER BY m.captured_at, m.path LIMIT 1)),
                 EXISTS (SELECT 1 FROM media m
                          WHERE m.id = a.cover_media_id AND m.state = 'normal'),
-                a.place
-         FROM albums a WHERE a.library_id = ?1
+                a.place, a.client_id, c.name, a.session_type_id
+         FROM albums a LEFT JOIN clients c ON c.id = a.client_id
+         WHERE a.library_id = ?1
          ORDER BY a.start_date DESC, a.name",
         head = pairs::HEAD_SQL
     ))?;
@@ -295,6 +299,9 @@ pub fn list_albums(conn: &Connection, library_id: i64) -> Result<Vec<AlbumSummar
                 cover_media_id: r.get(6)?,
                 cover_chosen: r.get(7)?,
                 place: r.get(8)?,
+                client_id: r.get(9)?,
+                client_name: r.get(10)?,
+                session_type_id: r.get(11)?,
             })
         })?
         .collect::<Result<_, _>>()?;

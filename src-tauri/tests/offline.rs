@@ -41,6 +41,9 @@ fn options(s: &Setup, files: Vec<PathBuf>) -> ImportOptions {
         creator: None,
         rights: None,
         skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
     }
 }
 

@@ -59,6 +59,9 @@ fn base_reconstruite_depuis_les_dossiers_et_les_xmp() {
             creator: Some("Lewis Bedar".into()),
             rights: None,
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();

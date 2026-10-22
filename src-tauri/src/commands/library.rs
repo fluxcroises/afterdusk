@@ -82,9 +82,17 @@ pub fn template_preview(
     folder_template: String,
     rename_template: Option<String>,
     album: String,
+    client: Option<String>,
+    session: Option<String>,
 ) -> CommandResult<String> {
-    template::preview(&folder_template, rename_template.as_deref(), &album)
-        .map_err(|e| CommandError::new("invalidTemplate", e))
+    template::preview(
+        &folder_template,
+        rename_template.as_deref(),
+        &album,
+        client.as_deref().unwrap_or(""),
+        session.as_deref().unwrap_or(""),
+    )
+    .map_err(|e| CommandError::new("invalidTemplate", e))
 }
 
 /// Dossiers synchronisés par un service de cloud, proposés comme sauvegarde.

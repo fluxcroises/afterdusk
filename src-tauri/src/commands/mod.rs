@@ -2,6 +2,7 @@
 
 pub mod analysis;
 pub mod bursts;
+pub mod clients;
 pub mod collections;
 pub mod contact_sheet;
 pub mod develop;

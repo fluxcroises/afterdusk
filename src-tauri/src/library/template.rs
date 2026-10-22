@@ -2,8 +2,9 @@
 //! (`{yyyy}{mm}{dd}_{hh}{min}{ss}_{camera}_{seq:4}`).
 //!
 //! Jetons : `{yyyy}` `{yy}` `{mm}` `{dd}` `{hh}` `{min}` `{ss}` `{album}`
-//! `{camera}` `{original}` (nom d'origine sans extension) et `{seq}` ou
-//! `{seq:N}` (numéro dans l'import, sur N chiffres).
+//! `{client}` `{seance}` `{camera}` `{original}` (nom d'origine sans
+//! extension) et `{seq}` ou `{seq:N}` (numéro dans l'import, sur N chiffres).
+//! Un dossier dont le nom reste vide (`{client}` sans client) est sauté.
 
 use super::paths::sanitize_component;
 
@@ -25,6 +26,10 @@ pub struct TemplateValues<'a> {
     /// `AAAA-MM-JJTHH:MM:SS`, heure du boîtier.
     pub captured_at: &'a str,
     pub album: &'a str,
+    /// Vide sans client choisi.
+    pub client: &'a str,
+    /// Type de séance tel qu'affiché ; vide sans type choisi.
+    pub session: &'a str,
     pub camera: &'a str,
     pub original_stem: &'a str,
     pub sequence: u32,
@@ -48,6 +53,8 @@ fn token(name: &str, v: &TemplateValues) -> Result<String, TemplateError> {
         "min" => part(14, 16),
         "ss" => part(17, 19),
         "album" => v.album.to_owned(),
+        "client" => v.client.to_owned(),
+        "seance" => v.session.to_owned(),
         "camera" => v.camera.replace(' ', "-"),
         "original" => v.original_stem.to_owned(),
         "seq" => v.sequence.to_string(),
@@ -87,7 +94,11 @@ pub fn render_folder(template: &str, v: &TemplateValues) -> Result<String, Templ
     template
         .split('/')
         .filter(|s| !s.trim().is_empty())
-        .map(|s| render_segment(s, v))
+        .filter_map(|s| match render_segment(s, v) {
+            // `{client}` sans client : pas de dossier vide.
+            Err(TemplateError::Empty) => None,
+            other => Some(other),
+        })
         .collect::<Result<Vec<_>, _>>()
         .map(|parts| parts.join("/"))
         .and_then(|p| {
@@ -118,6 +129,8 @@ pub fn validate(template: &str) -> Result<(), TemplateError> {
     let v = TemplateValues {
         captured_at: "2026-10-18T21:04:59",
         album: "Album",
+        client: "Client",
+        session: "Séance",
         camera: "Boîtier",
         original_stem: "IMG_0001",
         sequence: 1,
@@ -131,10 +144,14 @@ pub fn preview(
     folder_template: &str,
     rename_template: Option<&str>,
     album: &str,
+    client: &str,
+    session: &str,
 ) -> Result<String, TemplateError> {
     let v = TemplateValues {
         captured_at: "2026-10-18T21:04:59",
         album,
+        client,
+        session,
         camera: "X-T5",
         original_stem: "DSCF0042",
         sequence: 42,
@@ -155,10 +172,32 @@ mod tests {
         TemplateValues {
             captured_at: "2026-10-18T21:04:59",
             album: "Sortie à Saint-Malo",
+            client: "",
+            session: "",
             camera: "X-T3",
             original_stem: "DSCF0001",
             sequence: 7,
         }
+    }
+
+    #[test]
+    fn client_et_seance() {
+        let with = TemplateValues {
+            client: "Famille Dupont",
+            session: "Mariage",
+            ..values()
+        };
+        let t = "{yyyy}/{client}/{yyyy}-{mm}-{dd} {seance}";
+        assert_eq!(
+            render_folder(t, &with).unwrap(),
+            "2026/Famille Dupont/2026-10-18 Mariage"
+        );
+        // Sans client, pas de dossier vide ; sans séance, pas d'espace en trop.
+        assert_eq!(render_folder(t, &values()).unwrap(), "2026/2026-10-18");
+        assert_eq!(
+            render_file_name("{client}_{seq:3}", &with, "NEF").unwrap(),
+            "Famille Dupont_007.NEF"
+        );
     }
 
     #[test]

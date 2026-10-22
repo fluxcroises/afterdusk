@@ -138,6 +138,9 @@ fn export_de_100_jpeg_2048_px_sous_2_minutes() {
             creator: Some("Lewis Bedar".into()),
             rights: None,
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();

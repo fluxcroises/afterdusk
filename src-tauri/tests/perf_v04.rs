@@ -92,6 +92,9 @@ fn mille_photos_analysees_sans_ralentir_le_tri() {
             creator: None,
             rights: None,
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();

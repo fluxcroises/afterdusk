@@ -56,7 +56,13 @@ pub struct MediaFilter {
     pub camera_id: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lens_id: Option<i64>,
-    /// Texte libre : albums, noms de fichiers, mots-clés, lieux.
+    /// Albums de ce client.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<i64>,
+    /// Albums de ce type de séance.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_type_id: Option<i64>,
+    /// Texte libre : albums, clients, noms de fichiers, mots-clés, lieux.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
     /// Zone tracée sur la carte : ouest, sud, est, nord, en millionièmes de
@@ -169,6 +175,15 @@ impl MediaFilter {
             clauses.push("m.lens_id = ?".to_owned());
             values.push(id.into());
         }
+        if let Some(id) = self.client_id {
+            clauses.push("m.album_id IN (SELECT id FROM albums WHERE client_id = ?)".to_owned());
+            values.push(id.into());
+        }
+        if let Some(id) = self.session_type_id {
+            clauses
+                .push("m.album_id IN (SELECT id FROM albums WHERE session_type_id = ?)".to_owned());
+            values.push(id.into());
+        }
         if let Some(text) = self
             .query
             .as_deref()
@@ -177,7 +192,13 @@ impl MediaFilter {
         {
             // L'index retrouve les mots (accents compris) ; le chemin, les
             // morceaux de nom de fichier (« 1234 » dans DSCF1234.RAF).
-            let mut parts = vec!["m.path LIKE ? ESCAPE '\\'".to_owned()];
+            let mut parts = vec![
+                "m.path LIKE ? ESCAPE '\\'".to_owned(),
+                "m.album_id IN (SELECT a.id FROM albums a JOIN clients c ON c.id = a.client_id
+                                 WHERE c.name LIKE ? ESCAPE '\\')"
+                    .to_owned(),
+            ];
+            values.push(like_pattern(text).into());
             values.push(like_pattern(text).into());
             if let Some(fts) = fts_query(text) {
                 parts.push(

@@ -44,6 +44,9 @@ fn inventaire_fusion_masquage_accessoires_et_fiche() {
             creator: None,
             rights: None,
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();

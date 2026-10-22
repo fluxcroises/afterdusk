@@ -1,6 +1,7 @@
 //! Bibliothèques, albums et matériel détecté.
 
 pub mod bursts;
+pub mod clients;
 pub mod cloud;
 pub mod collections;
 pub mod copies;
@@ -42,6 +43,10 @@ pub enum LibraryError {
     EmptyName,
     #[error("logo : {0}")]
     Logo(String),
+    #[error("client {0} introuvable")]
+    ClientNotFound(i64),
+    #[error("type de séance {0} introuvable")]
+    SessionTypeNotFound(i64),
 }
 
 #[derive(Debug, Clone, Serialize)]

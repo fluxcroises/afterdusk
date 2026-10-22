@@ -57,6 +57,9 @@ fn setup(dir: &Path, names: &[&str]) -> (Connection, std::path::PathBuf, Vec<Pho
             creator: None,
             rights: None,
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();
@@ -350,6 +353,9 @@ fn photo_de_telephone_importee_avec_son_lieu() {
             creator: None,
             rights: None,
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();

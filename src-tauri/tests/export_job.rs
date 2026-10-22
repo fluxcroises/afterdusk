@@ -50,6 +50,9 @@ fn web_et_originaux_dans_des_sous_dossiers() {
             creator: Some("Lewis Bedar".into()),
             rights: Some("© 2026 Lewis Bedar".into()),
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();
@@ -189,6 +192,9 @@ fn heif_avec_copyright_quand_le_systeme_sait_l_ecrire() {
             creator: Some("Lewis Bedar".into()),
             rights: Some("© 2026 Lewis Bedar".into()),
             skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
         },
     )
     .unwrap();
