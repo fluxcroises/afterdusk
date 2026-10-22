@@ -32,18 +32,37 @@ const clip = {
   durationMs: 2000,
 };
 
+/** Réponses du cœur : `video_source` renvoie tour à tour `sources` (la
+ * dernière ensuite), les extraits et images clés `clips` et `keyframes`. */
+function respond(sources: unknown[], clips: unknown[] = [], keyframes: number[] = []) {
+  let n = 0;
+  invoke.mockImplementation((cmd, args) => {
+    if (cmd === "video_source") return Promise.resolve(sources[Math.min(n++, sources.length - 1)]);
+    if (cmd === "clips_list") return Promise.resolve(clips);
+    if (cmd === "video_keyframes") return Promise.resolve(keyframes);
+    if (cmd === "clips_add") {
+      const a = args as { startMs: number; endMs: number };
+      return Promise.resolve({ id: 9, mediaId: 7, startMs: 960, endMs: a.endMs, name: "" });
+    }
+    if (cmd === "clips_export") return Promise.resolve(["D:/Livraison/C0001 - extraits.mp4"]);
+    return Promise.resolve(null);
+  });
+}
+
+const native = {
+  path: "media/7",
+  needsProxy: false,
+  fps: 25,
+  durationMs: 2000,
+  codec: "h264",
+  ffmpeg: true,
+};
+
 describe("Lecture d'une vidéo dans la loupe", () => {
   beforeEach(() => invoke.mockReset());
 
   it("lit l'original d'un codec natif et affiche ses informations", async () => {
-    invoke.mockResolvedValue({
-      path: "media/7",
-      needsProxy: false,
-      fps: 25,
-      durationMs: 2000,
-      codec: "h264",
-      ffmpeg: true,
-    });
+    respond([native]);
     const { container } = render(<VideoPlayer media={clip} />);
     await act(async () => {});
     const video = container.querySelector("video");
@@ -61,24 +80,17 @@ describe("Lecture d'une vidéo dans la loupe", () => {
   });
 
   it("prépare une version de lecture quand le codec ne se lit pas ici", async () => {
-    invoke
-      .mockResolvedValueOnce({
-        path: null,
-        needsProxy: true,
-        fps: 50,
-        durationMs: 1000,
-        codec: "hevc",
-        ffmpeg: true,
-      })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
+    respond([
+      { path: null, needsProxy: true, fps: 50, durationMs: 1000, codec: "hevc", ffmpeg: true },
+      {
         path: "proxy/7",
         needsProxy: false,
         fps: 50,
         durationMs: 1000,
         codec: "hevc",
         ffmpeg: true,
-      });
+      },
+    ]);
     const { container } = render(<VideoPlayer media={{ ...clip, durationMs: 1000 }} />);
     await act(async () => {});
     expect(invoke).toHaveBeenCalledWith("video_prepare", { mediaId: 7 });
@@ -86,17 +98,35 @@ describe("Lecture d'une vidéo dans la loupe", () => {
   });
 
   it("explique quand FFmpeg manque", async () => {
-    invoke.mockResolvedValue({
-      path: null,
-      needsProxy: true,
-      fps: 0,
-      durationMs: 0,
-      codec: "",
-      ffmpeg: false,
-    });
+    respond([{ path: null, needsProxy: true, fps: 0, durationMs: 0, codec: "", ffmpeg: false }]);
     render(<VideoPlayer media={clip} />);
     await act(async () => {});
     expect(screen.getByRole("status")).toHaveTextContent("FFmpeg manque");
     expect(invoke).not.toHaveBeenCalledWith("video_prepare", expect.anything());
+  });
+
+  it("dérushage : entrée recalée, sortie, extrait ajouté puis exporté réuni", async () => {
+    respond([native], [], [0, 480, 960, 1440]);
+    const { container } = render(<VideoPlayer media={clip} />);
+    await act(async () => {});
+    const el = container.querySelector("video") as HTMLVideoElement;
+    expect(screen.getByText(/Aucun extrait/)).toBeInTheDocument();
+    el.currentTime = 1.2;
+    fireEvent.keyDown(window, { key: "i" });
+    // L'entrée affichée est celle de l'export : l'image clé de 0,96 s.
+    expect(screen.getByText("0:00,96")).toBeInTheDocument();
+    expect(screen.getByText(/demandée à 0:01,20/)).toBeInTheDocument();
+    el.currentTime = 1.8;
+    fireEvent.keyDown(window, { key: "o" });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+    expect(invoke).toHaveBeenCalledWith("clips_add", { mediaId: 7, startMs: 1200, endMs: 1800 });
+    expect(screen.getByText("0:00,96 – 0:01,80")).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Exporter l'extrait" }));
+    });
+    expect(invoke).toHaveBeenCalledWith("clips_export", { mediaId: 7, join: false });
+    expect(screen.getByText("1 fichier exporté dans la destination de Livrer")).toBeInTheDocument();
   });
 });

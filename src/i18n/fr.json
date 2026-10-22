@@ -1583,5 +1583,25 @@
     "systemFonts": "Polices de cet ordinateur",
     "missingFont": "La police « {{font}} » manque sur cet ordinateur : Inter la remplacera à l'export.",
     "doubleStrip": "Deux bandes sur un tirage 10 × 15"
+  },
+  "clips": {
+    "title": "Extraits",
+    "in": "Entrée",
+    "out": "Sortie",
+    "snapped": "(image clé ; demandée à {{asked}})",
+    "add": "Ajouter l'extrait",
+    "enter": "Entrée",
+    "empty": "Aucun extrait : I pour l'entrée, O pour la sortie, Entrée pour l'ajouter.",
+    "play": "Lire l'extrait de {{from}} à {{to}}",
+    "name": "Nom de l'extrait",
+    "unnamed": "Sans nom",
+    "remove": "Retirer l'extrait de {{from}} à {{to}}",
+    "export_one": "Exporter l'extrait",
+    "export_other": "Exporter les {{count}} extraits",
+    "join": "Réunir en un fichier",
+    "progress": "Export : {{done}} / {{total}}",
+    "exported_one": "{{count}} fichier exporté dans la destination de Livrer",
+    "exported_other": "{{count}} fichiers exportés dans la destination de Livrer",
+    "noReencode": "Sans réencodage : chaque extrait commence sur une image clé."
   }
 }

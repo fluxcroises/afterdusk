@@ -1583,5 +1583,25 @@
     "systemFonts": "Fonts on this computer",
     "missingFont": "The font “{{font}}” is missing on this computer: Inter will replace it on export.",
     "doubleStrip": "Two strips on a 4 × 6 in print"
+  },
+  "clips": {
+    "title": "Clips",
+    "in": "In",
+    "out": "Out",
+    "snapped": "(keyframe; asked for {{asked}})",
+    "add": "Add the clip",
+    "enter": "Enter",
+    "empty": "No clips: I for the in point, O for the out point, Enter to add it.",
+    "play": "Play the clip from {{from}} to {{to}}",
+    "name": "Clip name",
+    "unnamed": "Untitled",
+    "remove": "Remove the clip from {{from}} to {{to}}",
+    "export_one": "Export the clip",
+    "export_other": "Export the {{count}} clips",
+    "join": "Join into one file",
+    "progress": "Exporting: {{done}} / {{total}}",
+    "exported_one": "{{count}} file exported to the Deliver destination",
+    "exported_other": "{{count}} files exported to the Deliver destination",
+    "noReencode": "No re-encoding: each clip starts on a keyframe."
   }
 }

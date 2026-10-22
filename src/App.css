@@ -4546,7 +4546,7 @@ input.locate-offset {
 
 .video-player {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
   height: 100%;
   min-height: 0;
   background: var(--ad-workspace);
@@ -4605,10 +4605,80 @@ input.locate-offset {
   border-top: 1px solid var(--ad-border);
 }
 
+.video-seek-wrap {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
 .video-seek {
   flex: 1;
   min-width: 0;
   accent-color: var(--ad-accent);
+}
+
+/* Extraits sous la barre de position ; l'extrait en cours en pointillé. */
+.video-clip-mark {
+  position: absolute;
+  bottom: -3px;
+  height: 4px;
+  background: var(--ad-accent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.video-clip-mark[data-pending] {
+  background: none;
+  border: 1px dashed var(--ad-accent);
+}
+
+.video-clips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-2);
+  max-height: 220px;
+  overflow: auto;
+  padding: var(--ad-space-2) var(--ad-space-3);
+  border-top: 1px solid var(--ad-border);
+}
+
+.video-clips-marks,
+.video-clips-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ad-space-3);
+  font: var(--ad-font-ui);
+}
+
+.video-clips-marks strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.video-clips-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.video-clips-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.video-clips-range {
+  font: var(--ad-font-value);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.video-clips-name {
+  flex: 1;
+  min-width: 0;
 }
 
 .video-time {

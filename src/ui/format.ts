@@ -119,3 +119,16 @@ export function formatDuration(ms: number): string {
   const s = String(total % 60).padStart(2, "0");
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
 }
+
+/** Instant d'un extrait, au centième : « 0:02,40 » (« 0:02.40 » en anglais). */
+export function formatTimecode(ms: number, language: string): string {
+  const total = Math.max(0, Math.round(ms / 10));
+  const cs = String(total % 100).padStart(2, "0");
+  const seconds = Math.floor(total / 100);
+  const m = Math.floor(seconds / 60);
+  const s = String(seconds % 60).padStart(2, "0");
+  const decimal =
+    new Intl.NumberFormat(language).formatToParts(1.5).find((p) => p.type === "decimal")?.value ??
+    ".";
+  return `${m}:${s}${decimal}${cs}`;
+}
