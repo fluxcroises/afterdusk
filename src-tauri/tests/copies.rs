@@ -120,10 +120,12 @@ fn copie_listee_rendue_et_exportee() {
             Target {
                 preset: "web".into(),
                 folder: Some("Web".into()),
+                template: None,
             },
             Target {
                 preset: "originals".into(),
                 folder: Some("Originaux".into()),
+                template: None,
             },
         ],
         destination: out_dir.clone(),

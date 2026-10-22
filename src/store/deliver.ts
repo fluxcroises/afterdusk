@@ -95,6 +95,13 @@ export interface ExportProgress {
   failures: ExportFailure[];
 }
 
+/** Modèle de livraison coché : son preset (format, couleurs) et son dossier. */
+export interface TemplateTarget {
+  id: string;
+  preset: string;
+  folder: string;
+}
+
 export interface ExportFinished {
   progress: ExportProgress | null;
   cancelled: boolean;
@@ -147,7 +154,11 @@ interface DeliverState {
   removePreset: (id: string) => Promise<void>;
   toggleChosen: (id: string) => void;
   setEditing: (id: string | null) => void;
-  start: (mediaIds: number[], folders: Record<string, string>) => Promise<void>;
+  start: (
+    mediaIds: number[],
+    folders: Record<string, string>,
+    templates?: TemplateTarget[],
+  ) => Promise<void>;
   cancel: () => Promise<void>;
   onProgress: (p: ExportProgress) => void;
   onFinished: (f: ExportFinished) => void;
@@ -252,7 +263,7 @@ export const useDeliver = create<DeliverState>()((set, get) => {
 
     setEditing: (id) => set({ editing: get().editing === id ? null : id }),
 
-    start: async (mediaIds, folders) => {
+    start: async (mediaIds, folders, templates = []) => {
       const { settings, chosen, running } = get();
       if (!settings?.destination || running || mediaIds.length === 0) return;
       if (saveTimer) {
@@ -260,9 +271,12 @@ export const useDeliver = create<DeliverState>()((set, get) => {
         saveTimer = null;
         if (!(await save(settings))) return;
       }
-      const targets = settings.presets
-        .filter((p) => chosen.includes(p.id))
-        .map((p) => ({ preset: p.id, folder: folders[p.id] ?? p.id }));
+      const targets = [
+        ...settings.presets
+          .filter((p) => chosen.includes(p.id))
+          .map((p) => ({ preset: p.id, folder: folders[p.id] ?? p.id })),
+        ...templates.map((tp) => ({ preset: tp.preset, folder: tp.folder, template: tp.id })),
+      ];
       if (targets.length === 0) return;
       set({
         running: true,

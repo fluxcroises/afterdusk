@@ -15,6 +15,7 @@ import {
   useDeliver,
 } from "../store/deliver";
 import { useLibrary } from "../store/library";
+import { GROUP_PRESET, useTemplates } from "../store/templates";
 import { pasteTargets } from "../ui/paste";
 import { Slider } from "./DevelopPanels";
 import { IconButton } from "./IconButton";
@@ -567,13 +568,15 @@ export function ExportButton() {
   const settings = useDeliver((s) => s.settings);
   const chosen = useDeliver((s) => s.chosen);
   const running = useDeliver((s) => s.running);
+  const templates = useTemplates((s) => s.templates);
+  const chosenTemplates = useTemplates((s) => s.chosen);
   const count = useLibrary((s) =>
     s.selectedIds.length > 1 ? s.selectedIds.length : s.selectedId === null ? 0 : 1,
   );
   const nameOf = usePresetName();
   const reason = !settings?.destination
     ? t("deliver.needDestination")
-    : chosen.length === 0
+    : chosen.length === 0 && chosenTemplates.length === 0
       ? t("deliver.needPreset")
       : count === 0
         ? t("deliver.needSelection")
@@ -589,7 +592,14 @@ export function ExportButton() {
           const folders = Object.fromEntries(
             (settings?.presets ?? []).map((p) => [p.id, nameOf(p)]),
           );
-          void useDeliver.getState().start(pasteTargets(), folders);
+          const targets = templates
+            .filter((tp) => chosenTemplates.includes(tp.id))
+            .map((tp) => ({
+              id: tp.id,
+              preset: GROUP_PRESET[tp.group],
+              folder: t(`templates.names.${tp.id}`),
+            }));
+          void useDeliver.getState().start(pasteTargets(), folders, targets);
         }}
       >
         {t("deliver.export", { count })}

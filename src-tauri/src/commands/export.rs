@@ -13,6 +13,7 @@ use super::{AppState, blocking};
 use crate::export::ExportError;
 use crate::export::job::{self, ExportRequest, Progress};
 use crate::export::presets::{self, ExportPreset, ExportSettings, FILE};
+use crate::export::templates::{self, Framing, Template};
 use crate::export::watermark::Watermark;
 
 pub const EVENT_PROGRESS: &str = "export://progress";
@@ -188,4 +189,52 @@ pub async fn export_preview(
     })
     .await?;
     Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Modèles de livraison intégrés, dans l'ordre de l'interface.
+#[tauri::command]
+pub fn delivery_templates() -> Vec<Template> {
+    templates::TEMPLATES.to_vec()
+}
+
+/// Cadrages d'une photo pour tous les modèles (enregistrés ou par défaut).
+#[tauri::command]
+pub async fn delivery_framings(
+    state: State<'_, AppState>,
+    item: i64,
+) -> CommandResult<Vec<Framing>> {
+    let conn = state.connect()?;
+    let cache = state.cache_root.clone();
+    blocking(move || {
+        let size = job::item_size(&conn, item)?;
+        Ok(templates::framings(&conn, &cache, item, size).map_err(crate::db::DbError::from)?)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn delivery_framing_set(
+    state: State<'_, AppState>,
+    item: i64,
+    template: String,
+    rect: [f64; 4],
+) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || {
+        Ok(templates::set(&conn, item, &template, rect).map_err(crate::db::DbError::from)?)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn delivery_framing_reset(
+    state: State<'_, AppState>,
+    item: i64,
+    template: String,
+) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(
+        move || Ok(templates::reset(&conn, item, &template).map_err(crate::db::DbError::from)?),
+    )
+    .await
 }

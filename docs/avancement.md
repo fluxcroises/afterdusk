@@ -768,3 +768,13 @@ Critères (cahier des charges, section 7) :
 ### 2026-10-22 (suite) : installateurs en dernier
 
 - Choix de l'utilisateur : les installateurs signés et les mises à jour automatiques se feront en dernier, quand l'application sera entièrement opérationnelle. Le critère passe de la V0.4 à une étape « Distribution » placée après les versions fonctionnelles ; la décision 0011 s'appliquera alors. La V0.4 n'attend plus que la mesure de performance sur Mac.
+
+### 2026-10-22 (suite) : V0.5, export rendu des JPEG, TIFF et PNG, puis modèles de livraison
+
+- Export : les presets rendus acceptent les JPEG, TIFF et PNG (décodage, orientation, taille, accentuation, filigrane, espace couleur), comme les RAW ; l'aperçu de Livrer aussi. Test : un JPEG et un PNG 16 bits exportés en Web à 2048 × 1365, originaux intacts.
+- Modèles de livraison (liste choisie par l'utilisateur) : treize formats intégrés, rangés en réseaux sociaux, tirages (300 dpi, orientation de la photo) et web. Migration 0021 : cadrage par photo et par modèle, en fractions de l'image retouchée ; clé sur l'identifiant de grille (copies virtuelles comprises), effacé par déclencheur avec la photo ou la copie.
+- Cadrage par défaut : le plus grand cadre au rapport du modèle, centré sur le plus grand visage trouvé par YuNet (visage aux deux cinquièmes de la hauteur), sinon au centre. Un cadrage enregistré est ramené au rapport si la photo a été recadrée depuis.
+- Export par modèle : rendu juste assez grand pour le cadre, découpe, mise à la taille exacte du modèle (agrandie si la photo manque de pixels, signalé « Définition juste »), accentuation écran ou papier. Format, couleurs et métadonnées viennent d'un preset par usage : Instagram pour les réseaux, Pleine qualité (JPEG sRGB) pour les tirages, Web pour le web. Un dossier par modèle.
+- Livrer : bascule Photos / Modèles dans la barre d'outils. Les modèles montrent la photo active à travers leur cadrage ; un clic coche le modèle pour l'export, un double-clic (ou le bouton Cadrer) ouvre le cadrage : cadre au rapport fixe, déplacé en glissant ou aux flèches, agrandi par les coins, « Cadrage automatique » pour revenir au défaut.
+- Tests : géométrie des cadres (rapport, bords, visage, orientation des tirages), export de bout en bout (tailles, tirage tourné avec une photo en hauteur, cadrage enregistré respecté) ; interface (groupes, alertes, coche, cadrage enregistré au clavier, retour au cadrage automatique). Reste : vérification à l'écran, et la CI avant de cocher le critère.
+

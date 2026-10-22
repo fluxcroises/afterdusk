@@ -11,6 +11,7 @@ pub mod job;
 pub mod metadata;
 pub mod presets;
 pub mod render;
+pub mod templates;
 pub mod watermark;
 
 use std::path::PathBuf;
@@ -35,7 +36,7 @@ pub enum ExportError {
     Settings(String),
     #[error("copie de l'original impossible : {0}")]
     Copy(String),
-    #[error("export rendu réservé aux RAW pour l'instant : {0}")]
+    #[error("format non rendu : {0}")]
     Unsupported(String),
     #[error(transparent)]
     Raw(#[from] crate::raw::RawError),

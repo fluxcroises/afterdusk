@@ -15,7 +15,8 @@ use super::color::ColorSpace;
 use super::encode;
 use super::metadata::{self, PhotoMeta};
 use super::presets::{self, ExportPreset, ExportSettings, Output};
-use super::render::{RenderOptions, Resize, render_photo};
+use super::render::{RenderOptions, Resize, Sharpen, render_photo};
+use super::templates::{self, Template};
 use crate::db;
 use crate::develop::lens::{self, Shot};
 use crate::develop::store;
@@ -34,6 +35,10 @@ pub struct Target {
     pub preset: String,
     #[serde(default)]
     pub folder: Option<String>,
+    /// Modèle de livraison : taille, cadrage et accentuation du modèle, le
+    /// reste (format, couleurs, métadonnées, filigrane) du preset.
+    #[serde(default)]
+    pub template: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -66,6 +71,8 @@ pub struct Progress {
 
 /// Une photo de la bibliothèque, telle que l'export la voit.
 pub(crate) struct Photo {
+    /// Identifiant de grille : négatif pour une copie virtuelle.
+    item: i64,
     media_id: i64,
     /// Version exportée : vide pour l'originale, nom d'une copie virtuelle.
     version: String,
@@ -109,6 +116,7 @@ fn photo(conn: &Connection, item: i64) -> Result<Photo, PhotoError> {
         paths::to_absolute(&lib.root_path, &rel).map_err(|e| fail("internal", e.to_string()))?;
     let sidecar = sidecar.and_then(|s| paths::to_absolute(&lib.root_path, &s).ok());
     Ok(Photo {
+        item,
         media_id: id,
         version,
         path,
@@ -125,6 +133,7 @@ fn export_one(
     conn: &Connection,
     photo: &Photo,
     preset: &ExportPreset,
+    template: Option<&Template>,
     settings: &ExportSettings,
     dir: &Path,
     seq: usize,
@@ -171,8 +180,79 @@ fn export_one(
         color,
     };
     let mark = settings.watermark.as_ref().filter(|_| preset.watermark);
-    let image = render_source(conn, photo, options, mark)?;
+    let image = match template {
+        Some(t) => render_template(conn, photo, t, color, mark)?,
+        None => render_source(conn, photo, options, mark)?,
+    };
     write_rendered(conn, photo, &image, preset, format, color, dir, &stem).map(Some)
+}
+
+/// Taille retouchée d'une photo de la grille.
+pub fn item_size(conn: &Connection, item: i64) -> Result<(u32, u32), ExportError> {
+    let p = photo(conn, item)
+        .map_err(|(_, code, detail)| ExportError::Settings(format!("{code} {detail}")))?;
+    full_size(conn, &p)
+}
+
+/// Taille de la photo retouchée (cadrage de Développer et orientation compris).
+fn full_size(conn: &Connection, photo: &Photo) -> Result<(u32, u32), ExportError> {
+    match format_of(&photo.path) {
+        Some(MediaFormat::Raw) => {
+            let develop = store::load(conn, photo.media_id, &photo.version)
+                .map_err(|e| ExportError::Settings(e.to_string()))?;
+            let raw = RawFile::open(&photo.path)?;
+            Ok(super::render::output_size(&raw, &develop, Resize::Full))
+        }
+        Some(MediaFormat::Image) => {
+            let (w, h) = image::image_dimensions(&photo.path)
+                .map_err(|e| ExportError::Unsupported(format!("{} : {e}", photo.name)))?;
+            let orientation: u8 = conn
+                .query_row(
+                    "SELECT orientation FROM media WHERE id = ?1",
+                    [photo.media_id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(1);
+            Ok(if orientation >= 5 { (h, w) } else { (w, h) })
+        }
+        _ => Err(ExportError::Unsupported(photo.name.clone())),
+    }
+}
+
+/// Rendu pour un modèle : la photo juste assez grande pour le cadre, le
+/// cadre découpé (enregistré, sinon sur le plus grand visage), mis à la
+/// taille du modèle, puis accentué.
+fn render_template(
+    conn: &Connection,
+    photo: &Photo,
+    template: &Template,
+    color: ColorSpace,
+    mark: Option<&super::watermark::Watermark>,
+) -> Result<super::render::Rendered, ExportError> {
+    let (fw, fh) = full_size(conn, photo)?;
+    let (tw, th) = template.size_for(fw, fh);
+    let ratio = f64::from(tw) / f64::from(th);
+    let saved = templates::get(conn, photo.item, template.id)
+        .map_err(|e| ExportError::Settings(e.to_string()))?
+        .map(|r| templates::conform(r, ratio, fw, fh));
+    let span = saved.unwrap_or_else(|| templates::fit(ratio, fw, fh, (0.5, 0.5)));
+    let width = (f64::from(tw) / (span[2] - span[0]).max(0.01)).ceil() as u32;
+    let options = RenderOptions {
+        resize: Resize::Width(width),
+        sharpen: Sharpen::None,
+        color: ColorSpace::Srgb,
+    };
+    let image = render_source(conn, photo, options, None)?;
+    let rect = saved.unwrap_or_else(|| {
+        let small = image::RgbImage::from_raw(image.width, image.height, image.to_u8())
+            .map(|img| crate::raw::preview::fit(&img, 1024));
+        let face = small.as_ref().and_then(templates::subject);
+        templates::default_frame(ratio, image.width, image.height, face)
+    });
+    let framed = super::render::crop_fraction(&image, rect);
+    drop(image);
+    let sized = super::render::resize_exact(framed, tw, th);
+    super::render::finish(sized, Resize::Full, template.sharpen(), color, mark)
 }
 
 /// Rend une photo de la bibliothèque : un RAW avec ses réglages, une autre
@@ -289,18 +369,22 @@ pub fn run(
     cancel: &AtomicBool,
     report: &(dyn Fn(&Progress) + Sync),
 ) -> Result<Progress, ExportError> {
-    let targets: Vec<(&ExportPreset, PathBuf)> = request
+    let targets: Vec<(&ExportPreset, Option<&Template>, PathBuf)> = request
         .targets
         .iter()
         .filter_map(|t| {
             let preset = settings.presets.iter().find(|p| p.id == t.preset)?;
+            let template = match &t.template {
+                Some(id) => Some(templates::find(id)?),
+                None => None,
+            };
             let dir = match (&t.folder, request.targets.len() > 1) {
                 (Some(f), true) => request
                     .destination
                     .join(presets::file_stem(f, f, f, None, 0)),
                 _ => request.destination.clone(),
             };
-            Some((preset, dir))
+            Some((preset, template, dir))
         })
         .collect();
     if targets.is_empty() {
@@ -314,7 +398,7 @@ pub fn run(
         current: None,
         failures: Vec::new(),
     });
-    let presets_only: Vec<&ExportPreset> = targets.iter().map(|(p, _)| *p).collect();
+    let presets_only: Vec<&ExportPreset> = targets.iter().map(|(p, _, _)| *p).collect();
     std::thread::scope(|s| {
         for _ in 0..workers(&presets_only) {
             s.spawn(|| {
@@ -334,16 +418,23 @@ pub fn run(
                     match photo(&conn, id) {
                         Ok(p) => {
                             name.clone_from(&p.name);
-                            for (preset, dir) in &targets {
+                            for (preset, template, dir) in &targets {
                                 if cancel.load(Ordering::SeqCst) {
                                     break;
                                 }
-                                if let Err(e) =
-                                    export_one(&conn, &p, preset, settings, dir, index + 1)
-                                {
+                                if let Err(e) = export_one(
+                                    &conn,
+                                    &p,
+                                    preset,
+                                    *template,
+                                    settings,
+                                    dir,
+                                    index + 1,
+                                ) {
                                     failures.push(Failure {
                                         file: p.name.clone(),
-                                        preset: preset.id.clone(),
+                                        preset: template
+                                            .map_or_else(|| preset.id.clone(), |t| t.id.to_owned()),
                                         code: code_of(&e).into(),
                                         detail: e.to_string(),
                                     });
@@ -351,7 +442,7 @@ pub fn run(
                             }
                         }
                         Err((file, code, detail)) => {
-                            for (preset, _) in &targets {
+                            for (preset, _, _) in &targets {
                                 failures.push(Failure {
                                     file: file.clone(),
                                     preset: preset.id.clone(),

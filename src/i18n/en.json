@@ -1020,7 +1020,7 @@
     "chooseDestination": "Delivery folder",
     "openFolder": "Open the folder when done",
     "needDestination": "Choose a destination folder.",
-    "needPreset": "Tick at least one export preset.",
+    "needPreset": "Check at least one export preset or template.",
     "needSelection": "Select the photos to deliver.",
     "export_one": "Export {{count}} photo",
     "export_other": "Export {{count}} photos",
@@ -1473,5 +1473,45 @@
     "videos_one": "{{count}} video",
     "videos_other": "{{count}} videos",
     "both": "{{photos}} and {{videos}}"
+  },
+  "templates": {
+    "tab": "Templates",
+    "photosTab": "Photos",
+    "viewLabel": "Deliver view",
+    "groups": {
+      "social": "Social media",
+      "print": "Prints",
+      "web": "Web"
+    },
+    "names": {
+      "instagram-portrait": "Instagram 4:5",
+      "square": "Square",
+      "story": "Story and Reel",
+      "facebook-post": "Facebook and LinkedIn",
+      "facebook-cover": "Facebook cover",
+      "pinterest": "Pinterest",
+      "youtube": "YouTube thumbnail",
+      "x-post": "X",
+      "print-10x15": "4 × 6 in print",
+      "print-13x18": "5 × 7 in print",
+      "print-20x30": "8 × 12 in print",
+      "print-a4": "A4 print",
+      "web-fullscreen": "Full screen"
+    },
+    "size": "{{width}} × {{height}} px",
+    "lowResolution": "Low resolution",
+    "custom": "Framed by hand",
+    "frame": "Frame “{{name}}”",
+    "frameTitle": "Framing: {{name}}",
+    "frameArea": "Frame, arrow keys move it",
+    "frameHint": "Drag the frame to move it, a corner to resize it. Arrow keys: 1%, Shift + arrow keys: 10%.",
+    "resetFrame": "Automatic framing",
+    "cancel": "Cancel",
+    "save": "Save",
+    "needPhoto": "Choose a photo to see it in each format.",
+    "hint": "Click: check for export. Double-click: frame. Without a chosen framing, the frame centres on the largest face.",
+    "hintMany": "Framings of the active photo. The other selected photos keep theirs, or centre on the largest face.",
+    "chosen_one": "{{count}} template checked",
+    "chosen_other": "{{count}} templates checked"
   }
 }

@@ -229,6 +229,12 @@ pub fn ear(landmarks: &[f32], idx: [usize; 6]) -> f32 {
 }
 
 impl EyeDetector {
+    /// Plus grand visage : centre, largeur et hauteur, en pixels de l'image.
+    pub fn largest_face(&mut self, img: &RgbImage) -> Option<[f32; 4]> {
+        let faces = detect(&mut self.detect, img)?;
+        faces.first().map(|f| [f.cx, f.cy, f.w, f.h])
+    }
+
     /// Yeux fermés sur au moins un visage ? `None` si aucun visage n'est
     /// assez grand pour en juger, ou si un modèle échoue.
     pub fn eyes_closed(&mut self, img: &RgbImage) -> Option<bool> {

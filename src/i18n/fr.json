@@ -1020,7 +1020,7 @@
     "chooseDestination": "Dossier de livraison",
     "openFolder": "Ouvrir le dossier à la fin",
     "needDestination": "Choisissez un dossier de destination.",
-    "needPreset": "Cochez au moins un preset d'export.",
+    "needPreset": "Cochez au moins un preset d'export ou un modèle.",
     "needSelection": "Sélectionnez les photos à livrer.",
     "export_one": "Exporter {{count}} photo",
     "export_other": "Exporter {{count}} photos",
@@ -1473,5 +1473,45 @@
     "videos_one": "{{count}} vidéo",
     "videos_other": "{{count}} vidéos",
     "both": "{{photos}} et {{videos}}"
+  },
+  "templates": {
+    "tab": "Modèles",
+    "photosTab": "Photos",
+    "viewLabel": "Affichage de Livrer",
+    "groups": {
+      "social": "Réseaux sociaux",
+      "print": "Tirages",
+      "web": "Web"
+    },
+    "names": {
+      "instagram-portrait": "Instagram 4:5",
+      "square": "Carré",
+      "story": "Story et Reel",
+      "facebook-post": "Facebook et LinkedIn",
+      "facebook-cover": "Couverture Facebook",
+      "pinterest": "Pinterest",
+      "youtube": "Miniature YouTube",
+      "x-post": "X",
+      "print-10x15": "Tirage 10 × 15",
+      "print-13x18": "Tirage 13 × 18",
+      "print-20x30": "Tirage 20 × 30",
+      "print-a4": "Tirage A4",
+      "web-fullscreen": "Plein écran"
+    },
+    "size": "{{width}} × {{height}} px",
+    "lowResolution": "Définition juste",
+    "custom": "Cadré à la main",
+    "frame": "Cadrer « {{name}} »",
+    "frameTitle": "Cadrage : {{name}}",
+    "frameArea": "Cadre, flèches pour le déplacer",
+    "frameHint": "Glissez le cadre pour le déplacer, un coin pour l'agrandir. Flèches : 1 %, Maj + flèches : 10 %.",
+    "resetFrame": "Cadrage automatique",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "needPhoto": "Choisissez une photo pour la voir dans chaque format.",
+    "hint": "Clic : cocher pour l'export. Double-clic : cadrer. Sans cadrage choisi, le cadre se centre sur le plus grand visage.",
+    "hintMany": "Cadrages de la photo active. Les autres photos de la sélection gardent le leur, ou se centrent sur le plus grand visage.",
+    "chosen_one": "{{count}} modèle coché",
+    "chosen_other": "{{count}} modèles cochés"
   }
 }

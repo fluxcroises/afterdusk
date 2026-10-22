@@ -165,6 +165,7 @@ fn export_de_100_jpeg_2048_px_sous_2_minutes() {
             targets: vec![Target {
                 preset: "web".into(),
                 folder: None,
+                template: None,
             }],
             destination: out.clone(),
         },

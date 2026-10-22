@@ -12,6 +12,7 @@ use afterdusk_lib::develop::settings::DevelopSettings;
 use afterdusk_lib::develop::store;
 use afterdusk_lib::export::job::{self, ExportRequest, Target};
 use afterdusk_lib::export::presets::{ExportSettings, Output};
+use afterdusk_lib::export::templates;
 use afterdusk_lib::export::watermark::{Anchor, Watermark, WatermarkContent};
 use afterdusk_lib::import::{self, ImportOptions};
 use afterdusk_lib::{db, library};
@@ -103,10 +104,12 @@ fn web_et_originaux_dans_des_sous_dossiers() {
             Target {
                 preset: "web".into(),
                 folder: Some("Web".into()),
+                template: None,
             },
             Target {
                 preset: "originals".into(),
                 folder: Some("Originaux".into()),
+                template: None,
             },
         ],
         destination: out.clone(),
@@ -224,6 +227,7 @@ fn heif_avec_copyright_quand_le_systeme_sait_l_ecrire() {
             targets: vec![Target {
                 preset: "web".into(),
                 folder: None,
+                template: None,
             }],
             destination: out.clone(),
         },
@@ -318,6 +322,7 @@ fn jpeg_et_png_rendus_par_le_preset_web() {
         targets: vec![Target {
             preset: "web".into(),
             folder: None,
+            template: None,
         }],
         destination: out.clone(),
     };
@@ -339,6 +344,116 @@ fn jpeg_et_png_rendus_par_le_preset_web() {
     for (orig, hash) in &originals {
         assert_eq!(&common::sha256(orig), hash);
     }
+}
+
+/// Modèles de livraison : taille du modèle, tirage tourné avec la photo,
+/// cadrage enregistré respecté.
+#[test]
+fn modeles_de_livraison() {
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("carte");
+    fs::create_dir_all(&card).unwrap();
+    // Moitié gauche rouge, moitié droite bleue.
+    image::RgbImage::from_fn(3000, 2000, |x, _| {
+        if x < 1500 {
+            image::Rgb([220, 20, 20])
+        } else {
+            image::Rgb([20, 20, 220])
+        }
+    })
+    .save(card.join("paysage.jpg"))
+    .unwrap();
+    image::RgbImage::from_pixel(2000, 3000, image::Rgb([90, 90, 90]))
+        .save(card.join("portrait.jpg"))
+        .unwrap();
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let db_path = dir.path().join("afterdusk.db");
+    let mut conn = db::open(&db_path).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let mut files: Vec<_> = fs::read_dir(&card)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .collect();
+    files.sort();
+    let id = import::plan(
+        &mut conn,
+        &ImportOptions {
+            library_id: lib.id,
+            source_path: card.clone(),
+            source_label: "Carte".into(),
+            files,
+            album_name: "Modèles".into(),
+            album_per_day: false,
+            rename: false,
+            backup: false,
+            keywords: vec![],
+            creator: None,
+            rights: None,
+            skip_pair_jpegs: false,
+            client_id: None,
+            session_type_id: None,
+            session_label: String::new(),
+        },
+    )
+    .unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+    let ids: Vec<i64> = conn
+        .prepare("SELECT id FROM media ORDER BY path")
+        .unwrap()
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(ids.len(), 2);
+    let landscape = ids[0];
+    // Cadre 4:5 enregistré dans la moitié rouge.
+    templates::set(
+        &conn,
+        landscape,
+        "instagram-portrait",
+        [0.0, 0.0, 0.4, 0.75],
+    )
+    .unwrap();
+
+    let out = dir.path().join("Livraison");
+    let target = |template: &str| Target {
+        preset: "web".into(),
+        folder: Some(template.into()),
+        template: Some(template.into()),
+    };
+    let request = ExportRequest {
+        media_ids: ids,
+        targets: vec![target("instagram-portrait"), target("print-10x15")],
+        destination: out.clone(),
+    };
+    let done = job::run(
+        &db_path,
+        &ExportSettings::default(),
+        &request,
+        &AtomicBool::new(false),
+        &|_| {},
+    )
+    .unwrap();
+    assert!(done.failures.is_empty(), "{:?}", done.failures);
+    let size = |p: &std::path::Path| {
+        let img = image::open(p).unwrap();
+        (img.width(), img.height())
+    };
+    let insta = out.join("instagram-portrait");
+    let print = out.join("print-10x15");
+    assert_eq!(size(&insta.join("paysage.jpg")), (1080, 1350));
+    assert_eq!(size(&insta.join("portrait.jpg")), (1080, 1350));
+    assert_eq!(size(&print.join("paysage.jpg")), (1800, 1200));
+    assert_eq!(size(&print.join("portrait.jpg")), (1200, 1800));
+    // Le cadre enregistré ne prend que du rouge.
+    let red = image::open(insta.join("paysage.jpg")).unwrap().into_rgb8();
+    let p = red.get_pixel(1079, 675);
+    assert!(p[0] > 150 && p[2] < 80, "{p:?}");
+    // Par défaut, centré : du rouge à gauche, du bleu à droite.
+    let both = image::open(print.join("paysage.jpg")).unwrap().into_rgb8();
+    assert!(both.get_pixel(10, 600)[0] > 150);
+    assert!(both.get_pixel(1790, 600)[2] > 150);
 }
 
 fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
