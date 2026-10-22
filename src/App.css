@@ -4514,3 +4514,116 @@ input.locate-offset {
   height: 16px;
   margin-top: 2px;
 }
+
+/* Vidéos : badge de la grille et lecteur de la loupe. */
+.video-badge {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+  padding: 0 6px 0 4px;
+  font: var(--ad-font-meta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  color: var(--ad-text);
+  background: color-mix(in srgb, var(--ad-panel) 85%, transparent);
+  border: 1px solid var(--ad-border-strong);
+  border-radius: var(--ad-radius-sm);
+}
+
+.video-badge svg {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
+}
+
+.video-player {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  height: 100%;
+  min-height: 0;
+  background: var(--ad-workspace);
+}
+
+.video-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.video-stage video,
+.video-stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.video-status {
+  position: absolute;
+  display: flex;
+  gap: var(--ad-space-2);
+  align-items: center;
+  padding: var(--ad-space-2) var(--ad-space-3);
+  color: var(--ad-text);
+  background: color-mix(in srgb, var(--ad-panel) 90%, transparent);
+  border-radius: var(--ad-radius-md);
+}
+
+.video-status:empty {
+  display: none;
+}
+
+.video-status svg {
+  width: 16px;
+  height: 16px;
+}
+
+.spin {
+  animation: video-spin 1s linear infinite;
+}
+
+@keyframes video-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.video-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+  padding: var(--ad-space-2) var(--ad-space-3);
+  border-top: 1px solid var(--ad-border);
+}
+
+.video-seek {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--ad-accent);
+}
+
+.video-time {
+  font: var(--ad-font-value);
+  font-variant-numeric: tabular-nums;
+  color: var(--ad-text-secondary);
+  white-space: nowrap;
+}
+
+.video-info {
+  margin: 0;
+  padding: 0 var(--ad-space-3) var(--ad-space-2);
+  font: var(--ad-font-meta);
+  color: var(--ad-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}

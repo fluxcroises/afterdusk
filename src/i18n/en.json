@@ -414,7 +414,8 @@
     "watchMissing": "This folder does not exist or cannot be reached.",
     "watchInsideLibrary": "This folder overlaps a library: Afterdusk would import its own files.",
     "watchDuplicate": "This folder is already watched.",
-    "ftp": "FTP reception could not be set up."
+    "ftp": "FTP reception could not be set up.",
+    "videoUnavailable": "The playback version of this video could not be prepared."
   },
   "home": {
     "morning": "Hello",
@@ -522,7 +523,11 @@
     "client": "Client",
     "anyClient": "All clients",
     "session": "Session type",
-    "anySession": "All sessions"
+    "anySession": "All sessions",
+    "kind": "Media type",
+    "anyKind": "Photos and videos",
+    "photos": "Photos",
+    "videos": "Videos"
   },
   "pile": {
     "badge_one": "{{count}} file",
@@ -1446,5 +1451,20 @@
       "apply": "Pick and create the collection",
       "collectionName": "Selection – {{name}}"
     }
+  },
+  "video": {
+    "badge": "Video",
+    "play": "Play",
+    "pause": "Pause",
+    "space": "Space",
+    "previousFrame": "Previous frame",
+    "nextFrame": "Next frame",
+    "position": "Position in the video",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "fps": "{{value}} fps",
+    "preparing": "Preparing playback…",
+    "unplayable": "This video cannot be played here.",
+    "noFfmpeg": "Playback unavailable: FFmpeg is missing from this Afterdusk installation."
   }
 }

@@ -171,6 +171,19 @@ function PhotoFilters() {
         ))}
       </div>
       <select
+        aria-label={t("filter.kind")}
+        value={filter.kind ?? ""}
+        onChange={(e) =>
+          void setFilter({
+            kind: e.target.value ? (e.target.value as "photo" | "video") : undefined,
+          })
+        }
+      >
+        <option value="">{t("filter.anyKind")}</option>
+        <option value="photo">{t("filter.photos")}</option>
+        <option value="video">{t("filter.videos")}</option>
+      </select>
+      <select
         aria-label={t("filter.camera")}
         value={filter.cameraId ?? ""}
         onChange={(e) =>

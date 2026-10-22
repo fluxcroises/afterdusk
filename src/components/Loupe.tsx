@@ -1,3 +1,4 @@
+import { VideoPlayer } from "./VideoPlayer";
 import { useCallback, useEffect } from "react";
 import { useLibrary } from "../store/library";
 import { recordTransition } from "../ui/perf";
@@ -32,6 +33,7 @@ export function Loupe() {
   }, []);
 
   if (!current) return null;
+  if (current.kind === "video") return <VideoPlayer key={current.id} media={current} />;
   return (
     <PhotoPane
       media={current}

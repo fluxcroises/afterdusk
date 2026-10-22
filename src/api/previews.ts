@@ -30,3 +30,8 @@ export function sourceThumbnailUrl(path: string): string | null {
   const root = base();
   return root ? `${root}source?path=${encodeURIComponent(path)}` : null;
 }
+
+/** Vidéo servie par le protocole `video://` (`media/<id>` ou `proxy/<id>`). */
+export function videoUrl(path: string): string | null {
+  return isTauri() ? `${convertFileSrc("", "video")}${path}` : null;
+}

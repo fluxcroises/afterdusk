@@ -1,4 +1,5 @@
-import { BookImage, Flag, FlagOff, Layers, Star, TriangleAlert } from "lucide-react";
+import { formatDuration } from "../ui/format";
+import { BookImage, Flag, FlagOff, Layers, Play, Star, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -216,6 +217,12 @@ function MediaCell({
               .join("\n")}
           >
             <TriangleAlert aria-hidden="true" strokeWidth={2} />
+          </span>
+        )}
+        {media.kind === "video" && (
+          <span className="video-badge" aria-label={t("video.badge")}>
+            <Play aria-hidden="true" strokeWidth={2} />
+            {media.durationMs ? formatDuration(media.durationMs) : null}
           </span>
         )}
         {media.copyOf && (

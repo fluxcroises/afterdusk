@@ -755,3 +755,10 @@ Critères (cahier des charges, section 7) :
 - Protocole `video://` (original ou version de lecture, par plages d'octets) et commandes de lecture : version H.264 préparée en cache quand le lecteur intégré ne lit pas le codec (HEVC sous Windows, ProRes, AVCHD).
 - Tests : informations, miniature et version de lecture ; plages d'octets ; de bout en bout, carte Sony (clip et XML) avec un MOV HEVC et une photo, annexe copiée à l'identique, filtre, miniature, corbeille aller-retour, carte jamais écrite. L'interface vidéo reste à faire.
 - Correction (révélée par la CI macOS) : un fichier déposé dans un dossier surveillé était repéré par ses dates ; sous macOS, une copie garde les dates d'origine et la photo n'était jamais importée. Migration 0020 : relevé des fichiers présents à l'activation (chemins relatifs), seuls ignorés ; le test simule une copie à date ancienne.
+
+### 2026-10-22 (suite) : V0.4, vidéos (interface)
+
+- Grille : badge « lecture » avec la durée sur les vidéos. Barre de filtres : photos et vidéos, photos, vidéos.
+- Loupe : lecteur vidéo à la place de la photo, avec l'aperçu comme image d'attente ; lecture et pause (Espace, qui ne zoome plus sur une vidéo), image précédente et suivante (virgule et point, d'après la cadence du clip), barre de position, son ; ligne d'informations (dimensions, cadence, codec, durée). Un codec que le lecteur intégré ne lit pas déclenche la préparation de la version de lecture, avec « Préparation de la lecture… » ; sans FFmpeg, un message l'explique.
+- « À propos » cite FFmpeg (GPL 2.0 ou ultérieure).
+- Tests : lecteur (original d'un codec natif, informations, image par image ; version de lecture préparée pour le HEVC ; FFmpeg absent). Reste à voir la lecture à l'écran (protocole `video://` dans la fenêtre de l'application) avant de cocher le critère.

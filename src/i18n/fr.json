@@ -414,7 +414,8 @@
     "watchMissing": "Ce dossier n'existe pas ou n'est pas accessible.",
     "watchInsideLibrary": "Ce dossier est mêlé à une bibliothèque : Afterdusk s'importerait lui-même.",
     "watchDuplicate": "Ce dossier est déjà surveillé.",
-    "ftp": "La réception FTP n'a pas pu être réglée."
+    "ftp": "La réception FTP n'a pas pu être réglée.",
+    "videoUnavailable": "La version de lecture de cette vidéo n'a pas pu être préparée."
   },
   "home": {
     "morning": "Bonjour",
@@ -522,7 +523,11 @@
     "client": "Client",
     "anyClient": "Tous les clients",
     "session": "Type de séance",
-    "anySession": "Toutes les séances"
+    "anySession": "Toutes les séances",
+    "kind": "Type de média",
+    "anyKind": "Photos et vidéos",
+    "photos": "Photos",
+    "videos": "Vidéos"
   },
   "pile": {
     "badge_one": "{{count}} fichier",
@@ -1446,5 +1451,20 @@
       "apply": "Retenir et créer la collection",
       "collectionName": "Sélection – {{name}}"
     }
+  },
+  "video": {
+    "badge": "Vidéo",
+    "play": "Lire",
+    "pause": "Pause",
+    "space": "Espace",
+    "previousFrame": "Image précédente",
+    "nextFrame": "Image suivante",
+    "position": "Position dans la vidéo",
+    "mute": "Couper le son",
+    "unmute": "Remettre le son",
+    "fps": "{{value}} i/s",
+    "preparing": "Préparation de la lecture…",
+    "unplayable": "Cette vidéo ne peut pas être lue ici.",
+    "noFfmpeg": "Lecture impossible : FFmpeg manque à cette installation d'Afterdusk."
   }
 }

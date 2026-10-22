@@ -95,6 +95,9 @@ export function handleShortcut(e: KeyboardEvent): boolean {
     return true;
   }
   if (e.key === " " && (library.view === "loupe" || library.view === "compare")) {
+    // Vidéo : Espace lance la lecture (lecteur de la loupe), pas le zoom.
+    const current = library.media.find((m) => m.id === library.selectedId);
+    if (current?.kind === "video") return false;
     library.setZoom(library.zoom ? null : { fx: 0.5, fy: 0.5 });
     return true;
   }

@@ -30,6 +30,10 @@ export interface MediaSummary {
   burstSize?: number;
   /** Ratés probables, séparés par des espaces (« blur over ») ; vide sinon. */
   misses?: string;
+  /** « photo » ou « video ». */
+  kind?: "photo" | "video";
+  /** Vidéo : durée en millisecondes. */
+  durationMs?: number | null;
 }
 
 /**
@@ -78,6 +82,8 @@ export interface MediaFilter {
   focal?: [number, number];
   /** Ratés probables (flou, exposition, yeux fermés) seulement. */
   misses?: boolean;
+  /** Photos ou vidéos seulement. */
+  kind?: "photo" | "video";
   /** Albums d'un client. */
   clientId?: number;
   /** Albums d'un type de séance. */
@@ -118,6 +124,7 @@ export function isFiltering(filter: MediaFilter): boolean {
     filter.area !== undefined ||
     filter.focal !== undefined ||
     filter.misses === true ||
+    filter.kind !== undefined ||
     filter.clientId !== undefined ||
     filter.sessionTypeId !== undefined
   );
