@@ -405,7 +405,7 @@ Objectif : gagner du temps au tri et partager avec des clients.
 - [x] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option
 - [x] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
 - [x] Import automatique : carte connue, dossier surveillé et réception FTP sur le réseau local, chaque photo affichée dans le tri moins de 5 secondes après son arrivée
-- [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques
+- Installateurs signés et mises à jour automatiques : reportés à l'étape « Distribution », en dernier (choix de l'utilisateur, 2026-10-22).
 
 ### V0.5 : Livraison créative
 
@@ -415,6 +415,12 @@ Objectif : livrer aux bons formats, habiller une photo sans quitter Afterdusk, e
 - [ ] Éditeur de livraison simple : texte, logo, cadre, fond, collage de 2 à 4 photos, export à pleine résolution
 - [ ] Dérushage vidéo : entrée, sortie, découpe, export sans réencodage
 - [ ] Profils d'interface Simplifiée, De base et Complète, proposés par l'assistant de bienvenue et modifiables à tout moment
+
+### Distribution : en dernier
+
+Objectif : livrer Afterdusk au public une fois l'application entièrement opérationnelle (choix de l'utilisateur, 2026-10-22). Signature selon la décision 0011.
+
+- [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques
 
 **Après la V0.5** (pistes pour une V1) : retouches locales (masques, pinceau, dégradés), suppression de défauts, simulations de film, connexion en direct au boîtier (tethering, voir ci-dessous), version Linux, traductions communautaires.
 
