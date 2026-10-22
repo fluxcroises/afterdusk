@@ -53,8 +53,8 @@
   "filmstrip": {
     "empty": "No photos",
     "source": "Source: {{source}}",
-    "count_one": "{{count}} photo / {{selected}} selected",
-    "count_other": "{{count}} photos / {{selected}} selected",
+    "count_one": "{{items}} / {{count}} selected",
+    "count_other": "{{items}} / {{count}} selected",
     "filter": "Filter:",
     "noFilter": "No filter"
   },
@@ -347,10 +347,10 @@
     "analyse": "Find misses"
   },
   "status": {
-    "selection_one": "{{count}} photo · {{selected}} selected",
-    "selection_other": "{{count}} photos · {{selected}} selected",
-    "filtered_one": "{{count}} of {{total}} photos · {{selected}} selected",
-    "filtered_other": "{{count}} of {{total}} photos · {{selected}} selected",
+    "selection_one": "{{items}} · {{count}} selected",
+    "selection_other": "{{items}} · {{count}} selected",
+    "filtered_one": "{{items}} of {{total}} · {{count}} selected",
+    "filtered_other": "{{items}} of {{total}} · {{count}} selected",
     "albums_one": "{{count}} album",
     "albums_other": "{{count}} albums",
     "xmpFailed_one": "XMP not written for {{count}} photo, ratings kept in the database",
@@ -1466,5 +1466,12 @@
     "preparing": "Preparing playback…",
     "unplayable": "This video cannot be played here.",
     "noFfmpeg": "Playback unavailable: FFmpeg is missing from this Afterdusk installation."
+  },
+  "media": {
+    "photos_one": "{{count}} photo",
+    "photos_other": "{{count}} photos",
+    "videos_one": "{{count}} video",
+    "videos_other": "{{count}} videos",
+    "both": "{{photos}} and {{videos}}"
   }
 }

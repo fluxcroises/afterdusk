@@ -1,3 +1,4 @@
+import { mediaCount } from "../ui/counts";
 import { useAnalysis } from "../store/analysis";
 import { TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -14,6 +15,8 @@ export function StatusBar() {
       s.media.filter((m) => m.companionOf === null || !s.media.some((x) => x.id === m.companionOf))
         .length,
   );
+  const videos = useLibrary((s) => s.media.filter((m) => m.kind === "video").length);
+  const items = mediaCount(t, count - videos, videos);
   const selected = useLibrary((s) => s.selectedIds.length);
   // Photos de la source affichée, avant filtre.
   const total = useLibrary((s) =>
@@ -43,8 +46,8 @@ export function StatusBar() {
         {albums !== null
           ? t("status.albums", { count: albums })
           : filtering
-            ? t("status.filtered", { count, total, selected })
-            : t("status.selection", { count, selected })}
+            ? t("status.filtered", { count: selected, items, total })
+            : t("status.selection", { count: selected, items })}
       </span>
       <span className="status-bar-spacer" />
       {rescanning && <span>{t("rescan.progress", { done: rescanDone, total: rescanTotal })}</span>}

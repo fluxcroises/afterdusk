@@ -1,3 +1,4 @@
+import { mediaCount } from "../ui/counts";
 import { Flag, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLibrary } from "../store/library";
@@ -22,7 +23,14 @@ export function Filmstrip() {
       <div className="filmstrip-header">
         <span className="filmstrip-source">{t("filmstrip.source", { source: sourceName })}</span>
         <span>
-          {t("filmstrip.count", { count: media.length, selected: selectedCount })}
+          {t("filmstrip.count", {
+            count: selectedCount,
+            items: mediaCount(
+              t,
+              media.filter((m) => m.kind !== "video").length,
+              media.filter((m) => m.kind === "video").length,
+            ),
+          })}
           {selected && ` / ${selected.fileName}`}
         </span>
         <span className="toolbar-spacer" />

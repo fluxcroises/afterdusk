@@ -53,8 +53,8 @@
   "filmstrip": {
     "empty": "Aucune photo",
     "source": "Source : {{source}}",
-    "count_one": "{{count}} photo / {{selected}} sélectionnée",
-    "count_other": "{{count}} photos / {{selected}} sélectionnée(s)",
+    "count_one": "{{items}} / {{count}} sélectionnée",
+    "count_other": "{{items}} / {{count}} sélectionnée(s)",
     "filter": "Filtre :",
     "noFilter": "Aucun filtre"
   },
@@ -347,10 +347,10 @@
     "analyse": "Rechercher les ratés"
   },
   "status": {
-    "selection_one": "{{count}} photo · {{selected}} sélectionnée",
-    "selection_other": "{{count}} photos · {{selected}} sélectionnée(s)",
-    "filtered_one": "{{count}} sur {{total}} photos · {{selected}} sélectionnée",
-    "filtered_other": "{{count}} sur {{total}} photos · {{selected}} sélectionnée(s)",
+    "selection_one": "{{items}} · {{count}} sélectionnée",
+    "selection_other": "{{items}} · {{count}} sélectionnée(s)",
+    "filtered_one": "{{items}} sur {{total}} · {{count}} sélectionnée",
+    "filtered_other": "{{items}} sur {{total}} · {{count}} sélectionnée(s)",
     "albums_one": "{{count}} album",
     "albums_other": "{{count}} albums",
     "xmpFailed_one": "XMP non écrit pour {{count}} photo, notes gardées dans la base",
@@ -1466,5 +1466,12 @@
     "preparing": "Préparation de la lecture…",
     "unplayable": "Cette vidéo ne peut pas être lue ici.",
     "noFfmpeg": "Lecture impossible : FFmpeg manque à cette installation d'Afterdusk."
+  },
+  "media": {
+    "photos_one": "{{count}} photo",
+    "photos_other": "{{count}} photos",
+    "videos_one": "{{count}} vidéo",
+    "videos_other": "{{count}} vidéos",
+    "both": "{{photos}} et {{videos}}"
   }
 }
