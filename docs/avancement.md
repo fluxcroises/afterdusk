@@ -707,3 +707,4 @@ Critères (cahier des charges, section 7) :
 - Réglages > Import : liste des boîtiers (bibliothèque, dernier import), retrait d'un boîtier.
 - Tests : réglages versionnés ; de bout en bout, règle créée d'après un import, carte réinsérée sans rien de nouveau, nouvelle photo du même boîtier importée seule avec les réglages, carte jamais écrite, carte redevenue inconnue sans règle ; interface (import lancé, rien de nouveau, « Ne rien faire » respecté).
 - Pas de notification du système : elle demanderait un module de plus, à décider plus tard.
+- Critère « Galerie web statique avec sélection client et réimport des choix » coché : CI verte sous Windows et macOS (commit e8d694b, qui contient aussi l'import automatique d'une carte connue).
