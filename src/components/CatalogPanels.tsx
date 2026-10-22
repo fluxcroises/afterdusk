@@ -1,3 +1,4 @@
+import { AlbumClientSection, ClientsSection } from "./ClientsPanels";
 import { ImageOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
@@ -87,6 +88,7 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
         )}
       </PanelSection>
       <CollectionsSection scope={scope} />
+      <ClientsSection scope={scope} />
     </>
   );
 }
@@ -99,6 +101,7 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
 
   return (
     <>
+      <AlbumClientSection scope={scope} />
       <PanelSection id={`${scope}.histogram`} title={t("info.histogram")}>
         <div className="histogram" aria-hidden="true" />
         <ExifLine exposure={d} />

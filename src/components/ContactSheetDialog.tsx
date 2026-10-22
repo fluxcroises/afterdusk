@@ -2,6 +2,7 @@ import { save as chooseTarget } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/core";
+import { sessionLabel, useClients } from "../store/clients";
 import { useCollections } from "../store/collections";
 import {
   type ContactSheet,
@@ -36,12 +37,14 @@ export function ContactSheetDialog() {
   const progress = useContactSheet((s) => s.progress);
   const error = useContactSheet((s) => s.error);
   const logo = useStudioLogo((s) => s.url);
+  const sessionTypes = useClients((s) => s.sessionTypes);
   const [photographer, setPhotographer] = useState("");
   const st = useContactSheet.getState();
 
   useEffect(() => {
     if (!open) return;
     void useStudioLogo.getState().load();
+    void useClients.getState().load();
     api
       .identityGet()
       .then((i) => setPhotographer(i.name))
@@ -57,7 +60,11 @@ export function ContactSheetDialog() {
   const album = albums.find((a) => a.id === albumId);
   const collection = useCollections.getState().collections.find((c) => c.id === collectionId);
   const title = album?.name ?? collection?.name ?? t("contactSheet.allPhotos");
+  const sessionType = sessionTypes.find((s) => s.id === album?.sessionTypeId);
+  // En-tête du cahier des charges : client et séance, date, photographe.
   const subtitle = [
+    album?.clientName ?? null,
+    sessionLabel(t, sessionType) || null,
     album ? albumDates(album, i18n.language) : null,
     photographer || null,
     t("contactSheet.count", { count: photos.length }),

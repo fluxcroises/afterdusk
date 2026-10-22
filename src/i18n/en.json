@@ -239,7 +239,8 @@
     "logoChoose": "Choose a logo…",
     "logoReplace": "Replace logo…",
     "logoRemove": "Remove",
-    "logoImages": "Images"
+    "logoImages": "Images",
+    "sessions": "Sessions"
   },
   "menu": {
     "app": "Afterdusk",
@@ -361,7 +362,9 @@
     "collectionKind": "This action does not apply to this kind of collection.",
     "emptyName": "Give it a name.",
     "logo": "This file cannot be used as a logo.",
-    "contactSheet": "The contact sheet could not be saved."
+    "contactSheet": "The contact sheet could not be saved.",
+    "clientNotFound": "This client no longer exists.",
+    "sessionTypeNotFound": "This session type no longer exists."
   },
   "home": {
     "morning": "Hello",
@@ -465,7 +468,11 @@
     "focal": "Focal length",
     "anyFocal": "All focal lengths",
     "focalValue": "{{mm}} mm",
-    "misses": "Likely misses"
+    "misses": "Likely misses",
+    "client": "Client",
+    "anyClient": "All clients",
+    "session": "Session type",
+    "anySession": "All sessions"
   },
   "pile": {
     "badge_one": "{{count}} file",
@@ -1277,5 +1284,51 @@
     "save": "Save…",
     "progress": "Thumbnails: {{done}} / {{total}}",
     "footer": "Page {{page}} of {{pages}}"
+  },
+  "clients": {
+    "title": "Clients",
+    "new": "New client",
+    "newOption": "New client…",
+    "none": "No clients yet. Link one to an album from the right-hand panel.",
+    "albumCount_one": "{{count}} album",
+    "albumCount_other": "{{count}} albums",
+    "edit": "{{name}}'s details",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "notes": "Notes",
+    "albums": "Albums",
+    "noAlbum": "No linked albums.",
+    "privacy": "This information stays in Afterdusk's database, never in the photo files.",
+    "save": "Save",
+    "delete": "Delete client",
+    "confirmDelete_one": "Delete {{name}}'s details? Their contact details and notes will be erased. Their album stays, without a client, with all its photos.",
+    "confirmDelete_other": "Delete {{name}}'s details? Their contact details and notes will be erased. Their {{count}} albums stay, without a client, with all their photos.",
+    "albumSection": "Album",
+    "client": "Client",
+    "noClient": "No client"
+  },
+  "sessions": {
+    "type": "Session",
+    "none": "No type",
+    "kinds": {
+      "wedding": "Wedding",
+      "baptism": "Christening",
+      "birth": "Newborn",
+      "portrait": "Portrait",
+      "event": "Event",
+      "pregnancy": "Maternity",
+      "family": "Family",
+      "corporate": "Corporate",
+      "product": "Product",
+      "sport": "Sport",
+      "concert": "Concert"
+    },
+    "note": "Types offered for albums and at import. A renamed or added type keeps its name in every language; removing a type leaves its albums without one.",
+    "rename": "Rename {{name}}",
+    "delete": "Remove",
+    "confirmDelete": "Remove the “{{name}}” type? Its albums stay, without a session type.",
+    "newName": "New session type",
+    "add": "Add"
   }
 }

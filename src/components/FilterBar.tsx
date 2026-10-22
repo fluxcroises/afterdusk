@@ -1,3 +1,4 @@
+import { sessionLabel, useClients } from "../store/clients";
 import { Flag, FlagOff, Search, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -77,6 +78,8 @@ function PhotoFilters() {
   const filter = useLibrary((s) => s.filter);
   const options = useLibrary((s) => s.filterOptions);
   const setFilter = useLibrary((s) => s.setFilter);
+  const clients = useClients((s) => s.clients);
+  const sessionTypes = useClients((s) => s.sessionTypes);
   const flags = filter.flags ?? [];
   const colors = filter.colors ?? [];
   const toggleFlag = (flag: FlagValue) =>
@@ -192,6 +195,36 @@ function PhotoFilters() {
         {options?.lenses.map((g) => (
           <option key={g.id} value={g.id}>
             {g.name} ({g.count})
+          </option>
+        ))}
+      </select>
+      {clients.length > 0 && (
+        <select
+          aria-label={t("filter.client")}
+          value={filter.clientId ?? ""}
+          onChange={(e) =>
+            void setFilter({ clientId: e.target.value ? Number(e.target.value) : undefined })
+          }
+        >
+          <option value="">{t("filter.anyClient")}</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      )}
+      <select
+        aria-label={t("filter.session")}
+        value={filter.sessionTypeId ?? ""}
+        onChange={(e) =>
+          void setFilter({ sessionTypeId: e.target.value ? Number(e.target.value) : undefined })
+        }
+      >
+        <option value="">{t("filter.anySession")}</option>
+        {sessionTypes.map((s) => (
+          <option key={s.id} value={s.id}>
+            {sessionLabel(t, s)}
           </option>
         ))}
       </select>

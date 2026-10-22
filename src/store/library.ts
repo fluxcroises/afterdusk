@@ -78,6 +78,10 @@ export interface MediaFilter {
   focal?: [number, number];
   /** Ratés probables (flou, exposition, yeux fermés) seulement. */
   misses?: boolean;
+  /** Albums d'un client. */
+  clientId?: number;
+  /** Albums d'un type de séance. */
+  sessionTypeId?: number;
   /** Collection manuelle : posée par le magasin, pas par la barre de filtres. */
   collectionId?: number;
 }
@@ -113,7 +117,9 @@ export function isFiltering(filter: MediaFilter): boolean {
     !!filter.query?.trim() ||
     filter.area !== undefined ||
     filter.focal !== undefined ||
-    filter.misses === true
+    filter.misses === true ||
+    filter.clientId !== undefined ||
+    filter.sessionTypeId !== undefined
   );
 }
 
@@ -125,11 +131,11 @@ export function fold(text: string): string {
     .toLowerCase();
 }
 
-/** Albums de la vue Albums : recherche sur le nom et le lieu, puis tri. */
+/** Albums de la vue Albums : recherche sur le nom, le lieu et le client, puis tri. */
 export function visibleAlbums(albums: AlbumSummary[], query: string, sort: AlbumSort) {
   const words = fold(query).split(/\s+/).filter(Boolean);
   const found = albums.filter((a) => {
-    const text = fold(`${a.name} ${a.place ?? ""}`);
+    const text = fold(`${a.name} ${a.place ?? ""} ${a.clientName ?? ""}`);
     return words.every((w) => text.includes(w));
   });
   const byName = (a: AlbumSummary, b: AlbumSummary) =>
@@ -168,6 +174,9 @@ export interface AlbumSummary {
   place: string | null;
   coverMediaId: number | null;
   coverChosen: boolean;
+  clientId: number | null;
+  clientName: string | null;
+  sessionTypeId: number | null;
 }
 
 export interface MediaDetails {
@@ -340,6 +349,8 @@ interface LibraryState {
   previewReady: (mediaId: number) => void;
   /** Recharge la grille (copie virtuelle créée, renommée ou supprimée). */
   reloadMedia: () => Promise<void>;
+  /** Relit les albums seulement (client, séance, couverture). */
+  reloadAlbums: () => Promise<void>;
   setRating: (rating: number) => Promise<void>;
   setFlag: (flag: FlagValue) => Promise<void>;
   /** Pose la couleur, ou la retire si la photo l'a déjà (comme Lightroom). */
@@ -660,6 +671,15 @@ export const useLibrary = create<LibraryState>((set, get) => {
     setZoom: (zoom) => set({ zoom }),
 
     reloadMedia: () => reloadMedia(),
+    reloadAlbums: async () => {
+      const libraryId = get().libraryId;
+      if (libraryId === null) return;
+      try {
+        set({ albums: await libraryApi.albumsList(libraryId) });
+      } catch (e) {
+        set({ error: toCommandError(e) });
+      }
+    },
 
     previewReady: (mediaId) =>
       set((s) => ({

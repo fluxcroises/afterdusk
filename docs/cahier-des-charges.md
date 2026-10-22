@@ -239,6 +239,7 @@ Toute retouche est non destructive : un historique de réglages appliqué à l'o
 - Emplacement de la bibliothèque et de la sauvegarde.
 - Modèles de rangement et de renommage, avec aperçu du résultat.
 - Identité du photographe (nom, copyright, site) pour les métadonnées et le filigrane.
+- Types de séance \[V0.4\] : ajouter, renommer ou retirer un type de la liste proposée pour les albums ; un type retiré laisse ses albums sans type.
 - Logo du studio (PNG, JPEG ou WebP, copié dans les données d'Afterdusk) : en tête des documents PDF (planches contact, inventaire du matériel) et comme filigrane (idée de l'utilisateur).
 - Langue (français, anglais, ou celle du système), thème (sombre par défaut, clair, système).
 - Durée de la corbeille, taille maximale du cache d'aperçus.

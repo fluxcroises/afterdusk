@@ -4262,3 +4262,80 @@ input.locate-offset {
   flex: 1;
   min-width: 0;
 }
+
+/* Fiche client. */
+.client-dialog {
+  width: min(440px, calc(100vw - 32px));
+}
+
+.client-dialog .field-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-dialog .client-notes {
+  align-items: flex-start;
+}
+
+.client-dialog textarea {
+  flex: 1;
+  min-width: 0;
+  padding: var(--ad-space-2);
+  font: inherit;
+  color: var(--ad-text);
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-field-border);
+  border-radius: var(--ad-radius-sm);
+  resize: vertical;
+}
+
+.client-dialog textarea:focus {
+  border-color: var(--ad-accent);
+}
+
+.client-albums {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+}
+
+.client-albums ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+  max-height: 160px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.client-albums li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ad-space-2);
+}
+
+/* Réglages > Séances. */
+.session-types {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-1);
+  max-width: 420px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.session-type-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-2);
+}
+
+.session-type-row input,
+.settings-form .settings-actions input {
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+}

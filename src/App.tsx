@@ -1,3 +1,4 @@
+import { ClientDialog } from "./components/ClientsPanels";
 import { ContactSheetDialog } from "./components/ContactSheetDialog";
 import { AppDialog } from "./components/AppDialog";
 import type { ReactElement } from "react";
@@ -52,6 +53,7 @@ export default function App() {
       <LocateDialog />
       <TimeFixDialog />
       <ContactSheetDialog />
+      <ClientDialog />
       <AppDialog />
     </div>
   );

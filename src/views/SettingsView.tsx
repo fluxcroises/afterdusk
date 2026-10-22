@@ -5,7 +5,12 @@ import { ScreenLayout } from "../components/ScreenLayout";
 import i18n, { type Language, resources } from "../i18n";
 import { useLibrary } from "../store/library";
 import { useMap } from "../store/map";
-import { IdentityPage, ImportSettings, LibrarySettings } from "../settings/Pages";
+import {
+  IdentityPage,
+  ImportSettings,
+  LibrarySettings,
+  SessionTypesSettings,
+} from "../settings/Pages";
 
 /** Corbeille et cache : délai avant suppression définitive. */
 function TrashSettings() {
@@ -40,7 +45,7 @@ function TrashSettings() {
   );
 }
 
-const CATEGORIES = ["general", "library", "import", "identity", "trash"] as const;
+const CATEGORIES = ["general", "library", "import", "identity", "sessions", "trash"] as const;
 type Category = (typeof CATEGORIES)[number];
 
 export function SettingsView() {
@@ -98,6 +103,8 @@ export function SettingsView() {
           <ImportSettings />
         ) : category === "identity" ? (
           <IdentityPage />
+        ) : category === "sessions" ? (
+          <SessionTypesSettings />
         ) : (
           <TrashSettings />
         )}

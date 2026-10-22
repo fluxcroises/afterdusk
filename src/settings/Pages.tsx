@@ -1,3 +1,5 @@
+import { type SessionType, sessionLabel, useClients } from "../store/clients";
+import { confirmWarning } from "../ui/confirm";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useStudioLogo } from "../store/studioLogo";
 import { useAnalysis } from "../store/analysis";
@@ -258,4 +260,85 @@ export function IdentityPage() {
     };
   }, []);
   return identity ? <IdentitySettings initial={identity} /> : null;
+}
+
+/** Une ligne de type de séance : renommer (Entrée) ou retirer. */
+function SessionTypeRow({ type }: { type: SessionType }) {
+  const { t } = useTranslation();
+  const label = sessionLabel(t, type);
+  const [name, setName] = useState(label);
+  const st = useClients.getState();
+  const commit = () => {
+    if (name.trim() && name.trim() !== label) void st.renameType(type.id, name);
+    else setName(label);
+  };
+  const remove = async () => {
+    const ok = await confirmWarning(t("sessions.confirmDelete", { name: label }), {
+      title: t("settings.sessions"),
+      okLabel: t("sessions.delete"),
+      cancelLabel: t("trash.cancel"),
+    });
+    if (ok) await st.removeType(type.id);
+  };
+  return (
+    <li className="session-type-row">
+      <input
+        type="text"
+        aria-label={t("sessions.rename", { name: label })}
+        value={name}
+        maxLength={60}
+        onChange={(e) => setName(e.currentTarget.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") setName(label);
+        }}
+      />
+      <button type="button" className="button button-small" onClick={() => void remove()}>
+        {t("sessions.delete")}
+      </button>
+    </li>
+  );
+}
+
+/** Réglages > Séances : la liste des types proposée pour les albums. */
+export function SessionTypesSettings() {
+  const { t } = useTranslation();
+  const types = useClients((s) => s.sessionTypes);
+  const [name, setName] = useState("");
+  useEffect(() => {
+    void useClients.getState().load();
+  }, []);
+  return (
+    <div className="settings-form">
+      <p className="panel-note">{t("sessions.note")}</p>
+      <ul className="session-types">
+        {types.map((s) => (
+          // Une clé par nom affiché : la ligne repart du nom enregistré.
+          <SessionTypeRow key={`${s.id}-${s.key ?? s.name}`} type={s} />
+        ))}
+      </ul>
+      <form
+        className="settings-actions"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!name.trim()) return;
+          void useClients.getState().createType(name);
+          setName("");
+        }}
+      >
+        <input
+          type="text"
+          aria-label={t("sessions.newName")}
+          placeholder={t("sessions.newName")}
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.currentTarget.value)}
+        />
+        <button type="submit" className="button button-small" disabled={!name.trim()}>
+          {t("sessions.add")}
+        </button>
+      </form>
+    </div>
+  );
 }

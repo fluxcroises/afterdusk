@@ -52,6 +52,10 @@ export interface ImportOptions {
   rights: string | null;
   /** Paires RAW + JPEG : ne copier que le RAW. */
   skipPairJpegs: boolean;
+  clientId: number | null;
+  sessionTypeId: number | null;
+  /** Type de séance tel qu'affiché, pour le jeton {seance}. */
+  sessionLabel: string;
 }
 
 export interface ImportProgress {

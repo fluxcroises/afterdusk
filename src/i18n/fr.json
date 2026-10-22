@@ -239,7 +239,8 @@
     "logoChoose": "Choisir un logo…",
     "logoReplace": "Remplacer le logo…",
     "logoRemove": "Retirer",
-    "logoImages": "Images"
+    "logoImages": "Images",
+    "sessions": "Séances"
   },
   "menu": {
     "app": "Afterdusk",
@@ -361,7 +362,9 @@
     "collectionKind": "Cette action ne s'applique pas à ce type de collection.",
     "emptyName": "Donnez-lui un nom.",
     "logo": "Ce fichier ne peut pas servir de logo.",
-    "contactSheet": "La planche contact n'a pas pu être enregistrée."
+    "contactSheet": "La planche contact n'a pas pu être enregistrée.",
+    "clientNotFound": "Ce client n'existe plus.",
+    "sessionTypeNotFound": "Ce type de séance n'existe plus."
   },
   "home": {
     "morning": "Bonjour",
@@ -465,7 +468,11 @@
     "focal": "Focale",
     "anyFocal": "Toutes les focales",
     "focalValue": "{{mm}} mm",
-    "misses": "Ratés probables"
+    "misses": "Ratés probables",
+    "client": "Client",
+    "anyClient": "Tous les clients",
+    "session": "Type de séance",
+    "anySession": "Toutes les séances"
   },
   "pile": {
     "badge_one": "{{count}} fichier",
@@ -1277,5 +1284,51 @@
     "save": "Enregistrer…",
     "progress": "Vignettes : {{done}} / {{total}}",
     "footer": "Page {{page}} sur {{pages}}"
+  },
+  "clients": {
+    "title": "Clients",
+    "new": "Nouveau client",
+    "newOption": "Nouveau client…",
+    "none": "Aucun client. Une fiche se rattache à un album depuis le panneau de droite.",
+    "albumCount_one": "{{count}} album",
+    "albumCount_other": "{{count}} albums",
+    "edit": "Fiche de {{name}}",
+    "name": "Nom",
+    "email": "Courriel",
+    "phone": "Téléphone",
+    "notes": "Notes",
+    "albums": "Albums",
+    "noAlbum": "Aucun album rattaché.",
+    "privacy": "Ces informations restent dans la base d'Afterdusk, jamais dans les fichiers des photos.",
+    "save": "Enregistrer",
+    "delete": "Supprimer le client",
+    "confirmDelete_one": "Supprimer la fiche de {{name}} ? Ses coordonnées et ses notes seront effacées. Son album reste, sans client, avec toutes ses photos.",
+    "confirmDelete_other": "Supprimer la fiche de {{name}} ? Ses coordonnées et ses notes seront effacées. Ses {{count}} albums restent, sans client, avec toutes leurs photos.",
+    "albumSection": "Album",
+    "client": "Client",
+    "noClient": "Aucun client"
+  },
+  "sessions": {
+    "type": "Séance",
+    "none": "Aucun type",
+    "kinds": {
+      "wedding": "Mariage",
+      "baptism": "Baptême",
+      "birth": "Naissance",
+      "portrait": "Portrait",
+      "event": "Événement",
+      "pregnancy": "Grossesse",
+      "family": "Famille",
+      "corporate": "Entreprise",
+      "product": "Produit",
+      "sport": "Sport",
+      "concert": "Concert"
+    },
+    "note": "Types proposés pour les albums et à l'import. Un type renommé ou ajouté garde son nom dans toutes les langues ; un type retiré laisse ses albums sans type.",
+    "rename": "Renommer {{name}}",
+    "delete": "Retirer",
+    "confirmDelete": "Retirer le type « {{name}} » ? Ses albums restent, sans type de séance.",
+    "newName": "Nouveau type de séance",
+    "add": "Ajouter"
   }
 }

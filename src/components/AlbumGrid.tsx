@@ -20,7 +20,7 @@ function AlbumCard({ album }: { album: AlbumSummary }) {
       </span>
       <span className="album-card-name">{album.name}</span>
       <span className="album-card-meta">
-        {[dates, album.place, t("toolbar.photoCount", { count: album.count })]
+        {[dates, album.clientName, album.place, t("toolbar.photoCount", { count: album.count })]
           .filter(Boolean)
           .join(" · ")}
       </span>

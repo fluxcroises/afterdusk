@@ -666,3 +666,16 @@ Critères (cahier des charges, section 7) :
   - Livrer > Planche contact… : 9 photos de la grille, 4 colonnes en A4 portrait par défaut, logo en tête coché, filigrane « Logo du studio » choisi ; le PDF enregistré (une page) porte le titre, le nom du studio, le logo en haut à droite, les numéros et noms de fichiers, le filigrane translucide et les retouches des aperçus.
 - Corrigé : le bouton « Choisir un logo… » s'étirait sur toute la largeur ; l'aperçu du logo passe sur un damier clair, comme le papier, où un logo foncé reste lisible. Revu ensuite à l'écran : boutons « Remplacer le logo… » et « Retirer » côte à côte à leur taille, logo foncé bien lisible sur le damier clair.- À la demande de l'utilisateur, l'interface dit « Logo » et non plus « Logo du studio » (réglage, filigrane, planche contact).
 - Corrigé : l'onglet Matériel descendait d'un cran quand sa pastille d'entretiens était affichée ; les onglets centrent maintenant leur contenu (alignement mesuré dans le navigateur).
+
+### 2026-10-22 (suite) : V0.4, clients et types de séance (migration 0015)
+
+- Schéma validé par l'utilisateur : clients communs à toutes les bibliothèques ; types de séance d'origine enregistrés par une clé, traduite par l'interface, et types ajoutés ou renommés par leur nom ; `albums.client_id` et `albums.session_type_id`, vidés si le client ou le type disparaît.
+- Cœur : fiches client (nom obligatoire, courriel, téléphone et notes facultatifs), albums d'un client toutes bibliothèques confondues, rattachement d'un album, liste des types modifiable. Filtres `clientId` et `sessionTypeId`, recherche texte étendue au nom du client. Jetons `{client}` et `{seance}` dans les modèles ; un dossier resté vide (`{client}` sans client) est sauté. À l'import, le client et la séance choisis sont posés sur les albums qui ont reçu des photos, sans remplacer ceux déjà rattachés, y compris après une reprise.
+- Supprimer un client efface sa fiche et le retire de ses albums ; albums, photos et fichiers restent. Rien n'est écrit dans les XMP.
+- Interface :
+  - section Clients dans le panneau de gauche : un clic filtre les photos de ses albums, le crayon ouvre la fiche (coordonnées, notes, albums, suppression confirmée) ;
+  - panneau de droite d'un album ouvert : client (avec « Nouveau client… », rattaché aussitôt) et type de séance ;
+  - Import, destination : client et séance ; barre de filtres : client et type de séance ; vue Albums : le client sous le nom, et la recherche le trouve ;
+  - Réglages > Séances : renommer, ajouter, retirer ;
+  - planche contact : client et séance en tête du sous-titre.
+- Tests : fiches, suppression (fiche effacée, album gardé), types ; de bout en bout, import rangé dans `Famille Dupont/Mariage Église`, filtres, recherche, suppression sans toucher aux fichiers ni à la carte ; interface (fiche, rattachement, séances).

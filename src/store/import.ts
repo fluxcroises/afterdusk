@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+import { sessionLabel, useClients } from "./clients";
 import { useAnalysis } from "./analysis";
 import { useBursts } from "./bursts";
 import { invoke } from "@tauri-apps/api/core";
@@ -22,6 +24,9 @@ export interface ImportForm {
   rights: string;
   /** Paires RAW + JPEG : importer aussi le JPEG (choix mémorisé). */
   pairJpegs: boolean;
+  /** Client et type de séance des albums créés. */
+  clientId: number | null;
+  sessionTypeId: number | null;
 }
 
 const PAIR_JPEGS_KEY = "afterdusk.import.pairJpegs";
@@ -116,6 +121,8 @@ export const useImport = create<ImportState>((set, get) => ({
     keywords: "",
     rights: "",
     pairJpegs: readPairJpegs(),
+    clientId: null,
+    sessionTypeId: null,
   },
   progress: null,
   running: false,
@@ -242,6 +249,13 @@ export const useImport = create<ImportState>((set, get) => ({
         creator: null,
         rights: form.rights.trim() || null,
         skipPairJpegs: !form.pairJpegs,
+        clientId: form.clientId,
+        sessionTypeId: form.sessionTypeId,
+        // Nom affiché du type, pour le jeton {seance} des modèles.
+        sessionLabel: sessionLabel(
+          i18n.t.bind(i18n),
+          useClients.getState().sessionTypes.find((s) => s.id === form.sessionTypeId),
+        ),
       });
     } catch (e) {
       set({ running: false, error: toCommandError(e) });

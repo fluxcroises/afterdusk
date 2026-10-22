@@ -36,6 +36,9 @@ const album = (id: number, name: string, startDate: string, place: string | null
   place,
   coverMediaId: null,
   coverChosen: false,
+  clientId: null,
+  clientName: null,
+  sessionTypeId: null,
 });
 
 describe("filtres de la grille", () => {

@@ -1,4 +1,6 @@
+import { sessionLabel, useClients } from "../store/clients";
 import { FolderOpen, HardDriveDownload, RefreshCw } from "lucide-react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { newLibrary, pickFolder } from "../actions";
 import { EmptyState } from "../components/EmptyState";
@@ -116,6 +118,11 @@ function DestinationPanel() {
   const libraryId = useImport((s) => s.libraryId);
   const selectLibrary = useImport((s) => s.selectLibrary);
   const form = useImport((s) => s.form);
+  const clients = useClients((s) => s.clients);
+  const sessionTypes = useClients((s) => s.sessionTypes);
+  useEffect(() => {
+    void useClients.getState().load();
+  }, []);
   const hasPairs = useImport(
     (s) => s.source?.days.some((d) => d.files.some((f) => f.companions.length > 0)) ?? false,
   );
@@ -166,6 +173,36 @@ function DestinationPanel() {
             onChange={(e) => update({ albumPerDay: e.target.checked })}
           />
           {t("import.albumPerDay")}
+        </label>
+        <label className="field-row">
+          <span className="field-row-label">{t("clients.client")}</span>
+          <select
+            value={form.clientId ?? ""}
+            onChange={(e) => update({ clientId: e.target.value ? Number(e.target.value) : null })}
+          >
+            <option value="">{t("clients.noClient")}</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-row">
+          <span className="field-row-label">{t("sessions.type")}</span>
+          <select
+            value={form.sessionTypeId ?? ""}
+            onChange={(e) =>
+              update({ sessionTypeId: e.target.value ? Number(e.target.value) : null })
+            }
+          >
+            <option value="">{t("sessions.none")}</option>
+            {sessionTypes.map((s) => (
+              <option key={s.id} value={s.id}>
+                {sessionLabel(t, s)}
+              </option>
+            ))}
+          </select>
         </label>
         <FieldRow
           label={t("import.folderTemplate")}
