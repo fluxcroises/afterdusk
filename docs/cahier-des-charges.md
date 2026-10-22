@@ -384,7 +384,7 @@ Objectif : retrouver ses photos par lieu et suivre son matériel.
 
 Objectif : gagner du temps au tri et partager avec des clients.
 
-- [ ] Regroupement des rafales en piles
+- [x] Regroupement des rafales en piles
 - [x] Détection locale du flou, des yeux fermés et des problèmes d'exposition, avec filtre « Ratés probables »
 - [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
 - [ ] Vidéos : import, rangement, tri, lecture, fichiers annexes
@@ -470,7 +470,7 @@ Crée docs/avancement.md avec les critères de la V0.1 et coche-les au fur et à
 - [ ] Choisir le nom du dépôt GitHub (le compte « afterdusk » est déjà pris : `afterdusk-app` ou `afterdusk-photo`)
 - [ ] Choisir entre Exiv2 et xmp-toolkit-rs pour les métadonnées (prototype en V0.1)
 - [ ] Choisir le fournisseur de tuiles de carte et vérifier ses conditions d'usage
-- [x] Choisir les modèles ONNX de détection des yeux fermés et vérifier leur licence (décision 0010 : YuNet, MIT ; MediaPipe Face Mesh V2, Apache 2.0 ; ONNX Runtime 1.22.0, MIT)
+- [x] Choisir les modèles ONNX de détection des yeux fermés et vérifier leur licence (décision 0010 : YuNet, MIT ; MediaPipe Face Mesh V2, Apache 2.0 ; ONNX Runtime 1.23.2, MIT)
 - [ ] Signature des applications : certificat de développeur Apple (99 $ par an) pour macOS, certificat de signature de code pour Windows ou distribution non signée au début
 - [ ] Logo, icône et identité visuelle
 
