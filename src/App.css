@@ -3565,10 +3565,13 @@ input[type="radio"] {
   display: flex;
   align-items: center;
   gap: var(--ad-space-2);
+  min-width: 0;
 }
 
+/* La barre se resserre avant que les boutons de la barre d'outils débordent. */
 .deliver-status progress {
-  width: 140px;
+  flex: 0 1 140px;
+  min-width: 48px;
   accent-color: var(--ad-accent);
 }
 
@@ -4629,12 +4632,15 @@ input.locate-offset {
 }
 
 /* Livrer : modèles de livraison. */
+/* La bascule garde sa taille : ce sont les textes d'état qui s'abrègent. */
 .deliver-view {
+  flex-shrink: 0;
   margin: 0;
 }
 
 .deliver-view button {
   padding: 0 var(--ad-space-3);
+  white-space: nowrap;
 }
 
 .templates-view {
