@@ -689,3 +689,11 @@ Critères (cahier des charges, section 7) :
 - Livrer > Sélection client… : texte collé ou fichier ouvert. La galerie est retrouvée par son code (table `galleries`, liste numérotée dans `gallery_items`), même si les fichiers ont été renommés ; les numéros inconnus sont signalés. « Retenir et créer la collection » pose « Retenue » (XMP compris) et crée la collection « Sélection – client », ouverte aussitôt.
 - Vérifié dans le navigateur intégré sur une galerie d'exemple servie en local : cœurs, compteur, sélection gardée au rechargement, courriel préparé (destinataire, objet, ligne lue par Afterdusk), visionneuse au clavier avec retour du focus. Corrigé à cette occasion : vignettes démesurées (les attributs de taille l'emportaient sur le carré) et photo débordant de la visionneuse.
 - Tests : relecture d'une sélection abîmée par une messagerie, page échappée sans ressource externe ; de bout en bout, galerie de deux RAW, JPEG sans EXIF ni XMP, pas d'écrasement, sélection relue jusqu'aux photos, bibliothèque intacte ; interface (création, relecture et application).
+
+### 2026-10-22 (suite) : clients, galerie web et sélection client vérifiés à l'écran
+
+- Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises, originaux d'essai intacts) :
+  - album ouvert, panneau de droite : « Nouveau client… » ouvre la fiche, le client est rattaché dès l'enregistrement ; séance « Mariage » choisie ; la section Clients affiche « Famille Dupont · 1 album », un clic filtre (8 photos sur 11) et la barre de filtres propose clients et séances ; la fiche liste l'album et sa séance ;
+  - Livrer > Galerie web… : six photos, titre de l'album, texte d'accueil, filigrane texte ; dossier `Essai` créé avec `index.html`, CSS, JS, photos (2 048 px au plus, ni EXIF ni XMP) et vignettes ; l'en-tête reprend client, séance, dates et photographe, le pied de page le code ;
+  - Livrer > Sélection client… : texte collé avec la ligne `[AD-…: 1 4 9]`, galerie et client reconnus, numéro 9 signalé ; la collection « Sélection – Famille Dupont » (2 photos, « Retenue ») est créée et ouverte.
+- Corrigé : les champs courriel et téléphone gardaient la police du navigateur ; la zone de sélection utilisait la police des valeurs, en gras.
