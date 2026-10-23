@@ -25,7 +25,7 @@ SignPath Foundation ne signe que des projets « déjà publiés sous la forme à
 
 Sur GitHub : Actions > Publication > Run workflow (branche `main`), ou `gh workflow run release.yml`. Une demi-heure environ plus tard, la page de l'exécution propose deux archives à télécharger : `Afterdusk-0.5.0-essai-Windows` (installateur) et `Afterdusk-0.5.0-essai-macOS` (`.dmg`). Rien n'est publié.
 
-L'application installée utilise le même dossier de données que la version de développement (`%APPDATA%pp.afterdusk` sous Windows, `~/Library/Application Support/app.afterdusk` sur Mac) : elle ouvre tes bibliothèques réelles. Pour un essai à blanc, renommer ce dossier avant, puis le remettre après.
+L'application installée utilise le même dossier de données que la version de développement (`%APPDATA%\app.afterdusk` sous Windows, `~/Library/Application Support/app.afterdusk` sur Mac) : elle ouvre tes bibliothèques réelles. Pour un essai à blanc, renommer ce dossier avant, puis le remettre après.
 
 ## Publier une version
 
