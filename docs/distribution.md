@@ -22,7 +22,7 @@ SignPath Foundation ne signe que des projets « déjà publiés sous la forme à
 
 ## À faire de ton côté
 
-### A. Clé de signature des mises à jour (avant l'étape 2)
+### A. Clé de signature des mises à jour (avant l'étape 2) : faite le 2026-10-23
 
 Chaque mise à jour est signée par cette clé ; une version installée refuse tout fichier qui n'est pas signé par elle. **Perdue, elle empêche toute mise à jour des versions installées** : il faudrait réinstaller à la main.
 

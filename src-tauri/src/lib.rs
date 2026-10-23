@@ -13,6 +13,7 @@ pub mod library;
 pub mod metadata;
 pub mod pdf;
 pub mod raw;
+pub mod updates;
 pub mod video;
 
 use tauri::Manager;
@@ -92,6 +93,7 @@ fn name_places(db_path: std::path::PathBuf) {
 pub fn run() {
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .register_asynchronous_uri_scheme_protocol(previews::SCHEME, previews::protocol)
         .register_asynchronous_uri_scheme_protocol(
             commands::video::SCHEME,
@@ -146,6 +148,7 @@ pub fn run() {
                 reception,
             ));
             app.manage(commands::ftp::FtpService::default());
+            app.manage(commands::updates::PendingUpdate::default());
             // Réception FTP : démarrée seulement si l'utilisateur l'a activée.
             let handle = app.handle().clone();
             std::thread::spawn(move || {
@@ -170,6 +173,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::app_info,
             commands::open_publisher_site,
+            commands::updates::updates_enabled_get,
+            commands::updates::updates_enabled_set,
+            commands::updates::update_check,
+            commands::updates::update_install,
             commands::app_ready,
             commands::library::libraries_list,
             commands::library::library_create,

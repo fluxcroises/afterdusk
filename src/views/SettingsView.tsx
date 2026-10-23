@@ -1,12 +1,13 @@
 import { ProfileChoice } from "../components/ProfileChoice";
 import { useProfile } from "../store/profile";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ListRow, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
 import i18n, { type Language, resources } from "../i18n";
 import { useLibrary } from "../store/library";
 import { useMap } from "../store/map";
+import { useUpdates } from "../store/updates";
 import {
   IdentityPage,
   ImportSettings,
@@ -68,6 +69,10 @@ export function SettingsView() {
   );
 
   const online = useMap((s) => s.online);
+  const updatesEnabled = useUpdates((s) => s.enabled);
+  useEffect(() => {
+    void useUpdates.getState().loadEnabled();
+  }, []);
   const profile = useProfile((s) => s.profile);
 
   return (
@@ -99,6 +104,16 @@ export function SettingsView() {
                 {t("settings.mapOnline")}
               </label>
               <p className="panel-note">{t("settings.mapOnlineNote")}</p>
+              {updatesEnabled !== null && (
+                <label className="check-row">
+                  <input
+                    type="checkbox"
+                    checked={updatesEnabled}
+                    onChange={(e) => void useUpdates.getState().setEnabled(e.currentTarget.checked)}
+                  />
+                  {t("settings.updatesCheck")}
+                </label>
+              )}
             </div>
             <fieldset className="form-fieldset settings-form">
               <legend className="settings-block-title">{t("profiles.label")}</legend>

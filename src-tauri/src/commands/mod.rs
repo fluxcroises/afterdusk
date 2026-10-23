@@ -20,6 +20,7 @@ pub mod media;
 pub mod presets;
 pub mod previews;
 pub mod trash;
+pub mod updates;
 pub mod video;
 pub mod warnings;
 pub mod watch;

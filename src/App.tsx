@@ -9,6 +9,7 @@ import { LocateDialog } from "./components/LocateDialog";
 import { TimeFixDialog } from "./components/TimeFixDialog";
 import { DeviceBanner } from "./components/DeviceBanner";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { PerfOverlay } from "./components/PerfOverlay";
 import { StatusBar } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
@@ -47,6 +48,7 @@ export default function App() {
       {!immersive && <TopBar />}
       {!immersive && <DeviceBanner label="main" />}
       {!immersive && <OfflineBanner />}
+      {!immersive && <UpdateBanner />}
       <Current />
       {!immersive && <StatusBar />}
       <PerfOverlay />

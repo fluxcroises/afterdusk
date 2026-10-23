@@ -276,7 +276,8 @@
     "ftpCleared_other": "{{count}} files deleted, {{kept}}.",
     "ftpNote": "On the camera: address and port above, passive mode, FTPS. Only the local network can connect.",
     "ftpKept_one": "{{count}} kept",
-    "ftpKept_other": "{{count}} kept"
+    "ftpKept_other": "{{count}} kept",
+    "updatesCheck": "Check for updates at startup"
   },
   "menu": {
     "app": "Afterdusk",
@@ -410,7 +411,9 @@
     "ftp": "FTP reception could not be set up.",
     "videoUnavailable": "The playback version of this video could not be prepared.",
     "noDestination": "First choose a destination folder in Deliver.",
-    "designNotFound": "This composition no longer exists."
+    "designNotFound": "This composition no longer exists.",
+    "updateFailed": "The update could not be installed. Afterdusk stays on its current version.",
+    "noUpdate": "No update to install."
   },
   "home": {
     "morning": "Hello",
@@ -1617,5 +1620,12 @@
     "showAdvanced_other": "Show the {{count}} hidden advanced settings",
     "hideAdvanced_one": "Hide the advanced setting",
     "hideAdvanced_other": "Hide the advanced settings"
+  },
+  "updates": {
+    "available": "Afterdusk {{version}} is available.",
+    "install": "Install and restart",
+    "later": "Later",
+    "downloading": "Downloading the update…",
+    "downloadingPercent": "Downloading the update… {{percent}}%"
   }
 }

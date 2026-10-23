@@ -276,7 +276,8 @@
     "ftpCleared_other": "{{count}} fichiers supprimés, {{kept}}.",
     "ftpNote": "Sur le boîtier : adresse et port ci-dessus, mode passif, FTPS. Seul le réseau local peut se connecter.",
     "ftpKept_one": "{{count}} gardé",
-    "ftpKept_other": "{{count}} gardés"
+    "ftpKept_other": "{{count}} gardés",
+    "updatesCheck": "Vérifier les mises à jour au démarrage"
   },
   "menu": {
     "app": "Afterdusk",
@@ -410,7 +411,9 @@
     "ftp": "La réception FTP n'a pas pu être réglée.",
     "videoUnavailable": "La version de lecture de cette vidéo n'a pas pu être préparée.",
     "noDestination": "Choisissez d'abord un dossier de destination dans Livrer.",
-    "designNotFound": "Cette composition n'existe plus."
+    "designNotFound": "Cette composition n'existe plus.",
+    "updateFailed": "La mise à jour n'a pas pu s'installer. Afterdusk reste dans sa version actuelle.",
+    "noUpdate": "Aucune mise à jour à installer."
   },
   "home": {
     "morning": "Bonjour",
@@ -1617,5 +1620,12 @@
     "showAdvanced_other": "Afficher les {{count}} réglages avancés masqués",
     "hideAdvanced_one": "Masquer le réglage avancé",
     "hideAdvanced_other": "Masquer les réglages avancés"
+  },
+  "updates": {
+    "available": "Afterdusk {{version}} est disponible.",
+    "install": "Installer et redémarrer",
+    "later": "Plus tard",
+    "downloading": "Téléchargement de la mise à jour…",
+    "downloadingPercent": "Téléchargement de la mise à jour… {{percent}} %"
   }
 }

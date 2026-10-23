@@ -66,5 +66,16 @@
       }
     },
     "license": "GPL-3.0-or-later"
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgzMDg0QUMxOEYxMERFRjMKUldUejNoQ1B3VW9JZ3dKQTQ5REdvd2MyZmxES0lBbExuVFByYmdmL1I2WVVwSlZMWVg1UEJHTWcK",
+      "endpoints": [
+        "https://github.com/lewisbedar/afterdusk-app/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }
