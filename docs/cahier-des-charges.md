@@ -348,50 +348,50 @@ Le développement avance en quatre versions, chacune utilisable seule : on ne pa
 
 Objectif : remplacer l'explorateur de fichiers pour décharger et trier une journée de photos.
 
-- [ ] Projet Tauri 2 qui se compile et se lance sur Windows et macOS, avec intégration continue GitHub Actions sur les deux systèmes
-- [ ] Première ouverture guidée (bibliothèque, sauvegarde, rangement, identité)
+- [x] Projet Tauri 2 qui se compile et se lance sur Windows et macOS, avec intégration continue GitHub Actions sur les deux systèmes
+- [x] Première ouverture guidée (bibliothèque, sauvegarde, rangement, identité)
 - [ ] Une carte SD insérée est détectée en moins de 5 secondes et l'import proposé
-- [ ] Import de 500 RAW avec rangement, renommage, sauvegarde et vérification par somme de contrôle, sans aucune perte, en cas de coupure comprise (reprise propre au redémarrage)
-- [ ] Les photos déjà importées sont reconnues et grisées lors d'un second import
-- [ ] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
+- [x] Import de 500 RAW avec rangement, renommage, sauvegarde et vérification par somme de contrôle, sans aucune perte, en cas de coupure comprise (reprise propre au redémarrage)
+- [x] Les photos déjà importées sont reconnues et grisées lors d'un second import
+- [x] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
 - [ ] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
-- [ ] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
-- [ ] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
-- [ ] Corbeille interne avec restauration et vidage après 30 jours
-- [ ] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
-- [ ] Bibliothèque sur disque externe débranché consultable via le cache
-- [ ] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
-- [ ] Interface en français et en anglais
+- [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
+- [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
+- [x] Corbeille interne avec restauration et vidage après 30 jours
+- [x] Vue Bibliothèque avec albums, filtres de base (date, note, drapeau, boîtier, objectif) et recherche
+- [x] Bibliothèque sur disque externe débranché consultable via le cache
+- [x] RAW testés au minimum : Fujifilm (RAF X-Trans), Canon (CR3), Nikon (NEF), Sony (ARW), Panasonic (RW2), DNG
+- [x] Interface en français et en anglais
 
 ### V0.2 : Retoucher et livrer
 
 Objectif : traiter et exporter les photos retenues sans autre logiciel.
 
-- [ ] Pipeline de développement GPU avec rendu neutre fidèle au boîtier par défaut
+- [x] Pipeline de développement GPU avec rendu neutre fidèle au boîtier par défaut
 - [ ] Tous les réglages essentiels et intermédiaires de la section 4.5, avec retour visuel en moins de 100 ms
-- [ ] Corrections d'objectifs automatiques via lensfun
-- [ ] Recadrage, redressement, ratios
-- [ ] Correcteur de défauts (poussières, petites imperfections), corrections copiables entre photos
-- [ ] Presets fournis et personnels, intensité réglable, copier-coller et synchronisation des réglages
-- [ ] Historique, instantanés, copies virtuelles, avant/après
-- [ ] Retouches enregistrées dans le XMP et restaurées après reconstruction de la base
-- [ ] Les cinq presets d'export de la section 4.6, formats JPEG, HEIF, AVIF, TIFF, PNG
-- [ ] Filigrane texte et image, nettoyage des métadonnées, export multiple
+- [x] Corrections d'objectifs automatiques via lensfun
+- [x] Recadrage, redressement, ratios
+- [x] Correcteur de défauts (poussières, petites imperfections), corrections copiables entre photos
+- [x] Presets fournis et personnels, intensité réglable, copier-coller et synchronisation des réglages
+- [x] Historique, instantanés, copies virtuelles, avant/après
+- [x] Retouches enregistrées dans le XMP et restaurées après reconstruction de la base
+- [x] Les cinq presets d'export de la section 4.6, formats JPEG, HEIF, AVIF, TIFF, PNG
+- [x] Filigrane texte et image, nettoyage des métadonnées, export multiple
 - [ ] Export de 100 photos en JPEG 2048 px en moins de 2 minutes sur une machine de milieu de gamme
 
 ### V0.3 : Carte et matériel
 
 Objectif : retrouver ses photos par lieu et suivre son matériel.
 
-- [ ] Les quatre sources de localisation de la section 4.7, avec correction du fuseau horaire
-- [ ] Géocodage inverse hors ligne (pays, ville)
-- [ ] Carte du monde des albums avec grappes, aperçu et filtre par zone
-- [ ] Fond de carte simplifié hors ligne
-- [ ] Inventaire alimenté automatiquement, fusion des doublons, masquage
-- [ ] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
-- [ ] Journal d'entretien et rappels
-- [ ] Export d'inventaire PDF et CSV
-- [ ] Albums intelligents
+- [x] Les quatre sources de localisation de la section 4.7, avec correction du fuseau horaire
+- [x] Géocodage inverse hors ligne (pays, ville)
+- [x] Carte du monde des albums avec grappes, aperçu et filtre par zone
+- [x] Fond de carte simplifié hors ligne
+- [x] Inventaire alimenté automatiquement, fusion des doublons, masquage
+- [x] Fiches complètes, accessoires manuels, statistiques d'usage avec graphiques
+- [x] Journal d'entretien et rappels
+- [x] Export d'inventaire PDF et CSV
+- [x] Albums intelligents
 
 ### V0.4 : Assistants et partage
 

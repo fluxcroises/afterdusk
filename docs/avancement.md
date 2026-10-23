@@ -544,14 +544,14 @@ Ajout hors du périmètre initial de la V0.1, à la demande de l'utilisateur ; c
 Critères (cahier des charges, section 7) :
 
 - [x] Regroupement des rafales en piles
-- [ ] Détection locale du flou, des yeux fermés et des problèmes d'exposition, avec filtre « Ratés probables »
+- [x] Détection locale du flou, des yeux fermés et des problèmes d'exposition, avec filtre « Ratés probables »
 - [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
-- [ ] Vidéos : import, rangement, tri, lecture, fichiers annexes
-- [ ] Galerie web statique avec sélection client et réimport des choix
-- [ ] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option
-- [ ] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
-- [ ] Import automatique : carte connue, dossier surveillé et réception FTP sur le réseau local, chaque photo affichée dans le tri moins de 5 secondes après son arrivée
-- [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques
+- [x] Vidéos : import, rangement, tri, lecture, fichiers annexes
+- [x] Galerie web statique avec sélection client et réimport des choix
+- [x] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option
+- [x] Clients et types de séance rattachés aux albums, avec filtres, recherche et suppression complète d'un client
+- [x] Import automatique : carte connue, dossier surveillé et réception FTP sur le réseau local, chaque photo affichée dans le tri moins de 5 secondes après son arrivée
+- Installateurs signés et mises à jour automatiques : déplacés à l'étape Distribution, en dernier (choix de l'utilisateur, 2026-10-22).
 
 ### 2026-10-21 (suite) : V0.4, regroupement des rafales en piles
 
