@@ -2792,6 +2792,9 @@ input[type="radio"] {
 .develop-view {
   position: relative;
   display: grid;
+  /* Pistes à la taille de la vue : sans elles, max-height: 100% du canevas ne
+     se résout pas et une photo en portrait déborde en bas. */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   width: 100%;
   height: 100%;

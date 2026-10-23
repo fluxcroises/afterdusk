@@ -95,3 +95,4 @@ Consigner machine et résultats dans `docs/avancement.md`, cocher les critères 
 - [x] Pastilles centrées sur le logo de l'accueil et sur la barre de la fenêtre principale ; sinon, relever l'écart en points. Mac : alignés sur les deux fenêtres, écart inférieur à un point.
 - [x] Bouton iCloud Drive choisi : coche visible, sans air désactivé. Mac : vu dans Réglages > Bibliothèques (« ✓ iCloud Drive »), choix retiré ensuite.
 - [x] Informations système copiées depuis « À propos » : version de macOS et puce. Mac : « macOS 26.6.2 aarch64 », « CPU Apple M3 Pro ».
+- [ ] HEIC d'iPhone dans le Retoucher, après les corrections du 2026-10-23 (vue du Retoucher, migration 0024) : photo entière en portrait, panneau Informations en 4284 × 5712, vignette refaite d'elle-même au démarrage. Voir aussi une photo RAW en portrait.

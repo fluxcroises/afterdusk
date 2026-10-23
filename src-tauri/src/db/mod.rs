@@ -45,6 +45,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0021_cadrages_livraison.sql"),
     include_str!("migrations/0022_compositions.sql"),
     include_str!("migrations/0023_extraits_video.sql"),
+    include_str!("migrations/0024_orientation_heif.sql"),
 ];
 
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
@@ -198,6 +199,47 @@ mod tests {
             .pragma_query_value(None, "foreign_keys", |r| r.get(0))
             .unwrap();
         assert!(fk);
+    }
+
+    #[test]
+    fn heif_importes_avant_la_correction_d_orientation() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        configure(&conn).unwrap();
+        for sql in &MIGRATIONS[..23] {
+            conn.execute_batch(sql).unwrap();
+        }
+        conn.pragma_update(None, "user_version", 23).unwrap();
+        conn.execute_batch(
+            "INSERT INTO libraries (id, name, root_path, created_at) VALUES (1, 'P', '/p', 'x');
+             INSERT INTO albums (id, library_id, name, folder, created_at)
+               VALUES (1, 1, 'A', 'a', 'x');
+             INSERT INTO media (id, library_id, album_id, kind, path, original_name, file_size,
+                                fingerprint, content_hash, width, height, orientation,
+                                imported_at, updated_at)
+               VALUES (1, 1, 1, 'photo', 'a/IMG_1.HEIC', 'IMG_1.HEIC', 1, 'f1', 'h1',
+                       5712, 4284, 6, 'x', 'x'),
+                      (2, 1, 1, 'photo', 'a/DSC_2.NEF', 'DSC_2.NEF', 1, 'f2', 'h2',
+                       6048, 4024, 6, 'x', 'x');
+             INSERT INTO previews (media_id, size, width, height, bytes, source, created_at, last_used)
+               VALUES (1, 256, 256, 192, 1, 'decoded', 'x', 'x'),
+                      (2, 256, 170, 256, 1, 'embedded', 'x', 'x');",
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        let row = |id: i64| -> (i64, i64, i64, i64) {
+            conn.query_row(
+                "SELECT width, height, orientation,
+                        (SELECT count(*) FROM previews WHERE media_id = m.id)
+                 FROM media m WHERE id = ?1",
+                [id],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap()
+        };
+        // Le HEIC passe en portrait, ses aperçus seront refaits.
+        assert_eq!(row(1), (4284, 5712, 1, 0));
+        // Un RAW garde son orientation EXIF, appliquée au rendu.
+        assert_eq!(row(2), (6048, 4024, 6, 1));
     }
 
     #[test]
