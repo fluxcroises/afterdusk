@@ -96,10 +96,35 @@ impl MediaMetadata {
 pub fn read_metadata(path: &Path, format: MediaFormat) -> MediaMetadata {
     match format {
         MediaFormat::Raw => read_raw(path),
-        MediaFormat::Image => read_image(path),
+        MediaFormat::Image => {
+            // Sans EXIF : image droite.
+            let mut meta = read_image(path).unwrap_or(MediaMetadata {
+                orientation: 1,
+                ..Default::default()
+            });
+            // L'en-tête donne la vraie définition ; l'EXIF peut manquer
+            // (photo enregistrée par un autre logiciel) ou dater d'avant un
+            // recadrage. Le HEIF passe par FFmpeg et garde ses dimensions EXIF.
+            if let Some((w, h)) = header_dimensions(path) {
+                meta.width = Some(w);
+                meta.height = Some(h);
+            }
+            Some(meta)
+        }
         MediaFormat::Video => read_video(path),
     }
     .unwrap_or_default()
+}
+
+/// Largeur et hauteur stockées (avant orientation) d'un JPEG, PNG ou TIFF,
+/// lues dans l'en-tête sans décoder l'image.
+fn header_dimensions(path: &Path) -> Option<(u32, u32)> {
+    image::ImageReader::open(path)
+        .ok()?
+        .with_guessed_format()
+        .ok()?
+        .into_dimensions()
+        .ok()
 }
 
 /// Sans FFmpeg, une vidéo s'importe quand même, sans informations.
@@ -354,6 +379,18 @@ mod tests {
             read_metadata(&path, MediaFormat::Raw),
             MediaMetadata::default()
         );
+    }
+
+    #[test]
+    fn dimensions_d_un_jpeg_sans_exif() {
+        // Photo enregistrée par un autre logiciel, sans EXIF : la définition
+        // vient de l'en-tête, sans quoi la visionneuse ne peut pas zoomer.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("DSCF1671.JPG");
+        image::RgbImage::new(30, 20).save(&path).unwrap();
+        let meta = read_metadata(&path, MediaFormat::Image);
+        assert_eq!((meta.width, meta.height), (Some(30), Some(20)));
+        assert_eq!(meta.orientation, 1);
     }
 
     #[test]

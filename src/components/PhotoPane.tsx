@@ -2,6 +2,7 @@ import { ImageOff } from "lucide-react";
 import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -43,6 +44,13 @@ interface Size {
   h: number;
 }
 
+interface Marquee {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
 /** Rectangle réellement dessiné par une image en `object-fit: contain`. */
 function containedRect(img: HTMLImageElement) {
   const box = img.getBoundingClientRect();
@@ -54,7 +62,17 @@ function containedRect(img: HTMLImageElement) {
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
-export type Zoom = { fx: number; fy: number } | null;
+/**
+ * Zoom de la visionneuse : point visé en fraction de l'image, et échelle par
+ * rapport aux pixels réels (1, ou absente, = 100 %). `null` = ajusté.
+ */
+export type Zoom = { fx: number; fy: number; scale?: number } | null;
+
+/** Échelle maximale (800 %) et pas de la molette. */
+const MAX_SCALE = 8;
+const WHEEL_STEP = 1.25;
+/** Déplacement, en pixels, au-delà duquel un appui devient un tracé. */
+const DRAG_THRESHOLD = 4;
 
 interface PhotoPaneProps {
   media: MediaSummary;
@@ -128,21 +146,32 @@ export function PhotoPane({
       ? sensorLong / Math.max(loaded.w, loaded.h)
       : 1;
   const fullSize = loaded ? { w: (loaded.w * enlarge) / dpr, h: (loaded.h * enlarge) / dpr } : null;
+  const scale = zoom?.scale ?? 1;
   const actualPixels = loaded !== null && enlarge === 1;
-  // Avant le chargement : dimensions du boîtier, orientées.
+  // Avant le chargement : dimensions du boîtier, orientées. Inconnues (photo
+  // sans EXIF importée avant la lecture de l'en-tête) : la pleine taille,
+  // chargée d'abord sans être montrée, les donne.
   const approx: Size | null =
     current.width && current.height
       ? swapsAxes(orientation)
         ? { w: current.height / dpr, h: current.width / dpr }
         : { w: current.width / dpr, h: current.height / dpr }
       : null;
-  const disp: Size | null = fullSize
+  // Taille à 100 %, orientée.
+  const base: Size | null = fullSize
     ? swapsAxes(orientation)
       ? { w: fullSize.h, h: fullSize.w }
       : fullSize
     : approx;
+  const disp: Size | null = base ? { w: base.w * scale, h: base.h * scale } : null;
+  // Échelle de l'ajusté : en deçà, on revient à l'ajusté.
+  const fitScale = base && vp.w > 0 ? Math.min(vp.w / base.w, vp.h / base.h) : null;
 
+  const fitImg = useRef<HTMLImageElement>(null);
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  // Zoom par rectangle, tracé sur la photo ajustée (coordonnées de la vue).
+  const marqueeStart = useRef<{ x: number; y: number; id: number } | null>(null);
+  const [marquee, setMarquee] = useState<Marquee | null>(null);
 
   const enterZoom = (e: ReactMouseEvent<HTMLImageElement>) => {
     if (!active) {
@@ -156,13 +185,39 @@ export function PhotoPane({
     });
   };
 
+  // Position du coin de l'image zoomée : le point visé au centre, sans laisser de vide.
+  const place = (size: number, view: number, f: number) =>
+    size <= view ? (view - size) / 2 : clamp(view / 2 - f * size, view - size, 0);
+
+  /** Point de l'événement dans la vue. */
+  const local = (e: { clientX: number; clientY: number }) => {
+    const box = viewport.current?.getBoundingClientRect();
+    return { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0) };
+  };
+
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!active) onActivate?.();
-    if (!zoom) return;
+    if (e.button !== 0) return;
+    if (!zoom) {
+      // Ajusté : un tracé zoome sur le rectangle, un simple clic à 100 %.
+      if (active && fitImg.current) marqueeStart.current = { ...local(e), id: e.pointerId };
+      return;
+    }
     drag.current = { x: e.clientX, y: e.clientY, moved: false };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const start = marqueeStart.current;
+    if (start) {
+      const p = local(e);
+      if (marquee || Math.abs(p.x - start.x) + Math.abs(p.y - start.y) > DRAG_THRESHOLD) {
+        // Capturé seulement une fois le tracé commencé : un simple clic
+        // reste un clic sur la photo.
+        if (!marquee) e.currentTarget.setPointerCapture(start.id);
+        setMarquee({ x0: start.x, y0: start.y, x1: p.x, y1: p.y });
+      }
+      return;
+    }
     const d = drag.current;
     if (!d || !zoom || !disp) return;
     const dx = e.clientX - d.x;
@@ -171,20 +226,82 @@ export function PhotoPane({
     d.x = e.clientX;
     d.y = e.clientY;
     setZoom({
+      ...zoom,
       fx: clamp(zoom.fx - dx / disp.w, 0, 1),
       fy: clamp(zoom.fy - dy / disp.h, 0, 1),
     });
   };
   const onPointerUp = () => {
+    marqueeStart.current = null;
+    if (marquee) {
+      setMarquee(null);
+      zoomToMarquee(marquee);
+      return;
+    }
     const d = drag.current;
     drag.current = null;
     // Un clic sans déplacement revient à l'ajusté.
     if (d && !d.moved) setZoom(null);
   };
+  const onPointerCancel = () => {
+    marqueeStart.current = null;
+    drag.current = null;
+    setMarquee(null);
+  };
 
-  // Position du coin de l'image zoomée : le point visé au centre, sans laisser de vide.
-  const place = (size: number, view: number, f: number) =>
-    size <= view ? (view - size) / 2 : clamp(view / 2 - f * size, view - size, 0);
+  /** Rectangle tracé : sa zone remplit la vue. */
+  const zoomToMarquee = (m: Marquee) => {
+    const img = fitImg.current;
+    const box = viewport.current?.getBoundingClientRect();
+    if (!img || !box) return;
+    const r = containedRect(img);
+    const fx = (x: number) => clamp((x + box.left - r.left) / r.w, 0, 1);
+    const fy = (y: number) => clamp((y + box.top - r.top) / r.h, 0, 1);
+    const x0 = fx(Math.min(m.x0, m.x1));
+    const x1 = fx(Math.max(m.x0, m.x1));
+    const y0 = fy(Math.min(m.y0, m.y1));
+    const y1 = fy(Math.max(m.y0, m.y1));
+    if (x1 - x0 < 0.005 || y1 - y0 < 0.005) return;
+    const center = { fx: (x0 + x1) / 2, fy: (y0 + y1) / 2 };
+    if (!base || !fitScale) {
+      setZoom(center);
+      return;
+    }
+    const wanted = Math.min(vp.w / ((x1 - x0) * base.w), vp.h / ((y1 - y0) * base.h));
+    setZoom({ ...center, scale: clamp(wanted, fitScale * WHEEL_STEP, MAX_SCALE) });
+  };
+
+  /** Molette : zoom progressif autour du point sous le pointeur. */
+  const onWheel = (e: ReactWheelEvent<HTMLDivElement>) => {
+    if (!active || e.deltaY === 0 || !base || !fitScale) return;
+    const factor = e.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
+    if (!zoom) {
+      if (factor < 1 || !fitImg.current) return;
+      const r = containedRect(fitImg.current);
+      setZoom({
+        fx: clamp((e.clientX - r.left) / r.w, 0, 1),
+        fy: clamp((e.clientY - r.top) / r.h, 0, 1),
+        scale: Math.min(fitScale * WHEEL_STEP, MAX_SCALE),
+      });
+      return;
+    }
+    const next = Math.min(scale * factor, MAX_SCALE);
+    if (next <= fitScale * 1.001) {
+      setZoom(null);
+      return;
+    }
+    // Le point sous le pointeur reste sous le pointeur.
+    const p = local(e);
+    const size = { w: base.w * scale, h: base.h * scale };
+    const nextSize = { w: base.w * next, h: base.h * next };
+    const ux = (p.x - place(size.w, vp.w, zoom.fx)) / size.w;
+    const uy = (p.y - place(size.h, vp.h, zoom.fy)) / size.h;
+    setZoom({
+      fx: clamp((vp.w / 2 - (p.x - ux * nextSize.w)) / nextSize.w, 0, 1),
+      fy: clamp((vp.h / 2 - (p.y - uy * nextSize.h)) / nextSize.h, 0, 1),
+      scale: next,
+    });
+  };
 
   return (
     <div
@@ -195,6 +312,8 @@ export function PhotoPane({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onWheel={onWheel}
     >
       {!shown && !src && (
         <div className="loupe-empty">
@@ -204,6 +323,7 @@ export function PhotoPane({
       )}
       {shown && !zoom && (
         <img
+          ref={fitImg}
           className="loupe-fit"
           src={shown.src}
           alt={current.fileName}
@@ -211,18 +331,33 @@ export function PhotoPane({
           onClick={enterZoom}
         />
       )}
-      {shown && zoom && disp && (
+      {marquee && (
+        <div
+          className="loupe-marquee"
+          style={{
+            left: Math.min(marquee.x0, marquee.x1),
+            top: Math.min(marquee.y0, marquee.y1),
+            width: Math.abs(marquee.x1 - marquee.x0),
+            height: Math.abs(marquee.y1 - marquee.y0),
+          }}
+        />
+      )}
+      {shown && zoom && (
         <div
           className="loupe-zoomed"
-          style={{
-            width: disp.w,
-            height: disp.h,
-            left: place(disp.w, vp.w, zoom.fx),
-            top: place(disp.h, vp.h, zoom.fy),
-          }}
+          style={
+            disp
+              ? {
+                  width: disp.w,
+                  height: disp.h,
+                  left: place(disp.w, vp.w, zoom.fx),
+                  top: place(disp.h, vp.h, zoom.fy),
+                }
+              : { visibility: "hidden" }
+          }
         >
           {/* Aperçu agrandi tant que la pleine taille charge (ou si elle manque). */}
-          <img className="loupe-placeholder" src={shown.src} alt="" draggable={false} />
+          {disp && <img className="loupe-placeholder" src={shown.src} alt="" draggable={false} />}
           {fullSrc && fullFailed !== current.id && (
             <img
               className="loupe-full"
@@ -230,12 +365,12 @@ export function PhotoPane({
               alt={current.fileName}
               draggable={false}
               style={
-                fullSize
+                fullSize && disp
                   ? {
-                      width: fullSize.w,
-                      height: fullSize.h,
-                      left: (disp.w - fullSize.w) / 2,
-                      top: (disp.h - fullSize.h) / 2,
+                      width: fullSize.w * scale,
+                      height: fullSize.h * scale,
+                      left: (disp.w - fullSize.w * scale) / 2,
+                      top: (disp.h - fullSize.h * scale) / 2,
                       transform: orientationTransform(orientation),
                     }
                   : { visibility: "hidden" }
@@ -253,7 +388,11 @@ export function PhotoPane({
       )}
       {zoom && (
         <span className="loupe-badge">
-          {actualPixels ? t("loupe.actualPixels") : t("loupe.enlargedPreview")}
+          {scale !== 1
+            ? t("loupe.percent", { percent: Math.round(scale * 100) })
+            : actualPixels
+              ? t("loupe.actualPixels")
+              : t("loupe.enlargedPreview")}
         </span>
       )}
     </div>

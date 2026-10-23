@@ -1897,6 +1897,16 @@ button.color-chip[aria-pressed="true"] {
   position: absolute;
 }
 
+/* Zoom par rectangle : zone tracée sur la photo ajustée. */
+.loupe-marquee {
+  position: absolute;
+  z-index: 1;
+  border: 1px solid #fff;
+  background: rgb(255 255 255 / 0.12);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+
 .loupe-placeholder {
   position: absolute;
   inset: 0;

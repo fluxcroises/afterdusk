@@ -349,7 +349,7 @@ interface LibraryState {
   /** Grille, visionneuse (une photo) ou comparaison (2 à 4). */
   view: LibraryView;
   /** Zoom 100 % de la visionneuse : point visé, en fraction de l'image ; `null` = ajusté. */
-  zoom: { fx: number; fy: number } | null;
+  zoom: { fx: number; fy: number; scale?: number } | null;
   /** Instant de la dernière navigation, pour mesurer l'affichage de la suivante. */
   navigatedAt: number;
 
@@ -377,7 +377,7 @@ interface LibraryState {
   toggleColor: (color: ColorName) => Promise<void>;
   setAutoAdvance: (value: boolean) => void;
   setView: (view: LibraryView) => void;
-  setZoom: (zoom: { fx: number; fy: number } | null) => void;
+  setZoom: (zoom: { fx: number; fy: number; scale?: number } | null) => void;
   /** La photo devient la couverture de son album. */
   setAsCover: (mediaId: number) => Promise<void>;
   showTrash: () => Promise<void>;

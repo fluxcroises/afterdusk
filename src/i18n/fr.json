@@ -455,7 +455,8 @@
   "loupe": {
     "preparing": "Aperçu en préparation…",
     "actualPixels": "100 %",
-    "enlargedPreview": "Aperçu agrandi"
+    "enlargedPreview": "Aperçu agrandi",
+    "percent": "{{percent}} %"
   },
   "secondary": {
     "title": "Second écran",

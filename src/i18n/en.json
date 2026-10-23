@@ -455,7 +455,8 @@
   "loupe": {
     "preparing": "Preparing preview…",
     "actualPixels": "100%",
-    "enlargedPreview": "Enlarged preview"
+    "enlargedPreview": "Enlarged preview",
+    "percent": "{{percent}}%"
   },
   "secondary": {
     "title": "Secondary display",
