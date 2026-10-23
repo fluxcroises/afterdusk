@@ -85,6 +85,8 @@ interface PhotoPaneProps {
   onActivate?: () => void;
   /** Appelé quand la photo affichée a changé (mesure de la visionneuse). */
   onShown?: () => void;
+  /** Clic droit : menu de la photo (fenêtre principale seulement). */
+  onMenu?: () => void;
 }
 
 /**
@@ -100,6 +102,7 @@ export function PhotoPane({
   active = true,
   onActivate,
   onShown,
+  onMenu,
 }: PhotoPaneProps) {
   const { t } = useTranslation();
   const src = displaySrc(current, version);
@@ -314,6 +317,13 @@ export function PhotoPane({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
       onWheel={onWheel}
+      onContextMenu={
+        onMenu &&
+        ((e) => {
+          e.preventDefault();
+          onMenu();
+        })
+      }
     >
       {!shown && !src && (
         <div className="loupe-empty">

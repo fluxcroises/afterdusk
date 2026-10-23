@@ -1,3 +1,4 @@
+use rusqlite::OptionalExtension;
 use tauri::State;
 
 use super::error::CommandResult;
@@ -99,4 +100,57 @@ pub async fn media_histogram(
 ) -> CommandResult<Option<Vec<u32>>> {
     let cache = state.cache_root.clone();
     blocking(move || Ok(crate::library::media::preview_histogram(&cache, media_id))).await
+}
+
+/// Montre le fichier d'origine dans l'Explorateur ou le Finder, sélectionné.
+/// Rien n'est ouvert ni modifié ; une photo d'un disque débranché est ignorée.
+#[tauri::command]
+pub async fn media_reveal(state: State<'_, AppState>, media_id: i64) -> CommandResult<()> {
+    let conn = state.connect()?;
+    blocking(move || {
+        let found: Option<(i64, String)> = conn
+            .query_row(
+                "SELECT library_id, path FROM media WHERE id = ?1",
+                [media_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()
+            .map_err(crate::library::LibraryError::from)?;
+        let Some((library_id, rel)) = found else {
+            return Ok(());
+        };
+        let lib = crate::library::get_library(&conn, library_id)?;
+        if !lib.is_online {
+            return Ok(());
+        }
+        let Ok(path) = crate::library::paths::to_absolute(&lib.root_path, &rel) else {
+            return Ok(());
+        };
+        if path.is_file() {
+            reveal(&path);
+        }
+        Ok(())
+    })
+    .await
+}
+
+fn reveal(path: &std::path::Path) {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        // « /select, » et le chemin entre guillemets, tels quels : Explorer ne
+        // comprend pas le guillemetage habituel des arguments.
+        let _ = std::process::Command::new("explorer")
+            .raw_arg(format!("/select,\"{}\"", path.display()))
+            .spawn();
+    }
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open")
+        .arg("-R")
+        .arg(path)
+        .spawn();
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    if let Some(dir) = path.parent() {
+        let _ = std::process::Command::new("xdg-open").arg(dir).spawn();
+    }
 }

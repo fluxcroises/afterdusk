@@ -768,7 +768,8 @@
       "hint": "Zoom 100 % (Z)",
       "exitHint": "Image entière (Z)",
       "loading": "Développement de l'original en pleine définition…",
-      "status": "100 % · rendu {{render}} ms ({{engine}})"
+      "status": "100 % · rendu {{render}} ms ({{engine}})",
+      "actual": "100 %"
     },
     "detail": {
       "title": "Détail",
@@ -1631,5 +1632,12 @@
     "later": "Plus tard",
     "downloading": "Téléchargement de la mise à jour…",
     "downloadingPercent": "Téléchargement de la mise à jour… {{percent}} %"
+  },
+  "context": {
+    "openLoupe": "Afficher dans la visionneuse",
+    "develop": "Retoucher",
+    "revealExplorer": "Afficher dans l'Explorateur",
+    "revealFinder": "Afficher dans le Finder",
+    "beforeAfter": "Avant / après"
   }
 }

@@ -1,99 +1,12 @@
 import { formatDuration } from "../ui/format";
 import { BookImage, Flag, FlagOff, Layers, Play, Star, TriangleAlert } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { type MediaSummary, type SelectMode, daysLeft, useLibrary } from "../store/library";
 import { missesOf } from "../store/analysis";
-import { useBursts } from "../store/bursts";
-import { purgeSelection } from "../trash";
+import { openPhotoMenu } from "../contextMenu";
 import { Thumbnail } from "./Thumbnail";
-
-/** Menu contextuel d'une miniature (clic droit). */
-function MediaContextMenu({
-  media,
-  at,
-  onClose,
-}: {
-  media: MediaSummary;
-  at: { x: number; y: number };
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  const setAsCover = useLibrary((s) => s.setAsCover);
-  const trash = useLibrary((s) => s.trash);
-  const ref = useRef<HTMLDivElement>(null);
-  const item = (label: string, run: () => void) => (
-    <button
-      key={label}
-      type="button"
-      className="menu-row"
-      role="menuitem"
-      onClick={() => {
-        onClose();
-        run();
-      }}
-    >
-      <span className="menu-label">{label}</span>
-    </button>
-  );
-
-  useEffect(() => {
-    ref.current?.querySelector("button")?.focus();
-    const close = (e: Event) => {
-      if (!ref.current?.contains(e.target as Node)) onClose();
-    };
-    const escape = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("mousedown", close);
-    window.addEventListener("keydown", escape);
-    window.addEventListener("blur", onClose);
-    return () => {
-      window.removeEventListener("mousedown", close);
-      window.removeEventListener("keydown", escape);
-      window.removeEventListener("blur", onClose);
-    };
-  }, [onClose]);
-
-  return createPortal(
-    <div
-      ref={ref}
-      className="menu-list context-menu"
-      role="menu"
-      style={{ left: at.x, top: at.y }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {trash ? (
-        <>
-          {item(t("menu.restore"), () => void useLibrary.getState().restore())}
-          {item(t("menu.purge"), () => void purgeSelection())}
-        </>
-      ) : (
-        <>
-          {item(t("menu.setAlbumCover"), () => void setAsCover(media.id))}
-          {media.companionOf !== null &&
-            item(t("menu.stackTop"), () => void useLibrary.getState().setStackTop(media.id))}
-          {media.burstId && media.companionOf === null && (
-            <>
-              {item(t("menu.burstTop"), () => void useLibrary.getState().setStackTop(media.id))}
-              {item(t("menu.unstackBurst"), () => void useBursts.getState().unstackSelection())}
-            </>
-          )}
-          <div className="menu-separator" role="separator" />
-          {!media.copyOf &&
-            item(t("menu.moveToTrash"), () => void useLibrary.getState().moveToTrash())}
-          {(media.stackSize > 1 || media.companionOf !== null) && (
-            <>
-              {item(t("menu.trashJpeg"), () => void useLibrary.getState().trashFormat("image"))}
-              {item(t("menu.trashRaw"), () => void useLibrary.getState().trashFormat("raw"))}
-            </>
-          )}
-        </>
-      )}
-    </div>,
-    document.body,
-  );
-}
 
 /** Note, drapeau et couleur sous la miniature, comme dans Lightroom. */
 function MarkBadges({ media, isCover }: { media: MediaSummary; isCover: boolean }) {
@@ -173,7 +86,6 @@ function MediaCell({
   );
   const burstSize = media.burstSize ?? 1;
   const { t } = useTranslation();
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -196,8 +108,7 @@ function MediaCell({
       onDoubleClick={() => useLibrary.getState().setView("loupe")}
       onContextMenu={(e) => {
         e.preventDefault();
-        if (!selected) void select(media.id);
-        setMenu({ x: e.clientX, y: e.clientY });
+        void openPhotoMenu(media);
       }}
     >
       <span className="media-cell-image">
@@ -266,7 +177,6 @@ function MediaCell({
       ) : (
         <MarkBadges media={media} isCover={isCover} />
       )}
-      {menu && <MediaContextMenu media={media} at={menu} onClose={() => setMenu(null)} />}
     </button>
   );
 }
@@ -313,6 +223,10 @@ function StripCell({
       title={media.version ? `${media.fileName} · ${media.version}` : media.fileName}
       data-below={media.companionOf !== null || undefined}
       onClick={(e) => void select(media.id, selectMode(e))}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        void openPhotoMenu(media);
+      }}
     >
       <Thumbnail src={media.hasPreview ? previewUrl(media.id, 256, version) : null} />
       {media.copyOf && <span className="copy-badge copy-badge-small" aria-hidden="true" />}

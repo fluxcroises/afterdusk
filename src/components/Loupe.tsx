@@ -3,6 +3,7 @@ import { useCallback, useEffect } from "react";
 import { useLibrary } from "../store/library";
 import { recordTransition } from "../ui/perf";
 import { displaySrc, preload } from "../ui/preload";
+import { openPhotoMenu } from "../contextMenu";
 import { PhotoPane } from "./PhotoPane";
 
 /** Visionneuse : une photo à la fois, voisines décodées d'avance. */
@@ -41,6 +42,7 @@ export function Loupe() {
       zoom={zoom}
       onZoom={setZoom}
       onShown={measure}
+      onMenu={() => void openPhotoMenu(current)}
     />
   );
 }

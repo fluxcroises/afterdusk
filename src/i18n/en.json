@@ -768,7 +768,8 @@
       "hint": "Zoom 100% (Z)",
       "exitHint": "Whole image (Z)",
       "loading": "Developing the original at full resolution…",
-      "status": "100% · rendered in {{render}} ms ({{engine}})"
+      "status": "100% · rendered in {{render}} ms ({{engine}})",
+      "actual": "100%"
     },
     "detail": {
       "title": "Detail",
@@ -1631,5 +1632,12 @@
     "later": "Later",
     "downloading": "Downloading the update…",
     "downloadingPercent": "Downloading the update… {{percent}}%"
+  },
+  "context": {
+    "openLoupe": "Show in the viewer",
+    "develop": "Develop",
+    "revealExplorer": "Show in Explorer",
+    "revealFinder": "Show in Finder",
+    "beforeAfter": "Before / after"
   }
 }

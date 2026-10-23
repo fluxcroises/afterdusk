@@ -1,4 +1,6 @@
 import { isTyping } from "../ui/typing";
+import { openDevelopMenu } from "../contextMenu";
+import { perfOverlayEnabled } from "../ui/perf";
 import { profileAllows } from "../store/profile";
 import { ImageOff, Images, SlidersHorizontal } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
@@ -183,6 +185,10 @@ function DevelopCanvas() {
           press.current = null;
           setDragging(false);
         }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          void openDevelopMenu();
+        }}
       />
       {cropping && box && <CropOverlay box={box} />}
       {spotting && box && <SpotOverlay box={box} view={view} />}
@@ -233,10 +239,12 @@ function RenderStatus() {
   if (zoom && zoomFrame) {
     return (
       <span className="toolbar-status">
-        {t("develop.zoom.status", {
-          render: zoomFrame.renderMs.toFixed(1),
-          engine: zoomFrame.gpu && adapter ? adapter : t("develop.cpu"),
-        })}
+        {perfOverlayEnabled
+          ? t("develop.zoom.status", {
+              render: zoomFrame.renderMs.toFixed(1),
+              engine: zoomFrame.gpu && adapter ? adapter : t("develop.cpu"),
+            })
+          : t("develop.zoom.actual")}
       </span>
     );
   }
@@ -250,7 +258,8 @@ function RenderStatus() {
       </span>
     );
   }
-  if (!frame) return null;
+  // Temps de rendu et de décodage : pour les essais seulement (VITE_PERF_OVERLAY=1).
+  if (!frame || !perfOverlayEnabled) return null;
   return (
     <span className="toolbar-status">
       {t("develop.status", {

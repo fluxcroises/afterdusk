@@ -253,6 +253,7 @@ pub fn run() {
             commands::media::albums_list,
             commands::media::media_details,
             commands::media::media_histogram,
+            commands::media::media_reveal,
             commands::media::album_set_cover,
             commands::media::welcome_highlights,
             commands::trash::media_trash,

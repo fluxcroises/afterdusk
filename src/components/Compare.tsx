@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { compareIds, useLibrary } from "../store/library";
+import { openPhotoMenu } from "../contextMenu";
 import { PhotoPane } from "./PhotoPane";
 
 /**
@@ -31,6 +32,7 @@ export function Compare() {
             onZoom={setZoom}
             active={m.id === selectedId}
             onActivate={() => void activate(m.id)}
+            onMenu={() => void openPhotoMenu(m)}
           />
           <figcaption className="compare-caption">
             <span className="compare-name">{m.fileName}</span>

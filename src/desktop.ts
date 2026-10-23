@@ -164,10 +164,12 @@ export function installDesktopBehavior(label: WindowLabel): void {
       e.preventDefault();
     }
   });
-  // Le menu contextuel du navigateur reste disponible en développement (inspecteur).
-  if (!import.meta.env.DEV) {
-    window.addEventListener("contextmenu", (e) => {
-      if (!isTyping(e.target)) e.preventDefault();
-    });
-  }
+  // Le menu du navigateur (Imprimer, Enregistrer sous…) n'a rien à faire dans
+  // Afterdusk, sauf dans les champs de texte (couper, copier, coller) ; les
+  // photos et le Retoucher ouvrent leurs propres menus. En développement,
+  // Maj + clic droit le garde pour l'inspecteur.
+  window.addEventListener("contextmenu", (e) => {
+    if (isTyping(e.target) || (import.meta.env.DEV && e.shiftKey)) return;
+    e.preventDefault();
+  });
 }
