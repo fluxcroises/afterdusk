@@ -805,7 +805,10 @@ mod tests {
     fn correction_d_objectif_par_defaut_selon_la_source() {
         let d = LensSettings::default();
         assert!(d.active(false), "RAW : activée par défaut");
-        assert!(!d.active(true), "photo déjà développée : désactivée par défaut");
+        assert!(
+            !d.active(true),
+            "photo déjà développée : désactivée par défaut"
+        );
         let on = LensSettings {
             enabled: Some(true),
             ..LensSettings::default()
@@ -816,7 +819,10 @@ mod tests {
         assert_eq!(old.enabled, None);
         let off: LensSettings = serde_json::from_str(r#"{"enabled":false}"#).unwrap();
         assert_eq!(off.enabled, Some(false));
-        assert_eq!(serde_json::to_string(&LensSettings::default()).unwrap(), "{}");
+        assert_eq!(
+            serde_json::to_string(&LensSettings::default()).unwrap(),
+            "{}"
+        );
     }
 
     #[test]
