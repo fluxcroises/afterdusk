@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { version } from "../../package.json";
 
 const invoke = vi.fn<(cmd: string) => Promise<unknown>>(() => Promise.resolve(null));
 vi.mock("@tauri-apps/api/core", async (original) => ({
@@ -18,7 +19,7 @@ describe("À propos d'Afterdusk", () => {
   it("version, composants et avis de licence ; Licence… affiche la GPL", () => {
     render(<AboutDialog />);
     const dialog = screen.getByRole("dialog", { name: "Afterdusk" });
-    expect(dialog).toHaveTextContent("Version 0.5.0");
+    expect(dialog).toHaveTextContent(`Version ${version}`);
     expect(dialog).toHaveTextContent("Composants : LibRaw (LGPL 2.1) · Adobe XMP Toolkit (BSD 3)");
     expect(dialog).toHaveTextContent("SQLite (domaine public)");
     expect(dialog).toHaveTextContent("Cabourg, photo © Lewis Bedar");

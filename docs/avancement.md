@@ -961,3 +961,8 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 - Publication 0.5.0 : action réussie, version en brouillon sur GitHub, à publier par l'utilisateur (AFT-6).
 - Version 0.5.0 publiée par l'utilisateur le 2026-10-23 (version normale, pas une pré-version : l'adresse des mises à jour `releases/latest` ignore les pré-versions). Notes de version reprises de Confluence, liens vers le README public. `latest.json` répond à l'adresse inscrite dans l'application. AFT-6 terminé.
 - Candidature à SignPath Foundation reportée (choix de l'utilisateur) : le formulaire demande un projet « largement utilisé ou reconnu », ce qu'une version publiée le jour même ne peut montrer. À redéposer avec des téléchargements, plusieurs versions et des mentions extérieures ; Certum Open Source reste possible entre-temps (décision 0011). Réponses du formulaire préparées dans la conversation, README remis à « sera demandée ».
+
+### 2026-10-23 (suite) : icône gardée, version 0.5.1
+
+- Icône de l'application : celle du 18 octobre (symbole d'Afterdusk en blanc sur carré anthracite, conforme à la charte) est gardée telle quelle, au choix de l'utilisateur ; en 16 à 32 px, la spirale devient un anneau gris, lisible mais peu contrasté (une version simplifiée pour les petites tailles a été proposée et écartée). AFT-17 terminé.
+- Projet passé en 0.5.1 pour vérifier une vraie mise à jour depuis la 0.5.0 installée (AFT-8). Le test de « À propos » lit désormais le numéro dans `package.json`.
