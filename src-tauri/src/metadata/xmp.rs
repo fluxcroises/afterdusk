@@ -12,10 +12,14 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use xmp_toolkit::{ToStringOptions, XmpMeta, XmpValue, xmp_ns};
 
-/// Espace de noms des propriétés propres à Afterdusk (proposition, voir
-/// docs/decisions/0001-metadonnees-xmp.md).
-pub const AFTERDUSK_NS: &str = "https://afterdusk.app/ns/xmp/1.0/";
+/// Espace de noms des propriétés propres à Afterdusk, sur le domaine de
+/// l'association qui héberge le projet (docs/decisions/0002-metadonnees-xmp.md).
+pub const AFTERDUSK_NS: &str = "https://afterdusk.flux-croises.fr/ns/xmp/1.0/";
 const AFTERDUSK_PREFIX: &str = "afterdusk";
+/// Adresse provisoire écrite avant 2026-10-23, relue puis remplacée.
+const LEGACY_NS: &str = "https://afterdusk.app/ns/xmp/1.0/";
+const LEGACY_PREFIX: &str = "afterduskapp";
+const OWN_PROPERTIES: [&str; 5] = ["Pick", "Develop", "Snapshots", "Versions", "LocationSource"];
 
 #[derive(Debug, thiserror::Error)]
 pub enum XmpError {
@@ -249,12 +253,28 @@ fn ensure_sidecar(path: &Path) -> Result<(), XmpError> {
 }
 
 fn register_namespace(path: &Path) -> Result<(), XmpError> {
-    XmpMeta::register_namespace(AFTERDUSK_NS, AFTERDUSK_PREFIX)
-        .map(|_| ())
-        .map_err(|source| XmpError::Toolkit {
-            path: path.to_path_buf(),
-            source,
-        })
+    let toolkit = |source| XmpError::Toolkit {
+        path: path.to_path_buf(),
+        source,
+    };
+    XmpMeta::register_namespace(AFTERDUSK_NS, AFTERDUSK_PREFIX).map_err(toolkit)?;
+    XmpMeta::register_namespace(LEGACY_NS, LEGACY_PREFIX).map_err(toolkit)?;
+    Ok(())
+}
+
+/// Passe les propriétés de l'ancienne adresse sous la nouvelle ; une valeur
+/// déjà présente sous la nouvelle l'emporte.
+fn migrate_legacy(meta: &mut XmpMeta) -> Result<(), xmp_toolkit::XmpError> {
+    for name in OWN_PROPERTIES {
+        let Some(old) = meta.property(LEGACY_NS, name) else {
+            continue;
+        };
+        if !meta.contains_property(AFTERDUSK_NS, name) {
+            meta.set_property(AFTERDUSK_NS, name, &old.value.as_str().into())?;
+        }
+        meta.delete_property(LEGACY_NS, name)?;
+    }
+    Ok(())
 }
 
 fn load(path: &Path) -> Result<Option<XmpMeta>, XmpError> {
@@ -268,12 +288,13 @@ fn load(path: &Path) -> Result<Option<XmpMeta>, XmpError> {
             });
         }
     };
-    XmpMeta::from_str(&text)
-        .map(Some)
-        .map_err(|source| XmpError::Toolkit {
-            path: path.to_path_buf(),
-            source,
-        })
+    let toolkit = |source| XmpError::Toolkit {
+        path: path.to_path_buf(),
+        source,
+    };
+    let mut meta = XmpMeta::from_str(&text).map_err(toolkit)?;
+    migrate_legacy(&mut meta).map_err(toolkit)?;
+    Ok(Some(meta))
 }
 
 pub fn read_sidecar(path: &Path) -> Result<Option<SidecarData>, XmpError> {
@@ -602,5 +623,37 @@ mod tests {
         let back = read_sidecar(&path).unwrap().unwrap();
         assert_eq!(back.flag, Flag::None);
         assert_eq!(back.label, None);
+    }
+
+    #[test]
+    fn reprend_l_ancienne_adresse_de_l_espace_de_noms() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("DSCF0001.xmp");
+        fs::write(
+            &path,
+            r#"<x:xmpmeta xmlns:x="adobe:ns:meta/">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+    xmlns:afterdusk="https://afterdusk.app/ns/xmp/1.0/"
+    xmp:Rating="3"
+    afterdusk:Pick="1"
+    afterdusk:Develop="{&quot;version&quot;:1}"/>
+ </rdf:RDF>
+</x:xmpmeta>"#,
+        )
+        .unwrap();
+
+        let data = read_sidecar(&path).unwrap().unwrap();
+        assert_eq!(data.flag, Flag::Picked);
+        assert_eq!(data.develop.as_deref(), Some(r#"{"version":1}"#));
+
+        write_sidecar(&path, &data).unwrap();
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("afterdusk.app"), "{text}");
+        assert!(text.contains(AFTERDUSK_NS), "{text}");
+        let back = read_sidecar(&path).unwrap().unwrap();
+        assert_eq!(back.flag, Flag::Picked);
+        assert_eq!(back.develop, data.develop);
     }
 }

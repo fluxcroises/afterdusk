@@ -1,6 +1,6 @@
 # 0002 — Écriture XMP : xmp-toolkit-rs plutôt qu'Exiv2
 
-Date : 2026-10-18 · Statut : adoptée pour la bibliothèque et le nommage des annexes (validé par l'utilisateur le 2026-10-23) ; espace de noms à valider
+Date : 2026-10-18 · Statut : adoptée ; nommage des annexes et espace de noms validés par l'utilisateur le 2026-10-23
 
 ## Contexte
 
@@ -55,3 +55,5 @@ On n'écrit pas `xmp:Rating = -1` pour un rejet (convention Bridge et darktable)
    **Validé** par l'utilisateur le 2026-10-23, tel qu'appliqué depuis la V0.1 : `DSCF0001.xmp` pour les RAW et les vidéos, `DSCF0001.JPG.xmp` pour les autres formats.
 
 2. **Espace de noms** `https://afterdusk.app/ns/xmp/1.0/` (préfixe `afterdusk`). L'adresse n'a pas besoin d'exister, mais une fois écrite dans des fichiers on ne la change plus ; à confirmer avec le nom de domaine retenu (section 9 du cahier des charges).
+
+   **Validé** le 2026-10-23 : `https://afterdusk.flux-croises.fr/ns/xmp/1.0/`, sur le domaine de l'association de l'utilisateur, qui hébergera le projet. Les XMP écrits avant avec l'adresse provisoire sont relus ; leurs propriétés passent sous la nouvelle adresse au prochain enregistrement.
