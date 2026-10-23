@@ -842,3 +842,12 @@ Critères (cahier des charges, section 7) :
 - Vérifié dans l'application compilée sous Windows (données de l'utilisateur mises de côté puis remises, originaux d'essai intacts) : le RAW Sony exporté en JPEG puis en HEIF (encodeur de Windows, mosaïque de 24 Mpx), les deux déposés dans le dossier surveillé et importés ; vignette du HEIC décodée par FFmpeg (quelques secondes, toute la mosaïque étant recomposée). Retoucher : le JPEG s'ouvre, objectif reconnu d'après l'EXIF (Sony FE 16-35mm f/2.8 GM), case « Corriger l'objectif » décochée puis cochée (« Corrections d'objectif activées » dans l'historique) ; +0,50 IL, aperçu du résultat dans Livrer, export plus clair (luminosité moyenne de 138 à 164). Le HEIC s'ouvre (15 s environ en compilation de débogage), contraste +40, export JPEG au contraste accru (écart-type de 34,0 à 37,2). Réglages : Général et Import en deux colonnes.
 - À reprendre : Ctrl+Z restait sans effet quand le focus était sur la case de l'objectif ; l'ouverture d'un HEIC de 24 Mpx est lente, à mesurer en version optimisée.
 - Corrigé : les raccourcis de la fenêtre principale (Ctrl+Z, touches du tri) étaient ignorés dès qu'une case à cocher ou un curseur avait le focus, comptés comme une saisie de texte. Le test de saisie est partagé avec le Retoucher (`ui/typing.ts`) ; Espace et Entrée restent à la case ou au bouton qui a le focus.
+
+### 2026-10-23 : mesures de performance sous Windows (version optimisée)
+
+- Cahier des charges et journal alignés : 30 critères cochés au journal (V0.1 à V0.3) ne l'étaient pas au cahier, 6 de la V0.4 l'inverse ; les installateurs sont notés à l'étape Distribution.
+- Machine : Intel Core i7-12700, 32 Go, NVIDIA GeForce RTX 3060 Ti (Vulkan), Windows 11. `cargo test --release --test perf_v02 --test perf_v04 -- --ignored --nocapture`, sur les six RAW de test-assets.
+- Retour visuel d'un réglage (tous les réglages en jeu) : carte graphique, 95 % des rendus en 8 ms (médiane de 4 à 7 ms selon le boîtier) ; processeur seul (`AFTERDUSK_GPU=0`), 95 % en 64 ms. Seuil : 100 ms.
+- Export de 100 JPEG en 2048 px : 16,0 s (20 fils de calcul). Seuil : 2 minutes.
+- Analyse de 1 000 photos (flou, exposition, yeux fermés) : 1,4 min depuis les aperçus en cache, 2,2 min depuis les originaux (pire cas). Seuil : 10 minutes. Navigation pendant l'analyse : p95 0,8 ms (0,7 ms sans analyse), le tri n'est pas ralenti.
+- Les trois critères restent à mesurer sur Mac avant d'être cochés, avec la détection de carte et la navigation de la V0.1, lors de la session Mac.
