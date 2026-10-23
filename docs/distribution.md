@@ -10,7 +10,7 @@ SignPath Foundation ne signe que des projets « déjà publiés sous la forme à
 
 1. **Mises à jour dans l'application** : extension `updater` de Tauri ; vérification au démarrage, au plus une fois par jour ; bandeau qui propose la version, installation sur clic, redémarrage ; case « Vérifier les mises à jour » dans Réglages > Général. Tests de la règle « une fois par jour » et de la case désactivée (aucune requête).
 2. **Action de publication** (`.github/workflows/release.yml`), lancée par une étiquette `v0.5.0` :
-   - Windows x64 : installateur NSIS, pour l'utilisateur, sans droits d'administrateur ;
+   - Windows x64 : installateur NSIS dans `Program Files\Flux Croisés\Afterdusk` (droits d'administrateur à l'installation et aux mises à jour), en français et en anglais ;
    - macOS universel : `.dmg` et archive de mise à jour, signature ad hoc comme `build-macos.yml` ;
    - FFmpeg, ONNX Runtime et échantillons récupérés par les scripts qui vérifient leurs empreintes ;
    - archives de mise à jour signées avec la clé Tauri des secrets GitHub, `latest.json` produit ;
