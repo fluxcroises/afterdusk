@@ -184,8 +184,6 @@
       "fr": "Français",
       "en": "English"
     },
-    "theme": "Theme",
-    "themeDarkOnly": "Dark",
     "trashRetention": "Delete permanently after",
     "days_one": "day",
     "days_other": "days",
@@ -209,15 +207,15 @@
       "dateSeq": "Date, time, camera and number"
     },
     "example": "Example",
-    "tokensHint": "Tokens: {yyyy} {mm} {dd} {hh} {min} {ss} {album} {camera} {original} {seq:4}.",
+    "tokensHint": "Variables: {yyyy} {mm} {dd} {hh} {min} {ss} {album} {camera} {original} {seq:4}.",
     "identityName": "Name",
     "identityCopyright": "Copyright",
     "identityWebsite": "Website",
     "libraryName": "Name",
     "libraryLocation": "Location",
     "backupFolder": "Backup",
-    "backupHint": "The backup applies to future imports; photos already imported are not copied again.",
-    "templatesHint": "Templates apply to future imports; photos already filed do not move.",
+    "backupHint": "Applies to future imports.",
+    "templatesHint": "Applies to future imports.",
     "save": "Save",
     "saved": "Saved.",
     "onInsert": "When a card is inserted",
@@ -226,10 +224,10 @@
       "open": "Open Import",
       "nothing": "Do nothing"
     },
-    "cloudFolders": "Cloud folders",
-    "cloudBackup": "Folder synced by {{service}}: Afterdusk verifies the local copy, not the upload.",
+    "cloudFolders": "Synced folders",
+    "cloudBackup": "Folder synced by {{service}}. Afterdusk verifies the copy on this disk; uploading is up to {{service}}.",
     "mapOnline": "Online base map (OpenFreeMap)",
-    "mapOnlineNote": "Off: the map only shows the built-in borders and makes no request.",
+    "mapOnlineNote": "Without the online background, the map only shows country borders.",
     "autoBursts": "Group bursts after each import",
     "autoAnalysis": "Find misses after each import",
     "logo": "Logo",
@@ -244,7 +242,7 @@
     "autoImportNone": "No cameras.",
     "autoImportRule": "{{camera}} cards (no. {{serial}})",
     "autoImportUsed": "last import on {{date}}",
-    "autoImportRemove": "Stop importing {{camera}} cards automatically",
+    "autoImportRemove": "Remove the {{camera}} from automatic import",
     "autoImportNote": "A card from these cameras is imported as soon as it is inserted, with the settings of its first import.",
     "watchFolders": "Watched folders",
     "watchNone": "No watched folders.",
@@ -253,10 +251,9 @@
     "watchDefaultAlbum": "Current session",
     "watchAlbum": "Album for photos from {{path}}",
     "watchRemove": "Stop watching {{path}}",
-    "watchNote": "The folder is never modified; what it already contains is ignored.",
+    "watchNote": "Only photos added afterwards are imported. The folder is never modified.",
     "ftp": "FTP reception",
     "ftpEnable": "Receive photos from cameras over FTP on the local network",
-    "ftpOffNote": "Off.",
     "ftpRunning": "Listening on the local network.",
     "ftpStopped": "Server stopped. {{error}}",
     "ftpAddress": "Server address",
@@ -275,9 +272,11 @@
     "ftpCertificateSave": "Save the certificate…",
     "ftpClear": "Empty the reception",
     "ftpClearConfirm": "Delete the files already imported from the reception folder? Files not yet in the library are kept.",
-    "ftpCleared_one": "{{count}} file deleted, {{kept}} kept.",
-    "ftpCleared_other": "{{count}} files deleted, {{kept}} kept.",
-    "ftpNote": "On the camera: address and port above, passive mode, FTPS. Only the local network can connect."
+    "ftpCleared_one": "{{count}} file deleted, {{kept}}.",
+    "ftpCleared_other": "{{count}} files deleted, {{kept}}.",
+    "ftpNote": "On the camera: address and port above, passive mode, FTPS. Only the local network can connect.",
+    "ftpKept_one": "{{count}} kept",
+    "ftpKept_other": "{{count}} kept"
   },
   "menu": {
     "app": "Afterdusk",
@@ -1386,7 +1385,6 @@
       "sport": "Sport",
       "concert": "Concert"
     },
-    "note": "Removing a type leaves its albums without one.",
     "rename": "Rename {{name}}",
     "delete": "Remove",
     "confirmDelete": "Remove the “{{name}}” type? Its albums stay, without a session type.",
@@ -1604,16 +1602,10 @@
   },
   "profiles": {
     "label": "Interface",
-    "note": "Hidden features keep running: miss detection, backup, automatic import.",
     "names": {
       "simple": "Simplified",
       "basic": "Basic",
       "complete": "Complete"
-    },
-    "for": {
-      "simple": "To get started.",
-      "basic": "For regular use.",
-      "complete": "For a studio."
     },
     "shows": {
       "simple": "Import, cull, make the essential edits, deliver.",

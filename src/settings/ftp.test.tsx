@@ -46,7 +46,9 @@ describe("Réglages > Import : réception FTP", () => {
   it("désactivée par défaut, puis activée pour la bibliothèque affichée", async () => {
     render(<FtpReception />);
     await act(async () => {});
-    expect(screen.getByText(/Désactivée/)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Recevoir les photos des boîtiers par FTP sur le réseau local"),
+    ).not.toBeChecked();
     expect(screen.queryByText("k7m2xq9pa4cz")).toBeNull();
     await act(async () =>
       fireEvent.click(

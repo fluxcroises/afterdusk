@@ -2,6 +2,10 @@
 
 Ce que l'interface ne dit pas, pour ne pas l'encombrer. À compléter au fil des versions ; il servira de base à l'aide en ligne.
 
+## Interface
+
+Les profils Simplifiée et De base masquent des modules, des réglages et des entrées de menu. Ce qui est masqué reste actif : sauvegarde, analyse des ratés, import automatique.
+
 ## Import automatique
 
 Après l'import d'une carte, Afterdusk propose d'importer seules les prochaines cartes du même boîtier (reconnu par son numéro de série). Ces cartes s'importent dès leur insertion, avec les réglages de leur premier import et un nom d'album par défaut, sauf si « À l'insertion d'une carte » est réglé sur « Ne rien faire ». La carte n'est que lue.

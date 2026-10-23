@@ -94,7 +94,9 @@ export function FtpReception() {
     if (!ok) return;
     try {
       const [removed, kept] = await invoke<[number, number]>("ftp_clear_reception");
-      setNote(t("settings.ftpCleared", { count: removed, kept }));
+      setNote(
+        t("settings.ftpCleared", { count: removed, kept: t("settings.ftpKept", { count: kept }) }),
+      );
     } catch (e) {
       setError(toCommandError(e));
     }
@@ -121,9 +123,7 @@ export function FtpReception() {
         />
         {t("settings.ftpEnable")}
       </label>
-      {!enabled ? (
-        <p className="panel-note">{t("settings.ftpOffNote")}</p>
-      ) : (
+      {enabled && (
         <>
           <p className="panel-note" role="status">
             {info.status.running

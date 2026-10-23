@@ -33,7 +33,6 @@ export function ProfileChoice({
             onChange={() => onChange(p)}
           />
           <span className="profile-name">{t(`profiles.names.${p}`)}</span>
-          <span className="profile-for">{t(`profiles.for.${p}`)}</span>
           <span className="profile-shows">{t(`profiles.shows.${p}`)}</span>
         </label>
       ))}

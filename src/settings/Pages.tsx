@@ -522,7 +522,6 @@ export function SessionTypesSettings() {
   }, []);
   return (
     <div className="settings-form">
-      <p className="panel-note">{t("sessions.note")}</p>
       <ul className="session-types">
         {types.map((s) => (
           // Une clé par nom affiché : la ligne repart du nom enregistré.

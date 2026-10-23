@@ -883,3 +883,9 @@ Critères (cahier des charges, section 7) :
 - Assistant : le dossier de sauvegarde choisi est marqué d'une coche sur fond d'accent, au lieu d'un bouton qui paraissait désactivé.
 - Détails : « Photo restaurée » compte les photos réellement restaurées ; changer le format d'un preset garde la qualité choisie quand les deux formats en ont une ; informations système avec la version du système et le processeur (`sw_vers` et `sysctl` sous macOS, `ver` et `PROCESSOR_IDENTIFIER` sous Windows). L'avertissement de cargo sur les noms de sortie de `afterdusk_lib` vient des trois types de bibliothèque du modèle Tauri (`staticlib`, `cdylib`, `rlib`), sans effet sur l'application : laissé tel quel.
 - À revoir sur le Mac : points ajoutés à `docs/verification-mac.md`, section 6.
+
+### 2026-10-23 (suite) : textes des Réglages
+
+- Audit demandé par l'utilisateur, chaque point validé par lui. Retirés : la ligne « Thème : Sombre » (une seule valeur, rien à choisir), « Désactivée. » sous la case FTP, la note des types de séance (redite de la confirmation), les sous-titres des profils (« Pour débuter… », aussi dans l'assistant) et la note « Les fonctions masquées continuent de tourner », reportée dans `docs/guide-utilisateur.md`.
+- Réécrits : les deux notes d'import deviennent « S'applique aux prochains imports. » ; note iCloud / OneDrive sans la tournure « X, pas Y » ; carte hors ligne sans « requête » ; dossiers surveillés, ce qui est importé d'abord.
+- Tournures : « Jetons » devient « Variables », « gardé(s) » s'accorde, « Ne plus importer seules les cartes du… » devient « Retirer le … de l'import automatique », « Dossiers cloud » devient « Dossiers synchronisés ». Anglais aligné.

@@ -5079,10 +5079,6 @@ input.locate-offset {
   font-weight: 600;
 }
 
-.profile-for {
-  font: var(--ad-font-ui);
-}
-
 .profile-shows {
   font: var(--ad-font-meta);
   color: var(--ad-text-secondary);

@@ -184,8 +184,6 @@
       "fr": "Français",
       "en": "English"
     },
-    "theme": "Thème",
-    "themeDarkOnly": "Sombre",
     "trashRetention": "Supprimer définitivement après",
     "days_one": "jour",
     "days_other": "jours",
@@ -209,15 +207,15 @@
       "dateSeq": "Date, heure, boîtier et numéro"
     },
     "example": "Exemple",
-    "tokensHint": "Jetons : {yyyy} {mm} {dd} {hh} {min} {ss} {album} {camera} {original} {seq:4}.",
+    "tokensHint": "Variables : {yyyy} {mm} {dd} {hh} {min} {ss} {album} {camera} {original} {seq:4}.",
     "identityName": "Nom",
     "identityCopyright": "Copyright",
     "identityWebsite": "Site",
     "libraryName": "Nom",
     "libraryLocation": "Emplacement",
     "backupFolder": "Sauvegarde",
-    "backupHint": "La sauvegarde vaut pour les prochains imports ; les photos déjà importées n'y sont pas recopiées.",
-    "templatesHint": "Les modèles valent pour les prochains imports ; les photos déjà rangées ne bougent pas.",
+    "backupHint": "S'applique aux prochains imports.",
+    "templatesHint": "S'applique aux prochains imports.",
     "save": "Enregistrer",
     "saved": "Enregistré.",
     "onInsert": "À l'insertion d'une carte",
@@ -226,10 +224,10 @@
       "open": "Ouvrir l'import",
       "nothing": "Ne rien faire"
     },
-    "cloudFolders": "Dossiers cloud",
-    "cloudBackup": "Dossier synchronisé par {{service}} : Afterdusk vérifie la copie locale, pas l'envoi en ligne.",
+    "cloudFolders": "Dossiers synchronisés",
+    "cloudBackup": "Dossier synchronisé par {{service}}. Afterdusk vérifie la copie sur ce disque ; l'envoi en ligne relève de {{service}}.",
     "mapOnline": "Fond de carte en ligne (OpenFreeMap)",
-    "mapOnlineNote": "Désactivé : la carte n'affiche que les frontières embarquées et ne fait aucune requête.",
+    "mapOnlineNote": "Sans fond en ligne, la carte montre seulement les frontières des pays.",
     "autoBursts": "Regrouper les rafales après chaque import",
     "autoAnalysis": "Rechercher les ratés après chaque import",
     "logo": "Logo",
@@ -244,7 +242,7 @@
     "autoImportNone": "Aucun boîtier.",
     "autoImportRule": "Cartes du {{camera}} (n° {{serial}})",
     "autoImportUsed": "dernier import le {{date}}",
-    "autoImportRemove": "Ne plus importer seules les cartes du {{camera}}",
+    "autoImportRemove": "Retirer le {{camera}} de l'import automatique",
     "autoImportNote": "Une carte de ces boîtiers s'importe dès son insertion, avec les réglages de son premier import.",
     "watchFolders": "Dossiers surveillés",
     "watchNone": "Aucun dossier surveillé.",
@@ -253,10 +251,9 @@
     "watchDefaultAlbum": "Séance en cours",
     "watchAlbum": "Album des photos de {{path}}",
     "watchRemove": "Ne plus surveiller {{path}}",
-    "watchNote": "Le dossier n'est jamais modifié ; ce qu'il contient déjà est ignoré.",
+    "watchNote": "Seules les photos ajoutées ensuite sont importées. Le dossier n'est jamais modifié.",
     "ftp": "Réception FTP",
     "ftpEnable": "Recevoir les photos des boîtiers par FTP sur le réseau local",
-    "ftpOffNote": "Désactivée.",
     "ftpRunning": "En écoute sur le réseau local.",
     "ftpStopped": "Serveur arrêté. {{error}}",
     "ftpAddress": "Adresse du serveur",
@@ -275,9 +272,11 @@
     "ftpCertificateSave": "Enregistrer le certificat…",
     "ftpClear": "Vider la réception",
     "ftpClearConfirm": "Supprimer du dossier de réception les fichiers déjà importés ? Ceux qui ne sont pas encore dans la bibliothèque sont gardés.",
-    "ftpCleared_one": "{{count}} fichier supprimé, {{kept}} gardé(s).",
-    "ftpCleared_other": "{{count}} fichiers supprimés, {{kept}} gardé(s).",
-    "ftpNote": "Sur le boîtier : adresse et port ci-dessus, mode passif, FTPS. Seul le réseau local peut se connecter."
+    "ftpCleared_one": "{{count}} fichier supprimé, {{kept}}.",
+    "ftpCleared_other": "{{count}} fichiers supprimés, {{kept}}.",
+    "ftpNote": "Sur le boîtier : adresse et port ci-dessus, mode passif, FTPS. Seul le réseau local peut se connecter.",
+    "ftpKept_one": "{{count}} gardé",
+    "ftpKept_other": "{{count}} gardés"
   },
   "menu": {
     "app": "Afterdusk",
@@ -1386,7 +1385,6 @@
       "sport": "Sport",
       "concert": "Concert"
     },
-    "note": "Un type retiré laisse ses albums sans type.",
     "rename": "Renommer {{name}}",
     "delete": "Retirer",
     "confirmDelete": "Retirer le type « {{name}} » ? Ses albums restent, sans type de séance.",
@@ -1604,16 +1602,10 @@
   },
   "profiles": {
     "label": "Interface",
-    "note": "Les fonctions masquées continuent de tourner : analyse des ratés, sauvegarde, import automatique.",
     "names": {
       "simple": "Simplifiée",
       "basic": "De base",
       "complete": "Complète"
-    },
-    "for": {
-      "simple": "Pour débuter.",
-      "basic": "Pour un usage régulier.",
-      "complete": "Pour un studio."
     },
     "shows": {
       "simple": "Importer, trier, retoucher l'essentiel, livrer.",

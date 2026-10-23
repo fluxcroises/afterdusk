@@ -2,7 +2,7 @@ import { ProfileChoice } from "../components/ProfileChoice";
 import { useProfile } from "../store/profile";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FieldRow, ListRow, PanelSection } from "../components/PanelSection";
+import { ListRow, PanelSection } from "../components/PanelSection";
 import { ScreenLayout } from "../components/ScreenLayout";
 import i18n, { type Language, resources } from "../i18n";
 import { useLibrary } from "../store/library";
@@ -90,7 +90,6 @@ export function SettingsView() {
                   ))}
                 </select>
               </label>
-              <FieldRow label={t("settings.theme")} value={t("settings.themeDarkOnly")} />
               <label className="check-row">
                 <input
                   type="checkbox"
@@ -104,7 +103,6 @@ export function SettingsView() {
             <fieldset className="form-fieldset settings-form">
               <legend className="settings-block-title">{t("profiles.label")}</legend>
               <ProfileChoice value={profile} onChange={(p) => void useProfile.getState().set(p)} />
-              <p className="panel-note">{t("profiles.note")}</p>
             </fieldset>
           </div>
         ) : category === "library" ? (
