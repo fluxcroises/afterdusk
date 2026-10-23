@@ -930,3 +930,9 @@ Critères (cahier des charges, section 7) :
 - Marche à suivre pour publier dans `docs/distribution.md`. Pas encore lancée : la première exécution se fera avec la 0.5.0 (version du projet encore à 0.1.0).
 - Projet passé en version 0.5.0 (`tauri.conf.json`, `package.json`, `Cargo.toml`, verrous), pour la première publication ; « À propos » lit désormais la version de `package.json` quand le cœur ne la donne pas. Étiquette laissée à l'utilisateur.
 - Mode essai de l'action de publication (demande de l'utilisateur, pour vérifier avant toute publication) : lancée à la main, elle construit les mêmes installateurs et les laisse en téléchargement sur la page de l'exécution (7 jours), sans étiquette, sans version GitHub ni `latest.json`.
+
+### 2026-10-23 (suite) : retours de prise en main
+
+Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm X-T50, 40 Mpx), traitées une à une.
+
+- Assistant : la sauvegarde devient une question (« Voulez-vous une sauvegarde ? », Oui ou Non, sans réponse par défaut), le dossier n'est demandé qu'après un oui ; textes repris (« Vos originaux ne sont jamais modifiés. », « Vous pourrez le modifier plus tard… »), « Facultatif. » retiré. Livrer : notes « Aucun logo : il se choisit dans… » et « Photos en 2 048 px… » retirées. Test : question sans réponse par défaut, dossier après un oui seulement.

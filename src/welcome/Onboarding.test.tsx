@@ -4,7 +4,7 @@ import i18n from "../i18n";
 
 vi.mock("../settings/onboarding", async (original) => ({
   ...(await original<typeof import("../settings/onboarding")>()),
-  defaultRoot: () => Promise.resolve("C:\Users\Moi\Pictures\Afterdusk"),
+  defaultRoot: () => Promise.resolve("/Users/moi/Pictures/Afterdusk"),
 }));
 
 const { Onboarding } = await import("./Onboarding");
