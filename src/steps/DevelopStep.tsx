@@ -1,3 +1,4 @@
+import { isTyping } from "../ui/typing";
 import { profileAllows } from "../store/profile";
 import { ImageOff, Images, SlidersHorizontal } from "lucide-react";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
@@ -28,18 +29,6 @@ import { Filmstrip } from "../components/Filmstrip";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { type DevelopFrame, SPOT_RADIUS, useDevelop } from "../store/develop";
 import { useLibrary } from "../store/library";
-
-/** Champs qui ne prennent pas de texte : curseurs, cases à cocher, boutons. */
-const NOT_TEXT = ["range", "checkbox", "radio", "button"];
-
-/** Saisie de texte en cours (un curseur ou une case cochée n'en est pas une). */
-function isTyping(target: EventTarget | null): boolean {
-  if (target instanceof HTMLInputElement) return !NOT_TEXT.includes(target.type);
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ["TEXTAREA", "SELECT"].includes(target.tagName))
-  );
-}
 
 /** Distance (pixels de l'écran) sous laquelle un appui est un clic, pas un glissé. */
 const CLICK_SLOP = 4;

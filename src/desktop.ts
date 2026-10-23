@@ -1,3 +1,4 @@
+import { controlKey, isTyping } from "./ui/typing";
 import { profileAllows } from "./store/profile";
 import { handleMenuShortcut } from "./menu";
 import { purgeSelection } from "./trash";
@@ -24,13 +25,6 @@ function isBrowserShortcut(e: KeyboardEvent): boolean {
   if (mod && ["r", "p", "f", "g", "u", "j", "h", "s"].includes(key)) return true;
   if (mod && e.shiftKey && ["i", "c", "j"].includes(key)) return true;
   return false;
-}
-
-function isTyping(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
-  );
 }
 
 /** Touches 6 à 9 : étiquettes rouge, jaune, vert, bleu (cahier des charges, section 6). */
@@ -153,7 +147,12 @@ export function handleShortcut(e: KeyboardEvent): boolean {
 export function installDesktopBehavior(label: WindowLabel): void {
   window.addEventListener("keydown", (e) => {
     const handled =
-      label === "main" && !isTyping(e.target) && (handleMenuShortcut(e) || handleShortcut(e));
+      label === "main" &&
+      !isTyping(e.target) &&
+      // Une case cochée ou un curseur garde Ctrl+Z et les touches du tri ;
+      // Espace et Entrée y restent à la case ou au bouton.
+      !controlKey(e) &&
+      (handleMenuShortcut(e) || handleShortcut(e));
     if (handled || (!import.meta.env.DEV && isBrowserShortcut(e))) {
       e.preventDefault();
     }
