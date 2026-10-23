@@ -422,6 +422,8 @@ Objectif : livrer Afterdusk au public une fois l'application entièrement opéra
 
 - [ ] Installateurs signés pour Windows et macOS, mises à jour automatiques
 
+Plan et démarches : `docs/distribution.md` ; mises à jour, installateur et identifiant : décision 0013.
+
 **Après la V0.5** (pistes pour une V1) : retouches locales (masques, pinceau, dégradés), suppression de défauts, simulations de film, connexion en direct au boîtier (tethering, voir ci-dessous), version Linux, traductions communautaires.
 
 **Tethering** (demande de l'utilisateur, 2026-10-22) : en attendant, le dossier surveillé de la V0.4 sert de tethering simple, les logiciels gratuits des fabricants (EOS Utility, NX Tether, Imaging Edge, X Acquire) pilotant le boîtier et déposant les photos dans un dossier. Ensuite, libgphoto2 (LGPL 2.1) sous macOS et Linux. Sous Windows, libgphoto2 impose de remplacer le pilote USB de l'appareil ; les SDK des fabricants demanderaient une exception à la GPL : décision à prendre plus tard. Références proposées par l'utilisateur : darktable (GPL v3, même licence qu'Afterdusk, code réutilisable) pour l'intégration de libgphoto2 ; digiCamControl (MIT, réutilisable avec sa notice) pour Windows, qui pilote Nikon et Sony en PTP par l'interface Windows Portable Devices, sans remplacer le pilote USB, et Canon par le SDK du fabricant. La voie Windows Portable Devices est à prototyper en premier sous Windows.

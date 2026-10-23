@@ -896,3 +896,9 @@ Critères (cahier des charges, section 7) :
 - Restent ouverts : disponibilité du nom et nom de domaine, logo et identité visuelle. L'espace de noms XMP de la décision 0002 (`https://afterdusk.app/ns/xmp/1.0/`) dépend du domaine retenu ; il est à fixer avant la distribution, après quoi il ne change plus.
 - Nommage des annexes XMP (décision 0002) validé par l'utilisateur, tel qu'appliqué depuis la V0.1 : `photo.xmp` pour les RAW et les vidéos, `photo.jpg.xmp` pour les autres formats.
 - Espace de noms XMP validé par l'utilisateur : `https://afterdusk.flux-croises.fr/ns/xmp/1.0/`, le projet devant être hébergé sur le domaine de son association. Les XMP de ses essais, écrits avec l'adresse provisoire `afterdusk.app`, restent relus (drapeau, retouches, versions, source du lieu) et passent sous la nouvelle adresse au prochain enregistrement. Test : XMP à l'ancienne adresse relu, puis réécrit sans elle.
+
+### 2026-10-23 (suite) : plan de la Distribution
+
+- Plan et démarches de l'utilisateur dans `docs/distribution.md`. SignPath Foundation ne signe qu'un projet déjà publié : la version 0.5.0 sortira avec un installateur Windows non signé, la signature viendra ensuite.
+- Choix de l'utilisateur ([décision 0013](decisions/0013-mises-a-jour.md)) : mises à jour depuis les versions GitHub, vérification activée par défaut (une fois par jour au plus, installation sur clic, désactivable), installateur NSIS seul, identifiant `app.afterdusk` gardé.
+- En attente : clé de signature des mises à jour créée par l'utilisateur et ajoutée aux secrets GitHub, avant l'action de publication.
