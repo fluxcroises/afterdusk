@@ -350,11 +350,11 @@ Objectif : remplacer l'explorateur de fichiers pour décharger et trier une jour
 
 - [x] Projet Tauri 2 qui se compile et se lance sur Windows et macOS, avec intégration continue GitHub Actions sur les deux systèmes
 - [x] Première ouverture guidée (bibliothèque, sauvegarde, rangement, identité)
-- [ ] Une carte SD insérée est détectée en moins de 5 secondes et l'import proposé
+- [x] Une carte SD insérée est détectée en moins de 5 secondes et l'import proposé
 - [x] Import de 500 RAW avec rangement, renommage, sauvegarde et vérification par somme de contrôle, sans aucune perte, en cas de coupure comprise (reprise propre au redémarrage)
 - [x] Les photos déjà importées sont reconnues et grisées lors d'un second import
 - [x] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
-- [ ] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
+- [x] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
 - [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
 - [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
 - [x] Corbeille interne avec restauration et vidage après 30 jours
@@ -368,7 +368,7 @@ Objectif : remplacer l'explorateur de fichiers pour décharger et trier une jour
 Objectif : traiter et exporter les photos retenues sans autre logiciel.
 
 - [x] Pipeline de développement GPU avec rendu neutre fidèle au boîtier par défaut
-- [ ] Tous les réglages essentiels et intermédiaires de la section 4.5, avec retour visuel en moins de 100 ms
+- [x] Tous les réglages essentiels et intermédiaires de la section 4.5, avec retour visuel en moins de 100 ms
 - [x] Corrections d'objectifs automatiques via lensfun
 - [x] Recadrage, redressement, ratios
 - [x] Correcteur de défauts (poussières, petites imperfections), corrections copiables entre photos
@@ -377,7 +377,7 @@ Objectif : traiter et exporter les photos retenues sans autre logiciel.
 - [x] Retouches enregistrées dans le XMP et restaurées après reconstruction de la base
 - [x] Les cinq presets d'export de la section 4.6, formats JPEG, HEIF, AVIF, TIFF, PNG
 - [x] Filigrane texte et image, nettoyage des métadonnées, export multiple
-- [ ] Export de 100 photos en JPEG 2048 px en moins de 2 minutes sur une machine de milieu de gamme
+- [x] Export de 100 photos en JPEG 2048 px en moins de 2 minutes sur une machine de milieu de gamme
 
 ### V0.3 : Carte et matériel
 
@@ -399,7 +399,7 @@ Objectif : gagner du temps au tri et partager avec des clients.
 
 - [x] Regroupement des rafales en piles
 - [x] Détection locale du flou, des yeux fermés et des problèmes d'exposition, avec filtre « Ratés probables »
-- [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
+- [x] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
 - [x] Vidéos : import, rangement, tri, lecture, fichiers annexes
 - [x] Galerie web statique avec sélection client et réimport des choix
 - [x] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option

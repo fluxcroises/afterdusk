@@ -6,11 +6,11 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 
 - [x] Projet Tauri 2 qui se compile et se lance sur Windows et macOS, avec intégration continue GitHub Actions sur les deux systèmes
 - [x] Première ouverture guidée (bibliothèque, sauvegarde, rangement, identité)
-- [ ] Une carte SD insérée est détectée en moins de 5 secondes et l'import proposé
+- [x] Une carte SD insérée est détectée en moins de 5 secondes et l'import proposé
 - [x] Import de 500 RAW avec rangement, renommage, sauvegarde et vérification par somme de contrôle, sans aucune perte, en cas de coupure comprise (reprise propre au redémarrage)
 - [x] Les photos déjà importées sont reconnues et grisées lors d'un second import
 - [x] Aperçus affichés dès la fin de la copie de chaque fichier, sans attendre la fin de l'import
-- [ ] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
+- [x] Passage d'une photo à la suivante en moins de 100 ms dans la visionneuse
 - [x] Notes, drapeaux, couleurs au clavier, écrits en base et dans le XMP
 - [x] Comparaison côte à côte de 2 à 4 photos avec zoom synchronisé
 - [x] Corbeille interne avec restauration et vidage après 30 jours
@@ -22,7 +22,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 ## V0.2 : Retoucher et livrer
 
 - [x] Pipeline de développement GPU avec rendu neutre fidèle au boîtier par défaut
-- [ ] Tous les réglages essentiels et intermédiaires de la section 4.5, avec retour visuel en moins de 100 ms
+- [x] Tous les réglages essentiels et intermédiaires de la section 4.5, avec retour visuel en moins de 100 ms
 - [x] Corrections d'objectifs automatiques via lensfun
 - [x] Recadrage, redressement, ratios
 - [x] Correcteur de défauts (poussières, petites imperfections), corrections copiables entre photos
@@ -31,7 +31,7 @@ Un critère n'est coché qu'une fois testé sur Windows et macOS par GitHub Acti
 - [x] Retouches enregistrées dans le XMP et restaurées après reconstruction de la base
 - [x] Les cinq presets d'export de la section 4.6, formats JPEG, HEIF, AVIF, TIFF, PNG
 - [x] Filigrane texte et image, nettoyage des métadonnées, export multiple
-- [ ] Export de 100 photos en JPEG 2048 px en moins de 2 minutes sur une machine de milieu de gamme
+- [x] Export de 100 photos en JPEG 2048 px en moins de 2 minutes sur une machine de milieu de gamme
 
 ## V0.3 : Carte et matériel
 
@@ -545,7 +545,7 @@ Critères (cahier des charges, section 7) :
 
 - [x] Regroupement des rafales en piles
 - [x] Détection locale du flou, des yeux fermés et des problèmes d'exposition, avec filtre « Ratés probables »
-- [ ] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
+- [x] Analyse d'une journée de 1 000 photos en moins de 10 minutes en arrière-plan, sans ralentir le tri
 - [x] Vidéos : import, rangement, tri, lecture, fichiers annexes
 - [x] Galerie web statique avec sélection client et réimport des choix
 - [x] Planches contact en PDF d'un album ou d'une collection, numérotées, avec en-tête et filigrane en option
@@ -851,3 +851,22 @@ Critères (cahier des charges, section 7) :
 - Export de 100 JPEG en 2048 px : 16,0 s (20 fils de calcul). Seuil : 2 minutes.
 - Analyse de 1 000 photos (flou, exposition, yeux fermés) : 1,4 min depuis les aperçus en cache, 2,2 min depuis les originaux (pire cas). Seuil : 10 minutes. Navigation pendant l'analyse : p95 0,8 ms (0,7 ms sans analyse), le tri n'est pas ralenti.
 - Les trois critères restent à mesurer sur Mac avant d'être cochés, avec la détection de carte et la navigation de la V0.1, lors de la session Mac.
+
+### 2026-10-23 (suite) : session de vérification sur Mac
+
+- Machine : MacBook Pro 16 pouces (Mac15,7), Apple M3 Pro (12 cœurs, processeur graphique 18 cœurs, Metal 4), 18 Go, macOS 26.6.2. Outils Xcode déjà présents, Rust 1.99.1, Node.js 24.22.1. Détail de la session dans `docs/verification-mac.md`.
+- Installation : `npm test` (226 tests) et `cargo test` (282 tests, 6 mesures ignorées) passent. La commande de clonage de la liste de contrôle ne récupérait pas le sous-module LibRaw : `--recursive` ajouté.
+- Mesures en version optimisée (`perf_v02`, `perf_v04`) : retour visuel d'un réglage, 95 % des rendus en 6 ms par Metal (59 ms au processeur seul) ; export de 100 JPEG en 2048 px en 8,3 s ; analyse de 1 000 photos en 0,9 min depuis les aperçus et 1,4 min depuis les originaux ; navigation pendant l'analyse, p95 0,3 ms.
+- Mesures à l'écran, dans l'application compilée avec le compteur : visionneuse, p95 33 ms (max 37 ms) ; carte SD d'un Sony, bandeau environ 2 s après l'insertion (chronométré à la main), deux insertions annulées, carte relevée avant et après, rien d'écrit.
+- Critères cochés au cahier des charges et au journal : détection de la carte SD et visionneuse (V0.1), retour visuel et export de 100 JPEG (V0.2), analyse de 1 000 photos (V0.4).
+- Vérifié à l'écran : application compilée lancée (414 Mo, dont 307 Mo de FFmpeg pour les deux architectures) ; barre de titre transparente sans chevauchement ; assistant (étape Usage sans défilement, iCloud Drive et OneDrive proposés avec la note) ; « À propos » ; six RAW à 100 % rendus par Metal ; export HEIF relu dans Aperçu avec son EXIF ; vidéos HEVC et H.264 lues sans version de lecture, image par image, extrait exporté sans réencodage ; dossier surveillé (photo collée par le Finder, en base 1,3 s après) ; yeux fermés repérés ; police de macOS rendue à l'export d'un Polaroid ; ⌘Z (curseur et case ayant le focus) et ⌘⌫.
+- Réception FTP : envoi FTPS depuis le Mac lui-même reçu dans « Réception FTP », FTP en clair refusé ; réception désactivée ensuite. Restent la demande de macOS (pare-feu désactivé sur ce Mac) et un envoi depuis un autre appareil.
+- Défauts trouvés, à corriger :
+  - HEIC d'iPhone tourné d'un quart de tour (vignette, Retoucher, export) : FFmpeg 9.0.2 applique déjà la rotation du HEIF, même avec `-noautorotate`, et `rendered::develop` la réapplique d'après l'EXIF (Orientation 6).
+  - Second écran ouvert sur l'écran du Mac et non sur la TV en AirPlay (écran étendu) : `secondary_toggle` place la fenêtre avec une position physique relevée sur un écran d'échelle 1, interprétée à l'échelle 2 du Retina.
+  - ⌘F sans effet dans Trier, alors qu'Édition > Rechercher… donne le focus au champ.
+  - Entrées de menu ajoutées par macOS et fenêtres de choix de dossier en anglais : `Info.plist` sans `CFBundleLocalizations`, région de développement anglaise.
+  - Accueil : le logo et « Afterdusk » sont centrés environ 5 points plus bas que les pastilles de la fenêtre (relevé par l'utilisateur).
+  - Histogramme vide dans Trier (rempli dans le Retoucher).
+  - Bouton « iCloud Drive » de l'assistant grisé une fois choisi, comme désactivé.
+  - Mineurs : bandeau « Photos restaurées » qui reste affiché et au pluriel pour une photo ; changer le format d'un preset remet la qualité par défaut du format ; informations système copiées sans version de macOS ni puce ; ouverture d'un HEIC de 24 Mpx en 4,4 s ; avertissement de cargo sur des noms de sortie en double pour `afterdusk_lib`.
