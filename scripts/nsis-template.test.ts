@@ -18,7 +18,12 @@ function embeddedTemplate(): string | null {
   const inside = bin.indexOf(marker);
   if (inside < 0) return null;
   const start = bin.lastIndexOf(Buffer.from("Unicode true"), inside);
-  const end = bin.indexOf(0, inside);
+  // Le modèle finit par la fonction du raccourci du bureau ; selon le système,
+  // le texte qui le suit dans le binaire le touche sans séparateur.
+  const tail = Buffer.from('!insertmacro SetLnkAppUserModelId "$DESKTOP\\${PRODUCTNAME}.lnk"');
+  const last = bin.indexOf(tail, inside);
+  if (last < 0) return null;
+  const end = bin.indexOf(Buffer.from("FunctionEnd"), last) + "FunctionEnd".length;
   return bin.subarray(start, end).toString("utf8").replace(/\r\n/g, "\n");
 }
 
@@ -28,7 +33,8 @@ describe("modèle NSIS de l'installateur Windows", () => {
     expect(upstream, "modèle introuvable dans la CLI de Tauri").not.toBeNull();
     const ours = readFileSync(join(root, "src-tauri", "windows", "installer.nsi"), "utf8")
       .replace(/\r\n/g, "\n")
-      .replace(/^(;.*\n)+/, "");
+      .replace(/^(;.*\n)+/, "")
+      .trimEnd();
     const expected = (upstream ?? "").replace(
       /(\$PROGRAMFILES(?:64)?)\\\$\{PRODUCTNAME\}/g,
       "$1\\${MANUFACTURER}\\${PRODUCTNAME}",
