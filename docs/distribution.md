@@ -30,6 +30,7 @@ L'application installée utilise le même dossier de données que la version de 
 ## Publier une version
 
 1. Mettre le même numéro dans `src-tauri/tauri.conf.json`, `package.json` et `src-tauri/Cargo.toml` (puis `cargo check` pour `Cargo.lock`), commiter et pousser.
+   Écrire les notes dans `docs/notes-de-version/<version>.md` : l'action les reprend dans la version en brouillon.
 2. Poser l'étiquette et la pousser :
 
    ```bash

@@ -161,6 +161,13 @@ jobs:
           if gh release view "v$VERSION" > /dev/null 2>&1; then
             gh release upload "v$VERSION" "${files[@]}" --clobber
           else
-            gh release create "v$VERSION" "${files[@]}" --draft \
-              --title "Afterdusk $VERSION" --notes "Afterdusk $VERSION"
+            # Notes de la version : docs/notes-de-version/<version>.md s'il existe.
+            notes="$GITHUB_WORKSPACE/docs/notes-de-version/$VERSION.md"
+            if [ -f "$notes" ]; then
+              gh release create "v$VERSION" "${files[@]}" --draft \
+                --title "Afterdusk $VERSION" --notes-file "$notes"
+            else
+              gh release create "v$VERSION" "${files[@]}" --draft \
+                --title "Afterdusk $VERSION" --notes "Afterdusk $VERSION"
+            fi
           fi
