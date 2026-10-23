@@ -870,3 +870,16 @@ Critères (cahier des charges, section 7) :
   - Histogramme vide dans Trier (rempli dans le Retoucher).
   - Bouton « iCloud Drive » de l'assistant grisé une fois choisi, comme désactivé.
   - Mineurs : bandeau « Photos restaurées » qui reste affiché et au pluriel pour une photo ; changer le format d'un preset remet la qualité par défaut du format ; informations système copiées sans version de macOS ni puce ; ouverture d'un HEIC de 24 Mpx en 4,4 s ; avertissement de cargo sur des noms de sortie en double pour `afterdusk_lib`.
+
+### 2026-10-23 (suite) : défauts de la session Mac
+
+- HEIC d'iPhone : FFmpeg rend déjà le HEIF dans son sens final ; l'orientation EXIF n'est plus réappliquée (vignette, aperçu, Retoucher, export), et largeur et hauteur relevées à l'import sont échangées pour une orientation de 5 à 8. Les HEIC déjà importés gardent leurs vignettes et dimensions tournées jusqu'à leur régénération. Test : un HEIF d'orientation 6 garde ses dimensions.
+- Second écran : moniteur choisi d'après la liste des écrans ; sous macOS, position donnée en coordonnées logiques (une position physique relevée sur la TV, d'échelle 1, était lue à l'échelle 2 du Retina).
+- ⌘F donne le focus au champ de recherche (test avec la plateforme simulée en macOS).
+- Histogramme de Trier : calculé côté Rust d'après l'aperçu en cache (1024 px, sinon 256 px), commande `media_histogram`, même tracé que le Retoucher.
+- Réglages : titres des blocs en gras, couleur du texte principal, plus grands que les libellés (remarque de l'utilisateur, titres et texte courant indiscernables).
+- `Info.plist` : français comme langue de développement, français et anglais déclarés, pour que macOS traduise ses propres entrées de menu et ses fenêtres de choix de dossier.
+- Pastilles de la fenêtre : `trafficLightPosition` y passe de 22 à 25 (principale) et 27 (accueil). tao place les pastilles à leur origine par défaut dans un conteneur de hauteur bouton + y ; d'après l'écart de 5 points relevé, le centre des pastilles est à y − 3, d'où y = milieu de la barre (44 et 48 px) + 3. À confirmer sur le Mac.
+- Assistant : le dossier de sauvegarde choisi est marqué d'une coche sur fond d'accent, au lieu d'un bouton qui paraissait désactivé.
+- Détails : « Photo restaurée » compte les photos réellement restaurées ; changer le format d'un preset garde la qualité choisie quand les deux formats en ont une ; informations système avec la version du système et le processeur (`sw_vers` et `sysctl` sous macOS, `ver` et `PROCESSOR_IDENTIFIER` sous Windows). L'avertissement de cargo sur les noms de sortie de `afterdusk_lib` vient des trois types de bibliothèque du modèle Tauri (`staticlib`, `cdylib`, `rlib`), sans effet sur l'application : laissé tel quel.
+- À revoir sur le Mac : points ajoutés à `docs/verification-mac.md`, section 6.

@@ -1,5 +1,8 @@
+import { invoke } from "@tauri-apps/api/core";
+import { HistogramCanvas } from "./DevelopPanels";
 import { AlbumClientSection, ClientsSection } from "./ClientsPanels";
 import { ImageOff } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { previewUrl } from "../api/previews";
 import { useLibrary } from "../store/library";
@@ -93,6 +96,31 @@ export function CatalogPanel({ scope, navigator }: { scope: string; navigator?: 
   );
 }
 
+/** Histogramme de l'aperçu de la photo sélectionnée (retouche comprise). */
+function PreviewHistogram() {
+  const item = useLibrary((s) => s.selectedId);
+  const version = useLibrary((s) => (s.selectedId === null ? 0 : (s.versions[s.selectedId] ?? 0)));
+  const hasPreview = useLibrary(
+    (s) => s.media.find((m) => m.id === s.selectedId)?.hasPreview ?? false,
+  );
+  // Résultat rangé avec la photo et la version demandées : une autre photo
+  // n'affiche pas l'histogramme de la précédente.
+  const key = `${item}-${version}`;
+  const [loaded, setLoaded] = useState<{ key: string; bins: Uint32Array | null } | null>(null);
+  useEffect(() => {
+    if (item === null || !hasPreview) return;
+    let current = true;
+    invoke<number[] | null>("media_histogram", { mediaId: item })
+      .then((bins) => current && setLoaded({ key, bins: bins ? Uint32Array.from(bins) : null }))
+      .catch(() => current && setLoaded({ key, bins: null }));
+    return () => {
+      current = false;
+    };
+  }, [item, hasPreview, key]);
+  const histogram = loaded?.key === key && hasPreview ? loaded.bins : null;
+  return <HistogramCanvas histogram={histogram} />;
+}
+
 /** Panneau droit : histogramme et fiche d'informations de la photo sélectionnée. */
 export function PhotoInfoPanel({ scope }: { scope: string }) {
   const { t, i18n } = useTranslation();
@@ -103,7 +131,9 @@ export function PhotoInfoPanel({ scope }: { scope: string }) {
     <>
       <AlbumClientSection scope={scope} />
       <PanelSection id={`${scope}.histogram`} title={t("info.histogram")}>
-        <div className="histogram" aria-hidden="true" />
+        <div className="histogram" aria-hidden="true">
+          <PreviewHistogram />
+        </div>
         <ExifLine exposure={d} />
       </PanelSection>
       <PanelSection id={`${scope}.metadata`} title={t("info.metadata")}>

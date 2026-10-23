@@ -19,7 +19,8 @@ export function systemReport(info: AppInfo | null, language: string): string {
   if (!info) return `Afterdusk (${navigator.userAgent})`;
   return [
     `Afterdusk ${info.version}`,
-    `${info.os} ${info.arch}`,
+    `${info.osVersion ?? info.os} ${info.arch}`,
+    ...(info.cpu ? [`CPU ${info.cpu}`] : []),
     `WebView ${info.webview ?? "?"}`,
     `Tauri ${info.tauri} · LibRaw ${info.libraw} · SQLite ${info.sqlite}`,
     `Locale ${language}`,

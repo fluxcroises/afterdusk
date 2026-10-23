@@ -244,6 +244,7 @@ pub fn run() {
             commands::collections::collection_remove_media,
             commands::media::albums_list,
             commands::media::media_details,
+            commands::media::media_histogram,
             commands::media::album_set_cover,
             commands::media::welcome_highlights,
             commands::trash::media_trash,

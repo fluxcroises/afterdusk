@@ -39,11 +39,13 @@ describe("À propos d'Afterdusk", () => {
         webview: "141.0",
         os: "windows",
         arch: "x86_64",
+        osVersion: "Windows 10.0.26200",
+        cpu: "Apple M3 Pro",
       },
       "fr",
     );
     expect(report).toBe(
-      "Afterdusk 0.1.0\nwindows x86_64\nWebView 141.0\nTauri 2.12.4 · LibRaw 0.22.2 · SQLite 3.50.0\nLocale fr",
+      "Afterdusk 0.1.0\nWindows 10.0.26200 x86_64\nCPU Apple M3 Pro\nWebView 141.0\nTauri 2.12.4 · LibRaw 0.22.2 · SQLite 3.50.0\nLocale fr",
     );
   });
 });

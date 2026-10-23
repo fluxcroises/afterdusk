@@ -105,7 +105,7 @@ const CHANNEL_COLORS = [
 ];
 
 /** Histogramme de l'image rendue : rouge, vert et bleu superposés. */
-function HistogramCanvas({ histogram }: { histogram: Uint32Array | null }) {
+export function HistogramCanvas({ histogram }: { histogram: Uint32Array | null }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;

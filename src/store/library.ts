@@ -331,6 +331,8 @@ interface LibraryState {
   expanded: number[];
   /** Dernier envoi dans la corbeille, que Ctrl+Z restaure (l'annonce, elle, s'efface). */
   undoIds: number[] | null;
+  /** Photos annoncées par le dernier envoi (une pile RAW + JPEG en compte une). */
+  undoCount: number;
   media: MediaSummary[];
   /** Nombre total de photos de la bibliothèque. */
   total: number;
@@ -526,6 +528,7 @@ export const useLibrary = create<LibraryState>((set, get) => {
     retentionDays: 30,
     notice: null,
     undoIds: null,
+    undoCount: 0,
     filter: {},
     sort: "captureTime",
     filterOptions: null,
@@ -770,7 +773,11 @@ export const useLibrary = create<LibraryState>((set, get) => {
       try {
         const report = await libraryApi.trash(ids, !opened);
         reportFailures(report);
-        set({ notice: { kind: "trashed", count: report.done }, undoIds: report.moved ?? ids });
+        set({
+          notice: { kind: "trashed", count: report.done },
+          undoIds: report.moved ?? ids,
+          undoCount: report.done,
+        });
         await refresh();
       } catch (e) {
         set({ error: toCommandError(e) });
@@ -782,7 +789,10 @@ export const useLibrary = create<LibraryState>((set, get) => {
       try {
         const report = await libraryApi.restore(ids);
         reportFailures(report);
-        set({ notice: { kind: "restored", count: report.done }, undoIds: null });
+        // Annulation d'un envoi : autant de photos que l'envoi en avait annoncé
+        // (les fichiers d'une pile reviennent ensemble).
+        const count = ids === get().undoIds ? get().undoCount : report.done;
+        set({ notice: { kind: "restored", count }, undoIds: null });
         await refresh();
       } catch (e) {
         set({ error: toCommandError(e) });
@@ -897,7 +907,11 @@ export const useLibrary = create<LibraryState>((set, get) => {
         reportFailures(report);
         if (report.done === 0) return;
         // Annuler restaure le fichier jeté, pas la photo sélectionnée.
-        set({ notice: { kind: "trashed", count: report.done }, undoIds: report.moved ?? [] });
+        set({
+          notice: { kind: "trashed", count: report.done },
+          undoIds: report.moved ?? [],
+          undoCount: report.done,
+        });
         await refresh();
       } catch (e) {
         set({ error: toCommandError(e) });

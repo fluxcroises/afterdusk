@@ -5087,3 +5087,25 @@ input.locate-offset {
   font: var(--ad-font-meta);
   color: var(--ad-text-secondary);
 }
+
+/* Réglages : titre d'un bloc (Dossiers, Import automatique, Interface…),
+   distinct des libellés de champs, gris et de même taille. */
+.settings-block-title {
+  margin: var(--ad-space-3) 0 var(--ad-space-1);
+  padding: 0;
+  font: 600 13px/1.4 var(--ad-font);
+  color: var(--ad-text);
+}
+
+.settings-form > .settings-block-title:first-child,
+.settings-columns > * > .settings-block-title:first-child,
+fieldset > legend.settings-block-title {
+  margin-top: 0;
+}
+
+/* Dossier cloud choisi : coché et souligné de l'accent, pas grisé. */
+.cloud-button[aria-pressed="true"] {
+  color: var(--ad-text);
+  background: color-mix(in srgb, var(--ad-accent) 22%, var(--ad-surface));
+  border-color: var(--ad-accent);
+}

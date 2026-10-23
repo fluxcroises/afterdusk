@@ -1,4 +1,4 @@
-import { Cloud, FolderOpen, TriangleAlert } from "lucide-react";
+import { Check, Cloud, FolderOpen, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { pickFolder } from "../actions";
@@ -80,7 +80,11 @@ export function CloudSuggestions({
             title={path}
             onClick={() => onPick(path)}
           >
-            <Cloud aria-hidden="true" strokeWidth={1.75} />
+            {current === path ? (
+              <Check aria-hidden="true" strokeWidth={2} />
+            ) : (
+              <Cloud aria-hidden="true" strokeWidth={1.75} />
+            )}
             {f.label}
           </button>
         );
@@ -141,7 +145,7 @@ export function TemplateChoice({
       {/* Dossiers et noms côte à côte : l'assistant tient sans défiler. */}
       <div className="template-columns">
         <fieldset className="choice-list">
-          <legend className="field-row-label">{t("settings.folders")}</legend>
+          <legend className="settings-block-title">{t("settings.folders")}</legend>
           {FOLDER_PRESETS.map((p) => (
             <label key={p.id} className="check-row">
               <input
@@ -182,7 +186,7 @@ export function TemplateChoice({
           </div>
         </fieldset>
         <fieldset className="choice-list">
-          <legend className="field-row-label">{t("settings.fileNames")}</legend>
+          <legend className="settings-block-title">{t("settings.fileNames")}</legend>
           {RENAME_PRESETS.map((p) => (
             <label key={p.id} className="check-row">
               <input

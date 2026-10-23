@@ -2,6 +2,7 @@ import { controlKey, isTyping } from "./ui/typing";
 import { profileAllows } from "./store/profile";
 import { handleMenuShortcut } from "./menu";
 import { purgeSelection } from "./trash";
+import { focusSearch } from "./search";
 import { isMac } from "./platform";
 import { useLayout } from "./store/layout";
 import { type ColorName, useLibrary } from "./store/library";
@@ -54,6 +55,12 @@ export function handleShortcut(e: KeyboardEvent): boolean {
   if (isTyping(e.target)) return false;
   const screen = useNavigation.getState().screen;
   if (screen !== "cull" && screen !== "library") return false;
+  // ⌘F sous macOS : WKWebView garde la touche pour sa propre recherche dans
+  // la page, et Édition > Rechercher… ne la reçoit pas ; l'interface la prend.
+  if (isMac && e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "f") {
+    focusSearch();
+    return true;
+  }
   if (e.ctrlKey || e.metaKey || e.altKey) return false;
 
   const library = useLibrary.getState();

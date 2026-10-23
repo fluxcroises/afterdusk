@@ -81,6 +81,49 @@ pub struct AppInfo {
     pub webview: Option<String>,
     pub os: &'static str,
     pub arch: &'static str,
+    /// Version du système (« macOS 26.6.2 », « Windows 10.0.26200 »).
+    pub os_version: Option<String>,
+    /// Processeur (« Apple M3 Pro », « 12th Gen Intel(R) Core(TM) i7-12700 »).
+    pub cpu: Option<String>,
+}
+
+/// Sortie d'une commande du système, première ligne, sans espaces autour.
+fn system_line(program: &str, args: &[&str]) -> Option<String> {
+    let mut cmd = std::process::Command::new(program);
+    cmd.args(args).stdin(std::process::Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // Pas de fenêtre de console.
+        cmd.creation_flags(0x0800_0000);
+    }
+    let out = cmd.output().ok().filter(|o| o.status.success())?;
+    let text = String::from_utf8_lossy(&out.stdout);
+    let line = text.lines().map(str::trim).find(|l| !l.is_empty())?;
+    Some(line.to_owned())
+}
+
+fn os_version() -> Option<String> {
+    if cfg!(target_os = "macos") {
+        system_line("sw_vers", &["-productVersion"]).map(|v| format!("macOS {v}"))
+    } else if cfg!(windows) {
+        // « Microsoft Windows [version 10.0.26200.6584] » : le numéro seul.
+        let line = system_line("cmd", &["/c", "ver"])?;
+        let v = line.rsplit(' ').next()?.trim_end_matches(']');
+        Some(format!("Windows {v}"))
+    } else {
+        system_line("uname", &["-sr"])
+    }
+}
+
+fn cpu() -> Option<String> {
+    if cfg!(target_os = "macos") {
+        system_line("sysctl", &["-n", "machdep.cpu.brand_string"])
+    } else if cfg!(windows) {
+        std::env::var("PROCESSOR_IDENTIFIER").ok()
+    } else {
+        None
+    }
 }
 
 #[tauri::command]
@@ -93,6 +136,8 @@ pub fn app_info() -> AppInfo {
         webview: tauri::webview_version().ok(),
         os: std::env::consts::OS,
         arch: std::env::consts::ARCH,
+        os_version: os_version(),
+        cpu: cpu(),
     }
 }
 

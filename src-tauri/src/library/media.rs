@@ -743,3 +743,45 @@ pub fn cached_preview(cache_root: &Path, media_id: i64, size: u32) -> Option<Pat
     let path = preview::cache_path(cache_root, media_id, size);
     path.is_file().then_some(path)
 }
+
+/// Histogramme de l'aperçu en cache (rouge, vert, bleu puis luminance, 256
+/// cases chacun), pour le panneau de Trier et de la Bibliothèque. L'aperçu
+/// rendu reflète la retouche. `None` tant qu'aucun aperçu n'est prêt.
+pub fn preview_histogram(cache_root: &Path, media_id: i64) -> Option<Vec<u32>> {
+    // Assez de pixels pour un histogramme lisse, sans lire le 2048.
+    let path = cached_preview(cache_root, media_id, 1024)
+        .or_else(|| cached_preview(cache_root, media_id, 256))?;
+    let data = std::fs::read(path).ok()?;
+    let img = preview::decode_jpeg_scaled(&data, 512).ok()?;
+    let mut bins = vec![0u32; 256 * 4];
+    for p in img.pixels() {
+        let [r, g, b] = p.0;
+        bins[usize::from(r)] += 1;
+        bins[256 + usize::from(g)] += 1;
+        bins[512 + usize::from(b)] += 1;
+        let y = (0.2126 * f32::from(r) + 0.7152 * f32::from(g) + 0.0722 * f32::from(b)).round();
+        bins[768 + (y as usize).min(255)] += 1;
+    }
+    Some(bins)
+}
+
+#[cfg(test)]
+mod histogram_tests {
+    use super::*;
+
+    #[test]
+    fn histogramme_de_l_apercu() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(preview_histogram(dir.path(), 4).is_none());
+        let img = image::RgbImage::from_pixel(64, 32, image::Rgb([250, 10, 128]));
+        let path = preview::cache_path(dir.path(), 4, 256);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, preview::encode_jpeg(&img).unwrap()).unwrap();
+        let bins = preview_histogram(dir.path(), 4).unwrap();
+        assert_eq!(bins.len(), 1024);
+        assert_eq!(bins[..256].iter().sum::<u32>(), 64 * 32);
+        // Rouge vif, peu de vert : pics en haut et en bas de leurs canaux.
+        let peak = |c: usize| (0..256).max_by_key(|&i| bins[c * 256 + i]).unwrap();
+        assert!(peak(0) > 240 && peak(1) < 20, "{} {}", peak(0), peak(1));
+    }
+}

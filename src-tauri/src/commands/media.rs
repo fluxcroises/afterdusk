@@ -90,3 +90,13 @@ pub async fn welcome_highlights(
     let conn = state.connect()?;
     blocking(move || Ok(media::highlights(&conn, library_id, 12)?)).await
 }
+
+/// Histogramme de l'aperçu d'une photo (voir `library::media::preview_histogram`).
+#[tauri::command]
+pub async fn media_histogram(
+    state: State<'_, AppState>,
+    media_id: i64,
+) -> CommandResult<Option<Vec<u32>>> {
+    let cache = state.cache_root.clone();
+    blocking(move || Ok(crate::library::media::preview_histogram(&cache, media_id))).await
+}

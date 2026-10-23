@@ -157,7 +157,7 @@ function AutoImportRules() {
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" });
   return (
     <div className="auto-import-rules">
-      <span className="field-row-label">{t("settings.autoImport")}</span>
+      <h3 className="settings-block-title">{t("settings.autoImport")}</h3>
       {rules.length === 0 ? (
         <p className="panel-note">{t("settings.autoImportNone")}</p>
       ) : (
@@ -278,7 +278,7 @@ function WatchFolders() {
   };
   return (
     <div className="auto-import-rules watch-folders">
-      <span className="field-row-label">{t("settings.watchFolders")}</span>
+      <h3 className="settings-block-title">{t("settings.watchFolders")}</h3>
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
       {folders.length === 0 ? (
         <p className="panel-note">{t("settings.watchNone")}</p>
@@ -397,7 +397,7 @@ function StudioLogoField() {
   };
   return (
     <div className="studio-logo">
-      <span className="field-row-label">{t("settings.logo")}</span>
+      <h3 className="settings-block-title">{t("settings.logo")}</h3>
       <ErrorBanner error={error} onDismiss={() => useStudioLogo.setState({ error: null })} />
       <div className="studio-logo-preview">
         {url ? <img src={url} alt={t("settings.logo")} /> : <span>{t("settings.noLogo")}</span>}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Ajouté par Tauri à l'Info.plist du paquet macOS. Les langues déclarées
+     ici font traduire par macOS ses propres entrées de menu (Quitter, Tout
+     fermer, Dictée…) et les fenêtres de choix de fichier, comme le reste
+     d'Afterdusk. -->
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>fr</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>fr</string>
+    <string>en</string>
+  </array>
+  <key>CFBundleAllowMixedLocalizations</key>
+  <true/>
+</dict>
+</plist>

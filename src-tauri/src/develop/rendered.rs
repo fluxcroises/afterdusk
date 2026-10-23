@@ -100,6 +100,9 @@ fn to_srgb(rgb: &mut [f32], icc: Option<&[u8]>) {
 /// Décode une photo déjà développée en XYZ linéaire (0 à 65535), orientée
 /// selon `orientation` (EXIF, 1 à 8).
 pub fn develop(path: &Path, orientation: u8) -> Result<DevelopedRaw, RenderedError> {
+    // HEIF : FFmpeg l'a déjà tourné (voir `metadata::media::read_image`) ;
+    // une ancienne base peut encore porter l'Orientation de l'EXIF.
+    let orientation = if is_heif(path) { 1 } else { orientation };
     let (img, icc) = decode_any(path)?;
     let img = orient(img, orientation).into_rgb32f();
     let (width, height) = (img.width(), img.height());
@@ -197,6 +200,10 @@ mod tests {
         std::fs::write(&path, bytes).unwrap();
         let d = develop(&path, 1).unwrap();
         assert_eq!((d.width, d.height), (w, h));
+        // Orientation de l'EXIF (iPhone : 6) ignorée, FFmpeg ayant déjà
+        // appliqué la rotation du conteneur : pas de quart de tour en plus.
+        let again = develop(&path, 6).unwrap();
+        assert_eq!((again.width, again.height), (w, h));
         // Rouge dominant (X > Z) au milieu de l'image.
         let mid = ((h / 2 * w + w / 2) * 3) as usize;
         assert!(d.xyz[mid] > d.xyz[mid + 2], "{:?}", &d.xyz[mid..mid + 3]);

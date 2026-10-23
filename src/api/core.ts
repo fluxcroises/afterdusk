@@ -142,6 +142,8 @@ export interface AppInfo {
   webview: string | null;
   os: string;
   arch: string;
+  osVersion: string | null;
+  cpu: string | null;
 }
 
 /** Bibliothèque hors ligne : notes en attente d'écriture et dernier passage du disque. */

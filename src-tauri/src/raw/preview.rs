@@ -159,10 +159,13 @@ pub fn load(
                 }
                 "png" | "tif" | "tiff" => image::open(path)?.into_rgb8(),
                 // HEIF : décodé par FFmpeg, livré avec Afterdusk (décision 0012).
-                "heic" | "heif" | "hif" => crate::video::still(path)
-                    .and_then(|png| image::load_from_memory(&png).ok())
-                    .ok_or_else(|| PreviewError::Unsupported(path.to_path_buf()))?
-                    .into_rgb8(),
+                // Déjà droit : la rotation du HEIF est appliquée par FFmpeg.
+                "heic" | "heif" | "hif" => {
+                    return Ok(crate::video::still(path)
+                        .and_then(|png| image::load_from_memory(&png).ok())
+                        .ok_or_else(|| PreviewError::Unsupported(path.to_path_buf()))?
+                        .into_rgb8());
+                }
                 _ => return Err(PreviewError::Unsupported(path.to_path_buf())),
             }
         }

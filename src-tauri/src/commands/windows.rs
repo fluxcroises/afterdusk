@@ -2,7 +2,9 @@
 //! comparaison) sur un autre moniteur que la fenêtre principale.
 
 use tauri::window::Color;
-use tauri::{AppHandle, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
+use tauri::{
+    AppHandle, LogicalPosition, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder,
+};
 
 use super::error::CommandResult;
 use crate::MAIN_WINDOW;
@@ -77,10 +79,22 @@ pub async fn secondary_toggle(app: AppHandle) -> CommandResult<bool> {
             .visible(false)
             .build()?;
 
-    match pick_secondary(main_center, &areas).and_then(|i| areas.get(i)) {
+    match pick_secondary(main_center, &areas).and_then(|i| monitors.get(i)) {
         // Plein écran sur l'autre moniteur.
-        Some(area) => {
-            window.set_position(PhysicalPosition::new(area.x, area.y))?;
+        Some(monitor) => {
+            let at = monitor.position();
+            if cfg!(target_os = "macos") {
+                // macOS place les fenêtres en points : la position physique d'un
+                // écran d'échelle 1 (téléviseur, AirPlay) serait relue à l'échelle
+                // de l'écran Retina où la fenêtre vient d'être créée.
+                let scale = monitor.scale_factor();
+                window.set_position(LogicalPosition::new(
+                    f64::from(at.x) / scale,
+                    f64::from(at.y) / scale,
+                ))?;
+            } else {
+                window.set_position(PhysicalPosition::new(at.x, at.y))?;
+            }
             window.set_fullscreen(true)?;
         }
         // Un seul écran : une fenêtre normale, que l'on peut déplacer.

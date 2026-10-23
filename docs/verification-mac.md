@@ -84,3 +84,14 @@ Cocher chaque point vu sur le Mac.
 ## 5. Après la session
 
 Consigner machine et résultats dans `docs/avancement.md`, cocher les critères tenus (cahier des charges et journal), et noter les défauts trouvés pour les corriger depuis Windows ou le Mac.
+
+## 6. À revoir après les corrections du 2026-10-23
+
+- [ ] HEIC d'iPhone en portrait : vignette, Retoucher et export dans le bon sens (réimporter la photo, ou régénérer ses aperçus).
+- [ ] Second écran sur la TV en AirPlay (écran étendu), en plein écran, et suivi de la navigation.
+- [ ] ⌘F donne le focus au champ de recherche dans Trier.
+- [ ] Histogramme rempli dans Trier.
+- [ ] Menus ajoutés par macOS (Quitter, Écriture, Dictée…) et fenêtres de choix de dossier en français.
+- [ ] Pastilles centrées sur le logo de l'accueil et sur la barre de la fenêtre principale ; sinon, relever l'écart en points.
+- [ ] Bouton iCloud Drive choisi : coche visible, sans air désactivé.
+- [ ] Informations système copiées depuis « À propos » : version de macOS et puce.

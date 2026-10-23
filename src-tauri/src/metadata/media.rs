@@ -210,6 +210,22 @@ fn read_image(path: &Path) -> Option<MediaMetadata> {
         .or_else(|| text(Tag::DateTime))
         .and_then(|s| exif_datetime(&s));
 
+    let mut width = uint(Tag::PixelXDimension).or_else(|| uint(Tag::ImageWidth));
+    let mut height = uint(Tag::PixelYDimension).or_else(|| uint(Tag::ImageLength));
+    let mut orientation = uint(Tag::Orientation)
+        .and_then(|v| u8::try_from(v).ok())
+        .filter(|v| (1..=8).contains(v))
+        .unwrap_or(1);
+    // HEIF : la rotation fait partie du conteneur (`irot`, `imir`), et le
+    // décodeur (FFmpeg) rend déjà l'image droite ; l'Orientation de l'EXIF
+    // ne fait que la répéter et ne doit pas être appliquée une seconde fois.
+    if crate::develop::rendered::is_heif(path) {
+        if orientation >= 5 {
+            std::mem::swap(&mut width, &mut height);
+        }
+        orientation = 1;
+    }
+
     Some(MediaMetadata {
         make: text(Tag::Make),
         model: text(Tag::Model),
@@ -229,12 +245,9 @@ fn read_image(path: &Path) -> Option<MediaMetadata> {
         },
         captured_at,
         utc_offset: text(Tag::OffsetTimeOriginal),
-        width: uint(Tag::PixelXDimension).or_else(|| uint(Tag::ImageWidth)),
-        height: uint(Tag::PixelYDimension).or_else(|| uint(Tag::ImageLength)),
-        orientation: uint(Tag::Orientation)
-            .and_then(|v| u8::try_from(v).ok())
-            .filter(|v| (1..=8).contains(v))
-            .unwrap_or(1),
+        width,
+        height,
+        orientation,
         gps: gps(&field),
         tags,
         video: None,

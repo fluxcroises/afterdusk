@@ -71,6 +71,12 @@ const DEFAULT_OUTPUT: Record<ExportOutput["kind"], ExportOutput> = {
   heif: { kind: "heif", quality: 80 },
 };
 
+/** Autre format : la qualité choisie suit quand le nouveau format en a une. */
+function switchFormat(from: ExportOutput, kind: ExportOutput["kind"]): ExportOutput {
+  const next = DEFAULT_OUTPUT[kind];
+  return "quality" in from && "quality" in next ? { ...next, quality: from.quality } : next;
+}
+
 function NumberField({
   label,
   value,
@@ -131,7 +137,7 @@ function PresetEditor({ preset }: { preset: ExportPreset }) {
         <select
           value={o.kind}
           onChange={(e) =>
-            set({ output: DEFAULT_OUTPUT[e.currentTarget.value as ExportOutput["kind"]] })
+            set({ output: switchFormat(o, e.currentTarget.value as ExportOutput["kind"]) })
           }
         >
           {(Object.keys(DEFAULT_OUTPUT) as ExportOutput["kind"][]).map((k) => (

@@ -103,7 +103,7 @@ export function FtpReception() {
   const enabled = info.settings.enabled;
   return (
     <div className="ftp-reception">
-      <span className="field-row-label">{t("settings.ftp")}</span>
+      <h3 className="settings-block-title">{t("settings.ftp")}</h3>
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
       <label className="check-row">
         <input
