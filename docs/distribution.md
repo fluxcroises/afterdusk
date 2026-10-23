@@ -21,6 +21,12 @@ SignPath Foundation ne signe que des projets « déjà publiés sous la forme à
 5. **Candidature SignPath** (toi), puis, une fois acceptée : étape de signature dans l'action, approbation manuelle de chaque signature, signature Tauri calculée après celle de SignPath (sinon la mise à jour serait refusée).
 6. Critère « Installateurs signés pour Windows et macOS, mises à jour automatiques » coché après une mise à jour réelle 0.5.0 → 0.5.1 sur les deux systèmes.
 
+## Essayer avant de publier
+
+Sur GitHub : Actions > Publication > Run workflow (branche `main`), ou `gh workflow run release.yml`. Une demi-heure environ plus tard, la page de l'exécution propose deux archives à télécharger : `Afterdusk-0.5.0-essai-Windows` (installateur) et `Afterdusk-0.5.0-essai-macOS` (`.dmg`). Rien n'est publié.
+
+L'application installée utilise le même dossier de données que la version de développement (`%APPDATA%pp.afterdusk` sous Windows, `~/Library/Application Support/app.afterdusk` sur Mac) : elle ouvre tes bibliothèques réelles. Pour un essai à blanc, renommer ce dossier avant, puis le remettre après.
+
 ## Publier une version
 
 1. Mettre le même numéro dans `src-tauri/tauri.conf.json`, `package.json` et `src-tauri/Cargo.toml` (puis `cargo check` pour `Cargo.lock`), commiter et pousser.

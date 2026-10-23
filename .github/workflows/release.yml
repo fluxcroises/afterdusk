@@ -6,10 +6,15 @@ name: Publication
 # latest.json et dépose le tout dans une version GitHub en brouillon : rien
 # n'est public, ni proposé aux versions installées, avant sa publication à la
 # main (docs/distribution.md, décision 0013).
+#
+# Essai : lancée à la main (Actions > Publication > Run workflow), elle
+# construit les mêmes installateurs et les laisse en téléchargement sur la
+# page de l'exécution, sans étiquette, sans version GitHub ni latest.json.
 
 on:
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -31,8 +36,9 @@ jobs:
         id: check
         shell: bash
         run: |
-          tag="${GITHUB_REF_NAME#v}"
           conf=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          # Essai : pas d'étiquette, la version du projet fait foi.
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then tag="$conf"; else tag="${GITHUB_REF_NAME#v}"; fi
           pkg=$(node -p "require('./package.json').version")
           cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -1)
           echo "étiquette $tag, tauri.conf.json $conf, package.json $pkg, Cargo.toml $cargo"
@@ -115,13 +121,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: release-${{ runner.os }}
+          name: Afterdusk-${{ env.VERSION }}-${{ github.event_name == 'workflow_dispatch' && 'essai-' || '' }}${{ runner.os }}
           path: dist-release/*
           retention-days: 7
 
   publish:
     name: Version en brouillon
     needs: [version, build]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
