@@ -949,4 +949,4 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 ### 2026-10-23 (suite) : dépôt transféré à Flux Croisés
 
 - L'utilisateur transfère le dépôt vers l'organisation GitHub de l'association : `fluxcroises/afterdusk` (au lieu de `lewisbedar/afterdusk-app`). Adresse des mises à jour (`tauri.conf.json`), liens de `latest.json`, commandes de clonage, décision 0013 et cahier des charges mis à jour avant toute publication : aucune version installée ne connaît l'ancienne adresse.
-- À faire après le transfert : `git remote set-url origin https://github.com/fluxcroises/afterdusk.git` (ici et sur le Mac), vérifier que les deux secrets de la clé de mise à jour ont suivi (`gh secret list`), puis seulement poser l'étiquette v0.5.0.
+- Transfert fait : dépôt public `fluxcroises/afterdusk`, les deux secrets de la clé de mise à jour ont suivi, adresse du dépôt mise à jour sur ce PC. Reste sur le Mac : `git remote set-url origin https://github.com/fluxcroises/afterdusk.git`.
