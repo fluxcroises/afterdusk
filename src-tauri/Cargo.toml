@@ -1,6 +1,6 @@
 [package]
 name = "afterdusk"
-version = "0.1.0"
+version = "0.5.0"
 description = "Gestion photo open source pour photographes semi-pro"
 authors = ["Lewis Bedar"]
 license = "GPL-3.0-or-later"

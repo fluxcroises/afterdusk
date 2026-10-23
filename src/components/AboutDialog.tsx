@@ -5,6 +5,7 @@ import { type AppInfo, api } from "../api/core";
 import defaultPhoto from "../assets/accueil-cabourg.jpg";
 import publisherLogo from "../assets/logo_horizontal_blanc.png";
 import license from "../../LICENSE?raw";
+import { version as packageVersion } from "../../package.json";
 import { systemReport, useAbout } from "../store/about";
 
 /**
@@ -97,7 +98,7 @@ export function AboutDialog() {
             <h2 id="about-title" className="about-title">
               {t("app.name")}
             </h2>
-            <p>{t("about.version", { version: info?.version ?? "0.1.0" })}</p>
+            <p>{t("about.version", { version: info?.version ?? packageVersion })}</p>
             <p className="about-muted">{t("about.copyright")}</p>
             <p className="about-muted">
               <Trans

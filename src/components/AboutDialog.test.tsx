@@ -18,7 +18,7 @@ describe("À propos d'Afterdusk", () => {
   it("version, composants et avis de licence ; Licence… affiche la GPL", () => {
     render(<AboutDialog />);
     const dialog = screen.getByRole("dialog", { name: "Afterdusk" });
-    expect(dialog).toHaveTextContent("Version 0.1.0");
+    expect(dialog).toHaveTextContent("Version 0.5.0");
     expect(dialog).toHaveTextContent("Composants : LibRaw (LGPL 2.1) · Adobe XMP Toolkit (BSD 3)");
     expect(dialog).toHaveTextContent("SQLite (domaine public)");
     expect(dialog).toHaveTextContent("Cabourg, photo © Lewis Bedar");
