@@ -889,3 +889,9 @@ Critères (cahier des charges, section 7) :
 - Audit demandé par l'utilisateur, chaque point validé par lui. Retirés : la ligne « Thème : Sombre » (une seule valeur, rien à choisir), « Désactivée. » sous la case FTP, la note des types de séance (redite de la confirmation), les sous-titres des profils (« Pour débuter… », aussi dans l'assistant) et la note « Les fonctions masquées continuent de tourner », reportée dans `docs/guide-utilisateur.md`.
 - Réécrits : les deux notes d'import deviennent « S'applique aux prochains imports. » ; note iCloud / OneDrive sans la tournure « X, pas Y » ; carte hors ligne sans « requête » ; dossiers surveillés, ce qui est importé d'abord.
 - Tournures : « Jetons » devient « Variables », « gardé(s) » s'accorde, « Ne plus importer seules les cartes du… » devient « Retirer le … de l'import automatique », « Dossiers cloud » devient « Dossiers synchronisés ». Anglais aligné.
+
+### 2026-10-23 (suite) : points ouverts du cahier des charges
+
+- Cochés, déjà tranchés : bibliothèque de métadonnées (décision 0002, xmp-toolkit-rs), fournisseur de tuiles (décision 0008, OpenFreeMap), nom du dépôt (`lewisbedar/afterdusk-app`).
+- Restent ouverts : disponibilité du nom et nom de domaine, logo et identité visuelle. L'espace de noms XMP de la décision 0002 (`https://afterdusk.app/ns/xmp/1.0/`) dépend du domaine retenu ; il est à fixer avant la distribution, après quoi il ne change plus.
+- Nommage des annexes XMP (décision 0002, encore « à valider ») : la proposition est appliquée depuis la V0.1, `photo.xmp` pour les RAW et les vidéos, `photo.jpg.xmp` pour les autres formats.
