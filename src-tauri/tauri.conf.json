@@ -53,7 +53,7 @@
       "resources/ffmpeg/": "ffmpeg/"
     },
     "category": "Photography",
-    "copyright": "GPL-3.0-or-later",
+    "copyright": "© 2026 Lewis Bedar",
     "shortDescription": "Gestion photo open source",
     "publisher": "Flux Croisés",
     "windows": {
@@ -64,6 +64,7 @@
         "languages": ["French", "English"],
         "displayLanguageSelector": false
       }
-    }
+    },
+    "license": "GPL-3.0-or-later"
   }
 }

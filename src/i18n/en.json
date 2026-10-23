@@ -598,7 +598,8 @@
     "systemInfo": "System Info…",
     "copied": "Copied to the clipboard",
     "publicDomain": "public domain",
-    "componentsLead": "Components:"
+    "componentsLead": "Components:",
+    "publisher": "Free software from the Flux Croisés association, flux-croises.fr."
   },
   "develop": {
     "image": "Photo being edited",

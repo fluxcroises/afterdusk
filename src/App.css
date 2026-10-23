@@ -2716,6 +2716,15 @@ input[type="radio"] {
   color: var(--ad-text-secondary);
 }
 
+/* Logo blanc de Flux Croisés, l'éditeur, sous sa mention. */
+.about-publisher-logo {
+  display: block;
+  height: 14px;
+  width: auto;
+  margin-top: var(--ad-space-2);
+  opacity: 0.85;
+}
+
 .about-components {
   display: flex;
   flex: 1;

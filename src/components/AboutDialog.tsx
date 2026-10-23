@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type AppInfo, api } from "../api/core";
 import defaultPhoto from "../assets/accueil-cabourg.jpg";
+import publisherLogo from "../assets/logo_horizontal_blanc.png";
 import license from "../../LICENSE?raw";
 import { systemReport, useAbout } from "../store/about";
 
@@ -98,6 +99,8 @@ export function AboutDialog() {
             </h2>
             <p>{t("about.version", { version: info?.version ?? "0.1.0" })}</p>
             <p className="about-muted">{t("about.copyright")}</p>
+            <p className="about-muted">{t("about.publisher")}</p>
+            <img className="about-publisher-logo" src={publisherLogo} alt="" />
           </header>
           {showLicense ? (
             <pre className="about-license" tabIndex={0}>

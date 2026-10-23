@@ -598,7 +598,8 @@
     "systemInfo": "Informations système…",
     "copied": "Copiées dans le presse-papiers",
     "publicDomain": "domaine public",
-    "componentsLead": "Composants :"
+    "componentsLead": "Composants :",
+    "publisher": "Un logiciel libre de l'association Flux Croisés, flux-croises.fr."
   },
   "develop": {
     "image": "Photo en cours de retouche",
