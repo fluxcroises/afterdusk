@@ -9,16 +9,33 @@ SignPath Foundation ne signe que des projets « déjà publiés sous la forme à
 ## Plan
 
 1. **Mises à jour dans l'application** : extension `updater` de Tauri ; vérification au démarrage, au plus une fois par jour ; bandeau qui propose la version, installation sur clic, redémarrage ; case « Vérifier les mises à jour » dans Réglages > Général. Tests de la règle « une fois par jour » et de la case désactivée (aucune requête).
-2. **Action de publication** (`.github/workflows/release.yml`), lancée par une étiquette `v0.5.0` :
+2. **Action de publication** (`.github/workflows/release.yml`, écrite le 2026-10-23, pas encore lancée), déclenchée par une étiquette `v0.5.0` :
    - Windows x64 : installateur NSIS dans `Program Files\Flux Croisés\Afterdusk` (droits d'administrateur à l'installation et aux mises à jour), en français et en anglais ;
    - macOS universel : `.dmg` et archive de mise à jour, signature ad hoc comme `build-macos.yml` ;
-   - FFmpeg, ONNX Runtime et échantillons récupérés par les scripts qui vérifient leurs empreintes ;
-   - archives de mise à jour signées avec la clé Tauri des secrets GitHub, `latest.json` produit ;
+   - FFmpeg et ONNX Runtime récupérés par les scripts qui vérifient leurs empreintes ;
+   - arrêt d'emblée si l'étiquette ne correspond pas aux numéros de version de `tauri.conf.json`, `package.json` et `Cargo.toml` ;
+   - archives de mise à jour signées avec la clé Tauri des secrets GitHub, `latest.json` produit par `scripts/latest-json.mjs` (le paquet macOS universel sert Apple Silicon et Intel) ;
    - version GitHub créée en brouillon : rien n'est public avant ta relecture.
 3. **Page du projet** (`README.md`, puis le site) : téléchargement, installation sur Mac (« Ouvrir quand même »), section « Politique de signature du code » et déclaration de confidentialité (voir plus bas).
 4. **Version 0.5.0** : installateurs essayés sur une machine Windows et un Mac sans outils de développement, puis publication.
 5. **Candidature SignPath** (toi), puis, une fois acceptée : étape de signature dans l'action, approbation manuelle de chaque signature, signature Tauri calculée après celle de SignPath (sinon la mise à jour serait refusée).
 6. Critère « Installateurs signés pour Windows et macOS, mises à jour automatiques » coché après une mise à jour réelle 0.5.0 → 0.5.1 sur les deux systèmes.
+
+## Publier une version
+
+1. Mettre le même numéro dans `src-tauri/tauri.conf.json`, `package.json` et `src-tauri/Cargo.toml` (puis `cargo check` pour `Cargo.lock`), commiter et pousser.
+2. Poser l'étiquette et la pousser :
+
+   ```bash
+   git tag v0.5.0
+   ```
+
+   ```bash
+   git push origin v0.5.0
+   ```
+
+3. Attendre l'action « Publication » (Actions sur GitHub), puis ouvrir la version en brouillon (Releases) : relire les notes, essayer les installateurs.
+4. Cliquer sur « Publish release ». À partir de là, les versions installées trouvent la mise à jour à leur prochaine vérification. Tant qu'elle reste en brouillon, rien n'est public.
 
 ## À faire de ton côté
 

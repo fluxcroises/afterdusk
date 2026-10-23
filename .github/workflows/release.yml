@@ -1,0 +1,159 @@
+name: Publication
+
+# Lancée par une étiquette de version (git tag v0.5.0 && git push origin v0.5.0).
+# Construit l'installateur Windows (NSIS) et le paquet macOS universel, signe
+# les archives de mise à jour avec la clé Tauri des secrets, produit
+# latest.json et dépose le tout dans une version GitHub en brouillon : rien
+# n'est public, ni proposé aux versions installées, avant sa publication à la
+# main (docs/distribution.md, décision 0013).
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Étiquette et numéros de version identiques
+        id: check
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          conf=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          pkg=$(node -p "require('./package.json').version")
+          cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -1)
+          echo "étiquette $tag, tauri.conf.json $conf, package.json $pkg, Cargo.toml $cargo"
+          if [ "$tag" != "$conf" ] || [ "$tag" != "$pkg" ] || [ "$tag" != "$cargo" ]; then
+            echo "::error::L'étiquette v$tag ne correspond pas aux numéros de version du projet."
+            exit 1
+          fi
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ matrix.name }}
+    needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            args: --bundles nsis
+            config: '{"bundle":{"createUpdaterArtifacts":true}}'
+            bundle: src-tauri/target/release/bundle
+          - name: macOS universel
+            os: macos-latest
+            # Signature ad hoc (« - ») : macOS l'exige sur Apple Silicon ; sans
+            # certificat Apple, la première ouverture passe par « Ouvrir quand même ».
+            args: --target universal-apple-darwin --bundles app,dmg
+            config: '{"bundle":{"createUpdaterArtifacts":true,"macOS":{"signingIdentity":"-"}}}'
+            bundle: src-tauri/target/universal-apple-darwin/release/bundle
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: ONNX Runtime — bibliothèque officielle, vérifiée
+        run: node scripts/fetch-onnxruntime.mjs
+
+      - name: FFmpeg — binaires vérifiés (décision 0012)
+        run: node scripts/fetch-ffmpeg.mjs
+
+      - name: Dépendances de l'interface
+        run: npm ci
+
+      - name: Application — compilation et paquets
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: >
+          npm run tauri build --
+          ${{ matrix.args }}
+          --config '${{ matrix.config }}'
+
+      - name: Fichiers de la version
+        shell: bash
+        run: |
+          mkdir dist-release
+          b="${{ matrix.bundle }}"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp "$b/nsis/Afterdusk_${VERSION}_x64-setup.exe" dist-release/
+            cp "$b/nsis/Afterdusk_${VERSION}_x64-setup.exe.sig" dist-release/
+          else
+            cp "$b/dmg/Afterdusk_${VERSION}_universal.dmg" dist-release/
+            cp "$b/macos/Afterdusk.app.tar.gz" "dist-release/Afterdusk_${VERSION}_universal.app.tar.gz"
+            cp "$b/macos/Afterdusk.app.tar.gz.sig" "dist-release/Afterdusk_${VERSION}_universal.app.tar.gz.sig"
+          fi
+          ls -l dist-release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ runner.os }}
+          path: dist-release/*
+          retention-days: 7
+
+  publish:
+    name: Version en brouillon
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist-release
+          merge-multiple: true
+
+      - name: latest.json
+        run: node scripts/latest-json.mjs "$VERSION" dist-release
+
+      - name: Version GitHub en brouillon
+        shell: bash
+        run: |
+          cd dist-release
+          files=(
+            "Afterdusk_${VERSION}_x64-setup.exe"
+            "Afterdusk_${VERSION}_x64-setup.exe.sig"
+            "Afterdusk_${VERSION}_universal.dmg"
+            "Afterdusk_${VERSION}_universal.app.tar.gz"
+            "Afterdusk_${VERSION}_universal.app.tar.gz.sig"
+            latest.json
+          )
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            gh release upload "v$VERSION" "${files[@]}" --clobber
+          else
+            gh release create "v$VERSION" "${files[@]}" --draft \
+              --title "Afterdusk $VERSION" --notes "Afterdusk $VERSION"
+          fi
