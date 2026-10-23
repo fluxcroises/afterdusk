@@ -119,7 +119,8 @@
     "autoOffer_one": "Importer seules les prochaines cartes du {{camera}}",
     "autoOffer_other": "Importer seules les prochaines cartes de ces boîtiers ({{camera}})",
     "autoAdded_one": "Les prochaines cartes de ce boîtier s'importeront seules.",
-    "autoAdded_other": "Les prochaines cartes de ces {{count}} boîtiers s'importeront seules."
+    "autoAdded_other": "Les prochaines cartes de ces {{count}} boîtiers s'importeront seules.",
+    "openImported": "Déjà importée : ouvrir dans Trier"
   },
   "catalog": {
     "title": "Catalogue",

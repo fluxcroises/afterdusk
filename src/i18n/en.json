@@ -119,7 +119,8 @@
     "autoOffer_one": "Import the next {{camera}} cards automatically",
     "autoOffer_other": "Import these cameras' next cards automatically ({{camera}})",
     "autoAdded_one": "This camera's next cards will be imported automatically.",
-    "autoAdded_other": "These {{count}} cameras' next cards will be imported automatically."
+    "autoAdded_other": "These {{count}} cameras' next cards will be imported automatically.",
+    "openImported": "Already imported: open in Cull"
   },
   "catalog": {
     "title": "Catalog",

@@ -1080,6 +1080,11 @@ input[type="checkbox"] {
   opacity: 0.4;
 }
 
+/* Déjà importée : un clic l'ouvre dans Trier. */
+.import-tile[data-imported]:not(:disabled):hover {
+  opacity: 0.75;
+}
+
 .import-tile-check {
   position: absolute;
   top: 8px;

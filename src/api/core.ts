@@ -23,6 +23,9 @@ export interface SourceEntry {
   capturedAt: string;
   camera: string;
   alreadyImported: boolean;
+  /** Déjà importée et visible : la photo dans la bibliothèque, à ouvrir. */
+  mediaId: number | null;
+  albumId: number | null;
   /** Paire RAW + JPEG : le JPEG (ou HEIF) du boîtier, importé avec le RAW. */
   companions: { path: string; fileName: string; alreadyImported: boolean }[];
 }

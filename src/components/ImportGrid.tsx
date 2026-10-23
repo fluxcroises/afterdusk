@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { SourceEntry } from "../api/core";
 import { sourceThumbnailUrl } from "../api/previews";
 import { useImport } from "../store/import";
+import { useLibrary } from "../store/library";
+import { useNavigation } from "../store/navigation";
 import { Thumbnail } from "./Thumbnail";
 
 function dayLabel(day: string, language: string): string {
@@ -21,12 +23,45 @@ function extension(name: string): string {
   return name.split(".").pop()?.toUpperCase() ?? name;
 }
 
+/** Photo déjà importée : ouverte dans la visionneuse de Trier, dans son album. */
+async function openImported(mediaId: number, albumId: number | null): Promise<void> {
+  const library = useLibrary.getState();
+  useNavigation.getState().goTo("cull");
+  await library.showAlbum(albumId);
+  await library.select(mediaId);
+  library.setView("loupe");
+}
+
 function Tile({ file }: { file: SourceEntry }) {
   const { t } = useTranslation();
   const checked = useImport((s) => s.selected.has(file.path));
   const toggle = useImport((s) => s.toggle);
   const running = useImport((s) => s.running);
   const time = file.capturedAt.slice(11, 16);
+  const mediaId = file.alreadyImported ? file.mediaId : null;
+
+  if (mediaId !== null) {
+    return (
+      <button
+        type="button"
+        className="import-tile"
+        data-imported
+        title={t("import.openImported")}
+        onClick={() => void openImported(mediaId, file.albumId)}
+      >
+        <span className="import-tile-preview">
+          <Thumbnail
+            src={sourceThumbnailUrl(file.path)}
+            fallback={file.fileName.split(".").pop()?.toUpperCase()}
+          />
+        </span>
+        <span className="import-tile-name">
+          {[file.fileName, ...file.companions.map((c) => extension(c.fileName))].join(" + ")}
+        </span>
+        <span className="import-tile-meta">{t("import.alreadyImported")}</span>
+      </button>
+    );
+  }
 
   return (
     <button

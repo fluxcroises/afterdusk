@@ -137,6 +137,37 @@ pub fn known_fingerprints(
     Ok(set)
 }
 
+/// Photo déjà dans la bibliothèque, retrouvée par son empreinte : de quoi
+/// l'ouvrir depuis Importer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct KnownMedia {
+    pub media_id: i64,
+    pub album_id: Option<i64>,
+}
+
+/// Photos visibles de la bibliothèque (hors corbeille), par empreinte.
+pub fn known_media(
+    conn: &Connection,
+    library_id: i64,
+) -> Result<HashMap<String, KnownMedia>, ImportError> {
+    let mut stmt = conn.prepare(
+        "SELECT fingerprint, id, album_id FROM media
+         WHERE library_id = ?1 AND state = 'normal'",
+    )?;
+    let map = stmt
+        .query_map([library_id], |r| {
+            Ok((
+                r.get(0)?,
+                KnownMedia {
+                    media_id: r.get(1)?,
+                    album_id: r.get(2)?,
+                },
+            ))
+        })?
+        .collect::<Result<_, _>>()?;
+    Ok(map)
+}
+
 fn online_library(conn: &Connection, library_id: i64) -> Result<Library, ImportError> {
     let lib = library::get_library(conn, library_id)?;
     if !lib.is_online {
@@ -1135,4 +1166,35 @@ pub fn recent_imports(
             .collect::<Result<_, _>>()?;
     }
     Ok(imports)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn photos_deja_importees_a_ouvrir_hors_corbeille() {
+        let conn = crate::db::open_in_memory().unwrap();
+        conn.execute_batch(
+            "INSERT INTO libraries (id, name, root_path, created_at) VALUES (1, 'P', '/p', 'x');
+             INSERT INTO albums (id, library_id, name, folder, created_at)
+               VALUES (4, 1, 'A', 'a', 'x');
+             INSERT INTO media (id, library_id, album_id, kind, path, original_name, file_size,
+                                fingerprint, content_hash, state, imported_at, updated_at)
+               VALUES (12, 1, 4, 'photo', 'a/1.JPG', '1.JPG', 1, 'f1', 'h1', 'normal', 'x', 'x'),
+                      (13, 1, 4, 'photo', 'a/2.JPG', '2.JPG', 1, 'f2', 'h2', 'trashed', 'x', 'x');",
+        )
+        .unwrap();
+        let known = known_media(&conn, 1).unwrap();
+        assert_eq!(
+            known.get("f1"),
+            Some(&KnownMedia {
+                media_id: 12,
+                album_id: Some(4)
+            })
+        );
+        // À la corbeille : toujours déjà importée, mais rien à ouvrir.
+        assert!(known_fingerprints(&conn, 1).unwrap().contains("f2"));
+        assert_eq!(known.get("f2"), None);
+    }
 }

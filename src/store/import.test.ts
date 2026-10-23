@@ -21,6 +21,8 @@ const entry = (path: string, alreadyImported = false, companions: string[] = [])
   capturedAt: "2026-10-18T21:04:59",
   camera: "X-T3",
   alreadyImported,
+  mediaId: null,
+  albumId: null,
   companions: companions.map((c) => ({
     path: c,
     fileName: c.split("/").pop() ?? c,

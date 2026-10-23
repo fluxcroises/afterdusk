@@ -31,6 +31,9 @@ pub struct SourceEntry {
     pub captured_at: String,
     pub camera: String,
     pub already_imported: bool,
+    /// Déjà importée et visible : la photo dans la bibliothèque, à ouvrir.
+    pub media_id: Option<i64>,
+    pub album_id: Option<i64>,
     /// Paire RAW + JPEG : le JPEG (ou HEIF) du boîtier, importé avec le RAW.
     pub companions: Vec<CompanionEntry>,
 }
@@ -72,8 +75,11 @@ pub async fn source_scan(
         *root = Some(path.clone());
     }
     blocking(move || {
-        let known = match library_id {
-            Some(id) => import::known_fingerprints(&conn, id)?,
+        let (known, visible) = match library_id {
+            Some(id) => (
+                import::known_fingerprints(&conn, id)?,
+                import::known_media(&conn, id)?,
+            ),
             None => Default::default(),
         };
         let result = scan::scan(&path)?;
@@ -104,10 +110,13 @@ pub async fn source_scan(
                 continue;
             }
             let companions = companions.remove(&index).unwrap_or_default();
+            let found = visible.get(&file.fingerprint).copied();
             let entry = SourceEntry {
                 // Déjà importée : tous les fichiers du déclenchement le sont.
                 already_imported: known.contains(&file.fingerprint)
                     && companions.iter().all(|c| c.already_imported),
+                media_id: found.map(|m| m.media_id),
+                album_id: found.and_then(|m| m.album_id),
                 companions,
                 camera: file.metadata.camera_label(),
                 path: file.path.clone(),
