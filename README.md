@@ -9,7 +9,7 @@ Logiciel de bureau libre et gratuit pour les photographes semi-pro : importer, t
 Prérequis : Node.js 24, Rust stable, et sous Windows Visual Studio Build Tools (charge « Développement Desktop en C++ »).
 
 ```bash
-git clone --recurse-submodules https://github.com/lewisbedar/afterdusk-app.git
+git clone --recurse-submodules https://github.com/fluxcroises/afterdusk.git
 npm ci
 node scripts/fetch-test-assets.mjs   # échantillons RAW de test (≈ 320 Mo, raw.pixls.us)
 npm run tauri dev

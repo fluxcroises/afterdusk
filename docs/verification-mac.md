@@ -21,7 +21,7 @@ curl https://sh.rustup.rs -sSf | sh
 Installer Node.js (paquet LTS de nodejs.org), puis :
 
 ```bash
-git clone --recursive https://github.com/lewisbedar/afterdusk-app.git && cd afterdusk-app && npm ci
+git clone --recursive https://github.com/fluxcroises/afterdusk.git && cd afterdusk && npm ci
 ```
 
 ```bash

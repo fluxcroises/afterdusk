@@ -499,7 +499,7 @@ Crée docs/avancement.md avec les critères de la V0.1 et coche-les au fur et à
 **Points ouverts**
 
 - [ ] Vérifier la disponibilité du nom Afterdusk auprès de l'INPI, de l'EUIPO et de l'USPTO (classes 9 et 42), et réserver un nom de domaine (afterdusk.app ou afterdusk.fr). Hébergement pressenti : `afterdusk.flux-croises.fr`, sur le domaine de l'association de l'utilisateur ; l'espace de noms XMP s'y rattache déjà (décision 0002)
-- [x] Choisir le nom du dépôt GitHub (le compte « afterdusk » est déjà pris) : `lewisbedar/afterdusk-app`
+- [x] Choisir le nom du dépôt GitHub (le compte « afterdusk » est déjà pris) : `fluxcroises/afterdusk`, sous l'organisation de l'association (d'abord `lewisbedar/afterdusk-app`)
 - [x] Choisir entre Exiv2 et xmp-toolkit-rs pour les métadonnées (décision 0002 : xmp-toolkit-rs, EXIF des RAW lus par LibRaw)
 - [x] Choisir le fournisseur de tuiles de carte et vérifier ses conditions d'usage (décision 0008 : OpenFreeMap, sans clé ni cookies, usage commercial permis, attribution OpenStreetMap et OpenMapTiles affichée)
 - [x] Choisir les modèles ONNX de détection des yeux fermés et vérifier leur licence (décision 0010 : YuNet, MIT ; MediaPipe Face Mesh V2, Apache 2.0 ; ONNX Runtime 1.23.2, MIT)

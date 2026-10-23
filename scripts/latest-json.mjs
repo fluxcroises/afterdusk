@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const REPOSITORY = "lewisbedar/afterdusk-app";
+export const REPOSITORY = "fluxcroises/afterdusk";
 
 export function assetNames(version) {
   return {

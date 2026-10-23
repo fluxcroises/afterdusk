@@ -31,7 +31,7 @@ for (const file of manifest.files) {
   process.stdout.write(`télécharge ${file.name}… `);
   // Wikimedia refuse les requêtes sans User-Agent identifiable.
   const res = await fetch(file.url, {
-    headers: { "User-Agent": "Afterdusk-tests/1.0 (https://github.com/lewisbedar/afterdusk-app)" },
+    headers: { "User-Agent": "Afterdusk-tests/1.0 (https://github.com/fluxcroises/afterdusk)" },
   });
   if (!res.ok) {
     console.log(`échec HTTP ${res.status}`);
