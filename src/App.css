@@ -184,7 +184,12 @@ html[data-platform="mac"][data-fullscreen="true"] .welcome-brand::before {
   mask: url("./assets/logo.svg") center / contain no-repeat;
 }
 
+/* Barre du haut : menus, bibliothèque et onglets en 13 px, centrés dans leurs
+   boîtes, partagent la même ligne de base ; le nom, en 14 px, est remonté du
+   demi-pixel qui l'en sépare. */
 .brand-name {
+  position: relative;
+  top: -0.5px;
   font: var(--ad-font-panel-title);
 }
 
@@ -200,6 +205,7 @@ html[data-platform="mac"][data-fullscreen="true"] .welcome-brand::before {
 }
 
 .brand-library {
+  font-size: 13px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1310,6 +1316,7 @@ input[type="checkbox"] {
 
 .menu-title {
   height: 28px;
+  font-size: 13px;
   padding: 0 var(--ad-space-2);
   border-radius: var(--ad-radius-sm);
   color: var(--ad-text-secondary);
