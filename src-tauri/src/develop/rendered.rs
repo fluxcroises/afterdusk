@@ -5,6 +5,7 @@
 //! se règle en décalage relatif. L'original n'est qu'ouvert en lecture.
 
 use std::path::Path;
+use std::thread;
 
 use image::{DynamicImage, ImageDecoder, ImageReader};
 use moxcms::{ColorProfile, Layout, TransformOptions};
@@ -92,9 +93,26 @@ fn to_srgb(rgb: &mut [f32], icc: Option<&[u8]>) {
         return;
     };
     let src = rgb.to_vec();
-    if transform.transform(&src, rgb).is_err() {
-        rgb.copy_from_slice(&src);
-    }
+    // Par bandes, sur tous les cœurs.
+    let band = band_len(rgb.len());
+    thread::scope(|s| {
+        for (out, from) in rgb.chunks_mut(band).zip(src.chunks(band)) {
+            let transform = &transform;
+            s.spawn(move || {
+                if transform.transform(from, out).is_err() {
+                    out.copy_from_slice(from);
+                }
+            });
+        }
+    });
+}
+
+/// Longueur d'une bande de valeurs RGB (multiple de 3) pour la répartir sur
+/// les cœurs disponibles.
+fn band_len(values: usize) -> usize {
+    let workers = thread::available_parallelism().map_or(1, |n| n.get());
+    let pixels = (values / 3).div_ceil(workers).max(1);
+    pixels * 3
 }
 
 /// Décode une photo déjà développée en XYZ linéaire (0 à 65535), orientée
@@ -108,18 +126,26 @@ pub fn develop(path: &Path, orientation: u8) -> Result<DevelopedRaw, RenderedErr
     let (width, height) = (img.width(), img.height());
     let mut rgb = img.into_raw();
     to_srgb(&mut rgb, icc.as_deref());
-    let xyz = rgb
-        .as_chunks::<3>()
-        .0
-        .iter()
-        .flat_map(|p| {
-            let lin = [srgb_decode(p[0]), srgb_decode(p[1]), srgb_decode(p[2])];
-            SRGB_TO_XYZ.map(|row| {
-                let v = row[0] * lin[0] + row[1] * lin[1] + row[2] * lin[2];
-                (v.clamp(0.0, 1.0) * 65535.0).round() as u16
-            })
-        })
-        .collect();
+    let mut xyz = vec![0u16; rgb.len()];
+    let band = band_len(rgb.len());
+    thread::scope(|s| {
+        for (out, from) in xyz.chunks_mut(band).zip(rgb.chunks(band)) {
+            s.spawn(move || {
+                for (o, p) in out
+                    .as_chunks_mut::<3>()
+                    .0
+                    .iter_mut()
+                    .zip(from.as_chunks::<3>().0)
+                {
+                    let lin = [srgb_decode(p[0]), srgb_decode(p[1]), srgb_decode(p[2])];
+                    *o = SRGB_TO_XYZ.map(|row| {
+                        let v = row[0] * lin[0] + row[1] * lin[1] + row[2] * lin[2];
+                        (v.clamp(0.0, 1.0) * 65535.0).round() as u16
+                    });
+                }
+            });
+        }
+    });
     Ok(DevelopedRaw {
         width,
         height,
