@@ -176,6 +176,7 @@ pub fn run() {
             commands::updates::updates_enabled_get,
             commands::updates::updates_enabled_set,
             commands::updates::update_check,
+            commands::updates::update_check_now,
             commands::updates::update_install,
             commands::app_ready,
             commands::library::libraries_list,

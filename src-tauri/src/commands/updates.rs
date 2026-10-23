@@ -76,25 +76,46 @@ pub async fn update_check(
     if !due {
         return Ok(None);
     }
-    let found = match app.updater() {
-        Ok(updater) => updater.check().await,
-        Err(e) => Err(e),
-    };
-    let update = match found {
-        Ok(update) => update,
+    match fetch(&app, &pending).await {
+        Ok(info) => Ok(info),
         Err(e) => {
             eprintln!("afterdusk : vérification des mises à jour impossible : {e}");
-            None
+            Ok(None)
         }
-    };
+    }
+}
+
+/// Vérification demandée dans « À propos » : faite tout de suite, même si la
+/// vérification au démarrage est désactivée ou déjà faite aujourd'hui, et
+/// une erreur réseau est signalée.
+#[tauri::command]
+pub async fn update_check_now(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    pending: State<'_, PendingUpdate>,
+) -> CommandResult<Option<UpdateInfo>> {
+    let conn = state.connect()?;
+    let now = updates::now();
+    blocking(move || Ok(updates::set_last_check(&conn, now).map_err(LibraryError::from)?)).await?;
+    fetch(&app, &pending)
+        .await
+        .map_err(|e| CommandError::new("updateCheckFailed", e))
+}
+
+/// Interroge `latest.json` ; une version plus récente est gardée pour
+/// « Installer ».
+async fn fetch(
+    app: &AppHandle,
+    pending: &PendingUpdate,
+) -> Result<Option<UpdateInfo>, tauri_plugin_updater::Error> {
+    let update = app.updater()?.check().await?;
     let info = update.as_ref().map(|u| UpdateInfo {
         version: u.version.clone(),
         notes: u.body.clone(),
     });
-    *pending
-        .0
-        .lock()
-        .map_err(|e| CommandError::new("internal", e))? = update;
+    if let Ok(mut slot) = pending.0.lock() {
+        *slot = update;
+    }
     Ok(info)
 }
 

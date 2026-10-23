@@ -21,10 +21,14 @@ interface UpdatesState {
   dismissed: boolean;
   progress: UpdateProgress | null;
   error: CommandError | null;
+  /** Recherche demandée dans « À propos » : en cours, à jour, ou impossible. */
+  manual: "checking" | "upToDate" | "failed" | null;
   loadEnabled: () => Promise<void>;
   setEnabled: (enabled: boolean) => Promise<void>;
   /** Au démarrage : le cœur ne fait la requête que si elle est due. */
   check: () => Promise<void>;
+  /** Tout de suite, à la demande, même si la vérification est désactivée. */
+  checkNow: () => Promise<void>;
   install: () => Promise<void>;
   dismiss: () => void;
 }
@@ -35,6 +39,7 @@ export const useUpdates = create<UpdatesState>()((set, get) => ({
   dismissed: false,
   progress: null,
   error: null,
+  manual: null,
 
   loadEnabled: async () => {
     if (!isTauri()) return;
@@ -61,6 +66,17 @@ export const useUpdates = create<UpdatesState>()((set, get) => ({
       set({ available, dismissed: false });
     } catch {
       // Sans réponse, rien à proposer : la vérification reprendra le lendemain.
+    }
+  },
+
+  checkNow: async () => {
+    if (!isTauri() || get().manual === "checking") return;
+    set({ manual: "checking" });
+    try {
+      const available = await invoke<UpdateInfo | null>("update_check_now");
+      set({ available, dismissed: false, manual: available ? null : "upToDate" });
+    } catch {
+      set({ manual: "failed" });
     }
   },
 

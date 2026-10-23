@@ -608,7 +608,13 @@
     "publicDomain": "domaine public",
     "componentsLead": "Composants :",
     "publisher": "Un logiciel libre de l'association <site>Flux Croisés</site>.",
-    "copy": "Copier"
+    "copy": "Copier",
+    "updateCheck": "Rechercher les mises à jour",
+    "updateChecking": "Recherche des mises à jour…",
+    "upToDate": "Afterdusk est à jour.",
+    "updateAvailable": "Version {{version}} disponible.",
+    "updateFailed": "Recherche impossible, vérifiez la connexion.",
+    "updateRetry": "Réessayer"
   },
   "develop": {
     "image": "Photo en cours de retouche",

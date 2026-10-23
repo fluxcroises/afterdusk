@@ -7,6 +7,7 @@ import publisherLogo from "../assets/logo_horizontal_blanc.png";
 import license from "../../LICENSE?raw";
 import { version as packageVersion } from "../../package.json";
 import { systemReport, useAbout } from "../store/about";
+import { useUpdates } from "../store/updates";
 
 /**
  * Composants livrés avec Afterdusk et leur licence (obligation des licences
@@ -39,6 +40,39 @@ const COMPONENTS: { name: string; license: string; version?: keyof AppInfo }[] =
   { name: "React", license: "MIT" },
   { name: "Lucide", license: "ISC" },
 ];
+
+/** Recherche des mises à jour à la demande, sur la ligne de la version. */
+function UpdateCheck() {
+  const { t } = useTranslation();
+  const manual = useUpdates((s) => s.manual);
+  const available = useUpdates((s) => s.available);
+  const progress = useUpdates((s) => s.progress);
+  const { checkNow, install } = useUpdates.getState();
+  const link = (label: string, run: () => void) => (
+    <button type="button" className="about-site-link" onClick={run}>
+      {label}
+    </button>
+  );
+  if (progress) return <span role="status">{t("updates.downloading")}</span>;
+  if (available) {
+    return (
+      <span role="status">
+        {t("about.updateAvailable", { version: available.version })}{" "}
+        {link(t("updates.install"), () => void install())}
+      </span>
+    );
+  }
+  if (manual === "checking") return <span role="status">{t("about.updateChecking")}</span>;
+  if (manual === "upToDate") return <span role="status">{t("about.upToDate")}</span>;
+  if (manual === "failed") {
+    return (
+      <span role="status">
+        {t("about.updateFailed")} {link(t("about.updateRetry"), () => void checkNow())}
+      </span>
+    );
+  }
+  return link(t("about.updateCheck"), () => void checkNow());
+}
 
 /**
  * Aide > À propos d'Afterdusk, sur le modèle des boîtes « À propos » des
@@ -99,7 +133,15 @@ export function AboutDialog() {
             <h2 id="about-title" className="about-title">
               {t("app.name")}
             </h2>
-            <p>{t("about.version", { version: info?.version ?? packageVersion })}</p>
+            <p>
+              {t("about.version", { version: info?.version ?? packageVersion })}
+              {isTauri() && (
+                <>
+                  {" · "}
+                  <UpdateCheck />
+                </>
+              )}
+            </p>
             <p className="about-muted">{t("about.copyright")}</p>
             <p className="about-muted">
               <Trans

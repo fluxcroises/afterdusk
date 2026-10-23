@@ -608,7 +608,13 @@
     "publicDomain": "public domain",
     "componentsLead": "Components:",
     "publisher": "Free software from the <site>Flux Croisés</site> association.",
-    "copy": "Copy"
+    "copy": "Copy",
+    "updateCheck": "Check for updates",
+    "updateChecking": "Checking for updates…",
+    "upToDate": "Afterdusk is up to date.",
+    "updateAvailable": "Version {{version}} available.",
+    "updateFailed": "Could not check, check the connection.",
+    "updateRetry": "Try again"
   },
   "develop": {
     "image": "Photo being edited",

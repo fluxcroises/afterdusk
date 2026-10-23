@@ -37,7 +37,7 @@ Les ouvertures suivantes se font normalement.
 
 ### Mises à jour
 
-Au démarrage, au plus une fois par jour, Afterdusk regarde si une nouvelle version est publiée ici. Si c'est le cas, un bandeau la propose ; rien ne s'installe sans votre clic. La vérification se désactive dans Réglages > Général.
+Au démarrage, au plus une fois par jour, Afterdusk regarde si une nouvelle version est publiée ici. Si c'est le cas, un bandeau la propose ; rien ne s'installe sans votre clic. La vérification se désactive dans Réglages > Général ; Aide > À propos > « Rechercher les mises à jour » la fait à tout moment.
 
 ## Confidentialité
 
