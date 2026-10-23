@@ -282,54 +282,29 @@ h3 {
   font-weight: 600;
 }
 
-.section-lead {
-  max-width: 36em;
-  margin: 12px 0 0;
-  color: var(--ad-text-secondary);
+/* Fonctions : texte et capture côte à côte, en alternance sur grand écran. */
+.features {
+  display: grid;
+  gap: clamp(48px, 7vw, 96px);
 }
 
-ul.plain {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-ul.plain li {
-  padding: 10px 0;
-  border-top: 1px solid var(--ad-border);
-  color: var(--ad-text-secondary);
-}
-
-ul.plain li:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.soon {
-  color: var(--ad-warning);
-  font-weight: 500;
-}
-
-/* Le parcours : quatre étapes numérotées comme les vignettes d'une planche contact. */
-
-.steps {
-  margin: 40px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step {
+.feature {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-  padding: 28px 0;
-  border-top: 1px solid var(--ad-border);
+  gap: 24px;
+  align-items: center;
 }
 
-.step-head {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
+.feature-text p {
+  margin: 12px 0 0;
+  color: var(--ad-text-secondary);
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 34em;
+}
+
+.feature-text h2 {
+  margin-top: 6px;
 }
 
 .frame {
@@ -339,121 +314,53 @@ ul.plain li:first-child {
   font-variant-numeric: tabular-nums;
 }
 
-.step-head p {
-  margin: 4px 0 0;
-  color: var(--ad-text-muted);
-  font-size: 15px;
-}
-
 .shot {
-  margin: 40px 0 0;
+  margin: 0;
 }
 
 .shot img {
+  display: block;
+  width: 100%;
+  height: auto;
   border: 1px solid var(--ad-border);
   border-radius: var(--ad-radius-lg);
+  background: var(--ad-workspace);
 }
 
-.shot figcaption {
-  margin-top: 10px;
-  color: var(--ad-text-muted);
-  font-size: 14px;
-}
-
-/* Après coup : deux sujets de même poids, côte à côte sur grand écran. */
-
-.later {
+/* Et aussi, et les engagements : des cartes sobres sur fond de panneau. */
+.extras,
+.promises {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 40px;
-  margin-top: 36px;
-}
-
-.later h3 {
-  margin-bottom: 12px;
-}
-
-.later p {
-  margin: 0 0 16px;
-  color: var(--ad-text-secondary);
-}
-
-/* Principes : une liste de définitions, plus proche d'une notice que d'une grille de cartes. */
-
-.principles {
-  margin: 36px 0 0;
-}
-
-.principles div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
-  padding: 20px 0;
-  border-top: 1px solid var(--ad-border);
-}
-
-.principles dt {
-  font-weight: 600;
-}
-
-.principles dd {
-  margin: 0;
-  max-width: 40em;
-  color: var(--ad-text-secondary);
-}
-
-/* Avancement */
-
-.versions {
-  margin: 36px 0 0;
+  gap: 16px;
+  margin: 28px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.version {
-  padding: 22px 0;
-  border-top: 1px solid var(--ad-border);
+.extras li,
+.promises li {
+  padding: 20px;
+  background: var(--ad-panel);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius-lg);
 }
 
-.version-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 16px;
+.extras h3,
+.promises h3 {
+  font-size: 17px;
 }
 
-.count {
+.extras p,
+.promises p {
+  margin: 6px 0 0;
   color: var(--ad-text-secondary);
   font-size: 15px;
-  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
 }
 
-.bar {
-  height: 6px;
-  margin: 12px 0 14px;
-  background: var(--ad-surface);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.bar span {
-  display: block;
-  height: 100%;
-  background: var(--ad-accent);
-}
-
-.version p {
-  margin: 0;
-  max-width: 44em;
-  color: var(--ad-text-secondary);
-  font-size: 15px;
-}
-
-.note {
-  margin: 24px 0 0;
-  color: var(--ad-text-muted);
-  font-size: 14px;
+.actions.end {
+  margin-top: 36px;
 }
 
 /* Pied de page */
@@ -475,30 +382,32 @@ footer p {
 /* Grand écran : les colonnes s'ouvrent quand le texte garde une longueur de ligne lisible. */
 
 @media (min-width: 720px) {
-  .step {
-    grid-template-columns: 220px minmax(0, 1fr);
-    gap: 32px;
-  }
-
-  .step-head {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .later {
+  .extras {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 56px;
   }
 
-  .principles div {
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 32px;
+  .promises {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1000px) {
-  .step {
-    grid-template-columns: 300px minmax(0, 1fr);
+@media (min-width: 900px) {
+  .feature {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 48px;
+  }
+
+  /* Une fonction sur deux : la capture à gauche. */
+  .feature:nth-child(even) {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+
+  .feature:nth-child(even) .feature-text {
+    order: 2;
+  }
+
+  .extras {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
