@@ -1,5 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const invoke = vi.fn<(cmd: string) => Promise<unknown>>(() => Promise.resolve(null));
+vi.mock("@tauri-apps/api/core", async (original) => ({
+  ...(await original<typeof import("@tauri-apps/api/core")>()),
+  invoke: (cmd: string) => invoke(cmd),
+}));
 
 const { default: i18n } = await import("../i18n");
 await i18n.changeLanguage("fr");
@@ -21,6 +27,14 @@ describe("À propos d'Afterdusk", () => {
     expect(dialog).toHaveTextContent("GNU GENERAL PUBLIC LICENSE");
     fireEvent.click(screen.getByRole("button", { name: "OK" }));
     expect(useAbout.getState().open).toBe(false);
+  });
+
+  it("le nom de l'association ouvre son site dans le navigateur", () => {
+    render(<AboutDialog />);
+    const dialog = screen.getByRole("dialog", { name: "Afterdusk" });
+    expect(dialog).toHaveTextContent("Un logiciel libre de l'association Flux Croisés.");
+    fireEvent.click(screen.getByRole("button", { name: "Flux Croisés" }));
+    expect(invoke).toHaveBeenCalledWith("open_publisher_site");
   });
 
   it("Échap ferme la boîte", () => {

@@ -169,6 +169,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::app_info,
+            commands::open_publisher_site,
             commands::app_ready,
             commands::library::libraries_list,
             commands::library::library_create,

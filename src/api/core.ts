@@ -120,6 +120,7 @@ export const api = {
   importsResumable: () => invoke<ResumableImport[]>("imports_resumable"),
   importsRecent: (libraryId: number) => invoke<RecentImport[]>("imports_recent", { libraryId }),
   appInfo: () => invoke<AppInfo>("app_info"),
+  openPublisherSite: () => invoke<null>("open_publisher_site"),
   librarySetBackup: (id: number, backup: string | null) =>
     invoke<Library>("library_set_backup", { id, backup }),
   librarySetTemplates: (id: number, folderTemplate: string, renameTemplate: string | null) =>

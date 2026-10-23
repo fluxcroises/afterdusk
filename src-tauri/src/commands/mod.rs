@@ -126,6 +126,24 @@ fn cpu() -> Option<String> {
     }
 }
 
+/// Site de Flux Croisés, l'association qui publie Afterdusk.
+const PUBLISHER_SITE: &str = "https://flux-croises.fr";
+
+/// Ouvre le site de l'éditeur dans le navigateur par défaut, sur clic dans
+/// « À propos ». L'adresse est fixe : l'interface ne peut pas en ouvrir d'autre.
+#[tauri::command]
+pub fn open_publisher_site() {
+    #[cfg(target_os = "windows")]
+    let program = "explorer";
+    #[cfg(target_os = "macos")]
+    let program = "open";
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    let program = "xdg-open";
+    let _ = std::process::Command::new(program)
+        .arg(PUBLISHER_SITE)
+        .spawn();
+}
+
 #[tauri::command]
 pub fn app_info() -> AppInfo {
     AppInfo {

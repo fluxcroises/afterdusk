@@ -1,6 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { type AppInfo, api } from "../api/core";
 import defaultPhoto from "../assets/accueil-cabourg.jpg";
 import publisherLogo from "../assets/logo_horizontal_blanc.png";
@@ -99,7 +99,20 @@ export function AboutDialog() {
             </h2>
             <p>{t("about.version", { version: info?.version ?? "0.1.0" })}</p>
             <p className="about-muted">{t("about.copyright")}</p>
-            <p className="about-muted">{t("about.publisher")}</p>
+            <p className="about-muted">
+              <Trans
+                i18nKey="about.publisher"
+                components={{
+                  site: (
+                    <button
+                      type="button"
+                      className="about-site-link"
+                      onClick={() => void api.openPublisherSite().catch(() => undefined)}
+                    />
+                  ),
+                }}
+              />
+            </p>
             <img className="about-publisher-logo" src={publisherLogo} alt="" />
           </header>
           {showLicense ? (

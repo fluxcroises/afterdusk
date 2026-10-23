@@ -2716,6 +2716,22 @@ input[type="radio"] {
   color: var(--ad-text-secondary);
 }
 
+/* Nom de l'association, lien vers son site ouvert dans le navigateur. */
+.about-site-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ad-text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.about-site-link:hover {
+  color: var(--ad-accent);
+}
+
 /* Logo blanc de Flux Croisés, l'éditeur, sous sa mention. */
 .about-publisher-logo {
   display: block;
