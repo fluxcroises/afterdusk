@@ -605,7 +605,8 @@
     "copied": "Copiées dans le presse-papiers",
     "publicDomain": "domaine public",
     "componentsLead": "Composants :",
-    "publisher": "Un logiciel libre de l'association <site>Flux Croisés</site>."
+    "publisher": "Un logiciel libre de l'association <site>Flux Croisés</site>.",
+    "copy": "Copier"
   },
   "develop": {
     "image": "Photo en cours de retouche",

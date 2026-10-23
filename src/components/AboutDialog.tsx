@@ -50,7 +50,8 @@ export function AboutDialog() {
   const open = useAbout((s) => s.open);
   const close = useAbout((s) => s.close);
   const [info, setInfo] = useState<AppInfo | null>(null);
-  const [showLicense, setShowLicense] = useState(false);
+  // Partie du milieu : composants, licence ou informations système, à hauteur fixe.
+  const [view, setView] = useState<"components" | "license" | "system">("components");
   const [copied, setCopied] = useState(false);
   const ok = useRef<HTMLButtonElement>(null);
 
@@ -116,12 +117,21 @@ export function AboutDialog() {
             </p>
             <img className="about-publisher-logo" src={publisherLogo} alt="" />
           </header>
-          {showLicense ? (
-            <pre className="about-license" tabIndex={0}>
+          {view === "license" ? (
+            <pre className="about-panel about-text" tabIndex={0}>
               {license}
             </pre>
+          ) : view === "system" ? (
+            <div className="about-panel about-system">
+              <pre className="about-text" tabIndex={0}>
+                {systemReport(info, i18n.language)}
+              </pre>
+              <button type="button" className="button button-small" onClick={() => void copy()}>
+                {copied ? t("about.copied") : t("about.copy")}
+              </button>
+            </div>
           ) : (
-            <section className="about-components">
+            <section className="about-panel about-components">
               {/* Un paragraphe discret, comme les mentions des « À propos » classiques. */}
               <p>
                 {t("about.componentsLead")}{" "}
@@ -152,13 +162,18 @@ export function AboutDialog() {
               <button
                 type="button"
                 className="button"
-                aria-pressed={showLicense}
-                onClick={() => setShowLicense((v) => !v)}
+                aria-pressed={view === "license"}
+                onClick={() => setView((v) => (v === "license" ? "components" : "license"))}
               >
-                {showLicense ? t("about.components") : t("about.license")}
+                {view === "license" ? t("about.components") : t("about.license")}
               </button>
-              <button type="button" className="button" onClick={() => void copy()}>
-                {copied ? t("about.copied") : t("about.systemInfo")}
+              <button
+                type="button"
+                className="button"
+                aria-pressed={view === "system"}
+                onClick={() => setView((v) => (v === "system" ? "components" : "system"))}
+              >
+                {view === "system" ? t("about.components") : t("about.systemInfo")}
               </button>
             </div>
           </footer>

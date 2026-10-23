@@ -936,3 +936,4 @@ Critères (cahier des charges, section 7) :
 Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm X-T50, 40 Mpx), traitées une à une.
 
 - Assistant : la sauvegarde devient une question (« Voulez-vous une sauvegarde ? », Oui ou Non, sans réponse par défaut), le dossier n'est demandé qu'après un oui ; textes repris (« Vos originaux ne sont jamais modifiés. », « Vous pourrez le modifier plus tard… »), « Facultatif. » retiré. Livrer : notes « Aucun logo : il se choisit dans… » et « Photos en 2 048 px… » retirées. Test : question sans réponse par défaut, dossier après un oui seulement.
+- « À propos » : la boîte garde la même taille (640 × 516) avec les composants, la licence ou les informations système, la partie du milieu ayant une hauteur fixe ; les informations système s'affichent dans la boîte, avec un bouton « Copier » ; photo recadrée pour centrer le couple sous le logo (il était 32 px à droite).
