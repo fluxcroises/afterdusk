@@ -55,6 +55,8 @@ export function Onboarding() {
   // Une étape sans texte n'affiche que son titre et ses champs.
   const text = t(`onboarding.${step}.text`);
   const [busy, setBusy] = useState(false);
+  // Sauvegarde : question posée, sans réponse par défaut.
+  const [wantsBackup, setWantsBackup] = useState<boolean | null>(null);
   const [error, setError] = useState<ReturnType<typeof toCommandError> | null>(null);
   const [c, setChoices] = useState<OnboardingChoices>({
     profile: "basic",
@@ -137,15 +139,42 @@ export function Onboarding() {
           )}
           {step === "backup" && (
             <div className="settings-form">
-              <FolderField
-                label={t("onboarding.backup.folder")}
-                path={c.backup}
-                placeholder={t("onboarding.backup.none")}
-                onChange={(backup) => update({ backup })}
-                onClear={() => update({ backup: null })}
-              />
-              <CloudSuggestions current={c.backup} onPick={(backup) => update({ backup })} />
-              <BackupWarning root={c.root} backup={c.backup} />
+              <div role="radiogroup" aria-labelledby="onboarding-title">
+                <label className="check-row">
+                  <input
+                    type="radio"
+                    name="onboarding-backup"
+                    checked={wantsBackup === true}
+                    onChange={() => setWantsBackup(true)}
+                  />
+                  {t("onboarding.backup.yes")}
+                </label>
+                <label className="check-row">
+                  <input
+                    type="radio"
+                    name="onboarding-backup"
+                    checked={wantsBackup === false}
+                    onChange={() => {
+                      setWantsBackup(false);
+                      update({ backup: null });
+                    }}
+                  />
+                  {t("onboarding.backup.no")}
+                </label>
+              </div>
+              {wantsBackup && (
+                <>
+                  <FolderField
+                    label={t("onboarding.backup.folder")}
+                    path={c.backup}
+                    placeholder={t("onboarding.backup.noFolder")}
+                    onChange={(backup) => update({ backup })}
+                    onClear={() => update({ backup: null })}
+                  />
+                  <CloudSuggestions current={c.backup} onPick={(backup) => update({ backup })} />
+                  <BackupWarning root={c.root} backup={c.backup} />
+                </>
+              )}
             </div>
           )}
           {step === "folders" && (
@@ -186,7 +215,10 @@ export function Onboarding() {
             <button
               type="button"
               className="button button-primary button-inline"
-              disabled={step === "library" && !c.root}
+              disabled={
+                (step === "library" && !c.root) ||
+                (step === "backup" && (wantsBackup === null || (wantsBackup && !c.backup)))
+              }
               onClick={() => setStep(STEPS[index + 1] ?? "identity")}
             >
               {t("onboarding.next")}

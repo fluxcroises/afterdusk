@@ -243,7 +243,6 @@ export function GalleryDialog() {
                 />
               </label>
             )}
-            <p className="panel-note">{t("gallery.privacy")}</p>
             <div className="develop-crop-actions">
               {running && progress && (
                 <span className="panel-note">

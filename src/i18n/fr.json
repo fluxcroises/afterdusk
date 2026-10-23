@@ -544,15 +544,18 @@
     },
     "library": {
       "title": "Où ranger vos photos ?",
-      "text": "Les originaux de la carte ne sont jamais modifiés.",
+      "text": "Vos originaux ne sont jamais modifiés.",
       "folder": "Dossier de la bibliothèque",
       "name": "Nom"
     },
     "backup": {
-      "title": "Une seconde copie à chaque import",
-      "text": "Copie vérifiée ; rien n'y est jamais supprimé.",
+      "title": "Voulez-vous une sauvegarde ?",
+      "text": "Une seconde copie de chaque import, de préférence sur un autre disque. Une photo supprimée de la bibliothèque y reste.",
       "folder": "Dossier de sauvegarde",
-      "none": "Pas de sauvegarde pour l'instant"
+      "none": "Pas de sauvegarde pour l'instant",
+      "yes": "Oui, copier chaque import dans un dossier de sauvegarde",
+      "no": "Non, pas de sauvegarde",
+      "noFolder": "Aucun dossier choisi"
     },
     "folders": {
       "title": "Comment ranger les imports ?",
@@ -560,14 +563,14 @@
     },
     "identity": {
       "title": "Qui signe ces photos ?",
-      "text": "Facultatif."
+      "text": ""
     },
     "back": "Précédent",
     "next": "Suivant",
     "finish": "Créer la bibliothèque",
     "usage": {
       "title": "Comment comptez-vous utiliser Afterdusk ?",
-      "text": "Modifiable plus tard dans Réglages > Général."
+      "text": "Vous pourrez le modifier plus tard dans Réglages > Général."
     }
   },
   "devices": {
@@ -1046,8 +1049,7 @@
     "previewPreset": "Preset",
     "previewLoading": "Calcul de l'aperçu…",
     "previewFailed": "Aperçu impossible pour cette photo.",
-    "previewSize": "Fichier de {{width}} × {{height}} px",
-    "noStudioLogo": "Aucun logo : il se choisit dans Réglages > Identité."
+    "previewSize": "Fichier de {{width}} × {{height}} px"
   },
   "rescan": {
     "title": "Réanalyse de la bibliothèque",
@@ -1406,7 +1408,6 @@
     "selection": "Le client choisit ses photos et vous renvoie sa sélection",
     "noEmail": "Sans courriel dans Réglages > Identité, le client vous renverra un fichier ou un texte copié.",
     "allowDownload": "Les visiteurs peuvent télécharger les photos",
-    "privacy": "Photos en 2 048 px, retouches comprises, sans aucune métadonnée (ni lieu, ni boîtier). La page n'appelle aucun site extérieur.",
     "chooseFolder": "Dossier où créer la galerie",
     "create": "Créer…",
     "progress": "Photos : {{done}} / {{total}}",

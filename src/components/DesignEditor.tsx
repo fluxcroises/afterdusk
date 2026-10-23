@@ -634,7 +634,6 @@ export function DesignEditor() {
               />
               {t("design.useLogo")}
             </label>
-            {!logoUrl && <p className="panel-note">{t("deliver.noStudioLogo")}</p>}
             {d.logo && (
               <>
                 <Slider

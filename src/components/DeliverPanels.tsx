@@ -375,9 +375,7 @@ function StudioLogoNote() {
     <div className="studio-logo-preview studio-logo-small">
       <img src={url} alt={t("settings.logo")} />
     </div>
-  ) : (
-    <p className="panel-note">{t("deliver.noStudioLogo")}</p>
-  );
+  ) : null;
 }
 
 export function WatermarkSection() {

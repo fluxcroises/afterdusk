@@ -184,7 +184,6 @@ export function ContactSheetDialog() {
             />
           </label>
         )}
-        {logo === null && <p className="panel-note">{t("deliver.noStudioLogo")}</p>}
         <div className="develop-crop-actions">
           {running && progress && (
             <span className="panel-note">

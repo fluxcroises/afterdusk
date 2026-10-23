@@ -544,15 +544,18 @@
     },
     "library": {
       "title": "Where should your photos go?",
-      "text": "The originals on the card are never modified.",
+      "text": "Your originals are never modified.",
       "folder": "Library folder",
       "name": "Name"
     },
     "backup": {
-      "title": "A second copy with every import",
-      "text": "Verified copy; nothing is ever deleted from it.",
+      "title": "Do you want a backup?",
+      "text": "A second copy of every import, preferably on another disk. A photo deleted from the library stays there.",
       "folder": "Backup folder",
-      "none": "No backup for now"
+      "none": "No backup for now",
+      "yes": "Yes, copy every import to a backup folder",
+      "no": "No backup",
+      "noFolder": "No folder chosen"
     },
     "folders": {
       "title": "How should imports be organised?",
@@ -560,7 +563,7 @@
     },
     "identity": {
       "title": "Who signs these photos?",
-      "text": "Optional."
+      "text": ""
     },
     "back": "Back",
     "next": "Next",
@@ -1046,8 +1049,7 @@
     "previewPreset": "Preset",
     "previewLoading": "Computing the preview…",
     "previewFailed": "No preview for this photo.",
-    "previewSize": "File of {{width}} × {{height}} px",
-    "noStudioLogo": "No logo: choose one in Settings > Identity."
+    "previewSize": "File of {{width}} × {{height}} px"
   },
   "rescan": {
     "title": "Library rescan",
@@ -1406,7 +1408,6 @@
     "selection": "The client picks photos and sends you their selection",
     "noEmail": "Without an email in Settings > Identity, the client will send you a file or copied text.",
     "allowDownload": "Visitors can download the photos",
-    "privacy": "Photos at 2,048 px, edits included, without any metadata (no location, no camera). The page calls no outside site.",
     "chooseFolder": "Folder to create the gallery in",
     "create": "Create…",
     "progress": "Photos: {{done}} / {{total}}",
