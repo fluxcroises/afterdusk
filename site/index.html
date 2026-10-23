@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Afterdusk, gestion photo libre pour photographes semi-pro</title>
+    <meta
+      name="description"
+      content="Logiciel de bureau libre et gratuit pour importer, trier, retoucher et livrer une journée de photos. Windows et macOS, sans compte ni cloud."
+    />
+    <meta name="theme-color" content="#17191c" />
+    <link rel="icon" href="img/logo.svg" type="image/svg+xml" />
+    <link rel="alternate" hreflang="en" href="en/" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#contenu">Aller au contenu</a>
+
+    <header class="wrap top">
+      <a class="brand" href="./" aria-label="Afterdusk, accueil">
+        <span class="logo" aria-hidden="true"></span>
+        Afterdusk
+      </a>
+      <nav aria-label="Navigation principale">
+        <ul class="nav">
+          <li><a href="#parcours">Le parcours</a></li>
+          <li><a href="#principes">Principes</a></li>
+          <li><a href="#avancement">Avancement</a></li>
+          <li><a href="https://github.com/lewisbedar/afterdusk-app">GitHub</a></li>
+          <li><a class="lang" href="en/" hreflang="en" lang="en">English</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="contenu">
+      <figure class="dusk">
+        <img
+          src="img/cabourg.jpg"
+          width="2560"
+          height="853"
+          alt="Deux silhouettes sur la plage de Cabourg, à marée basse, au coucher du soleil."
+        />
+        <figcaption>Cabourg, photo © Lewis Bedar</figcaption>
+      </figure>
+
+      <div class="wrap intro">
+        <h1>Une journée de photos, de la carte mémoire à la livraison.</h1>
+        <p class="lead">
+          Afterdusk est un logiciel de bureau libre et gratuit pour les photographes semi-pro qui
+          trouvent Lightroom et Capture One trop lourds. Il importe, trie, retouche et exporte vos
+          photos, sur Windows et macOS, sans compte ni cloud.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/lewisbedar/afterdusk-app"
+            >Voir le code sur GitHub</a
+          >
+          <a class="button" href="#avancement">Où en est le projet</a>
+        </div>
+        <p class="status">
+          En développement. Aucun installateur n'est publié pour l'instant : le logiciel se compile
+          depuis les sources, en suivant le fichier README du dépôt.
+        </p>
+      </div>
+
+      <section id="parcours" aria-labelledby="parcours-titre">
+        <div class="wrap">
+          <h2 id="parcours-titre">Le parcours</h2>
+          <p class="section-lead">
+            Le logiciel suit le soir où l'on rentre avec une carte pleine, en quatre étapes :
+            Importer, Trier, Retoucher, Livrer.
+          </p>
+
+          <ol class="steps">
+            <li class="step">
+              <div class="step-head">
+                <span class="frame">01</span>
+                <div>
+                  <h3>Importer</h3>
+                  <p>Copier sans rien perdre.</p>
+                </div>
+              </div>
+              <ul class="plain">
+                <li>
+                  Copie, renommage et rangement automatiques, avec une copie de sauvegarde sur un
+                  second disque si vous en avez configuré un.
+                </li>
+                <li>
+                  Chaque fichier est vérifié par somme de contrôle. Si l'import est coupé, il
+                  reprend proprement au redémarrage.
+                </li>
+                <li>Rien n'est jamais écrit sur la carte ni sur le boîtier.</li>
+                <li>
+                  Les photos déjà importées sont reconnues et grisées. Les aperçus s'affichent dès
+                  qu'un fichier est copié, sans attendre la fin de l'import.
+                </li>
+                <li>
+                  RAW testés : Fujifilm (RAF, capteurs X-Trans compris), Canon (CR3), Nikon (NEF),
+                  Sony (ARW), Panasonic (RW2) et DNG.
+                </li>
+              </ul>
+            </li>
+
+            <li class="step">
+              <div class="step-head">
+                <span class="frame">02</span>
+                <div>
+                  <h3>Trier</h3>
+                  <p>Au clavier, une photo après l'autre.</p>
+                </div>
+              </div>
+              <ul class="plain">
+                <li>
+                  Notes, drapeaux et étiquettes de couleur au clavier, enregistrés aussi dans un
+                  fichier XMP à côté de l'original, que d'autres logiciels savent lire.
+                </li>
+                <li>Comparaison de deux à quatre photos côte à côte, avec un zoom synchronisé.</li>
+                <li>Les rafales sont regroupées en piles.</li>
+                <li>
+                  Les rejets partent dans une corbeille interne : on peut les restaurer, et elle se
+                  vide au bout de 30 jours.
+                </li>
+                <li>
+                  <span class="soon">En cours :</span> repérage des photos floues, mal exposées ou
+                  aux yeux fermés, calculé sur l'ordinateur, avec un filtre « Ratés probables ».
+                </li>
+              </ul>
+            </li>
+
+            <li class="step">
+              <div class="step-head">
+                <span class="frame">03</span>
+                <div>
+                  <h3>Retoucher</h3>
+                  <p>Sans jamais toucher à l'original.</p>
+                </div>
+              </div>
+              <ul class="plain">
+                <li>
+                  Développement des RAW sur la carte graphique, avec par défaut un rendu neutre,
+                  fidèle à celui du boîtier.
+                </li>
+                <li>
+                  Corrections d'objectifs automatiques (base lensfun), recadrage, redressement,
+                  correction des poussières.
+                </li>
+                <li>
+                  Presets fournis et personnels, copier-coller des réglages et synchronisation sur
+                  une série.
+                </li>
+                <li>Historique, instantanés, copies virtuelles et comparaison avant/après.</li>
+                <li>
+                  Les retouches sont écrites dans le XMP : elles reviennent même si la base de
+                  données est reconstruite.
+                </li>
+              </ul>
+            </li>
+
+            <li class="step">
+              <div class="step-head">
+                <span class="frame">04</span>
+                <div>
+                  <h3>Livrer</h3>
+                  <p>Le bon fichier pour chaque usage.</p>
+                </div>
+              </div>
+              <ul class="plain">
+                <li>
+                  Cinq presets d'export : originaux, pleine qualité, web, Instagram et impression.
+                  Formats JPEG, HEIF, AVIF, TIFF et PNG, plusieurs presets en une seule fois.
+                </li>
+                <li>
+                  Filigrane en texte, en image ou avec le logo de votre studio. Retrait du GPS, du
+                  numéro de série du boîtier ou de toutes les métadonnées.
+                </li>
+                <li>
+                  <span class="soon">En cours :</span> planches contact en PDF, numérotées, avec
+                  en-tête et filigrane en option. Puis une galerie web à envoyer au client, qui
+                  coche ses photos préférées.
+                </li>
+              </ul>
+            </li>
+          </ol>
+
+          <figure class="shot">
+            <img
+              src="img/accueil.png"
+              width="1042"
+              height="702"
+              loading="lazy"
+              alt="Écran d'accueil d'Afterdusk : la photo de Cabourg en bandeau, « Bonsoir », les boutons Bibliothèque, Dossier et Importer, puis les zones Ajouter des photos et Albums."
+            />
+            <figcaption>L'écran d'accueil, à l'ouverture du logiciel (Windows).</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="apres-coup" aria-labelledby="apres-titre">
+        <div class="wrap">
+          <h2 id="apres-titre">Après coup</h2>
+          <p class="section-lead">
+            Une fois la journée rangée, Afterdusk garde la trace des lieux et du matériel.
+          </p>
+          <div class="later">
+            <div>
+              <h3>La carte de vos albums</h3>
+              <p>
+                Le lieu vient du GPS des photos, d'une trace GPX, d'une photo prise au smartphone le
+                même jour, ou d'un placement à la main. Le décalage d'heure du boîtier est corrigé.
+              </p>
+              <p>
+                Pays et ville sont trouvés sans connexion. Chaque album devient un point sur une
+                carte du monde, et une zone dessinée sur la carte filtre les photos.
+              </p>
+            </div>
+            <div>
+              <h3>L'inventaire du matériel</h3>
+              <p>
+                Chaque boîtier et chaque objectif lus dans les photos ont leur fiche, avec leurs
+                statistiques d'usage. Les accessoires s'ajoutent à la main.
+              </p>
+              <p>
+                Un journal d'entretien envoie des rappels (nettoyage du capteur, révision), et
+                l'inventaire s'exporte en PDF ou en CSV pour l'assurance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="principes" aria-labelledby="principes-titre">
+        <div class="wrap">
+          <h2 id="principes-titre">Principes</h2>
+          <dl class="principles">
+            <div>
+              <dt>De vrais dossiers</dt>
+              <dd>
+                Vos photos restent dans des dossiers lisibles depuis l'explorateur. Notes et
+                retouches sont écrites dans un fichier XMP à côté de chaque original : la
+                bibliothèque reste utilisable sans Afterdusk.
+              </dd>
+            </div>
+            <div>
+              <dt>Un original n'est jamais modifié</dt>
+              <dd>
+                Les retouches sont des réglages, appliqués à l'affichage et à l'export. Une
+                suppression passe toujours par la corbeille interne.
+              </dd>
+            </div>
+            <div>
+              <dt>Tout reste sur votre ordinateur</dt>
+              <dd>
+                Pas de compte, pas de cloud, et les analyses tournent en local. Le logiciel ne se
+                connecte que pour les tuiles de la carte, la recherche de mises à jour et, si vous
+                l'activez, la réception FTP sur votre réseau local. Chacun de ces accès se coupe
+                dans les Réglages.
+              </dd>
+            </div>
+            <div>
+              <dt>Disque externe débranché</dt>
+              <dd>
+                Une bibliothèque sur un disque externe reste consultable quand il n'est pas branché,
+                grâce au cache des aperçus.
+              </dd>
+            </div>
+            <div>
+              <dt>Libre</dt>
+              <dd>
+                Code publié sous licence GPL v3. Gratuit, avec une interface en français et en
+                anglais.
+                <a href="https://github.com/lewisbedar/afterdusk-app">Le dépôt est sur GitHub</a>.
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section id="avancement" aria-labelledby="avancement-titre">
+        <div class="wrap">
+          <h2 id="avancement-titre">Avancement</h2>
+          <p class="section-lead">
+            Le projet avance une version à la fois. Chaque version a sa liste de critères, cochés
+            seulement une fois testés sur Windows et sur macOS.
+          </p>
+
+          <ol class="versions">
+            <li class="version">
+              <div class="version-head">
+                <h3>V0.1, Importer et trier</h3>
+                <span class="count">12 critères sur 14</span>
+              </div>
+              <div class="bar" aria-hidden="true"><span style="width: 85.7%"></span></div>
+              <p>
+                Restent la détection d'une carte SD en moins de 5 secondes et le passage d'une photo
+                à la suivante en moins de 100 ms.
+              </p>
+            </li>
+            <li class="version">
+              <div class="version-head">
+                <h3>V0.2, Retoucher et livrer</h3>
+                <span class="count">9 critères sur 11</span>
+              </div>
+              <div class="bar" aria-hidden="true"><span style="width: 81.8%"></span></div>
+              <p>
+                Restent l'ensemble des réglages avec un retour visuel en moins de 100 ms, et
+                l'export de 100 photos en moins de 2 minutes.
+              </p>
+            </li>
+            <li class="version">
+              <div class="version-head">
+                <h3>V0.3, Carte et matériel</h3>
+                <span class="count">9 critères sur 9</span>
+              </div>
+              <div class="bar" aria-hidden="true"><span style="width: 100%"></span></div>
+              <p>Terminée.</p>
+            </li>
+            <li class="version">
+              <div class="version-head">
+                <h3>V0.4, Assistants et partage</h3>
+                <span class="count">1 critère sur 9</span>
+              </div>
+              <div class="bar" aria-hidden="true"><span style="width: 11.1%"></span></div>
+              <p>
+                En cours : détection des ratés, vidéos, galerie web client, planches contact,
+                clients et séances, import automatique, puis installateurs signés et mises à jour
+                automatiques.
+              </p>
+            </li>
+          </ol>
+          <p class="note">
+            État au 21 octobre 2026. Le détail est dans le fichier
+            <a href="https://github.com/lewisbedar/afterdusk-app/blob/main/docs/avancement.md"
+              >avancement.md</a
+            >
+            du dépôt.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p>
+          Afterdusk est un logiciel libre, sous licence GPL v3 ou ultérieure.
+          <a href="https://github.com/lewisbedar/afterdusk-app">Code source sur GitHub</a>.
+        </p>
+        <p>
+          Photo de Cabourg © Lewis Bedar, tous droits réservés : elle n'est pas couverte par la
+          licence du code. Police Inter, licence SIL Open Font.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
