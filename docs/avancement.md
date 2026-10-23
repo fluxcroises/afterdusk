@@ -894,4 +894,4 @@ Critères (cahier des charges, section 7) :
 
 - Cochés, déjà tranchés : bibliothèque de métadonnées (décision 0002, xmp-toolkit-rs), fournisseur de tuiles (décision 0008, OpenFreeMap), nom du dépôt (`lewisbedar/afterdusk-app`).
 - Restent ouverts : disponibilité du nom et nom de domaine, logo et identité visuelle. L'espace de noms XMP de la décision 0002 (`https://afterdusk.app/ns/xmp/1.0/`) dépend du domaine retenu ; il est à fixer avant la distribution, après quoi il ne change plus.
-- Nommage des annexes XMP (décision 0002, encore « à valider ») : la proposition est appliquée depuis la V0.1, `photo.xmp` pour les RAW et les vidéos, `photo.jpg.xmp` pour les autres formats.
+- Nommage des annexes XMP (décision 0002) validé par l'utilisateur, tel qu'appliqué depuis la V0.1 : `photo.xmp` pour les RAW et les vidéos, `photo.jpg.xmp` pour les autres formats.

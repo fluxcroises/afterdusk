@@ -1,6 +1,6 @@
 # 0002 — Écriture XMP : xmp-toolkit-rs plutôt qu'Exiv2
 
-Date : 2026-10-18 · Statut : adoptée pour la bibliothèque ; nommage et espace de noms à valider
+Date : 2026-10-18 · Statut : adoptée pour la bibliothèque et le nommage des annexes (validé par l'utilisateur le 2026-10-23) ; espace de noms à valider
 
 ## Contexte
 
@@ -51,5 +51,7 @@ On n'écrit pas `xmp:Rating = -1` pour un rejet (convention Bridge et darktable)
    - `DSCF0001.RAF.xmp` : darktable, digiKam. Pas de collision, mais Lightroom ne le lit pas.
 
    Proposition : `DSCF0001.xmp` pour les RAW (compatibilité avec Lightroom, d'où viennent la plupart des utilisateurs visés) et `DSCF0001.JPG.xmp` pour les autres formats, ce qui évite la collision RAW + JPEG.
+
+   **Validé** par l'utilisateur le 2026-10-23, tel qu'appliqué depuis la V0.1 : `DSCF0001.xmp` pour les RAW et les vidéos, `DSCF0001.JPG.xmp` pour les autres formats.
 
 2. **Espace de noms** `https://afterdusk.app/ns/xmp/1.0/` (préfixe `afterdusk`). L'adresse n'a pas besoin d'exister, mais une fois écrite dans des fichiers on ne la change plus ; à confirmer avec le nom de domaine retenu (section 9 du cahier des charges).
