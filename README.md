@@ -53,9 +53,7 @@ Vos photos, vos réglages et votre bibliothèque restent sur votre ordinateur et
 
 Les installateurs sont construits par GitHub Actions, depuis ce dépôt public, par l'action [Publication](.github/workflows/release.yml) ; aucun fichier construit ailleurs n'est publié. Les archives de mise à jour sont signées avec la clé du projet, et Afterdusk refuse toute mise à jour qui n'en porte pas la signature.
 
-Pour la signature de ses installateurs Windows, Afterdusk utilise [SignPath Foundation](https://signpath.org), dont la signature gratuite est demandée (Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org), une fois la demande acceptée). D'ici là, les installateurs Windows et macOS ne sont pas signés.
-
-Chaque signature est approuvée à la main par un approbateur ; seuls les fichiers construits depuis ce dépôt par l'action Publication sont signés.
+Pour l'instant, les installateurs Windows et macOS ne sont pas signés. La signature gratuite des installateurs Windows sera demandée à [SignPath Foundation](https://signpath.org) une fois le projet un peu plus établi ; cette section donnera alors la mention exigée.
 
 Rôles :
 
