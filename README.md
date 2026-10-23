@@ -21,7 +21,7 @@ La dernière version est sur la page [Releases](https://github.com/fluxcroises/a
 
 Lancez l'installateur. Windows demande les droits d'administrateur : Afterdusk s'installe dans `Program Files\Flux Croisés\Afterdusk`, pour tous les utilisateurs de l'ordinateur.
 
-Tant que les installateurs ne sont pas signés (voir plus bas), Windows affiche « Windows a protégé votre ordinateur ». Cliquez sur « Informations complémentaires », puis sur « Exécuter quand même ».
+Tant que les installateurs ne sont pas signés (voir la politique de signature, plus bas), Windows affiche « Windows a protégé votre ordinateur ». Cliquez sur « Informations complémentaires », puis sur « Exécuter quand même ».
 
 ### Installer sur Mac
 
@@ -53,7 +53,9 @@ Vos photos, vos réglages et votre bibliothèque restent sur votre ordinateur et
 
 Les installateurs sont construits par GitHub Actions, depuis ce dépôt public, par l'action [Publication](.github/workflows/release.yml) ; aucun fichier construit ailleurs n'est publié. Les archives de mise à jour sont signées avec la clé du projet, et Afterdusk refuse toute mise à jour qui n'en porte pas la signature.
 
-Pour l'instant, les installateurs Windows et macOS ne sont pas signés. Une demande de signature gratuite est prévue auprès de [SignPath Foundation](https://signpath.org) pour Windows ; cette section donnera alors la mention et les règles exigées.
+Pour la signature de ses installateurs Windows, Afterdusk utilise [SignPath Foundation](https://signpath.org), dont la signature gratuite est demandée (Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org), une fois la demande acceptée). D'ici là, les installateurs Windows et macOS ne sont pas signés.
+
+Chaque signature est approuvée à la main par un approbateur ; seuls les fichiers construits depuis ce dépôt par l'action Publication sont signés.
 
 Rôles :
 
