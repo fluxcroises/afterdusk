@@ -1,0 +1,43 @@
+name: Signaler un problème
+description: Afterdusk ne fait pas ce qu'il devrait, affiche une erreur ou se ferme.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce problème. Afterdusk ne modifie jamais vos originaux ; si une photo semble abîmée, c'est son aperçu ou sa retouche qui est en cause.
+  - type: textarea
+    id: what
+    attributes:
+      label: Ce qui se passe
+      description: Ce que vous avez fait, ce que vous attendiez, et ce qui s'est passé à la place.
+      placeholder: "Dans Trier, en zoomant sur une photo, l'écran devient noir."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pour le reproduire
+      description: Les étapes, une par ligne, si vous les connaissez.
+      placeholder: |
+        1. Importer une carte d'un Fujifilm X-T50
+        2. Ouvrir une photo dans Trier
+        3. Cliquer sur la photo
+  - type: input
+    id: camera
+    attributes:
+      label: Boîtier et format des photos en cause
+      placeholder: "Sony A7 III, RAW (ARW) ; iPhone 15, HEIC…"
+  - type: textarea
+    id: system
+    attributes:
+      label: Informations système
+      description: Aide > À propos > « Informations système… », puis « Copier », et collez ici.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Captures ou fichiers
+      description: Une capture d'écran aide souvent. Ne joignez une photo que si vous acceptez qu'elle soit publique.

@@ -1,0 +1,29 @@
+name: Proposer une amélioration
+description: Une fonction qui manque, ou quelque chose qui pourrait être plus simple.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Ce dont vous avez besoin
+      description: Votre façon de travailler, et ce qu'Afterdusk ne permet pas encore ou rend difficile.
+      placeholder: "Après un mariage, je trie 2 000 photos et je voudrais…"
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Votre idée
+      description: Comment vous l'imagineriez, ou comment un autre logiciel le fait.
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module concerné
+      options:
+        - Importer
+        - Trier
+        - Retoucher
+        - Livrer
+        - Bibliothèque, carte ou matériel
+        - Réglages ou installation
+        - Autre
