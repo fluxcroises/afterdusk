@@ -161,6 +161,11 @@ pub fn render_developed(
     let healed = spots::healed(&corrected, &settings.spots);
     drop(corrected);
     let shaped = geometry::transform(&healed, g);
+    // Masques : la source avant géométrie, à l'échelle de la sortie.
+    let source = (
+        f64::from(healed.width) * f64::from(tw) / f64::from(shaped.width.max(1)),
+        f64::from(healed.height) * f64::from(th) / f64::from(shaped.height.max(1)),
+    );
     drop(healed);
     let sized = if (shaped.width, shaped.height) == (tw, th) {
         shaped
@@ -169,7 +174,8 @@ pub fn render_developed(
     };
 
     let params = RenderParams::from_settings(settings, sized.as_shot_white, Clipping::default())
-        .rendered(sized.rendered);
+        .rendered(sized.rendered)
+        .with_masks(settings, source.0, source.1);
     let mut rgb = render_encoded(&sized, &params);
     sharpen(&mut rgb, tw as usize, th as usize, options.sharpen);
     let mut out = Rendered {
@@ -336,6 +342,64 @@ mod tests {
         // Jamais d'agrandissement.
         assert_eq!(target_size(800, 600, Resize::LongSide(2048)), (800, 600));
         assert_eq!(target_size(800, 600, Resize::Percent(f64::NAN)), (800, 600));
+    }
+
+    #[test]
+    fn masque_a_sa_place_dans_l_export_recadre_et_reduit() {
+        use crate::develop::settings::{CropRect, LocalAdjust, Mask, MaskShape};
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("gris.png");
+        image::RgbImage::from_pixel(600, 400, image::Rgb([128, 128, 128]))
+            .save(&path)
+            .unwrap();
+        let developed = crate::develop::rendered::develop(&path, 1).unwrap();
+        // Ellipse nette de 120 × 120 pixels au centre de la source, -2 IL ;
+        // recadrage sur les trois quarts droits : elle va de 20 % à 46,7 % de
+        // la largeur exportée.
+        let mut s = DevelopSettings::default();
+        s.geometry.crop = CropRect {
+            left: 0.25,
+            top: 0.0,
+            right: 1.0,
+            bottom: 1.0,
+        };
+        s.masks = vec![Mask {
+            shape: MaskShape::Radial {
+                center: [0.5, 0.5],
+                radius: [0.1, 0.15],
+                angle: 0.0,
+                feather: 0.0,
+            },
+            adjust: LocalAdjust {
+                exposure: -2.0,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+        }];
+        for resize in [Resize::Full, Resize::LongSide(150)] {
+            let options = RenderOptions {
+                resize,
+                sharpen: Sharpen::None,
+                color: ColorSpace::Srgb,
+            };
+            let out = render_developed(&developed, &s, None, options, None).unwrap();
+            let y = out.height / 2;
+            let dark: Vec<u32> = (0..out.width)
+                .filter(|x| out.rgb[((y * out.width + x) * 3) as usize] < 0.3)
+                .collect();
+            let w = f64::from(out.width);
+            let (first, last) = (f64::from(dark[0]), f64::from(dark[dark.len() - 1] + 1));
+            assert!(
+                (first / w - 0.2).abs() < 1.5 / w && (last / w - 0.4667).abs() < 1.5 / w,
+                "{resize:?} : {first}..{last} sur {w}"
+            );
+            assert_eq!(
+                dark.len(),
+                (last - first) as usize,
+                "{resize:?} : d'un seul tenant"
+            );
+        }
     }
 
     #[test]

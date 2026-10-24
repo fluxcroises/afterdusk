@@ -155,7 +155,14 @@ impl MaskSet {
     /// Masques actifs (ni masqués, ni sans réglage) d'une source de
     /// `sw` × `sh` pixels, vue à travers `geometry`.
     pub fn new(masks: &[Mask], geometry: &Geometry, sw: u32, sh: u32) -> Self {
-        let (sw, sh) = (f64::from(sw.max(1)), f64::from(sh.max(1)));
+        Self::sized(masks, geometry, f64::from(sw), f64::from(sh))
+    }
+
+    /// Comme [`MaskSet::new`], la source mesurée en pixels de la sortie, pas
+    /// forcément entiers : une sortie redimensionnée après la géométrie (export,
+    /// vignettes) a une source à son échelle.
+    pub fn sized(masks: &[Mask], geometry: &Geometry, sw: f64, sh: f64) -> Self {
+        let (sw, sh) = (sw.max(1.0), sh.max(1.0));
         Self {
             fields: masks
                 .iter()

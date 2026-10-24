@@ -351,7 +351,12 @@ pub async fn develop_render(
         }
         let clipping = clipping.unwrap_or_default();
         let params = RenderParams::from_settings(&settings, session.image.as_shot_white, clipping)
-            .rendered(session.image.rendered);
+            .rendered(session.image.rendered)
+            .with_masks(
+                &settings,
+                session.corrected.width.into(),
+                session.corrected.height.into(),
+            );
         Ok(render_frame_cut(
             &engine,
             &session.image,
@@ -461,7 +466,8 @@ pub async fn develop_zoom_render(
         let settings = settings.sanitized();
         let clipping = clipping.unwrap_or_default();
         let params = RenderParams::from_settings(&settings, full.as_shot_white, clipping)
-            .rendered(full.rendered);
+            .rendered(full.rendered)
+            .with_masks(&settings, full.width.into(), full.height.into());
         // Réduction du bruit et netteté regardent les voisins : la région est
         // rendue avec une marge, puis rognée, pour des bords justes.
         let correction = lens_correction(
@@ -917,7 +923,7 @@ pub async fn develop_preset_previews(
     let path = super::presets::user_file(&state);
     let bytes = blocking(move || {
         let engine = app.state::<DevelopEngine>();
-        let small = {
+        let (small, source) = {
             let mut guard = engine
                 .session
                 .lock()
@@ -931,7 +937,18 @@ pub async fn develop_preset_previews(
             }) {
                 session.thumb = Some(session.image.downscaled(side));
             }
-            session.thumb.clone()
+            // Masques : la source avant géométrie, à l'échelle de la vignette.
+            let k = session
+                .thumb
+                .as_ref()
+                .map(|t| f64::from(t.width) / f64::from(session.image.width.max(1)));
+            let source = k.map(|k| {
+                (
+                    f64::from(session.corrected.width) * k,
+                    f64::from(session.corrected.height) * k,
+                )
+            });
+            session.thumb.clone().zip(source)
         }
         .ok_or_else(|| CommandError::new("internal", "vignette absente"))?;
         let settings = settings.sanitized();
@@ -949,7 +966,8 @@ pub async fn develop_preset_previews(
             };
             let params =
                 RenderParams::from_settings(&applied, small.as_shot_white, Clipping::default())
-                    .rendered(small.rendered);
+                    .rendered(small.rendered)
+                    .with_masks(&applied, source.0, source.1);
             let rendered = render(&small, &params);
             out.extend_from_slice(&small.width.to_le_bytes());
             out.extend_from_slice(&small.height.to_le_bytes());

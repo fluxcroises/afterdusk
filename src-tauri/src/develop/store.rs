@@ -641,7 +641,9 @@ pub fn xmp_data(conn: &Connection, media_id: i64) -> Result<DevelopXmp, StoreErr
         })
         .collect::<Result<Vec<Value>, StoreError>>()?;
     Ok(DevelopXmp {
-        develop: (!settings.is_neutral()).then(|| settings.to_json()),
+        // Des masques sans effet (masqués, sans réglage) restent du travail
+        // de l'utilisateur : ils vont aussi dans le XMP.
+        develop: (!settings.is_neutral() || !settings.masks.is_empty()).then(|| settings.to_json()),
         snapshots: (!snaps.is_empty()).then(|| snapshots_value(&snaps).to_string()),
         versions: (!copies.is_empty()).then(|| Value::Array(copies).to_string()),
     })

@@ -46,8 +46,11 @@ fn overlay_agrees(cpu: &[u8], gpu: &[u8], clean_cpu: &[u8], clean_gpu: &[u8]) ->
 /// lieu de source avant géométrie.
 fn params_of(image: &WorkingImage, settings: &DevelopSettings, clipping: Clipping) -> RenderParams {
     let (_, _, fw, fh) = image.frame();
-    RenderParams::from_settings(settings, image.as_shot_white, clipping)
-        .with_masks(settings, fw, fh)
+    RenderParams::from_settings(settings, image.as_shot_white, clipping).with_masks(
+        settings,
+        fw.into(),
+        fh.into(),
+    )
 }
 
 /// Compare un jeu de réglages : sans avertissements à un niveau près, avec

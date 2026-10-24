@@ -6,7 +6,9 @@ use std::fs;
 use std::sync::atomic::AtomicBool;
 
 use afterdusk_lib::db;
-use afterdusk_lib::develop::settings::{DevelopSettings, WhiteBalance};
+use afterdusk_lib::develop::settings::{
+    DevelopSettings, LocalAdjust, Mask, MaskShape, WhiteBalance,
+};
 use afterdusk_lib::develop::store::{self, ORIGINAL};
 use afterdusk_lib::import::{self, ImportOptions};
 use afterdusk_lib::library::marks::{Mark, apply_mark, flush_pending_xmp};
@@ -89,6 +91,57 @@ fn reglages_en_base_dans_l_historique_et_le_xmp() {
     assert_eq!(data.keywords, ["mer"]);
     let develop = data.develop.expect("réglages dans le XMP");
     assert_eq!(DevelopSettings::from_json(&develop).unwrap(), saved);
+
+    // Retouches locales : les masques passent au XMP (version 2), y compris
+    // un masque masqué, seul : il ne change pas le rendu mais reste à
+    // l'utilisateur.
+    let ciel = Mask {
+        shape: MaskShape::Linear {
+            from: [0.5, 0.0],
+            to: [0.5, 0.4],
+        },
+        adjust: LocalAdjust {
+            exposure: -1.0,
+            ..LocalAdjust::default()
+        },
+        invert: false,
+        hidden: false,
+    };
+    let masked = DevelopSettings {
+        masks: vec![
+            ciel.clone(),
+            Mask {
+                hidden: true,
+                ..ciel.clone()
+            },
+        ],
+        ..saved.clone()
+    };
+    let masked = store::save(&mut conn, media_id, ORIGINAL, masked, "Masques").unwrap();
+    flush_pending_xmp(&conn, 10).unwrap();
+    let develop = xmp::read_sidecar(&xmp_path)
+        .unwrap()
+        .unwrap()
+        .develop
+        .unwrap();
+    assert!(develop.contains(r#""version":2"#), "{develop}");
+    assert_eq!(DevelopSettings::from_json(&develop).unwrap(), masked);
+    let hidden_only = DevelopSettings {
+        masks: vec![Mask {
+            hidden: true,
+            ..ciel
+        }],
+        ..DevelopSettings::default()
+    };
+    assert!(hidden_only.is_neutral());
+    let hidden_only = store::save(&mut conn, media_id, ORIGINAL, hidden_only, "Masquer").unwrap();
+    flush_pending_xmp(&conn, 10).unwrap();
+    let develop = xmp::read_sidecar(&xmp_path)
+        .unwrap()
+        .unwrap()
+        .develop
+        .expect("masque masqué dans le XMP");
+    assert_eq!(DevelopSettings::from_json(&develop).unwrap(), hidden_only);
 
     // Retour au neutre : la propriété disparaît du XMP.
     store::save(

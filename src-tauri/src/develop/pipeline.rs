@@ -681,10 +681,11 @@ impl RenderParams {
 
     /// Ajoute les retouches locales des réglages, pour une image de travail
     /// de `sw` × `sh` pixels avant géométrie (celle que la géométrie
-    /// transforme pour donner l'image rendue).
+    /// transforme pour donner l'image rendue). Sortie redimensionnée après la
+    /// géométrie : la source à l'échelle de la sortie, en pixels fractionnaires.
     #[must_use]
-    pub fn with_masks(mut self, settings: &DevelopSettings, sw: u32, sh: u32) -> Self {
-        let masks = MaskSet::new(&settings.masks, &settings.geometry, sw, sh);
+    pub fn with_masks(mut self, settings: &DevelopSettings, sw: f64, sh: f64) -> Self {
+        let masks = MaskSet::sized(&settings.masks, &settings.geometry, sw, sh);
         if masks.is_empty() {
             return self;
         }
@@ -1192,7 +1193,7 @@ pub fn render_rgba(image: &WorkingImage, settings: &DevelopSettings) -> Vec<u8> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::develop::settings::{CropRect, WhiteBalance};
+    use crate::develop::settings::{CropRect, LocalAdjust, Mask, MaskShape, WhiteBalance};
 
     fn neutral() -> RenderParams {
         RenderParams::from_settings(&DevelopSettings::default(), D65_WHITE, Clipping::default())
@@ -1650,7 +1651,27 @@ mod tests {
             bottom: 0.85,
         };
         s.detail.sharpening.amount = 100.0;
-        let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default());
+        // Dégradé sur toute l'image : chaque pixel de la région a son poids,
+        // calculé dans l'image entière comme dans la région.
+        s.masks = vec![Mask {
+            shape: MaskShape::Linear {
+                from: [0.2, 0.2],
+                to: [0.8, 0.8],
+            },
+            adjust: LocalAdjust {
+                exposure: 1.5,
+                saturation: 30.0,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+        }];
+        let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default()).with_masks(
+            &s,
+            w.into(),
+            h.into(),
+        );
+        assert!(p.locals.is_some());
         let whole_src = WorkingImage::from_raw(&raw, w);
         let whole = geometry::transform(&whole_src, &s.geometry);
         let full = render(&whole, &p).rgba;
@@ -1712,7 +1733,6 @@ mod tests {
 
     mod locales {
         use super::*;
-        use crate::develop::settings::{LocalAdjust, Mask, MaskShape};
 
         /// Image de travail unie, 40 × 20, d'un gris moyen (déjà développée :
         /// les réglages à zéro la rendent telle quelle).
@@ -1750,7 +1770,7 @@ mod tests {
             };
             let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default())
                 .rendered(true)
-                .with_masks(&s, image.width, image.height);
+                .with_masks(&s, image.width.into(), image.height.into());
             render_encoded(image, &p)
         }
 
@@ -1893,7 +1913,7 @@ mod tests {
             s.detail.noise.luminance = 30.0;
             let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default())
                 .rendered(true)
-                .with_masks(&s, img.width, img.height);
+                .with_masks(&s, img.width.into(), img.height.into());
             assert!(p.flags & FLAG_DENOISE != 0);
             let out = render_encoded(&img, &p);
             assert!(px(&out, CENTRE.0, CENTRE.1)[1] > px(&out, COIN.0, COIN.1)[1] + 0.05);
