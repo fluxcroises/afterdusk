@@ -988,3 +988,7 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 ### 2026-10-24 : version 0.5.2 publiée
 
 - Version 0.5.2 publiée par l'utilisateur ; les notes du brouillon viennent bien de `docs/notes-de-version/0.5.2.md`, et `latest.json` annonce 0.5.2. « Rechercher les mises à jour » vérifié par l'utilisateur sous Windows dans l'application installée. Le cas « nouvelle version trouvée » de ce lien se verra avec la 0.5.3.
+
+### 2026-10-24 (suite) : plan de la V0.6, retouches locales
+
+- Plan validé par l'utilisateur ([décision 0014](decisions/0014-retouches-locales.md)) : format des réglages en version 2 (liste de masques, positions en fractions de la photo source) ; sept réglages par masque ; dégradés linéaire et radial dans la V0.6, pinceau ensuite ; masques recalculés depuis leurs formes à chaque rendu. Critères ajoutés au cahier des charges (V0.6). Étapes : format et migration, calcul des masques, rendu au processeur, rendu sur la carte graphique, export et XMP, interface, mesures et documentation.
