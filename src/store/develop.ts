@@ -180,6 +180,45 @@ export interface Spot {
 }
 
 export const SPOT_RADIUS = { min: 0.001, max: 0.1 } as const;
+
+/**
+ * Forme d'un masque de retouche locale (décision 0014). Positions en fractions
+ * de l'image avant géométrie, comme les corrections de défauts.
+ */
+export type MaskShape =
+  | { kind: "linear"; from: [number, number]; to: [number, number] }
+  | {
+      kind: "radial";
+      center: [number, number];
+      radius: [number, number];
+      /** Degrés ; absent : 0. */
+      angle?: number;
+      /** De 0 à 100 ; absent : 50. */
+      feather?: number;
+    };
+
+/** Réglages d'un masque : exposition en IL, le reste de -100 à +100. */
+export const LOCAL_KEYS = [
+  "exposure",
+  "contrast",
+  "highlights",
+  "shadows",
+  "temperature",
+  "tint",
+  "saturation",
+] as const;
+export type LocalKey = (typeof LOCAL_KEYS)[number];
+
+export interface Mask {
+  shape: MaskShape;
+  adjust?: Partial<Record<LocalKey, number>>;
+  invert?: boolean;
+  /** Sans effet, gardé pour plus tard. */
+  hidden?: boolean;
+}
+
+/** Nombre de masques au plus par photo. */
+export const MASKS_MAX = 32;
 export const SPOT_FEATHER_DEFAULT = 50;
 
 /** Pinceau du correcteur : réglages de la prochaine correction. */
@@ -277,6 +316,8 @@ export interface DevelopSettings {
   /** Corrections d'objectif ; absentes : actives, à 100 % du profil. */
   lens?: Partial<LensSettings>;
   spots?: Spot[];
+  /** Masques des retouches locales, dans l'ordre où ils s'appliquent. */
+  masks?: Mask[];
   detail?: {
     sharpening?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["sharpening"], number>>;
     noise?: Partial<Record<keyof (typeof DETAIL_DEFAULTS)["noise"], number>>;

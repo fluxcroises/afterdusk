@@ -6,7 +6,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// Forme actuelle du JSON. Toute évolution ajoute une étape à [`migrate`].
-pub const FORMAT_VERSION: u32 = 1;
+/// Version 2 : masques des retouches locales (décision 0014). Un document
+/// sans masque est encore écrit en version 1, que les versions antérieures
+/// d'Afterdusk savent lire (voir [`DevelopSettings::to_json`]).
+pub const FORMAT_VERSION: u32 = 2;
 
 /// Processus de rendu le plus récent, pris par les photos retouchées pour la
 /// première fois. Le moteur garde le calcul de chaque processus.
@@ -545,6 +548,84 @@ pub struct Spot {
     pub mode: SpotMode,
 }
 
+/// Forme d'un masque de retouche locale. Positions en fractions de la
+/// largeur et de la hauteur de l'image avant géométrie, comme les corrections
+/// de défauts : le masque suit le recadrage et le redressement. Une forme peut
+/// déborder de l'image (poignée posée hors cadre).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum MaskShape {
+    /// Dégradé linéaire : effet plein du côté de `from`, nul au-delà de `to`.
+    Linear { from: [f64; 2], to: [f64; 2] },
+    /// Dégradé radial : ellipse de centre `center`, de demi-axes `radius`
+    /// (fractions de la largeur et de la hauteur), tournée de `angle` degrés.
+    /// Effet plein à l'intérieur, adouci vers le bord selon `feather` (0 à 100).
+    #[serde(rename_all = "camelCase")]
+    Radial {
+        center: [f64; 2],
+        radius: [f64; 2],
+        #[serde(default, skip_serializing_if = "is_zero")]
+        angle: f64,
+        #[serde(default = "fifty", skip_serializing_if = "is_fifty")]
+        feather: f64,
+    },
+}
+
+/// Réglages d'un masque, ajoutés à ceux de la photo là où il agit :
+/// exposition en IL, le reste de -100 à +100 (température et teinte en
+/// décalage relatif, comme pour une photo déjà développée).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LocalAdjust {
+    #[serde(skip_serializing_if = "is_zero")]
+    pub exposure: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub contrast: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub highlights: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub shadows: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub temperature: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub tint: f64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub saturation: f64,
+}
+
+impl LocalAdjust {
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
+/// Masque de retouche locale : une forme, ses réglages, inversé ou non,
+/// masqué (sans effet) ou non.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Mask {
+    pub shape: MaskShape,
+    #[serde(default, skip_serializing_if = "LocalAdjust::is_default")]
+    pub adjust: LocalAdjust,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub invert: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub hidden: bool,
+}
+
+impl Mask {
+    /// Le masque change-t-il le rendu ?
+    pub fn is_active(&self) -> bool {
+        !self.hidden && !self.adjust.is_default()
+    }
+}
+
+/// Nombre de masques au plus par photo.
+pub const MASKS_MAX: usize = 32;
+/// Plus petit demi-axe d'un dégradé radial, plus petite longueur d'un
+/// dégradé linéaire, en fraction de l'image.
+pub const MASK_SIZE_MIN: f64 = 0.001;
+
 /// Rayon d'une correction, en fraction du côté long.
 pub const SPOT_RADIUS_MIN: f64 = 0.001;
 pub const SPOT_RADIUS_MAX: f64 = 0.1;
@@ -598,6 +679,9 @@ pub struct DevelopSettings {
     /// Corrections de défauts, dans l'ordre où elles sont appliquées.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub spots: Vec<Spot>,
+    /// Masques des retouches locales, dans l'ordre où ils s'appliquent.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub masks: Vec<Mask>,
 }
 
 impl Default for DevelopSettings {
@@ -616,6 +700,7 @@ impl Default for DevelopSettings {
             lens: LensSettings::default(),
             look: None,
             spots: Vec::new(),
+            masks: Vec::new(),
         }
     }
 }
@@ -630,8 +715,9 @@ fn clamp(v: f64, min: f64, max: f64) -> f64 {
 
 /// Fait passer un JSON d'une version ancienne à la forme actuelle, étape par étape.
 fn migrate(value: Value, from: u32) -> Value {
-    // Version 1 : forme actuelle. Une future version 2 ajoutera ici
-    // `if from < 2 { value = v1_vers_v2(value) }`, testée sur un JSON v1.
+    // Version 1 → 2 : les masques s'ajoutent ; un document v1 n'en a pas,
+    // rien à transformer. Une version 3 ajoutera ici `if from < 3 { … }`,
+    // testée sur un JSON v2.
     let _ = from;
     value
 }
@@ -666,9 +752,17 @@ impl DevelopSettings {
         Ok(settings.sanitized())
     }
 
-    /// JSON compact, sans les valeurs par défaut.
+    /// JSON compact, sans les valeurs par défaut, dans la plus ancienne
+    /// version qui suffit : sans masque, la version 1, que les versions
+    /// antérieures d'Afterdusk savent lire ; avec, la version 2, qu'elles
+    /// refusent au lieu d'effacer les masques en enregistrant.
     pub fn to_json(&self) -> String {
-        serde_json::to_string(self).unwrap_or_else(|_| "{}".to_owned())
+        let version = if self.masks.is_empty() { 1 } else { 2 };
+        let written = Self {
+            version,
+            ..self.clone()
+        };
+        serde_json::to_string(&written).unwrap_or_else(|_| "{}".to_owned())
     }
 
     /// Valeurs ramenées dans leurs plages (décision 0005).
@@ -781,6 +875,11 @@ impl DevelopSettings {
             s.radius = s.radius.clamp(SPOT_RADIUS_MIN, SPOT_RADIUS_MAX);
             s.feather = clamp(s.feather, 0.0, 100.0);
         }
+        self.masks.retain(Mask::is_valid);
+        self.masks.truncate(MASKS_MAX);
+        for m in &mut self.masks {
+            m.sanitize();
+        }
         self
     }
 
@@ -794,6 +893,67 @@ impl DevelopSettings {
             && self.effects.is_default()
             && self.lens.is_default()
             && self.spots.is_empty()
+            && !self.masks.iter().any(Mask::is_active)
+    }
+}
+
+impl Mask {
+    /// Toutes les positions finies, et une forme qui ne soit pas réduite à
+    /// un point.
+    fn is_valid(&self) -> bool {
+        match &self.shape {
+            MaskShape::Linear { from, to } => {
+                from.iter().chain(to).all(|v| v.is_finite())
+                    && (to[0] - from[0]).hypot(to[1] - from[1]) >= MASK_SIZE_MIN
+            }
+            MaskShape::Radial {
+                center,
+                radius,
+                angle,
+                feather,
+            } => center
+                .iter()
+                .chain(radius)
+                .chain([angle, feather])
+                .all(|v| v.is_finite()),
+        }
+    }
+
+    /// Positions ramenées autour de l'image (une image de part et d'autre),
+    /// tailles et réglages dans leurs plages.
+    fn sanitize(&mut self) {
+        let around = |v: &mut f64| *v = v.clamp(-1.0, 2.0);
+        match &mut self.shape {
+            MaskShape::Linear { from, to } => {
+                from.iter_mut().chain(to.iter_mut()).for_each(around);
+            }
+            MaskShape::Radial {
+                center,
+                radius,
+                angle,
+                feather,
+            } => {
+                center.iter_mut().for_each(around);
+                for r in radius.iter_mut() {
+                    *r = r.clamp(MASK_SIZE_MIN, 2.0);
+                }
+                // Angle ramené dans [-180, 180).
+                *angle = (*angle + 180.0).rem_euclid(360.0) - 180.0;
+                *feather = clamp(*feather, 0.0, 100.0);
+            }
+        }
+        let a = &mut self.adjust;
+        a.exposure = clamp(a.exposure, -4.0, 4.0);
+        for v in [
+            &mut a.contrast,
+            &mut a.highlights,
+            &mut a.shadows,
+            &mut a.temperature,
+            &mut a.tint,
+            &mut a.saturation,
+        ] {
+            *v = clamp(*v, -100.0, 100.0);
+        }
     }
 }
 
@@ -919,8 +1079,8 @@ mod tests {
     #[test]
     fn version_ou_processus_trop_recents_refuses() {
         assert!(matches!(
-            DevelopSettings::from_json(r#"{"version":2,"process":1}"#),
-            Err(SettingsError::TooNewFormat { found: 2, .. })
+            DevelopSettings::from_json(r#"{"version":3,"process":1}"#),
+            Err(SettingsError::TooNewFormat { found: 3, .. })
         ));
         assert!(matches!(
             DevelopSettings::from_json(r#"{"version":1,"process":9}"#),
@@ -951,5 +1111,120 @@ mod tests {
             s.to_json(),
             r#"{"version":1,"process":1,"spots":[{"x":0.5,"y":0.25,"radius":0.01,"sourceX":0.6,"sourceY":0.25},{"x":1.0,"y":0.0,"radius":0.1,"sourceX":0.1,"sourceY":0.2,"feather":20.0,"mode":"clone"}]}"#
         );
+    }
+
+    fn degrade_radial() -> Mask {
+        Mask {
+            shape: MaskShape::Radial {
+                center: [0.5, 0.4],
+                radius: [0.2, 0.3],
+                angle: 15.0,
+                feather: 50.0,
+            },
+            adjust: LocalAdjust {
+                exposure: 0.7,
+                shadows: 20.0,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+        }
+    }
+
+    #[test]
+    fn document_v1_relu_sans_masque() {
+        let s = DevelopSettings::from_json(
+            r#"{"version":1,"process":1,"light":{"exposure":0.5},"spots":[]}"#,
+        )
+        .unwrap();
+        assert!(s.masks.is_empty());
+        assert_eq!(s.light.exposure, 0.5);
+        // Réécrit sans masque : toujours lisible par les versions antérieures.
+        assert!(
+            s.to_json().starts_with(r#"{"version":1,"#),
+            "{}",
+            s.to_json()
+        );
+    }
+
+    #[test]
+    fn masques_en_version_2_aller_retour() {
+        let s = DevelopSettings {
+            masks: vec![
+                Mask {
+                    shape: MaskShape::Linear {
+                        from: [0.5, 0.0],
+                        to: [0.5, 0.45],
+                    },
+                    adjust: LocalAdjust {
+                        exposure: -0.8,
+                        temperature: -10.0,
+                        ..LocalAdjust::default()
+                    },
+                    invert: false,
+                    hidden: false,
+                },
+                degrade_radial(),
+            ],
+            ..DevelopSettings::default()
+        };
+        let json = s.to_json();
+        assert!(json.starts_with(r#"{"version":2,"#), "{json}");
+        assert!(json.contains(r#""kind":"linear""#), "{json}");
+        // Valeurs par défaut absentes : adoucissement de 50, ni inversé ni masqué.
+        assert!(
+            !json.contains("feather") && !json.contains("invert"),
+            "{json}"
+        );
+        let back = DevelopSettings::from_json(&json).unwrap();
+        assert_eq!(back.masks, s.masks);
+        assert!(!back.is_neutral());
+    }
+
+    #[test]
+    fn masques_bornes_et_formes_invalides_retirees() {
+        let s = DevelopSettings::from_json(
+            r#"{"version":2,"process":1,"masks":[
+                {"shape":{"kind":"radial","center":[5,-3],"radius":[0,9],"angle":540,"feather":300},
+                 "adjust":{"exposure":12,"saturation":-400}},
+                {"shape":{"kind":"linear","from":[0.2,0.2],"to":[0.2,0.2]}},
+                {"shape":{"kind":"linear","from":[0,0],"to":[1,1]},"hidden":true,
+                 "adjust":{"contrast":30}}
+            ]}"#,
+        )
+        .unwrap();
+        // Le dégradé linéaire réduit à un point est retiré.
+        assert_eq!(s.masks.len(), 2);
+        let MaskShape::Radial {
+            center,
+            radius,
+            angle,
+            feather,
+        } = s.masks[0].shape
+        else {
+            panic!("dégradé radial attendu");
+        };
+        assert_eq!(center, [2.0, -1.0]);
+        assert_eq!(radius, [MASK_SIZE_MIN, 2.0]);
+        assert_eq!((angle, feather), (-180.0, 100.0));
+        assert_eq!(
+            (s.masks[0].adjust.exposure, s.masks[0].adjust.saturation),
+            (4.0, -100.0)
+        );
+        // Un masque masqué ne compte pas : sans le premier, la photo est neutre.
+        let only_hidden = DevelopSettings {
+            masks: vec![s.masks[1].clone()],
+            ..DevelopSettings::default()
+        };
+        assert!(only_hidden.is_neutral());
+    }
+
+    #[test]
+    fn pas_plus_de_masques_que_la_limite() {
+        let s = DevelopSettings {
+            masks: vec![degrade_radial(); MASKS_MAX + 5],
+            ..DevelopSettings::default()
+        };
+        assert_eq!(s.sanitized().masks.len(), MASKS_MAX);
     }
 }

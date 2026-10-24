@@ -8,7 +8,7 @@ Première piste de la V1 : des réglages qui ne s'appliquent qu'à une partie de
 
 ## Décision
 
-1. **Format des réglages en version 2** : une liste `masks`, chaque masque portant sa forme (dégradé linéaire, dégradé radial, puis pinceau) et ses réglages. Positions en fractions de la photo source, avant recadrage et redressement, comme les corrections de défauts. Un document en version 1 se lit comme un document sans masque ; une version d'Afterdusk qui ne connaît que la version 1 refuse un document en version 2 (« format plus récent ») au lieu d'effacer les masques en l'enregistrant.
+1. **Format des réglages en version 2** : une liste `masks`, chaque masque portant sa forme (dégradé linéaire, dégradé radial, puis pinceau) et ses réglages. Positions en fractions de la photo source, avant recadrage et redressement, comme les corrections de défauts. Un document en version 1 se lit comme un document sans masque ; une version d'Afterdusk qui ne connaît que la version 1 refuse un document en version 2 (« format plus récent ») au lieu d'effacer les masques en l'enregistrant. Un document sans masque est encore écrit en version 1 : les versions antérieures continuent d'ouvrir les photos retouchées sans masque ; seules celles qui en ont sont refusées.
 2. **Sept réglages par masque** : exposition, contraste, hautes lumières, ombres, température, teinte, saturation. Tous se calculent pixel par pixel. Clarté, netteté et bruit locaux, qui regardent les pixels voisins, viendront plus tard.
 3. **Livraison en deux temps** : V0.6 avec les dégradés linéaire et radial, puis le pinceau (avec gomme) dans la version suivante.
 4. **Masques recalculés depuis leurs formes** à la définition de chaque rendu (aperçu, zoom, export), jamais depuis une image réduite.
