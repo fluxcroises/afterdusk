@@ -12,10 +12,11 @@ use wgpu::util::DeviceExt;
 use super::curve;
 use super::detail::{self, Radii};
 use super::pipeline::{
-    FLAG_CURVE, FLAG_DENOISE, FLAG_GRAIN, FLAG_HSL, FLAG_RENDERED, FLAG_SHARPEN, FLAG_TONE,
-    FLAG_VIGNETTE, HISTOGRAM_BINS, HUE_CENTERS, LUMA_REC2020, REC2020_TO_SRGB, RenderParams,
-    Rendered, WorkingImage, histogram_of, paint_clipping, process1,
+    FLAG_CURVE, FLAG_DENOISE, FLAG_GRAIN, FLAG_HSL, FLAG_MASKS, FLAG_RENDERED, FLAG_SHARPEN,
+    FLAG_TONE, FLAG_VIGNETTE, HISTOGRAM_BINS, HUE_CENTERS, LUMA_REC2020, REC2020_TO_SRGB,
+    RenderParams, Rendered, WorkingImage, histogram_of, paint_clipping, process1,
 };
+use super::settings::MASKS_MAX;
 
 #[derive(Debug, thiserror::Error)]
 pub enum GpuError {
@@ -41,6 +42,11 @@ const CURVE_BYTES: u64 = 4 * curve::LUT_SIZE as u64 * 4;
 
 const HISTOGRAM_BYTES: u64 = HISTOGRAM_BINS as u64 * 4;
 
+/// Valeurs par masque dans le tampon des retouches locales (voir
+/// [`mask_bytes`]).
+const MASK_STRIDE: usize = 20;
+const MASK_BYTES: u64 = (MASKS_MAX * MASK_STRIDE * 4) as u64;
+
 fn vec3(v: [f32; 3]) -> String {
     format!("vec3<f32>({:?}, {:?}, {:?})", v[0], v[1], v[2])
 }
@@ -54,7 +60,7 @@ struct Params {{
     m0: vec4<f32>, m1: vec4<f32>, m2: vec4<f32>,
     tone_a: vec4<f32>,
     tone_b: vec4<f32>,
-    width: u32, height: u32, flags: u32, pad: u32,
+    width: u32, height: u32, flags: u32, masks: u32,
     hsl: array<vec4<f32>, 6>,
     vignette: vec4<f32>,
     grain: vec4<f32>,
@@ -69,6 +75,7 @@ struct Params {{
 @group(0) @binding(1) var<storage, read_write> dst: array<u32>;
 @group(0) @binding(2) var<uniform> params: Params;
 @group(0) @binding(3) var<storage, read_write> hist: array<atomic<u32>, {bins}>;
+@group(0) @binding(8) var<storage, read> mask_data: array<f32>;
 
 var<workgroup> local_hist: array<atomic<u32>, {bins}>;
 
@@ -81,6 +88,8 @@ const S1 = {s1};
 const S2 = {s2};
 const FLAG_TONE: u32 = {flag_tone}u;
 const FLAG_RENDERED: u32 = {flag_rendered}u;
+const MASKS_MAX: u32 = {masks_max}u;
+const MASK_STRIDE: u32 = {mask_stride}u;
 
 fn neutral_curve(x: f32) -> f32 {{
     // Source déjà développée : identité bornée, pas d'épaule.
@@ -94,8 +103,10 @@ fn neutral_curve(x: f32) -> f32 {{
 }}
 
 fn tone_curve(p: f32) -> f32 {{
-    let a = params.tone_a;
-    let b = params.tone_b;
+    return tone_curve_with(p, params.tone_a, params.tone_b.xy);
+}}
+
+fn tone_curve_with(p: f32, a: vec4<f32>, b: vec2<f32>) -> f32 {{
     let w = 1.0 - p;
     let out = p
         + a.x * p * w
@@ -261,12 +272,71 @@ fn render_pixel(rgb: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     return out;
 }}
 
-fn display_pixel(lin: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
+// Poids du masque `i` au centre (x, y) d'un pixel de la sortie entière.
+fn mask_weight(i: u32, x: f32, y: f32) -> f32 {{
+    let b = i * MASK_STRIDE;
+    let u = mask_data[b + 4u] * x + mask_data[b + 5u] * y + mask_data[b + 6u];
+    var w = 0.0;
+    if (mask_data[b] != 0.0) {{
+        let v = mask_data[b + 7u] * x + mask_data[b + 8u] * y + mask_data[b + 9u];
+        let q = sqrt(u * u + v * v);
+        let inner = mask_data[b + 2u];
+        if (q >= 1.0) {{
+            w = 0.0;
+        }} else if (q <= inner) {{
+            w = 1.0;
+        }} else {{
+            w = 1.0 - smoothstep_(0.0, 1.0, (q - inner) / (1.0 - inner));
+        }}
+    }} else {{
+        w = 1.0 - smoothstep_(0.0, 1.0, u);
+    }}
+    if (mask_data[b + 1u] != 0.0) {{
+        w = 1.0 - w;
+    }}
+    return w;
+}}
+
+fn display_pixel(lin_in: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
+    // Retouches locales : poids de chaque masque en ce pixel, puis gains
+    // (exposition, température, teinte) en lumière linéaire.
+    var weights: array<f32, MASKS_MAX>;
+    let n = min(params.masks, MASKS_MAX);
+    let fx = f32(px) + 0.5;
+    let fy = f32(py) + 0.5;
+    var log_gain = vec3<f32>(0.0);
+    var local_tone = false;
+    var local_saturation = 0.0;
+    for (var i = 0u; i < n; i++) {{
+        let w = mask_weight(i, fx, fy);
+        weights[i] = w;
+        let b = i * MASK_STRIDE;
+        log_gain += w * vec3<f32>(mask_data[b + 10u], mask_data[b + 11u], mask_data[b + 12u]);
+        local_tone = local_tone || (mask_data[b + 3u] != 0.0 && w > 0.0);
+        local_saturation += w * mask_data[b + 19u];
+    }}
+    var lin = lin_in;
+    if (any(log_gain != vec3<f32>(0.0))) {{
+        lin = lin * exp2(log_gain);
+    }}
     var v = vec3<f32>(neutral_curve(lin.x), neutral_curve(lin.y), neutral_curve(lin.z));
-    if ((params.flags & FLAG_TONE) != 0u) {{
+    if ((params.flags & FLAG_TONE) != 0u || local_tone) {{
         let y = dot(LUMA, v);
         if (y > 1e-6) {{
-            let t = tone_curve(pow(y, 1.0 / TONE_GAMMA));
+            let q = pow(y, 1.0 / TONE_GAMMA);
+            var t = q;
+            if ((params.flags & FLAG_TONE) != 0u) {{
+                t = tone_curve(q);
+            }}
+            // Chaque masque mêle sa courbe à celle de la photo selon son poids.
+            for (var i = 0u; i < n; i++) {{
+                let b = i * MASK_STRIDE;
+                if (mask_data[b + 3u] != 0.0 && weights[i] > 0.0) {{
+                    let a = vec4<f32>(mask_data[b + 13u], mask_data[b + 14u], mask_data[b + 15u], mask_data[b + 16u]);
+                    let c = vec2<f32>(mask_data[b + 17u], mask_data[b + 18u]);
+                    t += weights[i] * (tone_curve_with(t, a, c) - t);
+                }}
+            }}
             var ratio = 0.0;
             if (t > 0.0) {{
                 ratio = pow(t, TONE_GAMMA) / y;
@@ -276,7 +346,7 @@ fn display_pixel(lin: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     }}
     let saturation = params.tone_b.z;
     let vibrance = params.tone_b.w;
-    if (saturation != 0.0 || vibrance != 0.0) {{
+    if (saturation != 0.0 || vibrance != 0.0 || local_saturation != 0.0) {{
         let y = dot(LUMA, v);
         let mx = max(v.x, max(v.y, v.z));
         let mn = min(v.x, min(v.y, v.z));
@@ -285,7 +355,8 @@ fn display_pixel(lin: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
             chroma = clamp((mx - mn) / mx, 0.0, 1.0);
         }}
         let dull = 1.0 - chroma;
-        let factor = (1.0 + saturation) * (1.0 + vibrance * dull * dull);
+        let factor = (1.0 + saturation) * (1.0 + vibrance * dull * dull)
+            * max(1.0 + local_saturation, 0.0);
         v = vec3<f32>(y) + (v - vec3<f32>(y)) * factor;
     }}
     if ((params.flags & FLAG_VIGNETTE) != 0u) {{
@@ -355,6 +426,8 @@ fn main(
         s2 = vec3(m[2]),
         flag_tone = FLAG_TONE,
         flag_rendered = FLAG_RENDERED,
+        masks_max = MASKS_MAX,
+        mask_stride = MASK_STRIDE,
         wg = WORKGROUP,
     )
 }
@@ -724,6 +797,8 @@ pub struct GpuImage {
     readback: wgpu::Buffer,
     hist_readback: wgpu::Buffer,
     curves: wgpu::Buffer,
+    /// Retouches locales (voir [`mask_bytes`]).
+    masks: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     src: wgpu::Buffer,
     staged: std::sync::OnceLock<Staged>,
@@ -760,7 +835,7 @@ fn uniform_bytes(
     f(p.tone[5]);
     f(p.saturation);
     f(p.vibrance);
-    for v in [width, height, p.flags, 0] {
+    for v in [width, height, p.flags, mask_count(p)] {
         out.extend_from_slice(&v.to_le_bytes());
     }
     let mut f = |v: f32| out.extend_from_slice(&v.to_le_bytes());
@@ -791,6 +866,42 @@ fn uniform_bytes(
     }
     for v in [radii.luminance, radii.color, radii.kernel, 0] {
         out.extend_from_slice(&v.to_le_bytes());
+    }
+    out
+}
+
+/// Nombre de masques actifs envoyés au shader.
+fn mask_count(p: &RenderParams) -> u32 {
+    match p.locals.as_deref() {
+        Some(l) if p.flags & FLAG_MASKS != 0 => l.params.len().min(MASKS_MAX) as u32,
+        _ => 0,
+    }
+}
+
+/// Masques des retouches locales, `MASK_STRIDE` valeurs chacun, lues par
+/// `mask_weight` et `display_pixel` : forme ramenée en pixels de la sortie
+/// (radial, inversé, bord intérieur, puis `u` et `v`), gains, courbe de
+/// tonalité et saturation.
+fn mask_bytes(p: &RenderParams) -> Vec<u8> {
+    let Some(l) = p.locals.as_deref() else {
+        return Vec::new();
+    };
+    let flag = |b: bool| if b { 1.0 } else { 0.0 };
+    let mut out = Vec::with_capacity(MASK_BYTES as usize);
+    let n = mask_count(p) as usize;
+    for (shape, lp) in l.masks.planar().iter().zip(&l.params).take(n) {
+        let mut values = vec![
+            flag(shape.radial),
+            flag(shape.invert),
+            shape.inner as f32,
+            flag(lp.has_tone),
+        ];
+        values.extend(shape.u.iter().chain(&shape.v).map(|v| *v as f32));
+        values.extend(lp.log_gain);
+        values.extend(lp.tone);
+        values.push(lp.saturation);
+        debug_assert_eq!(values.len(), MASK_STRIDE);
+        out.extend(values.iter().flat_map(|v| v.to_le_bytes()));
     }
     out
 }
@@ -852,6 +963,7 @@ impl GpuRenderer {
                 buffer(2, wgpu::BufferBindingType::Uniform),
                 buffer(3, storage(false)),
                 buffer(4, storage(true)),
+                buffer(8, storage(true)),
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -873,6 +985,7 @@ impl GpuRenderer {
             buffer(2, wgpu::BufferBindingType::Uniform),
             buffer(3, storage(false)),
             buffer(4, storage(true)),
+            buffer(8, storage(true)),
         ];
         staged_entries.extend((5..8).map(|b| buffer(b, storage(false))));
         let staged_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -957,6 +1070,7 @@ impl GpuRenderer {
             U::MAP_READ | U::COPY_DST,
         );
         let curves = buffer("courbes", CURVE_BYTES, U::STORAGE | U::COPY_DST);
+        let masks = buffer("masques", MASK_BYTES, U::STORAGE | U::COPY_DST);
         fn entry(binding: u32, buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
             wgpu::BindGroupEntry {
                 binding,
@@ -972,6 +1086,7 @@ impl GpuRenderer {
                 entry(2, &params),
                 entry(3, &hist),
                 entry(4, &curves),
+                entry(8, &masks),
             ],
         });
         if let Some(e) = pollster::block_on(scope.pop()) {
@@ -986,6 +1101,7 @@ impl GpuRenderer {
             readback,
             hist_readback,
             curves,
+            masks,
             bind_group,
             src,
             staged: std::sync::OnceLock::new(),
@@ -1031,6 +1147,10 @@ impl GpuRenderer {
                 binding: 4,
                 resource: image.curves.as_entire_binding(),
             },
+            wgpu::BindGroupEntry {
+                binding: 8,
+                resource: image.masks.as_entire_binding(),
+            },
         ];
         for (k, b) in buffers.iter().enumerate() {
             entries.push(wgpu::BindGroupEntry {
@@ -1061,6 +1181,10 @@ impl GpuRenderer {
         if params.flags & FLAG_CURVE != 0 {
             let bytes: Vec<u8> = params.curve.iter().flat_map(|v| v.to_le_bytes()).collect();
             self.queue.write_buffer(&image.curves, 0, &bytes);
+        }
+        if mask_count(params) > 0 {
+            self.queue
+                .write_buffer(&image.masks, 0, &mask_bytes(params));
         }
         let mut encoder = self
             .device

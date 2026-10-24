@@ -98,6 +98,40 @@ impl Compiled {
     }
 }
 
+/// Forme d'un masque en pixels de la sortie entière (voir
+/// [`MaskSet::planar`]) : `u` et `v` sont les coefficients de (x, y, 1), au
+/// centre (x, y) d'un pixel. Linéaire : `u` vaut 0 à l'effet plein, 1 à
+/// l'effet nul. Radial : (`u`, `v`) est la position dans le repère de
+/// l'ellipse, de rayon 1.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Planar {
+    pub radial: bool,
+    pub invert: bool,
+    pub inner: f64,
+    pub u: [f64; 3],
+    pub v: [f64; 3],
+}
+
+impl Planar {
+    /// Poids au centre (x, y) d'un pixel : le calcul du shader, en f64.
+    pub fn weight(&self, x: f64, y: f64) -> f64 {
+        let u = self.u[0] * x + self.u[1] * y + self.u[2];
+        let w = if self.radial {
+            let q = u.hypot(self.v[0] * x + self.v[1] * y + self.v[2]);
+            if q >= 1.0 {
+                0.0
+            } else if q <= self.inner {
+                1.0
+            } else {
+                1.0 - smoothstep((q - self.inner) / (1.0 - self.inner))
+            }
+        } else {
+            1.0 - smoothstep(u)
+        };
+        if self.invert { 1.0 - w } else { w }
+    }
+}
+
 /// Un masque actif, prêt à évaluer, et ses réglages.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Field {
@@ -158,6 +192,57 @@ impl MaskSet {
         let f = &self.fields[i];
         let w = f.shape.weight(p);
         (if f.invert { 1.0 - w } else { w }) as f32
+    }
+
+    /// Formes ramenées en pixels de la sortie entière, pour le processeur
+    /// graphique : le passage de la sortie à la source est affine (rotation,
+    /// miroirs, quarts de tour, décalage du recadrage), la forme compilée
+    /// aussi, leur composée se calcule une fois par masque.
+    pub fn planar(&self) -> Vec<Planar> {
+        // Point de la source montré par un point (x, y) quelconque de la
+        // sortie, centres de pixels compris.
+        let at = |x: f64, y: f64| {
+            geometry::canvas_to_source(
+                [self.plan.left + x, self.plan.top + y],
+                &self.geometry,
+                self.sw,
+                self.sh,
+            )
+        };
+        let (o, ex, ey) = (at(0.0, 0.0), at(1.0, 0.0), at(0.0, 1.0));
+        // Coefficients de (x, y, 1) d'une forme affine de la source.
+        let compose = |f: &dyn Fn([f64; 2]) -> f64| {
+            let c = f(o);
+            [f(ex) - c, f(ey) - c, c]
+        };
+        self.fields
+            .iter()
+            .map(|field| match field.shape {
+                Compiled::Linear { from, dir } => Planar {
+                    radial: false,
+                    invert: field.invert,
+                    inner: 0.0,
+                    u: compose(&|p| (p[0] - from[0]) * dir[0] + (p[1] - from[1]) * dir[1]),
+                    v: [0.0; 3],
+                },
+                Compiled::Radial {
+                    center,
+                    cos,
+                    sin,
+                    inv_rx,
+                    inv_ry,
+                    inner,
+                } => Planar {
+                    radial: true,
+                    invert: field.invert,
+                    inner,
+                    u: compose(&|p| ((p[0] - center[0]) * cos + (p[1] - center[1]) * sin) * inv_rx),
+                    v: compose(&|p| {
+                        (-(p[0] - center[0]) * sin + (p[1] - center[1]) * cos) * inv_ry
+                    }),
+                },
+            })
+            .collect()
     }
 
     /// Poids de chaque masque au pixel (x, y) de la sortie entière, dans
@@ -321,6 +406,44 @@ mod tests {
         // Même point de la source que le rééchantillonnage de l'image.
         let p = set.source_point(199, 200);
         assert!(p[1] < 1.0, "{p:?}");
+    }
+
+    #[test]
+    fn formes_en_pixels_de_sortie_egales_au_calcul_par_la_source() {
+        let biais = Geometry {
+            quarter: 3,
+            angle: 7.5,
+            flip_h: true,
+            crop: CropRect {
+                left: 0.1,
+                top: 0.05,
+                right: 0.8,
+                bottom: 0.9,
+            },
+            ..Geometry::default()
+        };
+        let masques = [
+            ciel(),
+            Mask {
+                invert: true,
+                ..mask(MaskShape::Radial {
+                    center: [0.3, 0.6],
+                    radius: [0.2, 0.3],
+                    angle: 25.0,
+                    feather: 60.0,
+                })
+            },
+        ];
+        let set = MaskSet::new(&masques, &biais, 400, 200);
+        let planar = set.planar();
+        let mut w = Vec::new();
+        for (x, y) in [(0, 0), (37, 91), (120, 300), (150, 12), (99, 199)] {
+            set.weights(x, y, &mut w);
+            for (i, p) in planar.iter().enumerate() {
+                let ours = p.weight(f64::from(x) + 0.5, f64::from(y) + 0.5);
+                assert!((ours - f64::from(w[i])).abs() < 1e-6, "{x},{y} masque {i}");
+            }
+        }
     }
 
     #[test]

@@ -9,7 +9,9 @@ use std::time::Instant;
 
 use afterdusk_lib::develop::gpu::{GpuError, GpuRenderer};
 use afterdusk_lib::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
-use afterdusk_lib::develop::settings::{DevelopSettings, WhiteBalance};
+use afterdusk_lib::develop::settings::{
+    CropRect, DevelopSettings, Geometry, LocalAdjust, Mask, MaskShape, WhiteBalance,
+};
 use afterdusk_lib::raw::{D65_WHITE, RawFile};
 
 /// Écart maximal toléré entre les deux rendus, en niveaux sur 255.
@@ -40,6 +42,14 @@ fn overlay_agrees(cpu: &[u8], gpu: &[u8], clean_cpu: &[u8], clean_gpu: &[u8]) ->
         .all(|((a, b), (ca, cb))| a == b || ca != cb)
 }
 
+/// Paramètres de rendu, masques compris : l'image entière (`frame`) tient
+/// lieu de source avant géométrie.
+fn params_of(image: &WorkingImage, settings: &DevelopSettings, clipping: Clipping) -> RenderParams {
+    let (_, _, fw, fh) = image.frame();
+    RenderParams::from_settings(settings, image.as_shot_white, clipping)
+        .with_masks(settings, fw, fh)
+}
+
 /// Compare un jeu de réglages : sans avertissements à un niveau près, avec
 /// histogrammes ; avec avertissements, aux pixels limites près.
 fn compare(
@@ -50,7 +60,7 @@ fn compare(
     settings: &DevelopSettings,
     clipping: Clipping,
 ) -> usize {
-    let clean = RenderParams::from_settings(settings, image.as_shot_white, Clipping::default());
+    let clean = params_of(image, settings, Clipping::default());
     let cpu = render(image, &clean);
     let ours = gpu.render(uploaded, &clean).unwrap();
     let (max, n) = max_diff(&cpu.rgba, &ours.rgba);
@@ -60,7 +70,7 @@ fn compare(
         "{label} : histogrammes"
     );
     if clipping != Clipping::default() {
-        let p = RenderParams::from_settings(settings, image.as_shot_white, clipping);
+        let p = params_of(image, settings, clipping);
         let cpu_w = render(image, &p);
         let ours_w = gpu.render(uploaded, &p).unwrap();
         assert!(
@@ -159,6 +169,130 @@ fn cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
         ("bruit et netteté", detail, Clipping::default()),
         ("netteté seule", sharp_only, Clipping::default()),
     ]
+}
+
+/// Retouches locales : dégradés linéaire et radial (inversé), chaque réglage
+/// local, avec et sans réglages globaux, sous une géométrie tournée et
+/// recadrée.
+fn mask_cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
+    let masks = vec![
+        Mask {
+            shape: MaskShape::Linear {
+                from: [0.2, 0.0],
+                to: [0.6, 0.7],
+            },
+            adjust: LocalAdjust {
+                exposure: -1.3,
+                temperature: 40.0,
+                contrast: 30.0,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+        },
+        Mask {
+            shape: MaskShape::Radial {
+                center: [0.55, 0.45],
+                radius: [0.3, 0.25],
+                angle: 30.0,
+                feather: 70.0,
+            },
+            adjust: LocalAdjust {
+                exposure: 0.8,
+                highlights: -60.0,
+                shadows: 50.0,
+                tint: -35.0,
+                saturation: 45.0,
+                ..LocalAdjust::default()
+            },
+            invert: true,
+            hidden: false,
+        },
+        Mask {
+            shape: MaskShape::Radial {
+                center: [0.3, 0.7],
+                radius: [0.15, 0.2],
+                angle: 0.0,
+                feather: 40.0,
+            },
+            adjust: LocalAdjust {
+                saturation: -100.0,
+                contrast: -50.0,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+        },
+    ];
+    let seuls = DevelopSettings {
+        masks: masks.clone(),
+        ..DevelopSettings::default()
+    };
+    let mut globaux = DevelopSettings {
+        masks: masks.clone(),
+        ..DevelopSettings::default()
+    };
+    globaux.light.contrast = 25.0;
+    globaux.light.highlights = -30.0;
+    globaux.color.vibrance = 30.0;
+    globaux.effects.vignette.amount = -30.0;
+    let mut detail = DevelopSettings {
+        masks: masks.clone(),
+        ..DevelopSettings::default()
+    };
+    detail.detail.noise.luminance = 50.0;
+    detail.detail.sharpening.amount = 80.0;
+    let biais = DevelopSettings {
+        masks,
+        geometry: Geometry {
+            quarter: 1,
+            angle: -6.0,
+            flip_v: true,
+            crop: CropRect {
+                left: 0.05,
+                top: 0.1,
+                right: 0.9,
+                bottom: 0.95,
+            },
+            ..Geometry::default()
+        },
+        ..DevelopSettings::default()
+    };
+    vec![
+        ("masques seuls", seuls, Clipping::default()),
+        ("masques et réglages globaux", globaux, Clipping::default()),
+        ("masques, bruit et netteté", detail, Clipping::default()),
+        ("masques sous géométrie", biais, Clipping::default()),
+    ]
+}
+
+#[test]
+fn retouches_locales_identiques_au_processeur() {
+    let Some(gpu) = renderer() else { return };
+    let mut raw = RawFile::open(&common::sample("fujifilm_x-t3.RAF")).unwrap();
+    let full = raw.develop(false).unwrap();
+    let whole = WorkingImage::from_raw(&full, 1024);
+    let part = WorkingImage::crop_from_raw(&full, 3000, 1500, 900, 600);
+    for (where_, image) in [("entière", &whole), ("région", &part)] {
+        let uploaded = gpu.upload(image).unwrap();
+        for (case, settings, clipping) in mask_cases() {
+            let p = params_of(image, &settings, clipping);
+            assert!(p.locals.is_some(), "{case} : masques absents");
+            // Les masques changent bien le rendu.
+            let plain = DevelopSettings {
+                masks: Vec::new(),
+                ..settings.clone()
+            };
+            assert_ne!(
+                render(image, &p).rgba,
+                render(image, &params_of(image, &plain, clipping)).rgba,
+                "{case} : sans effet"
+            );
+            let label = format!("{where_} {case}");
+            let n = compare(&label, &gpu, &uploaded, image, &settings, clipping);
+            println!("{label} : {n} valeurs différentes d'un niveau");
+        }
+    }
 }
 
 #[test]
