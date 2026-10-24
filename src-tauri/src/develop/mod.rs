@@ -7,6 +7,7 @@ pub mod detail;
 pub mod geometry;
 pub mod gpu;
 pub mod lens;
+pub mod masks;
 pub mod pipeline;
 pub mod presets;
 pub mod rendered;
