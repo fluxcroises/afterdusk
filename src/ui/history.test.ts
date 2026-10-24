@@ -145,6 +145,26 @@ describe("libellés de l'historique", () => {
     expect(describeStep(step("spots.clear", {}), t, "fr")).toBe("Corrections effacées");
   });
 
+  it("masques", () => {
+    const t = i18next.getFixedT("fr");
+    const masks = [
+      { shape: { kind: "linear", from: [0.5, 0], to: [0.5, 0.4] }, adjust: { exposure: -0.8 } },
+      { shape: { kind: "radial", center: [0.5, 0.5], radius: [0.2, 0.2], feather: 70 } },
+      { shape: { kind: "linear", from: [0, 0], to: [1, 1] }, adjust: { shadows: 25 } },
+    ];
+    expect(describeStep(step("masks.add", { masks }), t, "fr")).toBe("Masque ajouté");
+    expect(describeStep(step("masks.hide", { masks }), t, "fr")).toBe("Masque masqué");
+    expect(describeStep(step("masks.0.exposure", { masks }), t, "fr")).toBe(
+      "Linéaire 1 : exposition -0,80 IL",
+    );
+    expect(describeStep(step("masks.1.feather", { masks }), t, "fr")).toBe(
+      "Radial 1 : adoucissement 70",
+    );
+    expect(describeStep(step("masks.2.shadows", { masks }), t, "fr")).toBe(
+      "Linéaire 2 : ombres +25",
+    );
+  });
+
   it("en anglais", () => {
     const t = i18next.getFixedT("en");
     expect(describeStep(step("light.exposure", { light: { exposure: -1.5 } }), t, "en")).toBe(

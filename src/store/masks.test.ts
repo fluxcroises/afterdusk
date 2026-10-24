@@ -1,11 +1,8 @@
-// @vitest-environment node
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import rust from "../../src-tauri/src/develop/settings.rs?raw";
 import { LOCAL_KEYS, MASKS_MAX } from "./develop";
 
 // Le cœur (Rust) fait foi : mêmes réglages de masque et même limite des deux côtés.
-const rust = readFileSync(join(__dirname, "../../src-tauri/src/develop/settings.rs"), "utf8");
 
 const camel = (snake: string) => snake.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 

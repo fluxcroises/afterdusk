@@ -706,7 +706,17 @@
       "lookRemoved": "Filtre retiré",
       "lookAmount": "Intensité du filtre {{value}} %",
       "paste": "Réglages collés",
-      "xmpRestore": "Retouche reprise du XMP"
+      "xmpRestore": "Retouche reprise du XMP",
+      "masks": {
+        "add": "Masque ajouté",
+        "duplicate": "Masque dupliqué",
+        "move": "Masque déplacé",
+        "remove": "Masque retiré",
+        "invert": "Masque inversé",
+        "hide": "Masque masqué",
+        "show": "Masque affiché",
+        "value": "{{mask}} : {{name}} {{value}}"
+      }
     },
     "compare": {
       "hold": "Avant (maintenir pour voir l'original)",
@@ -817,7 +827,8 @@
       "adjust": "Réglages",
       "crop": "Recadrer",
       "spots": "Corriger les défauts",
-      "filters": "Filtres"
+      "filters": "Filtres",
+      "masks": "Masques"
     },
     "spots": {
       "title": "Correcteur de défauts",
@@ -935,6 +946,32 @@
       "label_other": "Coller les réglages sur {{count}} photos",
       "done_one": "Réglages collés",
       "done_other": "Réglages collés sur {{count}} photos"
+    },
+    "masks": {
+      "title": "Masques",
+      "kinds": {
+        "linear": "Linéaire",
+        "radial": "Radial"
+      },
+      "names": {
+        "linear": "Linéaire {{n}}",
+        "radial": "Radial {{n}}"
+      },
+      "draw": {
+        "linear": "Glisser sur la photo, de l'effet plein à l'effet nul.",
+        "radial": "Glisser du centre vers le bord. Maj : cercle."
+      },
+      "limit": "{{count}} masques au plus",
+      "hint": "Choisir un dégradé, puis glisser sur la photo.",
+      "view": "Afficher le masque (O)",
+      "invert": "Inverser",
+      "uninvert": "Ne plus inverser",
+      "feather": "Adoucissement",
+      "hide": "Masquer",
+      "show": "Afficher",
+      "duplicate": "Dupliquer",
+      "remove": "Supprimer",
+      "selectedHint": "Maj : cercle ou pas de 15° · Suppr : retirer · Échap : quitter"
     }
   },
   "deliver": {

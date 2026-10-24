@@ -41,6 +41,7 @@ export const FEATURES: Record<string, Profile> = {
   "develop.versions": "complete",
   "develop.snapshots": "complete",
   "develop.spots": "complete",
+  "develop.masks": "basic",
   // Livraison : presets, filigrane simple et formats en Simplifiée.
   "deliver.contactSheet": "basic",
   "deliver.gallery": "basic",

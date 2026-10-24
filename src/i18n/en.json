@@ -706,7 +706,17 @@
       "lookRemoved": "Filter removed",
       "lookAmount": "Filter amount {{value}}%",
       "paste": "Settings pasted",
-      "xmpRestore": "Edits restored from XMP"
+      "xmpRestore": "Edits restored from XMP",
+      "masks": {
+        "add": "Mask added",
+        "duplicate": "Mask duplicated",
+        "move": "Mask moved",
+        "remove": "Mask removed",
+        "invert": "Mask inverted",
+        "hide": "Mask hidden",
+        "show": "Mask shown",
+        "value": "{{mask}}: {{name}} {{value}}"
+      }
     },
     "compare": {
       "hold": "Before (hold to see the original)",
@@ -817,7 +827,8 @@
       "adjust": "Adjust",
       "crop": "Crop",
       "spots": "Heal spots",
-      "filters": "Filters"
+      "filters": "Filters",
+      "masks": "Masks"
     },
     "spots": {
       "title": "Spot healing",
@@ -935,6 +946,32 @@
       "label_other": "Paste settings to {{count}} photos",
       "done_one": "Settings pasted",
       "done_other": "Settings pasted to {{count}} photos"
+    },
+    "masks": {
+      "title": "Masks",
+      "kinds": {
+        "linear": "Linear",
+        "radial": "Radial"
+      },
+      "names": {
+        "linear": "Linear {{n}}",
+        "radial": "Radial {{n}}"
+      },
+      "draw": {
+        "linear": "Drag on the photo, from full effect to no effect.",
+        "radial": "Drag from the center to the edge. Shift: circle."
+      },
+      "limit": "{{count}} masks at most",
+      "hint": "Choose a gradient, then drag on the photo.",
+      "view": "Show mask (O)",
+      "invert": "Invert",
+      "uninvert": "Stop inverting",
+      "feather": "Feather",
+      "hide": "Hide",
+      "show": "Show",
+      "duplicate": "Duplicate",
+      "remove": "Delete",
+      "selectedHint": "Shift: circle or 15° steps · Del: remove · Esc: exit"
     }
   },
   "deliver": {

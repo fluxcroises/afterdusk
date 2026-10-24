@@ -596,6 +596,56 @@ describe("Retoucher", () => {
     expect(useDevelop.getState().settings?.spots).toBeUndefined();
   });
 
+  it("masques : une étape par geste, curseurs fusionnés, réglages creux", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().setTool("masks");
+    useDevelop.getState().armMask("linear");
+    await useDevelop.getState().addMask({ kind: "linear", from: [0.5, 0.0], to: [0.5, 0.4] });
+    expect(useDevelop.getState()).toMatchObject({ selectedMask: 0, maskDraft: null });
+    useDevelop.getState().setMaskAdjust(0, "exposure", -0.5);
+    useDevelop.getState().setMaskAdjust(0, "exposure", -0.8);
+    await useDevelop.getState().addMask({
+      kind: "radial",
+      center: [0.3, 0.6],
+      radius: [0.123456789, 0.2],
+      angle: 190,
+      feather: 50,
+    });
+    await useDevelop.getState().toggleMask(1, "invert");
+    await useDevelop.getState().toggleMask(0, "hidden");
+    await useDevelop.getState().flush();
+    expect(saves().map((a) => (a as { label: string }).label)).toEqual([
+      "masks.add",
+      "masks.0.exposure",
+      "masks.add",
+      "masks.invert",
+      "masks.hide",
+    ]);
+    // Positions arrondies, angle ramené, adoucissement par défaut retiré.
+    expect(useDevelop.getState().settings?.masks).toEqual([
+      {
+        shape: { kind: "linear", from: [0.5, 0], to: [0.5, 0.4] },
+        adjust: { exposure: -0.8 },
+        hidden: true,
+      },
+      {
+        shape: { kind: "radial", center: [0.3, 0.6], radius: [0.12346, 0.2], angle: -170 },
+        invert: true,
+      },
+    ]);
+    await useDevelop.getState().duplicateMask(0);
+    expect(useDevelop.getState().selectedMask).toBe(1);
+    expect(useDevelop.getState().settings?.masks).toHaveLength(3);
+    await useDevelop.getState().removeMask(1);
+    await useDevelop.getState().removeMask(1);
+    await useDevelop.getState().removeMask(0);
+    expect(useDevelop.getState().settings?.masks).toBeUndefined();
+    // Changer d'outil oublie le masque choisi et le tracé préparé.
+    useDevelop.getState().armMask("radial");
+    await useDevelop.getState().setTool("adjust");
+    expect(useDevelop.getState()).toMatchObject({ selectedMask: null, maskDraft: null });
+  });
+
   it("objectif : reconnu à l'ouverture, réglages creux", async () => {
     await useDevelop.getState().open(7);
     expect(useDevelop.getState().lensName).toBe("Sony FE 16-35mm f/2.8 GM");

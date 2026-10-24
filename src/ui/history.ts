@@ -1,4 +1,5 @@
 import { aspectLabel } from "./aspects";
+import { MASK_FEATHER_DEFAULT, maskName } from "./masks";
 import type { TFunction } from "i18next";
 import {
   type DevelopSettings,
@@ -9,6 +10,7 @@ import {
   type HistoryStep,
   type HslKind,
   type Hue,
+  type LocalKey,
   type WhitePreset,
 } from "../store/develop";
 
@@ -104,6 +106,29 @@ export function describeStep(
   }
   if (section === "spots" && key) {
     return t(`develop.history.spots.${key}`);
+  }
+  if (section === "masks" && key) {
+    // « masks.3.exposure » : un curseur du masque 3 ; « masks.add » : une action.
+    const index = Number(key);
+    if (!Number.isInteger(index) || !auto) return t(`develop.history.masks.${key}`);
+    const masks = s.masks ?? [];
+    const mask = masks[index];
+    const v =
+      auto === "feather"
+        ? mask?.shape.kind === "radial"
+          ? (mask.shape.feather ?? MASK_FEATHER_DEFAULT)
+          : 0
+        : (mask?.adjust?.[auto as LocalKey] ?? 0);
+    return t("develop.history.masks.value", {
+      mask: maskName(t, masks, index),
+      name: t(auto === "feather" ? "develop.masks.feather" : `develop.${auto}`).toLowerCase(),
+      value:
+        auto === "exposure"
+          ? t("develop.ev", { value: signed(v, 2, language) })
+          : auto === "feather"
+            ? String(v)
+            : signed(v, 0, language),
+    });
   }
   if (section === "curve" && key) {
     return t("develop.history.curve", { channel: t(`develop.curve.${key}`) });

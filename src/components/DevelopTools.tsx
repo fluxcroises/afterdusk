@@ -1,5 +1,5 @@
 import { useAllows } from "../store/profile";
-import { Bandage, Crop, type LucideIcon, SlidersHorizontal, SwatchBook } from "lucide-react";
+import { Bandage, Blend, Crop, type LucideIcon, SlidersHorizontal, SwatchBook } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { type DevelopTool, useDevelop } from "../store/develop";
 import { useLayout } from "../store/layout";
@@ -10,6 +10,7 @@ const TOOLS: { tool: DevelopTool; icon: LucideIcon; shortcut?: string }[] = [
   { tool: "filters", icon: SwatchBook },
   { tool: "crop", icon: Crop, shortcut: "R" },
   { tool: "spots", icon: Bandage, shortcut: "Q" },
+  { tool: "masks", icon: Blend, shortcut: "M" },
 ];
 
 /**
@@ -24,10 +25,11 @@ export function DevelopToolRail() {
   const panelVisible = useLayout((s) => s.visible.right);
   const togglePanel = useLayout((s) => s.togglePanel);
   const spots = useAllows("develop.spots");
+  const masks = useAllows("develop.masks");
 
   return (
     <nav className="tool-rail" aria-label={t("develop.tools.label")}>
-      {TOOLS.filter((x) => x.tool !== "spots" || spots).map(
+      {TOOLS.filter((x) => (x.tool !== "spots" || spots) && (x.tool !== "masks" || masks)).map(
         ({ tool: id, icon: Icon, shortcut }) => {
           const label = t(`develop.tools.${id}`);
           return (

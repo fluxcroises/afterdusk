@@ -24,6 +24,7 @@ import { type Box, CropOverlay, CropSection } from "../components/DevelopCrop";
 import { CopyDialog, CopyPasteControls } from "../components/DevelopCopy";
 import { FiltersPanel } from "../components/DevelopFilters";
 import { SpotOverlay, SpotsSection, type View } from "../components/DevelopSpots";
+import { MaskOverlay, MasksSection } from "../components/DevelopMasks";
 import { DevelopToolRail } from "../components/DevelopTools";
 import { SnapshotsSection, VersionsSection } from "../components/DevelopVersions";
 import { EmptyState } from "../components/EmptyState";
@@ -53,11 +54,12 @@ function DevelopCanvas() {
   const [dragging, setDragging] = useState(false);
   const cropping = useDevelop((s) => s.cropping);
   const spotting = useDevelop((s) => s.tool === "spots");
+  const masking = useDevelop((s) => s.tool === "masks");
   const fullSize = useDevelop((s) => s.fullSize);
   const zoomed = zoom !== null && zoomFrame !== null;
   const dpr = window.devicePixelRatio || 1;
   const [box, setBox] = useState<Box | null>(null);
-  const overlay = cropping || spotting;
+  const overlay = cropping || spotting || masking;
 
   // Boîte de l'image affichée, pour y poser le cadre de recadrage ou les
   // corrections.
@@ -192,6 +194,7 @@ function DevelopCanvas() {
       />
       {cropping && box && <CropOverlay box={box} />}
       {spotting && box && <SpotOverlay box={box} view={view} />}
+      {masking && box && <MaskOverlay box={box} view={view} />}
     </>
   );
 }
@@ -216,6 +219,7 @@ function SettingsPanel() {
       {tool === "filters" && <FiltersPanel />}
       {tool === "crop" && <CropSection />}
       {tool === "spots" && <SpotsSection />}
+      {tool === "masks" && <MasksSection />}
     </>
   );
 }
@@ -359,6 +363,32 @@ export function DevelopStep() {
             Math.max(SPOT_RADIUS.min, state.spotBrush.radius * factor),
           );
           state.setSpotBrush({ radius: Math.round(radius * 1000) / 1000 });
+          e.preventDefault();
+          return;
+        }
+      }
+      // M : masques. O montre le masque choisi, Suppr le retire, Échap
+      // annule le tracé préparé, puis quitte le masque choisi, puis l'outil.
+      if (plain && letter("m") && profileAllows("develop.masks") && state.settings) {
+        void state.setTool(state.tool === "masks" ? "adjust" : "masks");
+        e.preventDefault();
+        return;
+      }
+      if (state.tool === "masks") {
+        if (plain && letter("o")) {
+          state.setShowMask(!state.showMask);
+          e.preventDefault();
+          return;
+        }
+        if ((e.key === "Delete" || e.key === "Backspace") && state.selectedMask !== null) {
+          void state.removeMask(state.selectedMask);
+          e.preventDefault();
+          return;
+        }
+        if (e.key === "Escape") {
+          if (state.maskDraft) state.armMask(null);
+          else if (state.selectedMask !== null) state.selectMask(null);
+          else void state.setTool("adjust");
           e.preventDefault();
           return;
         }

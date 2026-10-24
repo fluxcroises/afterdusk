@@ -2,6 +2,7 @@ import i18next from "i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { type CommandError, toCommandError } from "../api/core";
+import { MASK_FEATHER_DEFAULT, normalizeAngle } from "../ui/masks";
 
 export type WhiteBalance =
   | { mode: "asShot" }
@@ -229,7 +230,10 @@ export interface SpotBrush {
 }
 
 /** Outil de la barre de droite. */
-export type DevelopTool = "adjust" | "filters" | "crop" | "spots";
+export type DevelopTool = "adjust" | "filters" | "crop" | "spots" | "masks";
+
+/** Exposition d'un masque, en IL. */
+export const LOCAL_EXPOSURE_RANGE = { min: -4, max: 4 } as const;
 
 /** Pellicule évoquée par une simulation de film (boîte dessinée, sans marque). */
 export interface Film {
@@ -295,6 +299,30 @@ function sparseSpot(spot: Spot): Spot {
     out.feather = spot.feather;
   }
   if (spot.mode === "clone") out.mode = "clone";
+  return out;
+}
+
+/** Masque creux : positions arrondies, valeurs par défaut retirées. */
+function sparseMask(mask: Mask): Mask {
+  const p = (v: [number, number]): [number, number] => [r5(v[0]), r5(v[1])];
+  const s = mask.shape;
+  let shape: MaskShape;
+  if (s.kind === "linear") {
+    shape = { kind: "linear", from: p(s.from), to: p(s.to) };
+  } else {
+    shape = { kind: "radial", center: p(s.center), radius: p(s.radius) };
+    const angle = normalizeAngle(s.angle ?? 0);
+    if (angle !== 0) shape.angle = angle;
+    const feather = Math.round(s.feather ?? MASK_FEATHER_DEFAULT);
+    if (feather !== MASK_FEATHER_DEFAULT) shape.feather = feather;
+  }
+  const adjust = Object.fromEntries(
+    Object.entries(mask.adjust ?? {}).filter(([, v]) => v !== undefined && v !== 0),
+  );
+  const out: Mask = { shape };
+  if (Object.keys(adjust).length > 0) out.adjust = adjust;
+  if (mask.invert) out.invert = true;
+  if (mask.hidden) out.hidden = true;
   return out;
 }
 
@@ -536,6 +564,12 @@ interface DevelopState {
   selectedSpot: number | null;
   /** Visualisation des poussières, dans l'outil de correction. */
   showDust: boolean;
+  /** Masque choisi (indice dans `settings.masks`). */
+  selectedMask: number | null;
+  /** Forme du prochain masque, tracée par un glissé sur la photo. */
+  maskDraft: MaskShape["kind"] | null;
+  /** Calque rouge du masque choisi sur la photo. */
+  showMask: boolean;
   /** Outil de recadrage ouvert : l'image entière redressée est affichée. */
   cropping: boolean;
   /** Position de l'historique à l'ouverture de l'outil, pour l'annuler. */
@@ -604,6 +638,20 @@ interface DevelopState {
   removeSpot: (index: number) => Promise<void>;
   clearSpots: () => Promise<void>;
   setShowDust: (show: boolean) => void;
+  /** Prépare le tracé d'un masque (`null` : aucun). */
+  armMask: (kind: MaskShape["kind"] | null) => void;
+  /** Nouveau masque, sans réglage, choisi aussitôt. */
+  addMask: (shape: MaskShape) => Promise<void>;
+  /** Forme déplacée ou redimensionnée, en une étape d'historique. */
+  setMaskShape: (index: number, shape: MaskShape) => Promise<void>;
+  setMaskAdjust: (index: number, key: LocalKey, value: number) => void;
+  setMaskFeather: (index: number, feather: number) => void;
+  /** Inverse le masque, ou le masque (sans effet). */
+  toggleMask: (index: number, flag: "invert" | "hidden") => Promise<void>;
+  duplicateMask: (index: number) => Promise<void>;
+  removeMask: (index: number) => Promise<void>;
+  selectMask: (index: number | null) => void;
+  setShowMask: (show: boolean) => void;
   startCrop: () => Promise<void>;
   finishCrop: () => void;
   cancelCrop: () => Promise<void>;
@@ -746,6 +794,24 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     const { settings } = get();
     if (!settings) return;
     change(put(settings, "spots", spots.length > 0 ? spots : undefined), label);
+  }
+
+  /** Nouvelle liste de masques, en une étape d'historique à part. */
+  async function changeMasks(masks: Mask[], label: string) {
+    await get().flush();
+    const { settings } = get();
+    if (!settings) return;
+    change(put(settings, "masks", masks.length > 0 ? masks.map(sparseMask) : undefined), label);
+  }
+
+  /** Masque `index` remplacé, réglage d'un curseur (étapes fusionnées). */
+  function changeMask(index: number, edit: (mask: Mask) => Mask, label: string) {
+    const { settings } = get();
+    const masks = [...(settings?.masks ?? [])];
+    const mask = masks[index];
+    if (!settings || !mask) return;
+    masks[index] = sparseMask(edit(mask));
+    change(put(settings, "masks", masks), label);
   }
 
   /** Nouvelle géométrie : le zoom et ses dimensions sont à refaire. */
@@ -991,7 +1057,10 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     sourceSize: null,
     spotBrush: { radius: 0.01, feather: SPOT_FEATHER_DEFAULT, mode: "heal" },
     selectedSpot: null,
+    selectedMask: null,
+    maskDraft: null,
     showDust: false,
+    showMask: false,
 
     open: async (mediaId, version = ORIGINAL) => {
       if (get().mediaId === mediaId && get().settings) {
@@ -1020,6 +1089,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         cropStart: null,
         tool: get().tool === "crop" ? "adjust" : get().tool,
         selectedSpot: null,
+        selectedMask: null,
+        maskDraft: null,
         sourceSize: null,
         presetThumbs: {},
       });
@@ -1242,7 +1313,7 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         await get().startCrop();
         return;
       }
-      set({ tool, selectedSpot: null, picking: false });
+      set({ tool, selectedSpot: null, selectedMask: null, maskDraft: null, picking: false });
       void render();
       if (tool === "filters") {
         await get().loadPresets();
@@ -1456,12 +1527,75 @@ export const useDevelop = create<DevelopState>()((set, get) => {
       void render();
     },
 
+    armMask: (kind) => set({ maskDraft: kind }),
+
+    addMask: async (shape) => {
+      const masks = [...(get().settings?.masks ?? [])];
+      if (masks.length >= MASKS_MAX) return;
+      masks.push({ shape });
+      await changeMasks(masks, "masks.add");
+      set({ selectedMask: masks.length - 1, maskDraft: null });
+    },
+
+    setMaskShape: async (index, shape) => {
+      const masks = [...(get().settings?.masks ?? [])];
+      const mask = masks[index];
+      if (!mask) return;
+      masks[index] = { ...mask, shape };
+      await changeMasks(masks, "masks.move");
+    },
+
+    setMaskAdjust: (index, key, value) =>
+      changeMask(
+        index,
+        (m) => ({ ...m, adjust: { ...m.adjust, [key]: value } }),
+        `masks.${index}.${key}`,
+      ),
+
+    setMaskFeather: (index, feather) =>
+      changeMask(
+        index,
+        (m) => (m.shape.kind === "radial" ? { ...m, shape: { ...m.shape, feather } } : m),
+        `masks.${index}.feather`,
+      ),
+
+    toggleMask: async (index, flag) => {
+      const masks = [...(get().settings?.masks ?? [])];
+      const mask = masks[index];
+      if (!mask) return;
+      const on = !mask[flag];
+      masks[index] = { ...mask, [flag]: on };
+      const label = flag === "invert" ? "masks.invert" : on ? "masks.hide" : "masks.show";
+      await changeMasks(masks, label);
+    },
+
+    duplicateMask: async (index) => {
+      const masks = [...(get().settings?.masks ?? [])];
+      const mask = masks[index];
+      if (!mask || masks.length >= MASKS_MAX) return;
+      masks.splice(index + 1, 0, structuredClone(mask));
+      await changeMasks(masks, "masks.duplicate");
+      set({ selectedMask: index + 1 });
+    },
+
+    removeMask: async (index) => {
+      const masks = (get().settings?.masks ?? []).filter((_, i) => i !== index);
+      set({ selectedMask: null });
+      await changeMasks(masks, "masks.remove");
+    },
+
+    selectMask: (index) => set({ selectedMask: index }),
+
+    setShowMask: (show) => set({ showMask: show }),
+
     startCrop: async () => {
       if (!get().settings || get().cropping) return;
       await get().flush();
       set({
         tool: "crop",
         selectedSpot: null,
+        selectedMask: null,
+        maskDraft: null,
         picking: false,
         cropping: true,
         cropStart: get().history?.current ?? 0,
@@ -1732,6 +1866,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
         cropStart: null,
         tool: get().tool === "crop" ? "adjust" : get().tool,
         selectedSpot: null,
+        selectedMask: null,
+        maskDraft: null,
         sourceSize: null,
       });
       await invoke("develop_close").catch(() => undefined);

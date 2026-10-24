@@ -10,7 +10,7 @@ import i18n from "./i18n";
 import { KEY_HINTS } from "./menu";
 import { isMac } from "./platform";
 import { useBursts } from "./store/bursts";
-import { useDevelop } from "./store/develop";
+import { MASKS_MAX, useDevelop } from "./store/develop";
 import { type MediaSummary, useLibrary } from "./store/library";
 import { purgeSelection } from "./trash";
 import { useNavigation } from "./store/navigation";
@@ -191,4 +191,36 @@ export function developMenuItems(t: TFunction): Item[] {
 
 export async function openDevelopMenu(): Promise<void> {
   await popup(developMenuItems(i18n.t.bind(i18n)));
+}
+
+/** Clic droit sur un masque (liste ou photo) : il est choisi d'abord. */
+export async function openMaskMenu(index: number): Promise<void> {
+  const t = i18n.t.bind(i18n);
+  const state = useDevelop.getState();
+  const masks = state.settings?.masks ?? [];
+  const mask = masks[index];
+  if (!mask) return;
+  state.selectMask(index);
+  const run = (f: (s: ReturnType<typeof useDevelop.getState>) => Promise<void>) => () =>
+    void f(useDevelop.getState());
+  await popup([
+    {
+      text: t(mask.invert ? "develop.masks.uninvert" : "develop.masks.invert"),
+      action: run((s) => s.toggleMask(index, "invert")),
+    },
+    {
+      text: t(mask.hidden ? "develop.masks.show" : "develop.masks.hide"),
+      action: run((s) => s.toggleMask(index, "hidden")),
+    },
+    {
+      text: t("develop.masks.duplicate"),
+      enabled: masks.length < MASKS_MAX,
+      action: run((s) => s.duplicateMask(index)),
+    },
+    separator,
+    {
+      text: hint(t("develop.masks.remove"), t("keys.delete")),
+      action: run((s) => s.removeMask(index)),
+    },
+  ]);
 }
