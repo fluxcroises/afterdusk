@@ -984,3 +984,7 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 - Vérifié à 1 280, 900 et 375 px : captures en alternance dans la colonne large, aucune ligne qui déborde, cibles de 44 px.
 - Description et sujets du dépôt GitHub mis à jour ; modèles « Signaler un problème » (avec les informations système d'« À propos ») et « Proposer une amélioration ».
 - Projet passé en 0.5.2 (« Rechercher les mises à jour » dans « À propos »). Les notes de version vivent désormais dans `docs/notes-de-version/<version>.md`, que l'action de publication reprend dans le brouillon ; sans fichier, le texte reste « Afterdusk <version> ».
+
+### 2026-10-24 : version 0.5.2 publiée
+
+- Version 0.5.2 publiée par l'utilisateur ; les notes du brouillon viennent bien de `docs/notes-de-version/0.5.2.md`, et `latest.json` annonce 0.5.2. « Rechercher les mises à jour » vérifié par l'utilisateur sous Windows dans l'application installée. Le cas « nouvelle version trouvée » de ce lien se verra avec la 0.5.3.
