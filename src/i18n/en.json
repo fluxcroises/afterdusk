@@ -932,12 +932,13 @@
       "grain": "Grain",
       "lens": "Lens corrections",
       "geometry": "Crop and straighten",
-      "spots": "Spot healing"
+      "spots": "Spot healing",
+      "masks": "Masks (local adjustments)"
     },
     "copy": {
       "open": "Copy settings…",
       "title": "Copy settings",
-      "hint": "Crop and spots: unticked by default, specific to each photo.",
+      "hint": "Crop, spots and masks: unticked by default, specific to each photo.",
       "confirm": "Copy",
       "modifiers": "Ctrl+Shift+"
     },

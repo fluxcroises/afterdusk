@@ -154,7 +154,7 @@ struct RawPreset {
 
 /// Ce que le copier-coller peut transmettre en plus : géométrie et
 /// corrections de défauts (jamais dans un preset).
-const PASTE_ONLY: &[&str] = &["geometry", "spots"];
+const PASTE_ONLY: &[&str] = &["geometry", "spots", "masks"];
 
 fn check_controls(controls: &[String]) -> Result<(), PresetError> {
     match controls.iter().find(|c| !PATHS.contains(&c.as_str())) {
@@ -661,15 +661,34 @@ mod tests {
             feather: 50.0,
             mode: crate::develop::settings::SpotMode::Heal,
         });
+        from.masks.push(crate::develop::settings::Mask {
+            shape: crate::develop::settings::MaskShape::Linear {
+                from: [0.5, 0.0],
+                to: [0.5, 0.4],
+            },
+            adjust: crate::develop::settings::LocalAdjust {
+                exposure: -1.0,
+                ..Default::default()
+            },
+            invert: false,
+            hidden: false,
+        });
         let mut target = DevelopSettings::default();
         target.light.exposure = -0.5;
         target.color.vibrance = 20.0;
         let c = |v: &[&str]| v.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+        // Masques collés : ceux de la photo copiée remplacent ceux de la cible.
+        let masked = paste(none, &target, &from, &c(&["masks"])).unwrap();
+        assert_eq!(masked.masks, from.masks);
+        assert_eq!(masked.light.exposure, -0.5);
+        let cleared = paste(none, &masked, &DevelopSettings::default(), &c(&["masks"])).unwrap();
+        assert!(cleared.masks.is_empty());
         let out = paste(none, &target, &from, &c(&["light.contrast", "spots"])).unwrap();
         assert_eq!((out.light.exposure, out.light.contrast), (-0.5, 30.0));
         assert_eq!(out.color.vibrance, 20.0);
         assert_eq!(out.spots.len(), 1);
         assert_eq!(out.geometry.angle, 0.0);
+        assert!(out.masks.is_empty());
         let all = paste(none, &target, &from, &c(&["light", "geometry"])).unwrap();
         assert_eq!((all.light.exposure, all.geometry.angle), (1.0, 4.0));
         assert!(paste(none, &target, &from, &c(&["version"])).is_err());

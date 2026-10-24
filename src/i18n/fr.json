@@ -932,12 +932,13 @@
       "grain": "Grain",
       "lens": "Corrections d'objectif",
       "geometry": "Recadrage et redressement",
-      "spots": "Corrections de défauts"
+      "spots": "Corrections de défauts",
+      "masks": "Masques (retouches locales)"
     },
     "copy": {
       "open": "Copier les réglages…",
       "title": "Copier les réglages",
-      "hint": "Recadrage et défauts : décochés par défaut, propres à chaque photo.",
+      "hint": "Recadrage, défauts et masques : décochés par défaut, propres à chaque photo.",
       "confirm": "Copier",
       "modifiers": "Ctrl+Maj+"
     },
