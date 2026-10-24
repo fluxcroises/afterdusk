@@ -1015,3 +1015,8 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - Ctrl+Z annule le dernier réglage, Suppr retire le masque choisi, Échap revient aux réglages ; libellés de l'historique (« Linéaire 1 : exposition -1,56 IL », « Masque déplacé », « Masque retiré »).
   - Non vu : le menu du clic droit, le pas de 15° et le cercle avec Maj (couverts par les tests).
   - Bibliothèque et données d'essai supprimées ensuite.
+- Étape 7, mesures et guide :
+  - `tests/perf_v06.rs`, sur le modèle de la mesure de la V0.2 : six RAW à 2048 px, tous les réglages de la photo en jeu et 8 masques qui se recouvrent (4 linéaires, 4 radiaux, sept réglages locaux chacun), l'exposition d'un masque glissée sur 40 valeurs, masques recompilés à chaque réglage comme dans l'application ;
+  - RTX 3060 Ti : 95 % des rendus en 8 ms ; processeur seul (`AFTERDUSK_GPU=0`) : 85 ms, contre 71 ms sans masque (mesure de la V0.2 relancée) ; sous les 100 ms dans les deux cas, à vérifier sur le Mac ;
+  - page « Retouches locales (masques) » du guide d'utilisation sur Confluence : tracer, ajuster la forme, réglages, clavier, historique, export et XMP.
+- Reste pour cocher les critères de la V0.6 : les masques dans le copier-coller des réglages (critère 2), la CI verte sous Windows et macOS, et la vérification sur le Mac (mesure et écran).
