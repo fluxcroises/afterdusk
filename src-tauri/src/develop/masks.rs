@@ -116,15 +116,22 @@ impl Planar {
     /// Poids au centre (x, y) d'un pixel : le calcul du shader, en f64.
     pub fn weight(&self, x: f64, y: f64) -> f64 {
         let u = self.u[0] * x + self.u[1] * y + self.u[2];
+        // Raccourcis des cas les plus fréquents (hors de l'ellipse, en deçà ou
+        // au-delà du dégradé), même résultat que le calcul complet.
         let w = if self.radial {
-            let q = u.hypot(self.v[0] * x + self.v[1] * y + self.v[2]);
-            if q >= 1.0 {
+            let v = self.v[0] * x + self.v[1] * y + self.v[2];
+            let q2 = u * u + v * v;
+            if q2 >= 1.0 {
                 0.0
-            } else if q <= self.inner {
+            } else if q2 <= self.inner * self.inner {
                 1.0
             } else {
-                1.0 - smoothstep((q - self.inner) / (1.0 - self.inner))
+                1.0 - smoothstep((q2.sqrt() - self.inner) / (1.0 - self.inner))
             }
+        } else if u <= 0.0 {
+            1.0
+        } else if u >= 1.0 {
+            0.0
         } else {
             1.0 - smoothstep(u)
         };

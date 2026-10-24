@@ -17,7 +17,7 @@ use super::curve;
 use super::detail::{self, DetailParams, Radii};
 use super::geometry;
 use super::lens::LensCorrection;
-use super::masks::MaskSet;
+use super::masks::{MaskSet, Planar};
 use super::settings::{DevelopSettings, LocalAdjust, MASKS_MAX};
 use super::spots;
 use super::white;
@@ -563,16 +563,20 @@ impl LocalParams {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Locals {
     pub masks: MaskSet,
+    /// Les mêmes formes en pixels de la sortie (voir [`MaskSet::planar`]) :
+    /// une forme affine par pixel au lieu de la géométrie entière, comme sur
+    /// la carte graphique.
+    pub planar: Vec<Planar>,
     pub params: Vec<LocalParams>,
 }
 
 impl Locals {
     /// Poids de chaque masque au pixel `at` (sortie entière), dans `out`.
     fn weights(&self, at: &At, out: &mut [f32; MASKS_MAX]) -> usize {
-        let p = self.masks.source_point(at.x, at.y);
-        let n = self.params.len().min(MASKS_MAX);
-        for (i, w) in out.iter_mut().enumerate().take(n) {
-            *w = self.masks.weight_of(i, p);
+        let (x, y) = (f64::from(at.x) + 0.5, f64::from(at.y) + 0.5);
+        let n = self.planar.len().min(MASKS_MAX);
+        for (w, shape) in out.iter_mut().zip(&self.planar) {
+            *w = shape.weight(x, y) as f32;
         }
         n
     }
@@ -694,7 +698,12 @@ impl RenderParams {
             .iter()
             .map(|f| LocalParams::from_adjust(&f.adjust))
             .collect();
-        self.locals = Some(Arc::new(Locals { masks, params }));
+        let planar = masks.planar();
+        self.locals = Some(Arc::new(Locals {
+            masks,
+            planar,
+            params,
+        }));
         self.flags |= FLAG_MASKS;
         self
     }
@@ -880,38 +889,41 @@ pub fn render_pixel_at(rgb: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
 /// sRGB, TSL, courbes.
 #[inline]
 pub fn display_of(lin: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
-    // Retouches locales : poids de chaque masque en ce pixel, puis gains
-    // (exposition, température, teinte) en lumière linéaire.
-    let mut weights = [0.0f32; MASKS_MAX];
-    let locals = match p.locals.as_deref() {
-        Some(l) if p.flags & FLAG_MASKS != 0 => {
-            let n = l.weights(at, &mut weights);
-            &l.params[..n]
-        }
-        _ => &[],
-    };
-    let mut lin = lin;
-    if !locals.is_empty() {
-        let mut log_gain = [0.0f32; 3];
-        for (lp, w) in locals.iter().zip(weights) {
-            for (g, l) in log_gain.iter_mut().zip(lp.log_gain) {
-                *g += w * l;
+    // Retouches locales : poids de chaque masque en ce pixel ; leurs réglages
+    // s'additionnent selon les poids (gains en IL, amplitudes de la courbe de
+    // tonalité, saturation), d'un seul passage.
+    let mut log_gain = [0.0f32; 3];
+    let mut local_tone = [0.0f32; 6];
+    let mut local_saturation = 0.0f32;
+    if let Some(l) = p.locals.as_deref().filter(|_| p.flags & FLAG_MASKS != 0) {
+        let mut weights = [0.0f32; MASKS_MAX];
+        let n = l.weights(at, &mut weights);
+        for (lp, &w) in l.params[..n].iter().zip(&weights) {
+            if w <= 0.0 {
+                continue;
             }
+            for (g, v) in log_gain.iter_mut().zip(lp.log_gain) {
+                *g += w * v;
+            }
+            if lp.has_tone {
+                for (t, v) in local_tone.iter_mut().zip(lp.tone) {
+                    *t += w * v;
+                }
+            }
+            local_saturation += w * lp.saturation;
         }
-        if log_gain != [0.0; 3] {
-            lin = std::array::from_fn(|c| lin[c] * log_gain[c].exp2());
-        }
+    }
+    let mut lin = lin;
+    if log_gain != [0.0; 3] {
+        lin = std::array::from_fn(|c| lin[c] * log_gain[c].exp2());
     }
     let mut v = if p.flags & FLAG_RENDERED != 0 {
         lin.map(|x| x.clamp(0.0, 1.0))
     } else {
         lin.map(neutral_curve)
     };
-    let local_tone = locals
-        .iter()
-        .zip(weights)
-        .any(|(lp, w)| lp.has_tone && w > 0.0);
-    if p.flags & FLAG_TONE != 0 || local_tone {
+    let local_tone = (local_tone != [0.0; 6]).then_some(local_tone);
+    if p.flags & FLAG_TONE != 0 || local_tone.is_some() {
         let y = LUMA_REC2020[0] * v[0] + LUMA_REC2020[1] * v[1] + LUMA_REC2020[2] * v[2];
         if y > 1e-6 {
             let q = y.powf(1.0 / process1::TONE_GAMMA);
@@ -920,21 +932,15 @@ pub fn display_of(lin: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
             } else {
                 q
             };
-            // Chaque masque mêle sa courbe à celle de la photo selon son poids.
-            for (lp, w) in locals.iter().zip(weights) {
-                if lp.has_tone && w > 0.0 {
-                    t += w * (tone_curve(t, &lp.tone) - t);
-                }
+            // Courbe des masques, de leurs amplitudes pondérées, après celle
+            // de la photo.
+            if let Some(local) = &local_tone {
+                t = tone_curve(t, local);
             }
             let ratio = t.max(0.0).powf(process1::TONE_GAMMA) / y;
             v = v.map(|c| c * ratio);
         }
     }
-    let local_saturation: f32 = locals
-        .iter()
-        .zip(weights)
-        .map(|(lp, w)| w * lp.saturation)
-        .sum();
     if p.saturation != 0.0 || p.vibrance != 0.0 || local_saturation != 0.0 {
         let y = LUMA_REC2020[0] * v[0] + LUMA_REC2020[1] * v[1] + LUMA_REC2020[2] * v[2];
         let max = v[0].max(v[1]).max(v[2]);

@@ -300,21 +300,27 @@ fn mask_weight(i: u32, x: f32, y: f32) -> f32 {{
 fn display_pixel(lin_in: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     // Retouches locales : poids de chaque masque en ce pixel, puis gains
     // (exposition, température, teinte) en lumière linéaire.
-    var weights: array<f32, MASKS_MAX>;
     let n = min(params.masks, MASKS_MAX);
     let fx = f32(px) + 0.5;
     let fy = f32(py) + 0.5;
     var log_gain = vec3<f32>(0.0);
-    var local_tone = false;
+    var tone_a = vec4<f32>(0.0);
+    var tone_b = vec2<f32>(0.0);
     var local_saturation = 0.0;
     for (var i = 0u; i < n; i++) {{
         let w = mask_weight(i, fx, fy);
-        weights[i] = w;
+        if (w <= 0.0) {{
+            continue;
+        }}
         let b = i * MASK_STRIDE;
         log_gain += w * vec3<f32>(mask_data[b + 10u], mask_data[b + 11u], mask_data[b + 12u]);
-        local_tone = local_tone || (mask_data[b + 3u] != 0.0 && w > 0.0);
+        if (mask_data[b + 3u] != 0.0) {{
+            tone_a += w * vec4<f32>(mask_data[b + 13u], mask_data[b + 14u], mask_data[b + 15u], mask_data[b + 16u]);
+            tone_b += w * vec2<f32>(mask_data[b + 17u], mask_data[b + 18u]);
+        }}
         local_saturation += w * mask_data[b + 19u];
     }}
+    let local_tone = any(tone_a != vec4<f32>(0.0)) || any(tone_b != vec2<f32>(0.0));
     var lin = lin_in;
     if (any(log_gain != vec3<f32>(0.0))) {{
         lin = lin * exp2(log_gain);
@@ -328,14 +334,10 @@ fn display_pixel(lin_in: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
             if ((params.flags & FLAG_TONE) != 0u) {{
                 t = tone_curve(q);
             }}
-            // Chaque masque mêle sa courbe à celle de la photo selon son poids.
-            for (var i = 0u; i < n; i++) {{
-                let b = i * MASK_STRIDE;
-                if (mask_data[b + 3u] != 0.0 && weights[i] > 0.0) {{
-                    let a = vec4<f32>(mask_data[b + 13u], mask_data[b + 14u], mask_data[b + 15u], mask_data[b + 16u]);
-                    let c = vec2<f32>(mask_data[b + 17u], mask_data[b + 18u]);
-                    t += weights[i] * (tone_curve_with(t, a, c) - t);
-                }}
+            // Courbe des masques, de leurs amplitudes pondérées, après celle
+            // de la photo.
+            if (local_tone) {{
+                t = tone_curve_with(t, tone_a, tone_b);
             }}
             var ratio = 0.0;
             if (t > 0.0) {{
@@ -889,7 +891,7 @@ fn mask_bytes(p: &RenderParams) -> Vec<u8> {
     let flag = |b: bool| if b { 1.0 } else { 0.0 };
     let mut out = Vec::with_capacity(MASK_BYTES as usize);
     let n = mask_count(p) as usize;
-    for (shape, lp) in l.masks.planar().iter().zip(&l.params).take(n) {
+    for (shape, lp) in l.planar.iter().zip(&l.params).take(n) {
         let mut values = vec![
             flag(shape.radial),
             flag(shape.invert),
