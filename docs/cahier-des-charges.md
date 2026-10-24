@@ -421,8 +421,8 @@ Objectif : livrer aux bons formats, habiller une photo sans quitter Afterdusk, e
 Objectif : régler une partie de la photo seulement, un ciel, un visage, le sol (première piste de la V1, choix de l'utilisateur, 2026-10-24 ; décision 0014).
 
 - [ ] Dégradés linéaire et radial, déplaçables, inversables, adoucis, sur RAW, JPEG et HEIF
-- [ ] Sept réglages par masque (exposition, contraste, hautes lumières, ombres, température, teinte, saturation), dans l'historique et le copier-coller des réglages
-- [ ] Même rendu à l'aperçu, au zoom 100 %, à l'export et après relecture du XMP
+- [x] Sept réglages par masque (exposition, contraste, hautes lumières, ombres, température, teinte, saturation), dans l'historique et le copier-coller des réglages
+- [x] Même rendu à l'aperçu, au zoom 100 %, à l'export et après relecture du XMP
 - [ ] Retour visuel d'un réglage en moins de 100 ms avec 8 masques
 - Pinceau et gomme : version suivante.
 
