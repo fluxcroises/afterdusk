@@ -1008,4 +1008,10 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - une étape d'historique par geste (« Masque ajouté », « Linéaire 1 : exposition -0,80 IL »), les curseurs fusionnés.
 - Tests : poids des masques identiques aux cas du cœur, store (étapes, réglages creux, angle ramené, duplication, suppression), libellés de l'historique, panneau, tracé à la souris, poignée de taille avec Maj, choix par la pastille.
 - Corrigé au passage : le test de l'étape 1 qui compare l'interface au code Rust lisait le fichier avec `node:fs`, que `tsc` refuse ; la compilation de l'application échouait sur la CI depuis l'étape 1. Il passe désormais par un import `?raw`.
-- Pas encore vu à l'écran.
+- Vérifié à l'écran sous Windows, dans l'application compilée avec un autre identifiant (`app.afterdusk.ecrans`, données de l'utilisateur non touchées), profil « De base », sur une bibliothèque d'essai des JPEG de Cabourg (source inchangée) :
+  - dégradé linéaire tracé sur le ciel, exposition -1,56 IL et saturation +34 : ciel assombri en fondu jusqu'à la ligne d'effet nul ; poignée basse tirée : le dégradé s'incline, le rendu suit ;
+  - « Afficher le masque » (O) : calque rouge calé sur les lignes et sur l'ellipse, adoucissement compris ; au zoom 100 %, ligne et calque restent calés ;
+  - dégradé radial tracé sur la plage, tourné par sa poignée, +1,14 IL dans l'ellipse ;
+  - Ctrl+Z annule le dernier réglage, Suppr retire le masque choisi, Échap revient aux réglages ; libellés de l'historique (« Linéaire 1 : exposition -1,56 IL », « Masque déplacé », « Masque retiré »).
+  - Non vu : le menu du clic droit, le pas de 15° et le cercle avec Maj (couverts par les tests).
+  - Bibliothèque et données d'essai supprimées ensuite.
