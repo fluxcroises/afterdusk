@@ -153,6 +153,13 @@ impl MaskSet {
         geometry::canvas_to_source(canvas, &self.geometry, self.sw, self.sh)
     }
 
+    /// Poids du masque actif `i` au point `p` de la source (en pixels).
+    pub fn weight_of(&self, i: usize, p: [f64; 2]) -> f32 {
+        let f = &self.fields[i];
+        let w = f.shape.weight(p);
+        (if f.invert { 1.0 - w } else { w }) as f32
+    }
+
     /// Poids de chaque masque au pixel (x, y) de la sortie entière, dans
     /// l'ordre des masques actifs.
     pub fn weights(&self, x: u32, y: u32, out: &mut Vec<f32>) {

@@ -8,6 +8,7 @@
 //! par teinte (TSL), courbes de tonalité, grain, 8 bits, histogramme et
 //! avertissements d'écrêtage.
 
+use std::sync::Arc;
 use std::thread;
 
 use serde::Deserialize;
@@ -16,7 +17,8 @@ use super::curve;
 use super::detail::{self, DetailParams, Radii};
 use super::geometry;
 use super::lens::LensCorrection;
-use super::settings::DevelopSettings;
+use super::masks::MaskSet;
+use super::settings::{DevelopSettings, LocalAdjust, MASKS_MAX};
 use super::spots;
 use super::white;
 #[cfg(test)]
@@ -113,6 +115,10 @@ pub mod process1 {
     pub const GRAIN_AMPLITUDE: f32 = 0.18;
     pub const GRAIN_CELL_MIN: f32 = 1.0;
     pub const GRAIN_CELL_RANGE: f32 = 4.0;
+    /// Retouches locales : décalage de température et de teinte à ±100, en IL
+    /// sur les canaux rouge et bleu (température), vert (teinte).
+    pub const LOCAL_TEMPERATURE: f32 = 0.5;
+    pub const LOCAL_TINT: f32 = 0.35;
 }
 
 /// Centres des huit teintes (rouge, orange, jaune, vert, cyan, bleu, violet,
@@ -131,6 +137,8 @@ pub const FLAG_DENOISE: u32 = 128;
 pub const FLAG_SHARPEN: u32 = 256;
 /// Source déjà développée : courbe neutre réduite à l'identité (bornée).
 pub const FLAG_RENDERED: u32 = 512;
+/// Retouches locales (décision 0014) : voir [`RenderParams::locals`].
+pub const FLAG_MASKS: u32 = 1024;
 
 /// Couleurs des avertissements d'écrêtage peints sur l'image.
 pub const CLIP_HIGHLIGHT_RGB: [u8; 3] = [255, 40, 40];
@@ -510,6 +518,64 @@ pub struct RenderParams {
     pub curve: Vec<f32>,
     /// Réduction du bruit et netteté (passes de voisinage).
     pub detail: DetailParams,
+    /// Retouches locales : masques et réglages de chacun, ou rien.
+    pub locals: Option<Arc<Locals>>,
+}
+
+/// Réglages d'un masque, prêts pour le rendu (à plein effet).
+#[derive(Debug, Clone, PartialEq)]
+pub struct LocalParams {
+    /// Gains en IL sur les canaux rouge, vert et bleu (Rec. 2020 linéaire) :
+    /// exposition, température, teinte.
+    pub log_gain: [f32; 3],
+    /// Amplitudes de la courbe de tonalité (même forme que [`RenderParams::tone`]).
+    pub tone: [f32; 6],
+    pub has_tone: bool,
+    /// Saturation, de -1 à +1.
+    pub saturation: f32,
+}
+
+impl LocalParams {
+    fn from_adjust(a: &LocalAdjust) -> Self {
+        use process1 as p;
+        let pct = |v: f64| (v / 100.0) as f32;
+        let ev = a.exposure as f32;
+        let warm = pct(a.temperature) * p::LOCAL_TEMPERATURE;
+        let magenta = pct(a.tint) * p::LOCAL_TINT;
+        let tone = [
+            0.0,
+            pct(a.contrast) * p::CONTRAST,
+            pct(a.highlights) * p::HIGHLIGHTS,
+            pct(a.shadows) * p::SHADOWS,
+            0.0,
+            0.0,
+        ];
+        Self {
+            log_gain: [ev + warm, ev - magenta, ev - warm],
+            has_tone: tone.iter().any(|v| *v != 0.0),
+            tone,
+            saturation: pct(a.saturation),
+        }
+    }
+}
+
+/// Masques actifs d'une photo et leurs réglages, dans le même ordre.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Locals {
+    pub masks: MaskSet,
+    pub params: Vec<LocalParams>,
+}
+
+impl Locals {
+    /// Poids de chaque masque au pixel `at` (sortie entière), dans `out`.
+    fn weights(&self, at: &At, out: &mut [f32; MASKS_MAX]) -> usize {
+        let p = self.masks.source_point(at.x, at.y);
+        let n = self.params.len().min(MASKS_MAX);
+        for (i, w) in out.iter_mut().enumerate().take(n) {
+            *w = self.masks.weight_of(i, p);
+        }
+        n
+    }
 }
 
 impl RenderParams {
@@ -609,7 +675,27 @@ impl RenderParams {
             grain,
             curve,
             detail,
+            locals: None,
         }
+    }
+
+    /// Ajoute les retouches locales des réglages, pour une image de travail
+    /// de `sw` × `sh` pixels avant géométrie (celle que la géométrie
+    /// transforme pour donner l'image rendue).
+    #[must_use]
+    pub fn with_masks(mut self, settings: &DevelopSettings, sw: u32, sh: u32) -> Self {
+        let masks = MaskSet::new(&settings.masks, &settings.geometry, sw, sh);
+        if masks.is_empty() {
+            return self;
+        }
+        let params = masks
+            .fields
+            .iter()
+            .map(|f| LocalParams::from_adjust(&f.adjust))
+            .collect();
+        self.locals = Some(Arc::new(Locals { masks, params }));
+        self.flags |= FLAG_MASKS;
+        self
     }
 }
 
@@ -793,20 +879,62 @@ pub fn render_pixel_at(rgb: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
 /// sRGB, TSL, courbes.
 #[inline]
 pub fn display_of(lin: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
+    // Retouches locales : poids de chaque masque en ce pixel, puis gains
+    // (exposition, température, teinte) en lumière linéaire.
+    let mut weights = [0.0f32; MASKS_MAX];
+    let locals = match p.locals.as_deref() {
+        Some(l) if p.flags & FLAG_MASKS != 0 => {
+            let n = l.weights(at, &mut weights);
+            &l.params[..n]
+        }
+        _ => &[],
+    };
+    let mut lin = lin;
+    if !locals.is_empty() {
+        let mut log_gain = [0.0f32; 3];
+        for (lp, w) in locals.iter().zip(weights) {
+            for (g, l) in log_gain.iter_mut().zip(lp.log_gain) {
+                *g += w * l;
+            }
+        }
+        if log_gain != [0.0; 3] {
+            lin = std::array::from_fn(|c| lin[c] * log_gain[c].exp2());
+        }
+    }
     let mut v = if p.flags & FLAG_RENDERED != 0 {
         lin.map(|x| x.clamp(0.0, 1.0))
     } else {
         lin.map(neutral_curve)
     };
-    if p.flags & FLAG_TONE != 0 {
+    let local_tone = locals
+        .iter()
+        .zip(weights)
+        .any(|(lp, w)| lp.has_tone && w > 0.0);
+    if p.flags & FLAG_TONE != 0 || local_tone {
         let y = LUMA_REC2020[0] * v[0] + LUMA_REC2020[1] * v[1] + LUMA_REC2020[2] * v[2];
         if y > 1e-6 {
             let q = y.powf(1.0 / process1::TONE_GAMMA);
-            let ratio = tone_curve(q, &p.tone).powf(process1::TONE_GAMMA) / y;
+            let mut t = if p.flags & FLAG_TONE != 0 {
+                tone_curve(q, &p.tone)
+            } else {
+                q
+            };
+            // Chaque masque mêle sa courbe à celle de la photo selon son poids.
+            for (lp, w) in locals.iter().zip(weights) {
+                if lp.has_tone && w > 0.0 {
+                    t += w * (tone_curve(t, &lp.tone) - t);
+                }
+            }
+            let ratio = t.max(0.0).powf(process1::TONE_GAMMA) / y;
             v = v.map(|c| c * ratio);
         }
     }
-    if p.saturation != 0.0 || p.vibrance != 0.0 {
+    let local_saturation: f32 = locals
+        .iter()
+        .zip(weights)
+        .map(|(lp, w)| w * lp.saturation)
+        .sum();
+    if p.saturation != 0.0 || p.vibrance != 0.0 || local_saturation != 0.0 {
         let y = LUMA_REC2020[0] * v[0] + LUMA_REC2020[1] * v[1] + LUMA_REC2020[2] * v[2];
         let max = v[0].max(v[1]).max(v[2]);
         let min = v[0].min(v[1]).min(v[2]);
@@ -816,7 +944,9 @@ pub fn display_of(lin: [f32; 3], p: &RenderParams, at: &At) -> [f32; 3] {
             0.0
         };
         let dull = 1.0 - chroma;
-        let factor = (1.0 + p.saturation) * (1.0 + p.vibrance * dull * dull);
+        let factor = (1.0 + p.saturation)
+            * (1.0 + p.vibrance * dull * dull)
+            * (1.0 + local_saturation).max(0.0);
         v = v.map(|c| y + (c - y) * factor);
     }
     if p.flags & FLAG_VIGNETTE != 0 {
@@ -1578,5 +1708,195 @@ mod tests {
         assert_eq!(r.histogram[0], 1);
         assert_eq!(r.histogram[768 + 255], 1);
         assert_eq!(r.histogram.iter().sum::<u32>(), 8);
+    }
+
+    mod locales {
+        use super::*;
+        use crate::develop::settings::{LocalAdjust, Mask, MaskShape};
+
+        /// Image de travail unie, 40 × 20, d'un gris moyen (déjà développée :
+        /// les réglages à zéro la rendent telle quelle).
+        fn grise(v: f32) -> WorkingImage {
+            WorkingImage {
+                width: 40,
+                height: 20,
+                rgb: vec![v; 40 * 20 * 3],
+                as_shot_white: D65_WHITE,
+                scale: 1.0,
+                crop: None,
+                rendered: true,
+            }
+        }
+
+        /// Disque net au centre (rayon 5 pixels), avec ces réglages.
+        fn disque(adjust: LocalAdjust) -> Mask {
+            Mask {
+                shape: MaskShape::Radial {
+                    center: [0.5, 0.5],
+                    radius: [0.125, 0.25],
+                    angle: 0.0,
+                    feather: 0.0,
+                },
+                adjust,
+                invert: false,
+                hidden: false,
+            }
+        }
+
+        fn rendu(masks: Vec<Mask>, image: &WorkingImage) -> Vec<f32> {
+            let s = DevelopSettings {
+                masks,
+                ..DevelopSettings::default()
+            };
+            let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default())
+                .rendered(true)
+                .with_masks(&s, image.width, image.height);
+            render_encoded(image, &p)
+        }
+
+        fn px(out: &[f32], x: usize, y: usize) -> [f32; 3] {
+            let i = (y * 40 + x) * 3;
+            [out[i], out[i + 1], out[i + 2]]
+        }
+
+        const CENTRE: (usize, usize) = (20, 10);
+        const COIN: (usize, usize) = (2, 2);
+
+        #[test]
+        fn masque_sans_effet_rendu_identique() {
+            let img = grise(0.18);
+            let sans = rendu(Vec::new(), &img);
+            let neutre = disque(LocalAdjust::default());
+            assert_eq!(rendu(vec![neutre], &img), sans);
+            // Masque actif : hors de sa zone, rien ne change.
+            let plus = disque(LocalAdjust {
+                exposure: 1.0,
+                ..LocalAdjust::default()
+            });
+            let avec = rendu(vec![plus], &img);
+            assert_eq!(px(&avec, COIN.0, COIN.1), px(&sans, COIN.0, COIN.1));
+            assert!(px(&avec, CENTRE.0, CENTRE.1)[1] > px(&sans, CENTRE.0, CENTRE.1)[1]);
+        }
+
+        #[test]
+        fn exposition_locale_comme_l_exposition_globale() {
+            let img = grise(0.1);
+            let local = rendu(
+                vec![disque(LocalAdjust {
+                    exposure: 1.0,
+                    ..LocalAdjust::default()
+                })],
+                &img,
+            );
+            let s = DevelopSettings {
+                light: crate::develop::settings::Light {
+                    exposure: 1.0,
+                    ..Default::default()
+                },
+                ..DevelopSettings::default()
+            };
+            let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default()).rendered(true);
+            let global = render_encoded(&img, &p);
+            let (a, b) = (
+                px(&local, CENTRE.0, CENTRE.1),
+                px(&global, CENTRE.0, CENTRE.1),
+            );
+            for c in 0..3 {
+                assert!((a[c] - b[c]).abs() < 1e-4, "{a:?} {b:?}");
+            }
+        }
+
+        #[test]
+        fn deux_masques_s_additionnent() {
+            let img = grise(0.05);
+            let un = |ev| {
+                disque(LocalAdjust {
+                    exposure: ev,
+                    ..LocalAdjust::default()
+                })
+            };
+            let deux = rendu(vec![un(0.5), un(0.5)], &img);
+            let seul = rendu(vec![un(1.0)], &img);
+            let (a, b) = (px(&deux, CENTRE.0, CENTRE.1), px(&seul, CENTRE.0, CENTRE.1));
+            assert!((a[0] - b[0]).abs() < 1e-4, "{a:?} {b:?}");
+        }
+
+        #[test]
+        fn temperature_teinte_saturation_et_ombres() {
+            let img = grise(0.18);
+            let sans = px(&rendu(Vec::new(), &img), CENTRE.0, CENTRE.1);
+            let chaud = px(
+                &rendu(
+                    vec![disque(LocalAdjust {
+                        temperature: 60.0,
+                        ..LocalAdjust::default()
+                    })],
+                    &img,
+                ),
+                CENTRE.0,
+                CENTRE.1,
+            );
+            assert!(chaud[0] > sans[0] && chaud[2] < sans[2], "{chaud:?}");
+            let magenta = px(
+                &rendu(
+                    vec![disque(LocalAdjust {
+                        tint: 60.0,
+                        ..LocalAdjust::default()
+                    })],
+                    &img,
+                ),
+                CENTRE.0,
+                CENTRE.1,
+            );
+            assert!(magenta[1] < sans[1], "{magenta:?}");
+            let ombres = px(
+                &rendu(
+                    vec![disque(LocalAdjust {
+                        shadows: 100.0,
+                        ..LocalAdjust::default()
+                    })],
+                    &img,
+                ),
+                CENTRE.0,
+                CENTRE.1,
+            );
+            assert!(ombres[1] > sans[1] + 0.02, "{ombres:?} {sans:?}");
+            // Saturation à -100 : une couleur devient grise, dans le masque seulement.
+            let mut couleur = grise(0.0);
+            for c in couleur.rgb.as_chunks_mut::<3>().0 {
+                *c = [0.3, 0.1, 0.05];
+            }
+            let gris = rendu(
+                vec![disque(LocalAdjust {
+                    saturation: -100.0,
+                    ..LocalAdjust::default()
+                })],
+                &couleur,
+            );
+            let dedans = px(&gris, CENTRE.0, CENTRE.1);
+            let dehors = px(&gris, COIN.0, COIN.1);
+            assert!((dedans[0] - dedans[2]).abs() < 1e-3, "{dedans:?}");
+            assert!(dehors[0] - dehors[2] > 0.2, "{dehors:?}");
+        }
+
+        #[test]
+        fn aussi_dans_le_rendu_par_passes() {
+            // Réduction du bruit : le rendu passe par l'image linéaire entière.
+            let img = grise(0.1);
+            let mut s = DevelopSettings {
+                masks: vec![disque(LocalAdjust {
+                    exposure: 1.0,
+                    ..LocalAdjust::default()
+                })],
+                ..DevelopSettings::default()
+            };
+            s.detail.noise.luminance = 30.0;
+            let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default())
+                .rendered(true)
+                .with_masks(&s, img.width, img.height);
+            assert!(p.flags & FLAG_DENOISE != 0);
+            let out = render_encoded(&img, &p);
+            assert!(px(&out, CENTRE.0, CENTRE.1)[1] > px(&out, COIN.0, COIN.1)[1] + 0.05);
+        }
     }
 }
