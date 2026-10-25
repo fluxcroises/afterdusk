@@ -99,7 +99,7 @@ Consigner machine et résultats dans `docs/avancement.md`, cocher les critères 
 
 ## 7. V0.6, retouches locales (ajouté le 2026-10-24)
 
-- [ ] Mesure du rendu avec 8 masques, au processeur graphique puis au processeur seul : `cargo test --release --test perf_v06 -- --ignored --nocapture`, puis la même commande précédée de `AFTERDUSK_GPU=0`. Critère : 95 % des rendus en moins de 100 ms (Windows : 8 ms sur la RTX 3060 Ti, 85 ms au processeur).
+- [x] Mesure du rendu avec 8 masques, au processeur graphique puis au processeur seul : depuis `src-tauri`, `cargo test --release --test perf_v06 -- --ignored --nocapture`, puis la même commande précédée de `AFTERDUSK_GPU=0`. Critère : 95 % des rendus en moins de 100 ms (Windows : 8 ms sur la RTX 3060 Ti, 85 ms au processeur). Mac (2026-10-24) : 3 ms sur Metal ; 104 ms au processeur seul, retenu comme limite connue (choix de l'utilisateur).
 - [ ] Outil Masques (touche M) dans le Retoucher : dégradé linéaire tracé sur un ciel puis incliné, radial tracé puis tourné, calque rouge (O) calé sur les formes, au zoom 100 % aussi ; ⌘Z, Suppr et Échap.
 - [ ] Masques sur un RAW, un JPEG et un HEIC d'iPhone en portrait : la zone touchée est la même à l'aperçu, au zoom 100 % et dans l'export.
 - [ ] Masques copiés sur une autre photo par « Copier les réglages… » (case « Masques »), puis collés.

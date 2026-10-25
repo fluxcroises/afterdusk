@@ -1028,3 +1028,8 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - raccourcis du poids hors d'une ellipse et en deçà ou au-delà d'un dégradé.
 - Gain presque nul. Banc d'essai temporaire sur ce PC, en meilleur temps sur 30 passages : 32 ms sans masque, 36 ms avec 1 ou 2 masques, 38 à 47 ms avec 8 masques. Les 10 à 15 ms des masques se répartissent sans goulot unique. Tests du cœur, égalité processeur et carte graphique, rendu et export verts.
 - Le banc temporaire a montré un conflit du cache de compilation : un test optimisé recompilé seul échoue sur la stratégie de panique (`panic = "abort"` du profil release). Contournement : `CARGO_PROFILE_RELEASE_PANIC=unwind`, ou `cargo clean --release -p afterdusk`.
+
+### 2026-10-25 : V0.6, critère de vitesse
+
+- Choix de l'utilisateur : le critère « moins de 100 ms avec 8 masques » se mesure avec le rendu que l'application utilise, comme celui de la V0.2 ; sur Mac, c'est toujours la carte graphique (Metal). Critère coché : 3 ms sur le Mac M3 Pro, 8 ms sur le PC (RTX 3060 Ti). Limite connue, notée au cahier des charges : 104 ms sur le Mac au processeur seul, rendu de secours quand la carte graphique est inutilisable (machine virtuelle, pilote défaillant). À reprendre si des utilisateurs sans carte graphique trouvent les masques lents : la piste serait des poids calculés à plus basse définition puis interpolés, qui changerait aussi le rendu de la carte graphique.
+- Reste de la V0.6 : le premier critère (dégradés sur RAW, JPEG et HEIF), à voir sur le Mac (`docs/verification-mac.md`, section 7).
