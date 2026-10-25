@@ -100,6 +100,8 @@ Consigner machine et résultats dans `docs/avancement.md`, cocher les critères 
 ## 7. V0.6, retouches locales (ajouté le 2026-10-24)
 
 - [x] Mesure du rendu avec 8 masques, au processeur graphique puis au processeur seul : depuis `src-tauri`, `cargo test --release --test perf_v06 -- --ignored --nocapture`, puis la même commande précédée de `AFTERDUSK_GPU=0`. Critère : 95 % des rendus en moins de 100 ms (Windows : 8 ms sur la RTX 3060 Ti, 85 ms au processeur). Mac : 3 ms sur Metal (2026-10-24) ; au processeur seul, 104 ms avant la simplification du rendu des masques (commit 3c801b3), 78 ms après (2026-10-25).
-- [ ] Outil Masques (touche M) dans le Retoucher : dégradé linéaire tracé sur un ciel puis incliné, radial tracé puis tourné, calque rouge (O) calé sur les formes, au zoom 100 % aussi ; ⌘Z, Suppr et Échap.
-- [ ] Masques sur un RAW, un JPEG et un HEIC d'iPhone en portrait : la zone touchée est la même à l'aperçu, au zoom 100 % et dans l'export.
-- [ ] Masques copiés sur une autre photo par « Copier les réglages… » (case « Masques »), puis collés.
+- [x] Outil Masques (touche M) dans le Retoucher : dégradé linéaire tracé sur un ciel puis incliné, radial tracé puis tourné, calque rouge (O) calé sur les formes, au zoom 100 % aussi ; ⌘Z, Suppr et Échap.
+- [x] Masques sur un RAW, un JPEG et un HEIC d'iPhone en portrait : la zone touchée est la même à l'aperçu, au zoom 100 % et dans l'export.
+- [x] Masques copiés sur une autre photo par « Copier les réglages… » (case « Masques »), puis collés.
+
+Mac (2026-10-25, application d'essai sous l'identifiant `app.afterdusk.essai`, bibliothèque d'essai) : l'utilisateur a fait les trois essais ci-dessus, tout fonctionne.

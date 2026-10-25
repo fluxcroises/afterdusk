@@ -420,7 +420,7 @@ Objectif : livrer aux bons formats, habiller une photo sans quitter Afterdusk, e
 
 Objectif : régler une partie de la photo seulement, un ciel, un visage, le sol (première piste de la V1, choix de l'utilisateur, 2026-10-24 ; décision 0014).
 
-- [ ] Dégradés linéaire et radial, déplaçables, inversables, adoucis, sur RAW, JPEG et HEIF
+- [x] Dégradés linéaire et radial, déplaçables, inversables, adoucis, sur RAW, JPEG et HEIF
 - [x] Sept réglages par masque (exposition, contraste, hautes lumières, ombres, température, teinte, saturation), dans l'historique et le copier-coller des réglages
 - [x] Même rendu à l'aperçu, au zoom 100 %, à l'export et après relecture du XMP
 - [x] Retour visuel d'un réglage en moins de 100 ms avec 8 masques (95e centile : 3 ms sur Mac M3 Pro et 8 ms sur PC avec la carte graphique ; 78 ms sur le Mac et 85 ms sur le PC au processeur seul)
