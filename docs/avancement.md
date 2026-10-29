@@ -1043,3 +1043,7 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 ### 2026-10-29 : version 0.6.0 publiée
 
 - Version 0.6.0 publiée par l'utilisateur (retouches locales) : installateurs Windows et macOS, archives de mise à jour signées et `latest.json`. Les 0.5.x installées la trouvent à leur prochaine vérification.
+
+### 2026-10-29 (suite) : plan de la V0.7, pinceau et gomme
+
+- Plan validé par l'utilisateur ([décision 0015](decisions/0015-pinceau-et-gomme.md)) : tracés enregistrés comme des suites de points et redessinés à chaque rendu (décision 0014) ; pinceau, nouvelle forme de masque ; gomme sur tous les masques, dégradés compris ; taille, adoucissement et densité ; format des réglages en version 3 (la 0.6 effacerait des tracés inconnus). Critères ajoutés au cahier des charges (V0.7). Étapes : format et migration, tracés dans le cœur, rendu processeur et carte graphique, export et XMP, interface, mesures et documentation.

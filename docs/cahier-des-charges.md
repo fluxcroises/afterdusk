@@ -426,6 +426,16 @@ Objectif : régler une partie de la photo seulement, un ciel, un visage, le sol 
 - [x] Retour visuel d'un réglage en moins de 100 ms avec 8 masques (95e centile : 3 ms sur Mac M3 Pro et 8 ms sur PC avec la carte graphique ; 78 ms sur le Mac et 85 ms sur le PC au processeur seul)
 - Pinceau et gomme : version suivante.
 
+### V0.7 : Pinceau et gomme
+
+Objectif : peindre un masque à main levée et retirer l'effet d'une zone de n'importe quel masque (choix de l'utilisateur, 2026-10-29 ; décision 0015).
+
+- [ ] Pinceau avec taille, adoucissement et densité, tracé visible en direct, sur RAW, JPEG et HEIF
+- [ ] Gomme (Alt maintenu) sur tous les masques, dégradés compris
+- [ ] Même rendu à l'aperçu, au zoom 100 %, à l'export et après relecture du XMP ; tracés dans l'historique et le copier-coller des réglages
+- [ ] Retour visuel d'un réglage en moins de 100 ms avec 8 masques dont des tracés de pinceau longs
+- Masque automatique qui suit les bords, masques du sujet ou du ciel : plus tard.
+
 ### Distribution : en dernier
 
 Objectif : livrer Afterdusk au public une fois l'application entièrement opérationnelle (choix de l'utilisateur, 2026-10-22). Signature selon la décision 0011.
