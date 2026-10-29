@@ -20,6 +20,7 @@ use super::lens::LensCorrection;
 use super::masks::{MaskSet, Planar};
 use super::settings::{DevelopSettings, LocalAdjust, MASKS_MAX};
 use super::spots;
+use super::strokes::StrokeGrid;
 use super::white;
 #[cfg(test)]
 use crate::raw::D65_WHITE;
@@ -567,6 +568,11 @@ pub struct Locals {
     /// une forme affine par pixel au lieu de la géométrie entière, comme sur
     /// la carte graphique.
     pub planar: Vec<Planar>,
+    /// Tracés du pinceau et de la gomme de chaque masque, en pixels de la
+    /// sortie (voir [`MaskSet::stroke_grids`]).
+    pub strokes: Vec<Option<StrokeGrid>>,
+    /// Pinceaux inversés : l'inversion vient après leurs tracés.
+    pub invert_after: Vec<bool>,
     pub params: Vec<LocalParams>,
 }
 
@@ -575,8 +581,15 @@ impl Locals {
     fn weights(&self, at: &At, out: &mut [f32; MASKS_MAX]) -> usize {
         let (x, y) = (f64::from(at.x) + 0.5, f64::from(at.y) + 0.5);
         let n = self.planar.len().min(MASKS_MAX);
-        for (w, shape) in out.iter_mut().zip(&self.planar) {
-            *w = shape.weight(x, y) as f32;
+        for (i, (w, shape)) in out.iter_mut().zip(&self.planar).enumerate() {
+            let mut v = shape.weight(x, y);
+            if let Some(grid) = &self.strokes[i] {
+                v = grid.apply(v, [x, y]);
+            }
+            if self.invert_after[i] {
+                v = 1.0 - v;
+            }
+            *w = v as f32;
         }
         n
     }
@@ -699,9 +712,13 @@ impl RenderParams {
             .map(|f| LocalParams::from_adjust(&f.adjust))
             .collect();
         let planar = masks.planar();
+        let strokes = masks.stroke_grids();
+        let invert_after = masks.invert_after_strokes();
         self.locals = Some(Arc::new(Locals {
             masks,
             planar,
+            strokes,
+            invert_after,
             params,
         }));
         self.flags |= FLAG_MASKS;
@@ -1740,6 +1757,7 @@ mod tests {
 
     mod locales {
         use super::*;
+        use crate::develop::settings::Stroke;
 
         /// Image de travail unie, 40 × 20, d'un gris moyen (déjà développée :
         /// les réglages à zéro la rendent telle quelle).
@@ -1925,6 +1943,66 @@ mod tests {
             assert!(p.flags & FLAG_DENOISE != 0);
             let out = render_encoded(&img, &p);
             assert!(px(&out, CENTRE.0, CENTRE.1)[1] > px(&out, COIN.0, COIN.1)[1] + 0.05);
+        }
+
+        /// Rond de pinceau (ou de gomme) au centre, rayon 5 pixels.
+        fn rond(erase: bool) -> Stroke {
+            Stroke {
+                points: vec![[0.5, 0.5]],
+                radius: 5.0 / 40.0,
+                feather: 0.0,
+                flow: 100.0,
+                erase,
+            }
+        }
+
+        fn plus_un() -> LocalAdjust {
+            LocalAdjust {
+                exposure: 1.0,
+                ..LocalAdjust::default()
+            }
+        }
+
+        #[test]
+        fn pinceau_inverse_et_gomme() {
+            let img = grise(0.2);
+            let neutre = px(&rendu(Vec::new(), &img), CENTRE.0, CENTRE.1)[1];
+            // Pinceau : éclairci là où il a peint, rien ailleurs.
+            let pinceau = Mask {
+                shape: MaskShape::Brush,
+                adjust: plus_un(),
+                invert: false,
+                hidden: false,
+                strokes: vec![rond(false)],
+            };
+            let out = rendu(vec![pinceau.clone()], &img);
+            assert!(px(&out, CENTRE.0, CENTRE.1)[1] > neutre + 0.05);
+            assert!((px(&out, COIN.0, COIN.1)[1] - neutre).abs() < 1e-4);
+            // Inversé : partout sauf là où il a peint.
+            let out = rendu(
+                vec![Mask {
+                    invert: true,
+                    ..pinceau
+                }],
+                &img,
+            );
+            assert!((px(&out, CENTRE.0, CENTRE.1)[1] - neutre).abs() < 1e-4);
+            assert!(px(&out, COIN.0, COIN.1)[1] > neutre + 0.05);
+            // Gomme sur un dégradé qui couvre toute l'image : le centre retrouve
+            // le rendu sans masque.
+            let partout = Mask {
+                shape: MaskShape::Linear {
+                    from: [0.0, -1.0],
+                    to: [0.0, -0.5],
+                },
+                adjust: plus_un(),
+                invert: true,
+                hidden: false,
+                strokes: vec![rond(true)],
+            };
+            let out = rendu(vec![partout], &img);
+            assert!((px(&out, CENTRE.0, CENTRE.1)[1] - neutre).abs() < 1e-4);
+            assert!(px(&out, COIN.0, COIN.1)[1] > neutre + 0.05);
         }
     }
 }

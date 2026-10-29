@@ -1055,3 +1055,11 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 - Types TypeScript alignés (`Stroke`, forme `brush`, `Mask.strokes`), avec un test qui compare les champs au code Rust ; tracés gardés creux par le store.
 - Un masque pinceau reste sans effet au rendu, et sans poignée à l'écran, jusqu'aux étapes suivantes (tracés dans le cœur, puis interface).
 - Tests : version 3 seulement avec des tracés (pinceau, et dégradé gommé), document v2 relu, bornes des tracés, valeurs par défaut absentes du JSON ; la version refusée comme trop récente passe à 4.
+- Étape 2, tracés dans le cœur (`develop/strokes.rs`) :
+  - chaque tracé est ramené une fois en pixels de la sortie, à travers la géométrie (le passage de la source à la sortie est une similitude : un rond reste un rond) ;
+  - en un pixel, un tracé vaut sa distance à la ligne brisée de ses points (bouts arrondis), adoucie, multipliée par sa densité ; un même tracé qui repasse sur lui-même ne s'accumule pas ;
+  - une grille range les segments par case, d'une taille proche du rayon le plus courant : chaque pixel ne regarde que ceux de sa case ; points à moins d'un quart de rayon du précédent sautés ;
+  - dans l'ordre de peinture, un tracé ajoute (`m + s·(1−m)`, jamais plus que le plein effet) ou gomme (`m·(1−s)`), en partant du poids du dégradé, ou de zéro pour un pinceau ; un pinceau inversé l'est après ses tracés, un dégradé avant ;
+  - branché sur le rendu processeur. La carte graphique ignore encore les tracés (étape 3), et rien ne permet encore d'en peindre (interface, étape 5).
+- Tests : plein dans le rayon et nul au-delà, bouts arrondis, densité et passages successifs, gomme et ordre des tracés, adoucissement, tracé de 4 000 points (peu de segments par case), rond de pinceau à sa place à travers quart de tour, redressement, miroir et recadrage (au pixel près sur toute la sortie), pinceau, pinceau inversé et gomme sur un dégradé dans le rendu.
+- Note de l'utilisateur : il peut signer l'application sur macOS avec un compte Apple, mais préfère attendre une application finalisée (`docs/distribution.md`).

@@ -15,4 +15,5 @@ pub mod settings;
 pub mod source;
 pub mod spots;
 pub mod store;
+pub mod strokes;
 pub mod white;

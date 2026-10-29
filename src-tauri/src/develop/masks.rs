@@ -6,7 +6,8 @@
 //! aperçu, zoom ou export, et reste aligné sur l'image recadrée ou redressée.
 
 use super::geometry::{self, Plan};
-use super::settings::{Geometry, LocalAdjust, Mask, MaskShape};
+use super::settings::{Geometry, LocalAdjust, Mask, MaskShape, Stroke};
+use super::strokes::{StrokeGrid, ToOutput};
 
 /// Montée douce de 0 à 1 sur [0, 1] (dérivée nulle aux deux bouts).
 fn smoothstep(t: f64) -> f64 {
@@ -149,6 +150,8 @@ pub struct Field {
     shape: Compiled,
     invert: bool,
     pub adjust: LocalAdjust,
+    /// Tracés du pinceau et de la gomme (décision 0015).
+    strokes: Vec<Stroke>,
 }
 
 /// Les masques actifs d'une photo, avec le passage d'un pixel de la sortie au
@@ -177,13 +180,12 @@ impl MaskSet {
         Self {
             fields: masks
                 .iter()
-                // Pinceau : ses tracés seront dessinés à l'étape suivante de
-                // la V0.7 ; d'ici là, sans effet.
-                .filter(|m| m.is_active() && m.shape != MaskShape::Brush)
+                .filter(|m| m.is_active())
                 .map(|m| Field {
                     shape: Compiled::new(&m.shape, sw, sh),
                     invert: m.invert,
                     adjust: m.adjust.clone(),
+                    strokes: m.strokes.clone(),
                 })
                 .collect(),
             geometry: geometry.clone(),
@@ -219,17 +221,7 @@ impl MaskSet {
     /// miroirs, quarts de tour, décalage du recadrage), la forme compilée
     /// aussi, leur composée se calcule une fois par masque.
     pub fn planar(&self) -> Vec<Planar> {
-        // Point de la source montré par un point (x, y) quelconque de la
-        // sortie, centres de pixels compris.
-        let at = |x: f64, y: f64| {
-            geometry::canvas_to_source(
-                [self.plan.left + x, self.plan.top + y],
-                &self.geometry,
-                self.sw,
-                self.sh,
-            )
-        };
-        let (o, ex, ey) = (at(0.0, 0.0), at(1.0, 0.0), at(0.0, 1.0));
+        let (o, ex, ey) = self.unit_points();
         // Coefficients de (x, y, 1) d'une forme affine de la source.
         let compose = |f: &dyn Fn([f64; 2]) -> f64| {
             let c = f(o);
@@ -261,16 +253,52 @@ impl MaskSet {
                         (-(p[0] - center[0]) * sin + (p[1] - center[1]) * cos) * inv_ry
                     }),
                 },
-                // Pinceau : toujours hors d'une ellipse, poids nul (les
-                // tracés s'y ajouteront).
+                // Pinceau : toujours hors d'une ellipse, poids nul ; ses
+                // tracés s'y ajoutent, l'inversion vient après eux.
                 Compiled::Brush => Planar {
                     radial: true,
-                    invert: field.invert,
+                    invert: false,
                     inner: 0.0,
                     u: [0.0, 0.0, 2.0],
                     v: [0.0; 3],
                 },
             })
+            .collect()
+    }
+
+    /// Points de la source montrés par (0, 0), (1, 0) et (0, 1) de la sortie
+    /// entière : le passage de la sortie à la source, affine.
+    fn unit_points(&self) -> ([f64; 2], [f64; 2], [f64; 2]) {
+        let at = |x: f64, y: f64| {
+            geometry::canvas_to_source(
+                [self.plan.left + x, self.plan.top + y],
+                &self.geometry,
+                self.sw,
+                self.sh,
+            )
+        };
+        (at(0.0, 0.0), at(1.0, 0.0), at(0.0, 1.0))
+    }
+
+    /// Tracés de chaque masque actif rangés en pixels de la sortie entière,
+    /// ou rien pour un masque sans tracé.
+    pub fn stroke_grids(&self) -> Vec<Option<StrokeGrid>> {
+        let (o, ex, ey) = self.unit_points();
+        let to_output = ToOutput::new(o, ex, ey);
+        let (w, h) = (f64::from(self.plan.width), f64::from(self.plan.height));
+        self.fields
+            .iter()
+            .map(|f| StrokeGrid::new(&f.strokes, &to_output, (self.sw, self.sh), w, h))
+            .collect()
+    }
+
+    /// Masques dont l'inversion vient après les tracés : le pinceau, inversé,
+    /// agit partout sauf là où il a peint. Un dégradé est inversé avant ses
+    /// tracés, qui le gomment tel qu'il apparaît.
+    pub fn invert_after_strokes(&self) -> Vec<bool> {
+        self.fields
+            .iter()
+            .map(|f| f.invert && matches!(f.shape, Compiled::Brush))
             .collect()
     }
 
@@ -474,6 +502,55 @@ mod tests {
                 assert!((ours - f64::from(w[i])).abs() < 1e-6, "{x},{y} masque {i}");
             }
         }
+    }
+
+    #[test]
+    fn rond_de_pinceau_a_sa_place_a_travers_la_geometrie() {
+        let biais = Geometry {
+            quarter: 1,
+            angle: -11.0,
+            flip_h: true,
+            crop: CropRect {
+                left: 0.05,
+                top: 0.1,
+                right: 0.9,
+                bottom: 0.95,
+            },
+            ..Geometry::default()
+        };
+        // Source de 400 × 200 : rond de rayon 20 pixels (côté long 400) en
+        // (120, 70).
+        let pinceau = Mask {
+            shape: MaskShape::Brush,
+            strokes: vec![Stroke {
+                points: vec![[0.3, 0.35]],
+                radius: 0.05,
+                feather: 0.0,
+                flow: 100.0,
+                erase: false,
+            }],
+            ..mask(MaskShape::Brush)
+        };
+        let set = MaskSet::new(&[pinceau], &biais, 400, 200);
+        let grids = set.stroke_grids();
+        let grid = grids[0].as_ref().unwrap();
+        let (w, h) = (set.plan.width, set.plan.height);
+        let mut inside = 0;
+        for y in 0..h {
+            for x in 0..w {
+                let p = set.source_point(x, y);
+                let d = (p[0] - 120.0).hypot(p[1] - 70.0);
+                let v = grid.apply(0.0, [f64::from(x) + 0.5, f64::from(y) + 0.5]);
+                if d < 19.0 {
+                    assert_eq!(v, 1.0, "({x}, {y}) à {d:.1} px du centre");
+                    inside += 1;
+                } else if d > 21.0 {
+                    assert_eq!(v, 0.0, "({x}, {y}) à {d:.1} px du centre");
+                }
+            }
+        }
+        // Le rond est bien dans la sortie : environ π × 19² pixels.
+        assert!(inside > 1000, "{inside}");
     }
 
     #[test]

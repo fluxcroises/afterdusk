@@ -2,6 +2,10 @@
 
 Plan de la dernière étape de la feuille de route (cahier des charges, section 7) et démarches à faire par l'utilisateur. Choix fixés le 2026-10-23 : [décision 0011](decisions/0011-signature-des-installateurs.md) pour la signature, [décision 0013](decisions/0013-mises-a-jour.md) pour les mises à jour.
 
+## Signature sur macOS
+
+L'utilisateur peut signer l'application sur macOS avec un compte Apple (2026-10-29). Il préfère attendre une application bien finalisée avant de le faire ; en attendant, le paquet macOS garde la signature ad hoc et l'étape « Ouvrir quand même ».
+
 ## Ordre imposé par SignPath
 
 SignPath Foundation ne signe que des projets « déjà publiés sous la forme à signer ». La première version publique sort donc avec un installateur Windows non signé ; la signature arrive à la version suivante, une fois la candidature acceptée.
