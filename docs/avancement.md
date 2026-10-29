@@ -1100,3 +1100,8 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - correction : l'écoute des changements est posée d'abord, puis la lecture est refaite tant qu'elle échoue, jusqu'à dix secondes (test : deux échecs puis « De base ») ;
   - vérifié : deux relances de l'application compilée, la fenêtre principale reste en « De base ».
   - Le défaut existe dans les versions publiées (0.5 et 0.6.0) : un utilisateur en « Simplifiée » ou « De base » retrouve l'interface complète à chaque lancement.
+
+### 2026-10-29 (suite) : préparation de la version 0.6.1
+
+- Correction seule du profil d'interface, à la demande de l'utilisateur, sans le pinceau et la gomme en cours sur `main` : branche `release/0.6.1` partie de l'étiquette `v0.6.0`, avec la correction (`src/store/profile.ts` et son test, inchangés entre la 0.6.0 et la correction), les numéros 0.6.1 et les notes de version (`docs/notes-de-version/0.6.1.md`, reportées ici). Étiquette `v0.6.1` posée sur cette branche ; l'action de publication crée le brouillon, à relire par l'utilisateur.
+- `main` reste en 0.6.0 jusqu'à la V0.7, qui passera en 0.7.0.
