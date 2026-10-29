@@ -196,7 +196,25 @@ export type MaskShape =
       angle?: number;
       /** De 0 à 100 ; absent : 50. */
       feather?: number;
-    };
+    }
+  /** Pinceau : l'effet n'est que là où ses tracés l'ont peint. */
+  | { kind: "brush" };
+
+/**
+ * Coup de pinceau ou de gomme (décision 0015), miroir de
+ * `develop::settings::Stroke` : points en fractions de la source, rayon en
+ * fraction de son côté long.
+ */
+export interface Stroke {
+  points: [number, number][];
+  radius: number;
+  /** De 0 à 100 ; absent : 50. */
+  feather?: number;
+  /** Densité, de 1 à 100 ; absente : 100. */
+  flow?: number;
+  /** Gomme : retire l'effet du masque. */
+  erase?: boolean;
+}
 
 /** Réglages d'un masque : exposition en IL, le reste de -100 à +100. */
 export const LOCAL_KEYS = [
@@ -216,6 +234,8 @@ export interface Mask {
   invert?: boolean;
   /** Sans effet, gardé pour plus tard. */
   hidden?: boolean;
+  /** Tracés du pinceau et de la gomme, dans l'ordre où ils ont été peints. */
+  strokes?: Stroke[];
 }
 
 /** Nombre de masques au plus par photo. */
@@ -309,6 +329,8 @@ function sparseMask(mask: Mask): Mask {
   let shape: MaskShape;
   if (s.kind === "linear") {
     shape = { kind: "linear", from: p(s.from), to: p(s.to) };
+  } else if (s.kind === "brush") {
+    shape = { kind: "brush" };
   } else {
     shape = { kind: "radial", center: p(s.center), radius: p(s.radius) };
     const angle = normalizeAngle(s.angle ?? 0);
@@ -323,6 +345,16 @@ function sparseMask(mask: Mask): Mask {
   if (Object.keys(adjust).length > 0) out.adjust = adjust;
   if (mask.invert) out.invert = true;
   if (mask.hidden) out.hidden = true;
+  const strokes = (mask.strokes ?? []).map((st) => {
+    const sparse: Stroke = { points: st.points.map(p), radius: r5(st.radius) };
+    if (st.feather !== undefined && st.feather !== MASK_FEATHER_DEFAULT) {
+      sparse.feather = st.feather;
+    }
+    if (st.flow !== undefined && st.flow !== 100) sparse.flow = st.flow;
+    if (st.erase) sparse.erase = true;
+    return sparse;
+  });
+  if (strokes.length > 0) out.strokes = strokes;
   return out;
 }
 

@@ -31,6 +31,8 @@ enum Compiled {
         inv_ry: f64,
         inner: f64,
     },
+    /// Pinceau : pas de forme, l'effet vient de ses tracés.
+    Brush,
 }
 
 impl Compiled {
@@ -62,6 +64,7 @@ impl Compiled {
                     inner: 1.0 - feather / 100.0,
                 }
             }
+            MaskShape::Brush => Self::Brush,
         }
     }
 
@@ -94,6 +97,7 @@ impl Compiled {
                     1.0 - smoothstep((q - inner) / (1.0 - inner))
                 }
             }
+            Self::Brush => 0.0,
         }
     }
 }
@@ -173,7 +177,9 @@ impl MaskSet {
         Self {
             fields: masks
                 .iter()
-                .filter(|m| m.is_active())
+                // Pinceau : ses tracés seront dessinés à l'étape suivante de
+                // la V0.7 ; d'ici là, sans effet.
+                .filter(|m| m.is_active() && m.shape != MaskShape::Brush)
                 .map(|m| Field {
                     shape: Compiled::new(&m.shape, sw, sh),
                     invert: m.invert,
@@ -255,6 +261,15 @@ impl MaskSet {
                         (-(p[0] - center[0]) * sin + (p[1] - center[1]) * cos) * inv_ry
                     }),
                 },
+                // Pinceau : toujours hors d'une ellipse, poids nul (les
+                // tracés s'y ajouteront).
+                Compiled::Brush => Planar {
+                    radial: true,
+                    invert: field.invert,
+                    inner: 0.0,
+                    u: [0.0, 0.0, 2.0],
+                    v: [0.0; 3],
+                },
             })
             .collect()
     }
@@ -285,6 +300,7 @@ mod tests {
             },
             invert: false,
             hidden: false,
+            strokes: Vec::new(),
         }
     }
 

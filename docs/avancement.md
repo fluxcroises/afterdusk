@@ -1047,3 +1047,11 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 ### 2026-10-29 (suite) : plan de la V0.7, pinceau et gomme
 
 - Plan validé par l'utilisateur ([décision 0015](decisions/0015-pinceau-et-gomme.md)) : tracés enregistrés comme des suites de points et redessinés à chaque rendu (décision 0014) ; pinceau, nouvelle forme de masque ; gomme sur tous les masques, dégradés compris ; taille, adoucissement et densité ; format des réglages en version 3 (la 0.6 effacerait des tracés inconnus). Critères ajoutés au cahier des charges (V0.7). Étapes : format et migration, tracés dans le cœur, rendu processeur et carte graphique, export et XMP, interface, mesures et documentation.
+- Étape 1, format des réglages en version 3 :
+  - `Stroke` : points en fractions de la source, rayon en fraction du côté long, adoucissement (50 par défaut), densité `flow` (100 par défaut), `erase` pour la gomme ;
+  - `Mask.strokes` sur tous les masques ; nouvelle forme `MaskShape::Brush` (« kind »: « brush »), sans géométrie ;
+  - écriture dans la plus ancienne version qui suffit : 1 sans masque, 2 avec masques sans tracé (lisible par la 0.6), 3 avec tracés ou pinceau ;
+  - bornes : 1 000 tracés par masque, 4 000 points par tracé, points ramenés autour de l'image, rayon de 0,001 à 0,5, densité de 1 à 100, tracés sans point retirés.
+- Types TypeScript alignés (`Stroke`, forme `brush`, `Mask.strokes`), avec un test qui compare les champs au code Rust ; tracés gardés creux par le store.
+- Un masque pinceau reste sans effet au rendu, et sans poignée à l'écran, jusqu'aux étapes suivantes (tracés dans le cœur, puis interface).
+- Tests : version 3 seulement avec des tracés (pinceau, et dégradé gommé), document v2 relu, bornes des tracés, valeurs par défaut absentes du JSON ; la version refusée comme trop récente passe à 4.

@@ -67,6 +67,7 @@ fn heavy_with_masks() -> DevelopSettings {
                 adjust: adjust(if i % 3 == 0 { -1.0 } else { 1.0 }),
                 invert: i == 5,
                 hidden: false,
+                strokes: Vec::new(),
             }
         })
         .collect();

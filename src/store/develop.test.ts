@@ -646,6 +646,54 @@ describe("Retoucher", () => {
     expect(useDevelop.getState()).toMatchObject({ selectedMask: null, maskDraft: null });
   });
 
+  it("tracés de pinceau gardés et creux à l'enregistrement d'un masque", async () => {
+    await useDevelop.getState().open(7);
+    const settings = useDevelop.getState().settings;
+    useDevelop.setState({
+      settings: {
+        ...settings,
+        version: 3,
+        masks: [
+          {
+            shape: { kind: "brush" },
+            adjust: { exposure: 0.5 },
+            strokes: [
+              {
+                points: [
+                  [0.1234567, 0.2],
+                  [0.3, 0.4],
+                ],
+                radius: 0.02,
+                feather: 50,
+                flow: 100,
+                erase: false,
+              },
+              { points: [[0.5, 0.5]], radius: 0.05, flow: 40, erase: true },
+            ],
+          },
+        ],
+      } as never,
+    });
+    await useDevelop.getState().toggleMask(0, "invert");
+    expect(useDevelop.getState().settings?.masks).toEqual([
+      {
+        shape: { kind: "brush" },
+        adjust: { exposure: 0.5 },
+        invert: true,
+        strokes: [
+          {
+            points: [
+              [0.12346, 0.2],
+              [0.3, 0.4],
+            ],
+            radius: 0.02,
+          },
+          { points: [[0.5, 0.5]], radius: 0.05, flow: 40, erase: true },
+        ],
+      },
+    ]);
+  });
+
   it("objectif : reconnu à l'ouverture, réglages creux", async () => {
     await useDevelop.getState().open(7);
     expect(useDevelop.getState().lensName).toBe("Sony FE 16-35mm f/2.8 GM");

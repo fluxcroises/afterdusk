@@ -34,6 +34,9 @@ export function maskWeight(
     const [dx, dy] = [s.to[0] * sw - ax, s.to[1] * sh - ay];
     const len2 = Math.max(dx * dx + dy * dy, Number.EPSILON);
     w = 1 - smoothstep(((x - ax) * dx + (y - ay) * dy) / len2);
+  } else if (s.kind === "brush") {
+    // Pinceau : l'effet vient des tracés, dessinés par le cœur (V0.7).
+    w = 0;
   } else {
     const a = ((s.angle ?? 0) * Math.PI) / 180;
     const [sin, cos] = [Math.sin(a), Math.cos(a)];
@@ -91,6 +94,7 @@ export function maskViewPixels(
 /** Copie d'une forme, déplacée de (dx, dy) en fractions de la source. */
 export function movedShape(shape: MaskShape, dx: number, dy: number): MaskShape {
   const add = (p: [number, number]): [number, number] => [p[0] + dx, p[1] + dy];
+  if (shape.kind === "brush") return shape;
   return shape.kind === "linear"
     ? { ...shape, from: add(shape.from), to: add(shape.to) }
     : { ...shape, center: add(shape.center) };

@@ -672,6 +672,7 @@ mod tests {
             },
             invert: false,
             hidden: false,
+            strokes: Vec::new(),
         });
         let mut target = DevelopSettings::default();
         target.light.exposure = -0.5;

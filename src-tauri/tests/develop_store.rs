@@ -106,6 +106,7 @@ fn reglages_en_base_dans_l_historique_et_le_xmp() {
         },
         invert: false,
         hidden: false,
+        strokes: Vec::new(),
     };
     let masked = DevelopSettings {
         masks: vec![

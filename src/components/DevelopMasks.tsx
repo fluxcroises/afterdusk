@@ -56,6 +56,10 @@ const dist = (a: Pt, b: Pt) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 /** Poignées d'un masque à l'écran, et ce qu'il faut pour le dessiner. */
 function screenShape(shape: MaskShape, toScreen: (p: Pt) => Pt, sw: number, sh: number) {
+  // Pinceau : ni poignée ni contour, ses tracés le montrent (V0.7).
+  if (shape.kind === "brush") {
+    return { kind: "brush" as const, handles: {} as Partial<Record<Handle, Pt>> };
+  }
   if (shape.kind === "linear") {
     const from = toScreen(shape.from);
     const to = toScreen(shape.to);
@@ -210,6 +214,7 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
     const shape = masks[target.index]?.shape;
     if (!shape) return null;
     if (target.handle === "move") return movedShape(shape, s1[0] - s0[0], s1[1] - s0[1]);
+    if (shape.kind === "brush") return null;
     if (shape.kind === "linear") {
       return target.handle === "from" ? { ...shape, from: s1 } : { ...shape, to: s1 };
     }
@@ -294,6 +299,7 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
         />
       );
     }
+    if (s.kind === "brush") return null;
     if (s.kind === "linear") {
       const d: Pt = [s.to[0] - s.from[0], s.to[1] - s.from[1]];
       const len = Math.max(Math.hypot(d[0], d[1]), 1e-9);

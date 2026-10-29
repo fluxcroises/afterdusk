@@ -6,10 +6,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// Forme actuelle du JSON. Toute évolution ajoute une étape à [`migrate`].
-/// Version 2 : masques des retouches locales (décision 0014). Un document
-/// sans masque est encore écrit en version 1, que les versions antérieures
+/// Version 2 : masques des retouches locales (décision 0014). Version 3 :
+/// tracés du pinceau et de la gomme (décision 0015). Un document est écrit
+/// dans la plus ancienne version qui suffit, que les versions antérieures
 /// d'Afterdusk savent lire (voir [`DevelopSettings::to_json`]).
-pub const FORMAT_VERSION: u32 = 2;
+pub const FORMAT_VERSION: u32 = 3;
 
 /// Processus de rendu le plus récent, pris par les photos retouchées pour la
 /// première fois. Le moteur garde le calcul de chaque processus.
@@ -569,6 +570,30 @@ pub enum MaskShape {
         #[serde(default = "fifty", skip_serializing_if = "is_fifty")]
         feather: f64,
     },
+    /// Pinceau : l'effet n'est que là où ses tracés l'ont peint (voir
+    /// [`Mask::strokes`]).
+    Brush,
+}
+
+/// Coup de pinceau (ou de gomme) : une suite de points en fractions de la
+/// largeur et de la hauteur de l'image avant géométrie, comme les formes des
+/// masques. Redessiné à chaque rendu, à sa définition (décision 0015).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Stroke {
+    pub points: Vec<[f64; 2]>,
+    /// Rayon du pinceau, en fraction du côté long de l'image.
+    pub radius: f64,
+    /// De 0 (bord net) à 100 (fondu depuis le centre) ; absent : 50.
+    #[serde(default = "fifty", skip_serializing_if = "is_fifty")]
+    pub feather: f64,
+    /// Densité, de 1 à 100 % : part de l'effet ajoutée (ou retirée) par le
+    /// tracé ; repasser l'accumule. Absente : 100.
+    #[serde(default = "hundred", skip_serializing_if = "is_hundred")]
+    pub flow: f64,
+    /// Gomme : le tracé retire l'effet du masque au lieu de l'ajouter.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub erase: bool,
 }
 
 /// Réglages d'un masque, ajoutés à ceux de la photo là où il agit :
@@ -611,6 +636,10 @@ pub struct Mask {
     pub invert: bool,
     #[serde(default, skip_serializing_if = "is_false")]
     pub hidden: bool,
+    /// Tracés du pinceau (masque pinceau) et de la gomme (tous les masques),
+    /// dans l'ordre où ils ont été peints.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub strokes: Vec<Stroke>,
 }
 
 impl Mask {
@@ -625,6 +654,12 @@ pub const MASKS_MAX: usize = 32;
 /// Plus petit demi-axe d'un dégradé radial, plus petite longueur d'un
 /// dégradé linéaire, en fraction de l'image.
 pub const MASK_SIZE_MIN: f64 = 0.001;
+/// Tracés au plus par masque, points au plus par tracé.
+pub const STROKES_MAX: usize = 1000;
+pub const STROKE_POINTS_MAX: usize = 4000;
+/// Rayon d'un pinceau, en fraction du côté long.
+pub const BRUSH_RADIUS_MIN: f64 = 0.001;
+pub const BRUSH_RADIUS_MAX: f64 = 0.5;
 
 /// Rayon d'une correction, en fraction du côté long.
 pub const SPOT_RADIUS_MIN: f64 = 0.001;
@@ -715,9 +750,10 @@ fn clamp(v: f64, min: f64, max: f64) -> f64 {
 
 /// Fait passer un JSON d'une version ancienne à la forme actuelle, étape par étape.
 fn migrate(value: Value, from: u32) -> Value {
-    // Version 1 → 2 : les masques s'ajoutent ; un document v1 n'en a pas,
-    // rien à transformer. Une version 3 ajoutera ici `if from < 3 { … }`,
-    // testée sur un JSON v2.
+    // Version 1 → 2 : les masques s'ajoutent ; version 2 → 3 : les tracés
+    // s'ajoutent aux masques. Un document ancien n'en a pas, rien à
+    // transformer. Une version 4 ajoutera ici `if from < 4 { … }`, testée sur
+    // un JSON v3.
     let _ = from;
     value
 }
@@ -753,11 +789,22 @@ impl DevelopSettings {
     }
 
     /// JSON compact, sans les valeurs par défaut, dans la plus ancienne
-    /// version qui suffit : sans masque, la version 1, que les versions
-    /// antérieures d'Afterdusk savent lire ; avec, la version 2, qu'elles
-    /// refusent au lieu d'effacer les masques en enregistrant.
+    /// version qui suffit : sans masque, la version 1 ; avec des masques sans
+    /// tracé, la version 2 (Afterdusk 0.6) ; avec des tracés, la version 3.
+    /// Une version d'Afterdusk qui ne connaît pas ce qu'un document contient
+    /// le refuse, au lieu de l'effacer en enregistrant.
     pub fn to_json(&self) -> String {
-        let version = if self.masks.is_empty() { 1 } else { 2 };
+        let version = if self
+            .masks
+            .iter()
+            .any(|m| !m.strokes.is_empty() || m.shape == MaskShape::Brush)
+        {
+            3
+        } else if self.masks.is_empty() {
+            1
+        } else {
+            2
+        };
         let written = Self {
             version,
             ..self.clone()
@@ -916,6 +963,7 @@ impl Mask {
                 .chain(radius)
                 .chain([angle, feather])
                 .all(|v| v.is_finite()),
+            MaskShape::Brush => true,
         }
     }
 
@@ -941,7 +989,24 @@ impl Mask {
                 *angle = (*angle + 180.0).rem_euclid(360.0) - 180.0;
                 *feather = clamp(*feather, 0.0, 100.0);
             }
+            MaskShape::Brush => {}
         }
+        // Tracés : points finis ramenés autour de l'image, au plus
+        // `STROKE_POINTS_MAX` ; un tracé sans point est retiré.
+        for s in &mut self.strokes {
+            s.points.retain(|p| p.iter().all(|v| v.is_finite()));
+            s.points.truncate(STROKE_POINTS_MAX);
+            s.points.iter_mut().flatten().for_each(around);
+            s.radius = if s.radius.is_finite() {
+                s.radius.clamp(BRUSH_RADIUS_MIN, BRUSH_RADIUS_MAX)
+            } else {
+                BRUSH_RADIUS_MIN
+            };
+            s.feather = clamp(s.feather, 0.0, 100.0);
+            s.flow = clamp(s.flow, 1.0, 100.0);
+        }
+        self.strokes.retain(|s| !s.points.is_empty());
+        self.strokes.truncate(STROKES_MAX);
         let a = &mut self.adjust;
         a.exposure = clamp(a.exposure, -4.0, 4.0);
         for v in [
@@ -1079,8 +1144,8 @@ mod tests {
     #[test]
     fn version_ou_processus_trop_recents_refuses() {
         assert!(matches!(
-            DevelopSettings::from_json(r#"{"version":3,"process":1}"#),
-            Err(SettingsError::TooNewFormat { found: 3, .. })
+            DevelopSettings::from_json(r#"{"version":4,"process":1}"#),
+            Err(SettingsError::TooNewFormat { found: 4, .. })
         ));
         assert!(matches!(
             DevelopSettings::from_json(r#"{"version":1,"process":9}"#),
@@ -1128,6 +1193,7 @@ mod tests {
             },
             invert: false,
             hidden: false,
+            strokes: Vec::new(),
         }
     }
 
@@ -1163,6 +1229,7 @@ mod tests {
                     },
                     invert: false,
                     hidden: false,
+                    strokes: Vec::new(),
                 },
                 degrade_radial(),
             ],
@@ -1217,6 +1284,121 @@ mod tests {
             ..DevelopSettings::default()
         };
         assert!(only_hidden.is_neutral());
+    }
+
+    fn trait_de_pinceau(erase: bool) -> Stroke {
+        Stroke {
+            points: vec![[0.2, 0.3], [0.25, 0.32], [0.3, 0.35]],
+            radius: 0.02,
+            feather: 50.0,
+            flow: if erase { 100.0 } else { 60.0 },
+            erase,
+        }
+    }
+
+    #[test]
+    fn traces_en_version_3_seulement_quand_il_y_en_a() {
+        let pinceau = Mask {
+            shape: MaskShape::Brush,
+            adjust: LocalAdjust {
+                exposure: 0.5,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+            strokes: vec![trait_de_pinceau(false)],
+        };
+        // Un dégradé gommé est aussi en version 3.
+        let gomme = Mask {
+            strokes: vec![trait_de_pinceau(true)],
+            ..degrade_radial()
+        };
+        for masks in [vec![pinceau], vec![gomme]] {
+            let s = DevelopSettings {
+                masks,
+                ..DevelopSettings::default()
+            };
+            let json = s.to_json();
+            assert!(json.starts_with(r#"{"version":3,"#), "{json}");
+            assert_eq!(DevelopSettings::from_json(&json).unwrap().masks, s.masks);
+        }
+        // Masque pinceau : "kind":"brush" ; densité 100 et adoucissement 50
+        // absents ; gomme notée.
+        let json = DevelopSettings {
+            masks: vec![Mask {
+                shape: MaskShape::Brush,
+                adjust: LocalAdjust::default(),
+                invert: false,
+                hidden: false,
+                strokes: vec![trait_de_pinceau(true)],
+            }],
+            ..DevelopSettings::default()
+        }
+        .to_json();
+        assert!(json.contains(r#""kind":"brush""#), "{json}");
+        assert!(json.contains(r#""erase":true"#), "{json}");
+        assert!(
+            !json.contains("flow") && !json.contains("feather"),
+            "{json}"
+        );
+        // Sans tracé, les dégradés restent en version 2 (Afterdusk 0.6).
+        let v2 = DevelopSettings {
+            masks: vec![degrade_radial()],
+            ..DevelopSettings::default()
+        };
+        assert!(v2.to_json().starts_with(r#"{"version":2,"#));
+    }
+
+    #[test]
+    fn document_v2_relu_en_version_3() {
+        let s = DevelopSettings::from_json(
+            r#"{"version":2,"process":1,"masks":[
+                {"shape":{"kind":"linear","from":[0.5,0],"to":[0.5,0.4]},"adjust":{"exposure":-1}}
+            ]}"#,
+        )
+        .unwrap();
+        assert_eq!(s.version, FORMAT_VERSION);
+        assert_eq!(s.masks.len(), 1);
+        assert!(s.masks[0].strokes.is_empty());
+        assert!(s.to_json().starts_with(r#"{"version":2,"#));
+    }
+
+    #[test]
+    fn traces_bornes() {
+        let s = DevelopSettings::from_json(
+            r#"{"version":3,"process":1,"masks":[
+                {"shape":{"kind":"brush"},"adjust":{"exposure":1},"strokes":[
+                    {"points":[[0.1,0.1],[9,-9]],"radius":4,"feather":300,"flow":0},
+                    {"points":[],"radius":0.01},
+                    {"points":[[0.5,0.5]],"radius":0}
+                ]}
+            ]}"#,
+        )
+        .unwrap();
+        let strokes = &s.masks[0].strokes;
+        // Le tracé sans point est retiré.
+        assert_eq!(strokes.len(), 2);
+        assert_eq!(strokes[0].points, vec![[0.1, 0.1], [2.0, -1.0]]);
+        assert_eq!(strokes[0].radius, BRUSH_RADIUS_MAX);
+        assert_eq!((strokes[0].feather, strokes[0].flow), (100.0, 1.0));
+        assert_eq!(strokes[1].radius, BRUSH_RADIUS_MIN);
+        let long = Mask {
+            strokes: vec![
+                Stroke {
+                    points: vec![[0.5, 0.5]; STROKE_POINTS_MAX + 10],
+                    ..trait_de_pinceau(false)
+                };
+                STROKES_MAX + 3
+            ],
+            ..degrade_radial()
+        };
+        let s = DevelopSettings {
+            masks: vec![long],
+            ..DevelopSettings::default()
+        }
+        .sanitized();
+        assert_eq!(s.masks[0].strokes.len(), STROKES_MAX);
+        assert_eq!(s.masks[0].strokes[0].points.len(), STROKE_POINTS_MAX);
     }
 
     #[test]

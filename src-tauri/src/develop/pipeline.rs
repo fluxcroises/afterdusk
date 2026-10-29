@@ -1671,6 +1671,7 @@ mod tests {
             },
             invert: false,
             hidden: false,
+            strokes: Vec::new(),
         }];
         let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default()).with_masks(
             &s,
@@ -1766,6 +1767,7 @@ mod tests {
                 adjust,
                 invert: false,
                 hidden: false,
+                strokes: Vec::new(),
             }
         }
 

@@ -376,6 +376,7 @@ mod tests {
             },
             invert: false,
             hidden: false,
+            strokes: Vec::new(),
         }];
         for resize in [Resize::Full, Resize::LongSide(150)] {
             let options = RenderOptions {

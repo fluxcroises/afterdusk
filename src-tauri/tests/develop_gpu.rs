@@ -192,6 +192,7 @@ fn mask_cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
             },
             invert: false,
             hidden: false,
+            strokes: Vec::new(),
         },
         Mask {
             shape: MaskShape::Radial {
@@ -210,6 +211,7 @@ fn mask_cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
             },
             invert: true,
             hidden: false,
+            strokes: Vec::new(),
         },
         Mask {
             shape: MaskShape::Radial {
@@ -225,6 +227,7 @@ fn mask_cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
             },
             invert: false,
             hidden: false,
+            strokes: Vec::new(),
         },
     ];
     let seuls = DevelopSettings {
