@@ -1082,3 +1082,15 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - sur la photo : cercle du pinceau qui suit le pointeur (pointillés pour la gomme), tracé dessiné en direct, enregistré au relâchement en une étape d'historique (« Tracé de pinceau », « Tracé de gomme », « Tracés effacés ») ;
   - calque rouge (O) avec les tracés : `compileMask` reprend dans l'interface le calcul du cœur (forme, tracés dans l'ordre, inversion d'un pinceau après ses tracés).
 - Tests : poids des tracés de l'interface sur les cas du cœur (densité, gomme et ordre, pinceau inversé, dégradé gommé) ; store (réglages bornés, tracés creux, étiquettes de l'historique) ; « + Pinceau », peinture et gomme à la souris, gomme sur un dégradé seulement avec « Gommer » ou Alt. Pas encore vu à l'écran.
+- Vérifié à l'écran sous Windows, dans l'application compilée sous un autre identifiant (`app.afterdusk.ecrans`, données de l'utilisateur non touchées), sur une bibliothèque d'essai des JPEG de Cabourg (source inchangée ; la carte SONY branchée n'a pas été touchée) :
+  - « + Pinceau », +1,59 IL, une bande peinte le long des maisons : éclaircie avec un bord adouci, rendu par la carte graphique ; cercle du pinceau qui suit le pointeur ;
+  - Alt + glissé au milieu de la bande : l'effet y disparaît (« Tracé de gomme ») ;
+  - calque rouge (O) calé sur la bande, trou de la gomme compris ;
+  - dégradé linéaire sur le ciel à -1,62 IL, « Gommer », glissé dans le ciel : le ciel retrouve sa luminosité le long du tracé.
+- Corrigé à cette occasion :
+  - relâcher Alt après un glissé avec Alt donnait le focus à la barre de menus (« Fichier ») ; un clic ou un glissé pendant qu'Alt est maintenu l'annule désormais, et la répétition d'Alt ne la réarme pas (test) ;
+  - la pastille d'un pinceau non choisi était dessinée en (0, 0), un petit arc dans le coin de la photo ; un pinceau n'a plus de pastille ;
+  - état enfoncé de « Gommer » (et des boutons armés « + Linéaire », « + Radial ») invisible : contour d'accent ; espace entre l'icône et le texte (ce dernier point n'a pas été revu à l'écran) ;
+  - invitation « Choisir une forme » au lieu de « Choisir un dégradé », le pinceau n'en étant pas un.
+- Défaut vu, sans lien avec le pinceau, à examiner : à la relance de l'application, la fenêtre principale affichait le profil complet (Versions, Clients, Matériel, correcteur) alors que le réglage enregistré était « De base » (`interface.profile` = `"basic"`).
+- Bibliothèque et données d'essai supprimées ensuite.

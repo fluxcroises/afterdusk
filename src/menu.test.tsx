@@ -109,4 +109,19 @@ describe("menus dessinés (Windows)", () => {
     // Le menu se referme après la commande.
     expect(screen.queryByRole("menu")).toBeNull();
   });
+
+  it("Alt seul donne le focus au premier menu, pas Alt qui sert à un glissé", async () => {
+    await i18n.changeLanguage("fr");
+    render(<MenuBar />);
+    const fichier = screen.getByRole("menuitem", { name: "Fichier" });
+    // Alt maintenu pendant un glissé (gomme du pinceau), répété par le clavier.
+    fireEvent.keyDown(window, { key: "Alt" });
+    fireEvent.pointerDown(window);
+    fireEvent.keyDown(window, { key: "Alt", repeat: true });
+    fireEvent.keyUp(window, { key: "Alt" });
+    expect(document.activeElement).not.toBe(fichier);
+    fireEvent.keyDown(window, { key: "Alt" });
+    fireEvent.keyUp(window, { key: "Alt" });
+    expect(document.activeElement).toBe(fichier);
+  });
 });

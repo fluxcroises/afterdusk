@@ -969,7 +969,7 @@
         "brush": "New brush mask: drag on the photo to paint."
       },
       "limit": "{{count}} masks at most",
-      "hint": "Choose a gradient, then drag on the photo.",
+      "hint": "Choose a shape, then drag on the photo.",
       "view": "Show mask (O)",
       "invert": "Invert",
       "uninvert": "Stop inverting",

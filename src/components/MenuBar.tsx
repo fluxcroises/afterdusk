@@ -129,8 +129,15 @@ export function MenuBar() {
     };
     let altAlone = false;
     const onKeyDown = (e: globalThis.KeyboardEvent) => {
-      altAlone = e.key === "Alt" && !e.ctrlKey && !e.shiftKey;
+      // Alt maintenu se répète : seul le premier appui arme la barre.
+      if (e.key !== "Alt") altAlone = false;
+      else if (!e.repeat) altAlone = !e.ctrlKey && !e.shiftKey;
       if (e.key === "Escape") setOpen(null);
+    };
+    // Alt qui a servi à un clic ou un glissé (gomme du pinceau) n'est pas
+    // Alt seul.
+    const onPointerDown = () => {
+      altAlone = false;
     };
     // Alt seul, comme sous Windows : donne le focus au premier menu.
     const onKeyUp = (e: globalThis.KeyboardEvent) => {
@@ -143,11 +150,13 @@ export function MenuBar() {
     window.addEventListener("mousedown", close);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("blur", () => setOpen(null));
     return () => {
       window.removeEventListener("mousedown", close);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("pointerdown", onPointerDown);
     };
   }, []);
 

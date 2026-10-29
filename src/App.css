@@ -3446,18 +3446,23 @@ input[type="radio"] {
 }
 
 .develop-mask-add .button-small {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
   gap: var(--ad-space-1);
 }
 
-.develop-mask-add .button-small[aria-pressed="true"] {
-  border-color: var(--ad-accent);
+.develop-mask-add .button-small[aria-pressed="true"],
+.develop-mask-detail .button-small[aria-pressed="true"] {
+  background: var(--ad-hover);
+  box-shadow: inset 0 0 0 1px var(--ad-accent);
   color: var(--ad-text);
 }
 
-.develop-mask-detail .button-small[aria-pressed="true"] {
-  border-color: var(--ad-accent);
-  color: var(--ad-text);
+.develop-mask-detail .button-small {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ad-space-1);
 }
 
 .develop-mask-detail .button-small svg {

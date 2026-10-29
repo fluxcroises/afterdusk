@@ -969,7 +969,7 @@
         "brush": "Nouveau masque pinceau : glisser sur la photo pour peindre."
       },
       "limit": "{{count}} masques au plus",
-      "hint": "Choisir un dégradé, puis glisser sur la photo.",
+      "hint": "Choisir une forme, puis glisser sur la photo.",
       "view": "Afficher le masque (O)",
       "invert": "Inverser",
       "uninvert": "Ne plus inverser",

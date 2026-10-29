@@ -58,7 +58,7 @@ describe("outil Masques", () => {
   it("sans masque : les deux dégradés et l'invitation à tracer", () => {
     const spies = setup([]);
     render(<MasksSection />);
-    expect(screen.getByText("Choisir un dégradé, puis glisser sur la photo.")).toBeInTheDocument();
+    expect(screen.getByText("Choisir une forme, puis glisser sur la photo.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Radial" }));
     expect(spies.armMask).toHaveBeenCalledWith("radial");
     expect(screen.queryAllByRole("slider")).toHaveLength(0);

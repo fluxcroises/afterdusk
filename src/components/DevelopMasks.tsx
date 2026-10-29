@@ -335,6 +335,8 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
   const outline = (shape: MaskShape, key: string, active: boolean, hidden = false) => {
     const s = screenShape(shape, toScreen, sw, sh);
     if (!active) {
+      // Pinceau : pas de pastille, il se choisit dans la liste.
+      if (!s.handles.move) return null;
       return (
         <circle
           key={key}
