@@ -17,6 +17,7 @@ use super::pipeline::{
     RenderParams, Rendered, WorkingImage, histogram_of, paint_clipping, process1,
 };
 use super::settings::MASKS_MAX;
+use super::strokes::StrokeGrid;
 
 #[derive(Debug, thiserror::Error)]
 pub enum GpuError {
@@ -44,7 +45,10 @@ const HISTOGRAM_BYTES: u64 = HISTOGRAM_BINS as u64 * 4;
 
 /// Valeurs par masque dans le tampon des retouches locales (voir
 /// [`mask_bytes`]).
-const MASK_STRIDE: usize = 20;
+const MASK_STRIDE: usize = 24;
+/// Valeurs par segment de tracé dans une grille (voir [`push_grid`]).
+const SEGMENT_STRIDE: usize = 9;
+/// Taille de départ du tampon des masques ; il grandit avec les tracés.
 const MASK_BYTES: u64 = (MASKS_MAX * MASK_STRIDE * 4) as u64;
 
 fn vec3(v: [f32; 3]) -> String {
@@ -90,6 +94,8 @@ const FLAG_TONE: u32 = {flag_tone}u;
 const FLAG_RENDERED: u32 = {flag_rendered}u;
 const MASKS_MAX: u32 = {masks_max}u;
 const MASK_STRIDE: u32 = {mask_stride}u;
+const SEGMENT_STRIDE: u32 = {segment_stride}u;
+const NO_STROKE: u32 = 0xffffffffu;
 
 fn neutral_curve(x: f32) -> f32 {{
     // Source déjà développée : identité bornée, pas d'épaule.
@@ -297,6 +303,84 @@ fn mask_weight(i: u32, x: f32, y: f32) -> f32 {{
     return w;
 }}
 
+fn word(i: u32) -> u32 {{
+    return bitcast<u32>(mask_data[i]);
+}}
+
+// Effet du segment de tracé `s` au point (x, y), avant densité.
+fn segment_profile(s: u32, x: f32, y: f32) -> f32 {{
+    let ax = mask_data[s];
+    let ay = mask_data[s + 1u];
+    let dx = mask_data[s + 2u] - ax;
+    let dy = mask_data[s + 3u] - ay;
+    let px = x - ax;
+    let py = y - ay;
+    let len2 = dx * dx + dy * dy;
+    var t = 0.0;
+    if (len2 > 0.0) {{
+        t = clamp((px * dx + py * dy) / len2, 0.0, 1.0);
+    }}
+    let ex = px - t * dx;
+    let ey = py - t * dy;
+    let r = mask_data[s + 4u];
+    let inner = mask_data[s + 5u];
+    let d2 = (ex * ex + ey * ey) / (r * r);
+    if (d2 >= 1.0) {{
+        return 0.0;
+    }}
+    if (d2 <= inner * inner) {{
+        return 1.0;
+    }}
+    return 1.0 - smoothstep_(0.0, 1.0, (sqrt(d2) - inner) / (1.0 - inner));
+}}
+
+fn combine(m: f32, s: f32, erase: bool) -> f32 {{
+    if (erase) {{
+        return m * (1.0 - s);
+    }}
+    return m + s * (1.0 - m);
+}}
+
+// Tracés de la grille `g` au point (x, y), en partant de `base` : comme
+// `StrokeGrid::apply` dans le cœur.
+fn strokes_apply(base: f32, g: u32, x: f32, y: f32) -> f32 {{
+    let cx = (x - mask_data[g]) / mask_data[g + 2u];
+    let cy = (y - mask_data[g + 1u]) / mask_data[g + 2u];
+    let cols = word(g + 3u);
+    let rows = word(g + 4u);
+    if (cx < 0.0 || cy < 0.0 || cx >= f32(cols) || cy >= f32(rows)) {{
+        return base;
+    }}
+    let c = u32(cy) * cols + u32(cx);
+    let entries = word(g + 5u);
+    let segments = word(g + 6u);
+    var m = base;
+    var current = NO_STROKE;
+    var s = 0.0;
+    var flow = 0.0;
+    var erase = false;
+    for (var k = word(g + 8u + c); k < word(g + 9u + c); k++) {{
+        let seg = segments + word(entries + k) * SEGMENT_STRIDE;
+        let stroke = word(seg + 8u);
+        if (stroke != current) {{
+            if (current != NO_STROKE) {{
+                m = combine(m, s * flow, erase);
+            }}
+            current = stroke;
+            s = 0.0;
+            flow = mask_data[seg + 6u];
+            erase = mask_data[seg + 7u] != 0.0;
+        }}
+        if (s < 1.0) {{
+            s = max(s, segment_profile(seg, x, y));
+        }}
+    }}
+    if (current != NO_STROKE) {{
+        m = combine(m, s * flow, erase);
+    }}
+    return m;
+}}
+
 fn display_pixel(lin_in: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     // Retouches locales : poids de chaque masque en ce pixel, puis gains
     // (exposition, température, teinte) en lumière linéaire.
@@ -308,11 +392,18 @@ fn display_pixel(lin_in: vec3<f32>, px: u32, py: u32) -> vec3<f32> {{
     var tone_b = vec2<f32>(0.0);
     var local_saturation = 0.0;
     for (var i = 0u; i < n; i++) {{
-        let w = mask_weight(i, fx, fy);
+        let b = i * MASK_STRIDE;
+        var w = mask_weight(i, fx, fy);
+        let grid = word(b + 20u);
+        if (grid != 0u) {{
+            w = strokes_apply(w, grid, fx, fy);
+        }}
+        if (mask_data[b + 21u] != 0.0) {{
+            w = 1.0 - w;
+        }}
         if (w <= 0.0) {{
             continue;
         }}
-        let b = i * MASK_STRIDE;
         log_gain += w * vec3<f32>(mask_data[b + 10u], mask_data[b + 11u], mask_data[b + 12u]);
         if (mask_data[b + 3u] != 0.0) {{
             tone_a += w * vec4<f32>(mask_data[b + 13u], mask_data[b + 14u], mask_data[b + 15u], mask_data[b + 16u]);
@@ -430,6 +521,7 @@ fn main(
         flag_rendered = FLAG_RENDERED,
         masks_max = MASKS_MAX,
         mask_stride = MASK_STRIDE,
+        segment_stride = SEGMENT_STRIDE,
         wg = WORKGROUP,
     )
 }
@@ -785,8 +877,16 @@ pub struct GpuRenderer {
 
 /// Tampons des passes de voisinage, créés au premier rendu qui en a besoin.
 struct Staged {
-    _buffers: Vec<wgpu::Buffer>,
+    buffers: Vec<wgpu::Buffer>,
     bind_group: wgpu::BindGroup,
+}
+
+/// Tampon des masques et liaisons qui le citent : refaits ensemble quand les
+/// tracés demandent un tampon plus grand.
+struct Bindings {
+    masks: wgpu::Buffer,
+    main: wgpu::BindGroup,
+    staged: Option<Staged>,
 }
 
 /// Image de travail chargée sur le processeur graphique, avec ses tampons.
@@ -799,11 +899,9 @@ pub struct GpuImage {
     readback: wgpu::Buffer,
     hist_readback: wgpu::Buffer,
     curves: wgpu::Buffer,
-    /// Retouches locales (voir [`mask_bytes`]).
-    masks: wgpu::Buffer,
-    bind_group: wgpu::BindGroup,
     src: wgpu::Buffer,
-    staged: std::sync::OnceLock<Staged>,
+    /// Retouches locales (voir [`mask_bytes`]) et liaisons.
+    bindings: std::sync::Mutex<Bindings>,
     scale: f32,
     /// Origine dans l'image entière et taille de celle-ci (voir [`WorkingImage::frame`]).
     frame: (u32, u32, u32, u32),
@@ -880,18 +978,56 @@ fn mask_count(p: &RenderParams) -> u32 {
     }
 }
 
-/// Masques des retouches locales, `MASK_STRIDE` valeurs chacun, lues par
-/// `mask_weight` et `display_pixel` : forme ramenée en pixels de la sortie
-/// (radial, inversé, bord intérieur, puis `u` et `v`), gains, courbe de
-/// tonalité et saturation.
+/// Grille de tracés à la suite de `out` (valeurs), lue par `strokes_apply` :
+/// coin, côté d'une case, colonnes et rangées, positions de la liste des
+/// segments et des segments, début de la liste de chaque case, liste, puis
+/// segments (`SEGMENT_STRIDE` valeurs). Entiers rangés bit à bit.
+fn push_grid(out: &mut Vec<f32>, g: &StrokeGrid) -> u32 {
+    let at = out.len() as u32;
+    let cells = g.starts.len() as u32;
+    let entries = at + 8 + cells;
+    let segments = entries + g.entries.len() as u32;
+    out.extend([g.origin[0] as f32, g.origin[1] as f32, g.cell as f32]);
+    out.extend([g.cols, g.rows, entries, segments, 0].map(f32::from_bits));
+    out.extend(g.starts.iter().map(|v| f32::from_bits(*v)));
+    out.extend(g.entries.iter().map(|v| f32::from_bits(*v)));
+    for s in &g.segments {
+        out.extend([
+            s.a[0] as f32,
+            s.a[1] as f32,
+            s.b[0] as f32,
+            s.b[1] as f32,
+            s.radius as f32,
+            s.inner as f32,
+            s.flow as f32,
+            if s.erase { 1.0 } else { 0.0 },
+            f32::from_bits(s.stroke),
+        ]);
+    }
+    debug_assert_eq!(
+        out.len() as u32,
+        segments + (g.segments.len() * SEGMENT_STRIDE) as u32
+    );
+    at
+}
+
+/// Masques des retouches locales, lus par `mask_weight` et `display_pixel` :
+/// `MASK_STRIDE` valeurs par masque (forme ramenée en pixels de la sortie :
+/// radial, inversé, bord intérieur, `u` et `v` ; gains, courbe de tonalité,
+/// saturation ; position de la grille de tracés, 0 sans tracé ; inversion
+/// après les tracés), puis les grilles de tracés.
 fn mask_bytes(p: &RenderParams) -> Vec<u8> {
     let Some(l) = p.locals.as_deref() else {
         return Vec::new();
     };
     let flag = |b: bool| if b { 1.0 } else { 0.0 };
-    let mut out = Vec::with_capacity(MASK_BYTES as usize);
     let n = mask_count(p) as usize;
-    for (shape, lp) in l.planar.iter().zip(&l.params).take(n) {
+    let mut out = vec![0.0f32; MASKS_MAX * MASK_STRIDE];
+    for (i, (shape, lp)) in l.planar.iter().zip(&l.params).take(n).enumerate() {
+        let grid = match &l.strokes[i] {
+            Some(g) => push_grid(&mut out, g),
+            None => 0,
+        };
         let mut values = vec![
             flag(shape.radial),
             flag(shape.invert),
@@ -902,10 +1038,11 @@ fn mask_bytes(p: &RenderParams) -> Vec<u8> {
         values.extend(lp.log_gain);
         values.extend(lp.tone);
         values.push(lp.saturation);
+        values.extend([f32::from_bits(grid), flag(l.invert_after[i]), 0.0, 0.0]);
         debug_assert_eq!(values.len(), MASK_STRIDE);
-        out.extend(values.iter().flat_map(|v| v.to_le_bytes()));
+        out[i * MASK_STRIDE..(i + 1) * MASK_STRIDE].copy_from_slice(&values);
     }
-    out
+    out.iter().flat_map(|v| v.to_le_bytes()).collect()
 }
 
 impl GpuRenderer {
@@ -1073,24 +1210,7 @@ impl GpuRenderer {
         );
         let curves = buffer("courbes", CURVE_BYTES, U::STORAGE | U::COPY_DST);
         let masks = buffer("masques", MASK_BYTES, U::STORAGE | U::COPY_DST);
-        fn entry(binding: u32, buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
-            wgpu::BindGroupEntry {
-                binding,
-                resource: buffer.as_entire_binding(),
-            }
-        }
-        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("process1"),
-            layout: &self.layout,
-            entries: &[
-                entry(0, &src),
-                entry(1, &dst),
-                entry(2, &params),
-                entry(3, &hist),
-                entry(4, &curves),
-                entry(8, &masks),
-            ],
-        });
+        let main = self.main_group([&src, &dst, &params, &hist, &curves], &masks);
         if let Some(e) = pollster::block_on(scope.pop()) {
             return Err(wgpu_err(e));
         }
@@ -1103,17 +1223,41 @@ impl GpuRenderer {
             readback,
             hist_readback,
             curves,
-            masks,
-            bind_group,
             src,
-            staged: std::sync::OnceLock::new(),
+            bindings: std::sync::Mutex::new(Bindings {
+                masks,
+                main,
+                staged: None,
+            }),
             scale: image.scale,
             frame: image.frame(),
         })
     }
 
-    /// Tampons et liaisons des passes de voisinage d'une image.
-    fn staged_buffers(&self, image: &GpuImage) -> Staged {
+    /// Liaison du rendu direct : `parts` = image de travail, rendu,
+    /// paramètres, histogramme, courbes (liaisons 0 à 4), puis les masques.
+    fn main_group(&self, parts: [&wgpu::Buffer; 5], masks: &wgpu::Buffer) -> wgpu::BindGroup {
+        let mut entries: Vec<wgpu::BindGroupEntry> = parts
+            .iter()
+            .enumerate()
+            .map(|(k, b)| wgpu::BindGroupEntry {
+                binding: k as u32,
+                resource: b.as_entire_binding(),
+            })
+            .collect();
+        entries.push(wgpu::BindGroupEntry {
+            binding: 8,
+            resource: masks.as_entire_binding(),
+        });
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("process1"),
+            layout: &self.layout,
+            entries: &entries,
+        })
+    }
+
+    /// Tampons des passes de voisinage d'une image.
+    fn staged_buffers(&self, image: &GpuImage) -> Vec<wgpu::Buffer> {
         let pixels = u64::from(image.width) * u64::from(image.height);
         let make = |label: &str, per_pixel: u64| {
             self.device.create_buffer(&wgpu::BufferDescriptor {
@@ -1123,52 +1267,51 @@ impl GpuRenderer {
                 mapped_at_creation: false,
             })
         };
-        let buffers = vec![
+        vec![
             make("linéaire", 3),
             make("passes A, B, C", 6),
             make("codé et luminances", 5),
+        ]
+    }
+
+    /// Liaison des passes de voisinage : celles du rendu direct, plus leurs
+    /// tampons (liaisons 5 à 7).
+    fn staged_group(
+        &self,
+        image: &GpuImage,
+        buffers: &[wgpu::Buffer],
+        masks: &wgpu::Buffer,
+    ) -> wgpu::BindGroup {
+        let parts = [
+            &image.src,
+            &image.dst,
+            &image.params,
+            &image.hist,
+            &image.curves,
         ];
-        let mut entries = vec![
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: image.src.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: image.dst.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: image.params.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 3,
-                resource: image.hist.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 4,
-                resource: image.curves.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 8,
-                resource: image.masks.as_entire_binding(),
-            },
-        ];
+        let mut entries: Vec<wgpu::BindGroupEntry> = parts
+            .iter()
+            .enumerate()
+            .map(|(k, b)| wgpu::BindGroupEntry {
+                binding: k as u32,
+                resource: b.as_entire_binding(),
+            })
+            .collect();
+        entries.push(wgpu::BindGroupEntry {
+            binding: 8,
+            resource: masks.as_entire_binding(),
+        });
         for (k, b) in buffers.iter().enumerate() {
             entries.push(wgpu::BindGroupEntry {
                 binding: 5 + k as u32,
                 resource: b.as_entire_binding(),
             });
         }
-        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("process1-passes"),
             layout: &self.staged_layout,
             entries: &entries,
-        });
-        Staged {
-            _buffers: buffers,
-            bind_group,
-        }
+        })
     }
 
     /// Rendu RGBA 8 bits et histogramme, identiques au rendu processeur à la
@@ -1184,9 +1327,43 @@ impl GpuRenderer {
             let bytes: Vec<u8> = params.curve.iter().flat_map(|v| v.to_le_bytes()).collect();
             self.queue.write_buffer(&image.curves, 0, &bytes);
         }
+        let mut bindings = image.bindings.lock().map_err(wgpu_err)?;
+        let Bindings {
+            masks,
+            main,
+            staged,
+        } = &mut *bindings;
         if mask_count(params) > 0 {
-            self.queue
-                .write_buffer(&image.masks, 0, &mask_bytes(params));
+            let bytes = mask_bytes(params);
+            // Tracés plus grands que le tampon : un tampon plus grand, et les
+            // liaisons qui le citent refaites.
+            let needed = bytes.len() as u64;
+            if needed > masks.size() {
+                let limits = self.device.limits();
+                if needed > limits.max_storage_buffer_binding_size {
+                    return Err(GpuError::TooLarge(needed));
+                }
+                *masks = self.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("masques"),
+                    size: needed.next_power_of_two(),
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                });
+                *main = self.main_group(
+                    [
+                        &image.src,
+                        &image.dst,
+                        &image.params,
+                        &image.hist,
+                        &image.curves,
+                    ],
+                    masks,
+                );
+                if let Some(st) = staged.as_mut() {
+                    st.bind_group = self.staged_group(image, &st.buffers, masks);
+                }
+            }
+            self.queue.write_buffer(masks, 0, &bytes);
         }
         let mut encoder = self
             .device
@@ -1199,7 +1376,14 @@ impl GpuRenderer {
             image.height.div_ceil(WORKGROUP),
         );
         if params.flags & (FLAG_DENOISE | FLAG_SHARPEN) != 0 {
-            let staged = image.staged.get_or_init(|| self.staged_buffers(image));
+            let staged = staged.get_or_insert_with(|| {
+                let buffers = self.staged_buffers(image);
+                let bind_group = self.staged_group(image, &buffers, masks);
+                Staged {
+                    buffers,
+                    bind_group,
+                }
+            });
             let wanted = |name: &str| match name {
                 "s_chroma" | "s_box_h_color" | "s_box_v_color" | "s_chroma_apply" => {
                     params.detail.color > 0.0
@@ -1226,7 +1410,7 @@ impl GpuRenderer {
                 timestamp_writes: None,
             });
             pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &image.bind_group, &[]);
+            pass.set_bind_group(0, &*main, &[]);
             pass.dispatch_workgroups(groups.0, groups.1, 1);
         }
         encoder.copy_buffer_to_buffer(&image.dst, 0, &image.readback, 0, image.dst.size());

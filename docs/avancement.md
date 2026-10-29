@@ -1063,3 +1063,10 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - branché sur le rendu processeur. La carte graphique ignore encore les tracés (étape 3), et rien ne permet encore d'en peindre (interface, étape 5).
 - Tests : plein dans le rayon et nul au-delà, bouts arrondis, densité et passages successifs, gomme et ordre des tracés, adoucissement, tracé de 4 000 points (peu de segments par case), rond de pinceau à sa place à travers quart de tour, redressement, miroir et recadrage (au pixel près sur toute la sortie), pinceau, pinceau inversé et gomme sur un dégradé dans le rendu.
 - Note de l'utilisateur : il peut signer l'application sur macOS avec un compte Apple, mais préfère attendre une application finalisée (`docs/distribution.md`).
+- Étape 3, tracés sur la carte graphique :
+  - le rendu par passes utilise déjà 8 tampons de stockage, la limite par défaut de wgpu : pas de nouvelle liaison, les grilles de tracés suivent les masques dans le même tampon (liaison 8) ;
+  - enregistrement d'un masque passé à 24 valeurs : position de sa grille (0 sans tracé), inversion après les tracés ;
+  - grille : coin, côté d'une case, colonnes et rangées, début de la liste de chaque case, liste des segments, segments (9 valeurs), entiers rangés bit à bit ;
+  - le tampon grandit au besoin (puissance de deux) ; les liaisons du rendu direct et des passes qui le citent sont alors refaites ;
+  - `strokes_apply` dans le shader suit `StrokeGrid::apply` du cœur : même profil adouci, même ordre d'ajout et de gomme.
+- Test d'égalité processeur / carte graphique étendu : gomme sur le dégradé linéaire, pinceau à trois tracés (densités 60 et 100, adoucissement, gomme), pinceau inversé ; image entière, région au zoom, réglages globaux, bruit et netteté, géométrie. Égal à un niveau près (RTX 3060 Ti, de 21 à 109 valeurs différentes d'un niveau).

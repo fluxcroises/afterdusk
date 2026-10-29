@@ -10,7 +10,7 @@ use std::time::Instant;
 use afterdusk_lib::develop::gpu::{GpuError, GpuRenderer};
 use afterdusk_lib::develop::pipeline::{Clipping, RenderParams, WorkingImage, render};
 use afterdusk_lib::develop::settings::{
-    CropRect, DevelopSettings, Geometry, LocalAdjust, Mask, MaskShape, WhiteBalance,
+    CropRect, DevelopSettings, Geometry, LocalAdjust, Mask, MaskShape, Stroke, WhiteBalance,
 };
 use afterdusk_lib::raw::{D65_WHITE, RawFile};
 
@@ -177,6 +177,17 @@ fn cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
 /// Retouches locales : dégradés linéaire et radial (inversé), chaque réglage
 /// local, avec et sans réglages globaux, sous une géométrie tournée et
 /// recadrée.
+/// Tracé de pinceau (ou de gomme) : points en fractions de l'image.
+fn stroke(points: &[[f64; 2]], radius: f64, feather: f64, flow: f64, erase: bool) -> Stroke {
+    Stroke {
+        points: points.to_vec(),
+        radius,
+        feather,
+        flow,
+        erase,
+    }
+}
+
 fn mask_cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
     let masks = vec![
         Mask {
@@ -192,7 +203,13 @@ fn mask_cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
             },
             invert: false,
             hidden: false,
-            strokes: Vec::new(),
+            strokes: vec![stroke(
+                &[[0.2, 0.1], [0.4, 0.2], [0.5, 0.15]],
+                0.04,
+                80.0,
+                100.0,
+                true,
+            )],
         },
         Mask {
             shape: MaskShape::Radial {
@@ -228,6 +245,40 @@ fn mask_cases() -> Vec<(&'static str, DevelopSettings, Clipping)> {
             invert: false,
             hidden: false,
             strokes: Vec::new(),
+        },
+        // Pinceau : deux tracés qui se recouvrent (densités 60 et 100), une
+        // gomme par-dessus.
+        Mask {
+            shape: MaskShape::Brush,
+            adjust: LocalAdjust {
+                exposure: 1.1,
+                shadows: 40.0,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+            strokes: vec![
+                stroke(
+                    &[[0.6, 0.6], [0.7, 0.75], [0.85, 0.7]],
+                    0.05,
+                    50.0,
+                    60.0,
+                    false,
+                ),
+                stroke(&[[0.65, 0.8], [0.8, 0.6]], 0.03, 0.0, 100.0, false),
+                stroke(&[[0.7, 0.7]], 0.02, 30.0, 100.0, true),
+            ],
+        },
+        // Pinceau inversé : partout sauf sur son tracé.
+        Mask {
+            shape: MaskShape::Brush,
+            adjust: LocalAdjust {
+                temperature: 30.0,
+                ..LocalAdjust::default()
+            },
+            invert: true,
+            hidden: false,
+            strokes: vec![stroke(&[[0.1, 0.5], [0.3, 0.55]], 0.06, 60.0, 100.0, false)],
         },
     ];
     let seuls = DevelopSettings {
