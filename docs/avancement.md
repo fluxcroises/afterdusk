@@ -1094,3 +1094,9 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - invitation « Choisir une forme » au lieu de « Choisir un dégradé », le pinceau n'en étant pas un.
 - Défaut vu, sans lien avec le pinceau, à examiner : à la relance de l'application, la fenêtre principale affichait le profil complet (Versions, Clients, Matériel, correcteur) alors que le réglage enregistré était « De base » (`interface.profile` = `"basic"`).
 - Bibliothèque et données d'essai supprimées ensuite.
+- Profil qui revenait à « Complète » à la relance, corrigé :
+  - reproduit à l'écran : juste après l'assistant, la fenêtre principale est en « De base » (le profil lui arrive par l'avertissement `profile://changed`) ; après une relance, elle passe en complet (onglet Matériel, section Clients), alors que le réglage enregistré est toujours `"basic"` ;
+  - cause : les fenêtres de `tauri.conf.json` se chargent pendant que le cœur se prépare (ouverture et migration de la base, file des aperçus…) ; la fenêtre principale lit le profil aussitôt, avant que l'état de l'application soit enregistré ; la commande échoue et l'interface garde sa valeur par défaut, complète ;
+  - correction : l'écoute des changements est posée d'abord, puis la lecture est refaite tant qu'elle échoue, jusqu'à dix secondes (test : deux échecs puis « De base ») ;
+  - vérifié : deux relances de l'application compilée, la fenêtre principale reste en « De base ».
+  - Le défaut existe dans les versions publiées (0.5 et 0.6.0) : un utilisateur en « Simplifiée » ou « De base » retrouve l'interface complète à chaque lancement.
