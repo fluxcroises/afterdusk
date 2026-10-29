@@ -1039,3 +1039,7 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 
 - Projet passé en 0.6.0 (`package.json`, `package-lock.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`). Notes de version dans `docs/notes-de-version/0.6.0.md` : retouches locales, avertissement sur les versions antérieures qui refusent les photos avec masques, installation. Étiquette `v0.6.0` à poser après relecture par l'utilisateur.
 - Demande notée pour plus tard (Jira AFT-23) : verrouiller la taille de la fenêtre d'accueil, sans agrandissement ni redimensionnement.
+
+### 2026-10-29 : version 0.6.0 publiée
+
+- Version 0.6.0 publiée par l'utilisateur (retouches locales) : installateurs Windows et macOS, archives de mise à jour signées et `latest.json`. Les 0.5.x installées la trouvent à leur prochaine vérification.
