@@ -694,6 +694,51 @@ describe("Retoucher", () => {
     ]);
   });
 
+  it("pinceau : tracés avec les réglages du pinceau, une étape chacun", async () => {
+    await useDevelop.getState().open(7);
+    await useDevelop.getState().setTool("masks");
+    await useDevelop.getState().addMask({ kind: "brush" });
+    useDevelop.getState().setMaskBrush({ radius: 9, feather: 20, flow: 60 });
+    expect(useDevelop.getState().maskBrush).toEqual({ radius: 0.5, feather: 20, flow: 60 });
+    useDevelop.getState().setMaskBrush({ radius: 0.02 });
+    await useDevelop.getState().addStroke(
+      0,
+      [
+        [0.1, 0.2],
+        [0.3, 0.4],
+      ],
+      false,
+    );
+    await useDevelop.getState().addStroke(0, [[0.2, 0.3]], true);
+    await useDevelop.getState().clearStrokes(0);
+    await useDevelop.getState().flush();
+    expect(saves().map((a) => (a as { label: string }).label)).toEqual([
+      "masks.add",
+      "masks.paint",
+      "masks.erase",
+      "masks.clearStrokes",
+    ]);
+    const second = saves()[2] as { settings: { masks: unknown } };
+    expect(second.settings.masks).toEqual([
+      {
+        shape: { kind: "brush" },
+        strokes: [
+          {
+            points: [
+              [0.1, 0.2],
+              [0.3, 0.4],
+            ],
+            radius: 0.02,
+            feather: 20,
+            flow: 60,
+          },
+          { points: [[0.2, 0.3]], radius: 0.02, feather: 20, flow: 60, erase: true },
+        ],
+      },
+    ]);
+    expect(useDevelop.getState().settings?.masks).toEqual([{ shape: { kind: "brush" } }]);
+  });
+
   it("objectif : reconnu à l'ouverture, réglages creux", async () => {
     await useDevelop.getState().open(7);
     expect(useDevelop.getState().lensName).toBe("Sony FE 16-35mm f/2.8 GM");

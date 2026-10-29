@@ -1,8 +1,16 @@
-import { Eye, EyeOff, Plus } from "lucide-react";
-import { type MouseEvent, type PointerEvent, useEffect, useRef, useState } from "react";
+import { Eraser, Eye, EyeOff, Plus } from "lucide-react";
+import {
+  type MouseEvent,
+  type PointerEvent,
+  type WheelEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { openDevelopMenu, openMaskMenu } from "../contextMenu";
 import {
+  BRUSH_RADIUS,
   LOCAL_EXPOSURE_RANGE,
   LOCAL_KEYS,
   type LocalKey,
@@ -12,7 +20,7 @@ import {
   SLIDER_RANGE,
   useDevelop,
 } from "../store/develop";
-import { outputToSource, sourceToOutput } from "../ui/geometry";
+import { outputSize, outputToSource, sourceToOutput } from "../ui/geometry";
 import {
   MASK_FEATHER_DEFAULT,
   MASK_SIZE_MIN,
@@ -41,6 +49,12 @@ type Pt = [number, number];
 type Handle = "move" | "from" | "to" | "u+" | "u-" | "v+" | "v-" | "rotate";
 
 type Target = { index: number; handle: Handle } | { create: MaskShape["kind"] };
+
+/** Tracé de pinceau en cours : points en fractions de la source. */
+interface Painting {
+  points: Pt[];
+  erase: boolean;
+}
 
 interface Press {
   /** Position de l'écran au dernier déplacement de la région (zoom). */
@@ -104,8 +118,10 @@ function screenShape(shape: MaskShape, toScreen: (p: Pt) => Pt, sw: number, sh: 
  * Masques posés sur l'image. Outil armé (« + Linéaire », « + Radial ») : un
  * glissé trace le masque. Sinon, les poignées du masque choisi le déplacent,
  * le redimensionnent ou le font tourner (Maj : cercle, ou par pas de 15°), et
- * la pastille d'un autre masque le choisit. Au zoom, un glissé ailleurs
- * déplace la région. La forme n'est enregistrée qu'au relâchement.
+ * la pastille d'un autre masque le choisit. Pinceau choisi : un glissé ailleurs
+ * peint, Alt maintenu gomme ; sur un dégradé, Alt ou la gomme du panneau font
+ * gommer. Au zoom, un glissé ailleurs déplace la région. Formes et tracés ne
+ * sont enregistrés qu'au relâchement.
  */
 export function MaskOverlay({ box, view }: { box: Box; view: View }) {
   const { t } = useTranslation();
@@ -116,8 +132,12 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
   const armed = useDevelop((s) => s.maskDraft);
   const showMask = useDevelop((s) => s.showMask);
   const zoomed = useDevelop((s) => s.zoom !== null);
+  const brush = useDevelop((s) => s.maskBrush);
+  const erasing = useDevelop((s) => s.maskErasing);
   const [press, setPress] = useState<Press | null>(null);
   const [draft, setDraft] = useState<MaskShape | null>(null);
+  const [painting, setPainting] = useState<Painting | null>(null);
+  const [hover, setHover] = useState<{ at: Pt; alt: boolean } | null>(null);
   const viewRef = useRef<HTMLCanvasElement>(null);
 
   const sw = source?.width ?? 1;
@@ -147,6 +167,14 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
       : chosen && draft && editing === selected
         ? { ...chosen, shape: draft }
         : chosen;
+
+  // Pinceau : pixels de l'écran par pixel de la source, rayon à l'écran.
+  const [outW] = outputSize(geometry, sw, sh);
+  const scale = box.width / Math.max(1e-9, (view.x1 - view.x0) * outW);
+  const brushRadius = brush.radius * Math.max(sw, sh) * scale;
+  const isBrush = chosen?.shape.kind === "brush";
+  /** Un glissé hors des poignées peint ou gomme le masque choisi. */
+  const paints = (alt: boolean) => !armed && chosen !== undefined && (isBrush || erasing || alt);
   const viewKey = showMask && viewed ? JSON.stringify([viewed, geometry, view, box, sw, sh]) : "";
 
   useEffect(() => {
@@ -241,11 +269,22 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
     e.currentTarget.setPointerCapture(e.pointerId);
     const start = local(e);
     const hit = hitAt(start);
+    if (!hit && paints(e.altKey)) {
+      // Pinceau : ajout, sauf Alt ou gomme choisie ; dégradé : toujours gomme.
+      setPainting({ points: [toSource(start)], erase: !isBrush || erasing || e.altKey });
+      return;
+    }
     const target: Target | null = armed ? { create: armed } : hit;
     setPress({ x: e.clientX, y: e.clientY, start, moved: false, target });
   };
 
   const move = (e: PointerEvent<HTMLDivElement>) => {
+    const at = local(e);
+    setHover({ at, alt: e.altKey });
+    if (painting) {
+      setPainting({ ...painting, points: [...painting.points, toSource(at)] });
+      return;
+    }
     if (!press) return;
     const dx = e.clientX - press.x;
     const dy = e.clientY - press.y;
@@ -263,6 +302,14 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
   };
 
   const up = () => {
+    if (painting) {
+      const stroke = painting;
+      setPainting(null);
+      if (selected !== null) {
+        void useDevelop.getState().addStroke(selected, stroke.points, stroke.erase);
+      }
+      return;
+    }
     const p = press;
     const shape = draft;
     setPress(null);
@@ -379,6 +426,7 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
       aria-label={t("develop.masks.title")}
       style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
       data-armed={armed ?? undefined}
+      data-painting={(hover && paints(hover.alt)) || undefined}
       data-dragging={(press?.moved ?? false) || undefined}
       onPointerDown={down}
       onPointerMove={move}
@@ -386,6 +434,14 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
       onPointerCancel={() => {
         setPress(null);
         setDraft(null);
+        setPainting(null);
+      }}
+      onPointerLeave={() => setHover(null)}
+      onWheel={(e: WheelEvent<HTMLDivElement>) => {
+        // Molette : taille du pinceau, quand un glissé peindrait.
+        if (!paints(e.altKey)) return;
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        useDevelop.getState().setMaskBrush({ radius: brush.radius * factor });
       }}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -397,6 +453,23 @@ export function MaskOverlay({ box, view }: { box: Box; view: View }) {
       <svg width={box.width} height={box.height} aria-hidden="true">
         {drawn.map((m, i) => outline(m.shape, String(i), i === selected, m.hidden))}
         {creating && outline(creating, "draft", true)}
+        {painting && (
+          <polyline
+            className="develop-mask-stroke"
+            data-erase={painting.erase || undefined}
+            points={painting.points.map((p) => toScreen(p).join(",")).join(" ")}
+            strokeWidth={Math.max(1, brushRadius * 2)}
+          />
+        )}
+        {hover && !press && paints(hover.alt) && (
+          <circle
+            className="develop-mask-brush"
+            data-erase={!isBrush || erasing || hover.alt || undefined}
+            cx={hover.at[0]}
+            cy={hover.at[1]}
+            r={brushRadius}
+          />
+        )}
       </svg>
     </div>
   );
@@ -428,7 +501,9 @@ export function MasksSection() {
   const st = useDevelop.getState();
   const full = masks.length >= MASKS_MAX;
   const chosen = selected === null ? undefined : masks[selected];
-  const kinds: readonly MaskShape["kind"][] = ["linear", "radial"];
+  const kinds: readonly MaskShape["kind"][] = ["linear", "radial", "brush"];
+  const brush = useDevelop((s) => s.maskBrush);
+  const erasing = useDevelop((s) => s.maskErasing);
 
   return (
     <PanelSection
@@ -442,12 +517,16 @@ export function MasksSection() {
             key={kind}
             type="button"
             className="button button-small"
-            aria-pressed={armed === kind}
+            aria-pressed={kind === "brush" ? undefined : armed === kind}
             disabled={full}
             title={t(full ? "develop.masks.limit" : `develop.masks.draw.${kind}`, {
               count: MASKS_MAX,
             })}
-            onClick={() => st.armMask(armed === kind ? null : kind)}
+            onClick={() =>
+              kind === "brush"
+                ? void st.addMask({ kind: "brush" })
+                : st.armMask(armed === kind ? null : kind)
+            }
           >
             <Plus aria-hidden="true" strokeWidth={1.75} />
             {t(`develop.masks.kinds.${kind}`)}
@@ -518,6 +597,72 @@ export function MasksSection() {
               onReset={() => st.setMaskFeather(selected, MASK_FEATHER_DEFAULT)}
             />
           )}
+          <h3 className="develop-subheading">
+            {t(
+              chosen.shape.kind === "brush"
+                ? "develop.masks.brush.title"
+                : "develop.masks.brush.eraser",
+            )}
+          </h3>
+          <div className="develop-crop-actions">
+            <button
+              type="button"
+              className="button button-small"
+              aria-pressed={erasing}
+              onClick={() => st.setMaskErasing(!erasing)}
+            >
+              <Eraser aria-hidden="true" strokeWidth={1.75} />
+              {t("develop.masks.brush.erase")}
+            </button>
+            <span className="toolbar-spacer" />
+            {(chosen.strokes?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                className="button button-small"
+                onClick={() => void st.clearStrokes(selected)}
+              >
+                {t("develop.masks.brush.clear")}
+              </button>
+            )}
+          </div>
+          <Slider
+            label={t("develop.masks.brush.size")}
+            display={String(Math.round(brush.radius * 1000))}
+            value={Math.round(brush.radius * 1000)}
+            min={Math.round(BRUSH_RADIUS.min * 1000)}
+            max={200}
+            step={1}
+            onChange={(v) => st.setMaskBrush({ radius: v / 1000 })}
+            onReset={() => st.setMaskBrush({ radius: 0.03 })}
+          />
+          <Slider
+            label={t("develop.masks.feather")}
+            display={String(brush.feather)}
+            value={brush.feather}
+            min={0}
+            max={100}
+            step={1}
+            onChange={(v) => st.setMaskBrush({ feather: v })}
+            onReset={() => st.setMaskBrush({ feather: MASK_FEATHER_DEFAULT })}
+          />
+          <Slider
+            label={t("develop.masks.brush.flow")}
+            display={`${brush.flow} %`}
+            value={brush.flow}
+            min={1}
+            max={100}
+            step={1}
+            onChange={(v) => st.setMaskBrush({ flow: v })}
+            onReset={() => st.setMaskBrush({ flow: 100 })}
+          />
+          <p className="panel-note">
+            {t(
+              chosen.shape.kind === "brush"
+                ? "develop.masks.brush.hint"
+                : "develop.masks.brush.eraseHint",
+            )}
+          </p>
+          <h3 className="develop-subheading">{t("develop.masks.adjustments")}</h3>
           {LOCAL_KEYS.map((key) => {
             const v = chosen.adjust?.[key] ?? 0;
             const range = key === "exposure" ? LOCAL_EXPOSURE_RANGE : SLIDER_RANGE;

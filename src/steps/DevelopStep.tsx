@@ -367,8 +367,9 @@ export function DevelopStep() {
           return;
         }
       }
-      // M : masques. O montre le masque choisi, Suppr le retire, Échap
-      // annule le tracé préparé, puis quitte le masque choisi, puis l'outil.
+      // M : masques. O montre le masque choisi, Suppr le retire, [ et ]
+      // changent la taille du pinceau, Échap annule le tracé préparé, puis
+      // quitte le masque choisi, puis l'outil.
       if (plain && letter("m") && profileAllows("develop.masks") && state.settings) {
         void state.setTool(state.tool === "masks" ? "adjust" : "masks");
         e.preventDefault();
@@ -377,6 +378,13 @@ export function DevelopStep() {
       if (state.tool === "masks") {
         if (plain && letter("o")) {
           state.setShowMask(!state.showMask);
+          e.preventDefault();
+          return;
+        }
+        // [ et ] : taille du pinceau.
+        if (e.key === "[" || e.key === "]") {
+          const factor = e.key === "]" ? 1.2 : 1 / 1.2;
+          state.setMaskBrush({ radius: state.maskBrush.radius * factor });
           e.preventDefault();
           return;
         }

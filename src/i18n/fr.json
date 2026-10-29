@@ -715,7 +715,10 @@
         "invert": "Masque inversé",
         "hide": "Masque masqué",
         "show": "Masque affiché",
-        "value": "{{mask}} : {{name}} {{value}}"
+        "value": "{{mask}} : {{name}} {{value}}",
+        "paint": "Tracé de pinceau",
+        "erase": "Tracé de gomme",
+        "clearStrokes": "Tracés effacés"
       }
     },
     "compare": {
@@ -952,15 +955,18 @@
       "title": "Masques",
       "kinds": {
         "linear": "Linéaire",
-        "radial": "Radial"
+        "radial": "Radial",
+        "brush": "Pinceau"
       },
       "names": {
         "linear": "Linéaire {{n}}",
-        "radial": "Radial {{n}}"
+        "radial": "Radial {{n}}",
+        "brush": "Pinceau {{n}}"
       },
       "draw": {
         "linear": "Glisser sur la photo, de l'effet plein à l'effet nul.",
-        "radial": "Glisser du centre vers le bord. Maj : cercle."
+        "radial": "Glisser du centre vers le bord. Maj : cercle.",
+        "brush": "Nouveau masque pinceau : glisser sur la photo pour peindre."
       },
       "limit": "{{count}} masques au plus",
       "hint": "Choisir un dégradé, puis glisser sur la photo.",
@@ -972,7 +978,18 @@
       "show": "Afficher",
       "duplicate": "Dupliquer",
       "remove": "Supprimer",
-      "selectedHint": "Maj : cercle ou pas de 15° · Suppr : retirer · Échap : quitter"
+      "selectedHint": "Maj : cercle ou pas de 15° · Suppr : retirer · Échap : quitter",
+      "adjustments": "Réglages",
+      "brush": {
+        "title": "Pinceau",
+        "eraser": "Gomme",
+        "erase": "Gommer",
+        "clear": "Effacer les tracés",
+        "size": "Taille",
+        "flow": "Densité",
+        "hint": "Glisser pour peindre · Alt : gommer · [ ] ou molette : taille",
+        "eraseHint": "Gommer ou Alt : glisser hors des poignées pour retirer l'effet · [ ] ou molette : taille"
+      }
     }
   },
   "deliver": {

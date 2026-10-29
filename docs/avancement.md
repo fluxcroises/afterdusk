@@ -1075,3 +1075,10 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - région du zoom identique à l'image entière avec une gomme sur le dégradé et un pinceau, sous rotation, quart de tour, recadrage et netteté ;
   - XMP en version 3 avec un dégradé gommé et un pinceau, relu à l'identique ;
   - copier-coller des masques avec leurs tracés.
+- Étape 5, pinceau et gomme dans l'outil Masques :
+  - « + Pinceau » (troisième bouton) crée un masque pinceau et le choisit ; un glissé sur la photo peint, Alt maintenu gomme ;
+  - sur un dégradé choisi, « Gommer » (ou Alt) fait gommer un glissé hors des poignées ; les poignées restent prioritaires ;
+  - réglages du pinceau dans le panneau : taille (millièmes du côté long, [ ] ou molette), adoucissement, densité ; « Effacer les tracés » ;
+  - sur la photo : cercle du pinceau qui suit le pointeur (pointillés pour la gomme), tracé dessiné en direct, enregistré au relâchement en une étape d'historique (« Tracé de pinceau », « Tracé de gomme », « Tracés effacés ») ;
+  - calque rouge (O) avec les tracés : `compileMask` reprend dans l'interface le calcul du cœur (forme, tracés dans l'ordre, inversion d'un pinceau après ses tracés).
+- Tests : poids des tracés de l'interface sur les cas du cœur (densité, gomme et ordre, pinceau inversé, dégradé gommé) ; store (réglages bornés, tracés creux, étiquettes de l'historique) ; « + Pinceau », peinture et gomme à la souris, gomme sur un dégradé seulement avec « Gommer » ou Alt. Pas encore vu à l'écran.

@@ -715,7 +715,10 @@
         "invert": "Mask inverted",
         "hide": "Mask hidden",
         "show": "Mask shown",
-        "value": "{{mask}}: {{name}} {{value}}"
+        "value": "{{mask}}: {{name}} {{value}}",
+        "paint": "Brush stroke",
+        "erase": "Eraser stroke",
+        "clearStrokes": "Strokes cleared"
       }
     },
     "compare": {
@@ -952,15 +955,18 @@
       "title": "Masks",
       "kinds": {
         "linear": "Linear",
-        "radial": "Radial"
+        "radial": "Radial",
+        "brush": "Brush"
       },
       "names": {
         "linear": "Linear {{n}}",
-        "radial": "Radial {{n}}"
+        "radial": "Radial {{n}}",
+        "brush": "Brush {{n}}"
       },
       "draw": {
         "linear": "Drag on the photo, from full effect to no effect.",
-        "radial": "Drag from the center to the edge. Shift: circle."
+        "radial": "Drag from the center to the edge. Shift: circle.",
+        "brush": "New brush mask: drag on the photo to paint."
       },
       "limit": "{{count}} masks at most",
       "hint": "Choose a gradient, then drag on the photo.",
@@ -972,7 +978,18 @@
       "show": "Show",
       "duplicate": "Duplicate",
       "remove": "Delete",
-      "selectedHint": "Shift: circle or 15° steps · Del: remove · Esc: exit"
+      "selectedHint": "Shift: circle or 15° steps · Del: remove · Esc: exit",
+      "adjustments": "Adjustments",
+      "brush": {
+        "title": "Brush",
+        "eraser": "Eraser",
+        "erase": "Erase",
+        "clear": "Clear strokes",
+        "size": "Size",
+        "flow": "Flow",
+        "hint": "Drag to paint · Alt: erase · [ ] or wheel: size",
+        "eraseHint": "Erase or Alt: drag outside the handles to remove the effect · [ ] or wheel: size"
+      }
     }
   },
   "deliver": {

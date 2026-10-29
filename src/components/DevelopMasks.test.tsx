@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tauri-apps/api/core", async (original) => ({
@@ -32,6 +32,7 @@ function setup(masks: object[], selectedMask: number | null = null) {
     selectMask: vi.fn(),
     setMaskAdjust: vi.fn(),
     toggleMask: vi.fn(() => Promise.resolve()),
+    addStroke: vi.fn(() => Promise.resolve()),
   };
   useLayout.setState({ collapsed: { "develop.masks": false } });
   useDevelop.setState({
@@ -40,6 +41,8 @@ function setup(masks: object[], selectedMask: number | null = null) {
     selectedMask,
     maskDraft: null,
     showMask: false,
+    maskErasing: false,
+    maskBrush: { radius: 0.05, feather: 50, flow: 100 },
     zoom: null,
     ...spies,
   });
@@ -67,8 +70,9 @@ describe("outil Masques", () => {
     for (const name of ["Linéaire 1", "Radial 1", "Linéaire 2"]) {
       expect(screen.getByRole("button", { name })).toBeInTheDocument();
     }
-    // Sept réglages et l'adoucissement du radial.
-    expect(screen.getAllByRole("slider")).toHaveLength(8);
+    // Pinceau (taille, adoucissement, densité), adoucissement du radial et
+    // sept réglages.
+    expect(screen.getAllByRole("slider")).toHaveLength(11);
     expect(screen.getByText("+0,50 IL")).toBeInTheDocument();
     const saturation = screen.getByText("Saturation").closest("label")?.querySelector("input");
     fireEvent.change(saturation as HTMLInputElement, { target: { value: "30" } });
@@ -110,5 +114,46 @@ describe("outil Masques", () => {
     fireEvent.pointerDown(layer, { button: 0, clientX: 101, clientY: 101 });
     fireEvent.pointerUp(layer, { clientX: 101, clientY: 101 });
     expect(spies.selectMask).toHaveBeenCalledWith(1);
+  });
+
+  it("« + Pinceau » crée un masque pinceau", () => {
+    const spies = setup([]);
+    render(<MasksSection />);
+    fireEvent.click(screen.getByRole("button", { name: "Pinceau" }));
+    expect(spies.addMask).toHaveBeenCalledWith({ kind: "brush" });
+  });
+
+  it("pinceau choisi : un glissé peint, Alt gomme", () => {
+    const spies = setup([{ shape: { kind: "brush" } }], 0);
+    render(<MaskOverlay box={box} view={view} />);
+    const layer = screen.getByRole("group", { name: "Masques" });
+    fireEvent.pointerDown(layer, { button: 0, clientX: 100, clientY: 50 });
+    fireEvent.pointerMove(layer, { clientX: 200, clientY: 100 });
+    fireEvent.pointerUp(layer, { clientX: 200, clientY: 100 });
+    expect(spies.addStroke).toHaveBeenLastCalledWith(
+      0,
+      [
+        [0.25, 0.25],
+        [0.5, 0.5],
+      ],
+      false,
+    );
+    fireEvent.pointerDown(layer, { button: 0, clientX: 100, clientY: 50, altKey: true });
+    fireEvent.pointerUp(layer, { clientX: 100, clientY: 50 });
+    expect(spies.addStroke).toHaveBeenLastCalledWith(0, [[0.25, 0.25]], true);
+  });
+
+  it("dégradé choisi : un glissé ne gomme qu'avec la gomme ou Alt", () => {
+    const spies = setup([linear], 0);
+    render(<MaskOverlay box={box} view={view} />);
+    const layer = screen.getByRole("group", { name: "Masques" });
+    fireEvent.pointerDown(layer, { button: 0, clientX: 40, clientY: 150 });
+    fireEvent.pointerMove(layer, { clientX: 80, clientY: 150 });
+    fireEvent.pointerUp(layer, { clientX: 80, clientY: 150 });
+    expect(spies.addStroke).not.toHaveBeenCalled();
+    act(() => useDevelop.setState({ maskErasing: true }));
+    fireEvent.pointerDown(layer, { button: 0, clientX: 40, clientY: 150 });
+    fireEvent.pointerUp(layer, { clientX: 40, clientY: 150 });
+    expect(spies.addStroke).toHaveBeenCalledWith(0, [[0.1, 0.75]], true);
   });
 });

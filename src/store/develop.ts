@@ -249,6 +249,16 @@ export interface SpotBrush {
   mode: SpotMode;
 }
 
+/** Pinceau des masques : rayon en fraction du côté long, adoucissement et densité de 0 à 100. */
+export interface MaskBrush {
+  radius: number;
+  feather: number;
+  flow: number;
+}
+
+/** Rayon du pinceau des masques, en fraction du côté long (comme le cœur). */
+export const BRUSH_RADIUS = { min: 0.001, max: 0.5 } as const;
+
 /** Outil de la barre de droite. */
 export type DevelopTool = "adjust" | "filters" | "crop" | "spots" | "masks";
 
@@ -602,6 +612,10 @@ interface DevelopState {
   maskDraft: MaskShape["kind"] | null;
   /** Calque rouge du masque choisi sur la photo. */
   showMask: boolean;
+  /** Pinceau des masques : réglages du prochain tracé. */
+  maskBrush: MaskBrush;
+  /** Gomme choisie dans le panneau (Alt maintenu gomme aussi). */
+  maskErasing: boolean;
   /** Outil de recadrage ouvert : l'image entière redressée est affichée. */
   cropping: boolean;
   /** Position de l'historique à l'ouverture de l'outil, pour l'annuler. */
@@ -684,6 +698,11 @@ interface DevelopState {
   removeMask: (index: number) => Promise<void>;
   selectMask: (index: number | null) => void;
   setShowMask: (show: boolean) => void;
+  setMaskBrush: (patch: Partial<MaskBrush>) => void;
+  setMaskErasing: (erasing: boolean) => void;
+  /** Nouveau tracé sur le masque `index`, points en fractions de la source. */
+  addStroke: (index: number, points: [number, number][], erase: boolean) => Promise<void>;
+  clearStrokes: (index: number) => Promise<void>;
   startCrop: () => Promise<void>;
   finishCrop: () => void;
   cancelCrop: () => Promise<void>;
@@ -1093,6 +1112,8 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     maskDraft: null,
     showDust: false,
     showMask: false,
+    maskBrush: { radius: 0.03, feather: 50, flow: 100 },
+    maskErasing: false,
 
     open: async (mediaId, version = ORIGINAL) => {
       if (get().mediaId === mediaId && get().settings) {
@@ -1619,6 +1640,32 @@ export const useDevelop = create<DevelopState>()((set, get) => {
     selectMask: (index) => set({ selectedMask: index }),
 
     setShowMask: (show) => set({ showMask: show }),
+
+    setMaskBrush: (patch) => {
+      const next = { ...get().maskBrush, ...patch };
+      next.radius = Math.min(BRUSH_RADIUS.max, Math.max(BRUSH_RADIUS.min, next.radius));
+      set({ maskBrush: next });
+    },
+
+    setMaskErasing: (erasing) => set({ maskErasing: erasing }),
+
+    addStroke: async (index, points, erase) => {
+      const masks = [...(get().settings?.masks ?? [])];
+      const mask = masks[index];
+      if (!mask || points.length === 0) return;
+      const { radius, feather, flow } = get().maskBrush;
+      const stroke: Stroke = { points, radius, feather, flow, erase };
+      masks[index] = { ...mask, strokes: [...(mask.strokes ?? []), stroke] };
+      await changeMasks(masks, erase ? "masks.erase" : "masks.paint");
+    },
+
+    clearStrokes: async (index) => {
+      const masks = [...(get().settings?.masks ?? [])];
+      const mask = masks[index];
+      if (!mask?.strokes?.length) return;
+      masks[index] = { ...mask, strokes: [] };
+      await changeMasks(masks, "masks.clearStrokes");
+    },
 
     startCrop: async () => {
       if (!get().settings || get().cropping) return;

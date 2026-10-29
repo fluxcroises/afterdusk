@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Mask } from "../store/develop";
-import { maskViewPixels, maskWeight, movedShape, normalizeAngle } from "./masks";
+import { compileMask, maskViewPixels, maskWeight, movedShape, normalizeAngle } from "./masks";
 
 // Mêmes cas que les tests de `develop::masks` dans le cœur (image de 400 × 200).
 const ciel: Mask = { shape: { kind: "linear", from: [0.5, 0], to: [0.5, 0.5] } };
@@ -50,6 +50,57 @@ describe("poids des masques, comme le cœur", () => {
       kind: "linear",
       from: [0.6, 0.2],
       to: [0.6, 0.7],
+    });
+  });
+
+  // Mêmes cas que `develop::strokes` dans le cœur (source de 400 × 400).
+  describe("tracés de pinceau et de gomme", () => {
+    const rond = (erase: boolean, flow = 100) => ({
+      points: [[0.5, 0.5]] as [number, number][],
+      radius: 30 / 400,
+      feather: 0,
+      flow,
+      erase,
+    });
+    const pinceau = (strokes: ReturnType<typeof rond>[], invert = false) =>
+      compileMask({ shape: { kind: "brush" }, invert, strokes }, 400, 400);
+
+    it("plein dans le rayon, nul au-delà ; densité qui s'accumule", () => {
+      expect(pinceau([rond(false)])(200, 200)).toBe(1);
+      expect(pinceau([rond(false)])(240, 200)).toBe(0);
+      expect(pinceau([rond(false, 50)])(200, 200)).toBeCloseTo(0.5, 12);
+      expect(pinceau([rond(false, 50), rond(false, 50)])(200, 200)).toBeCloseTo(0.75, 12);
+    });
+
+    it("gomme dans l'ordre des tracés, et pinceau inversé après ses tracés", () => {
+      expect(pinceau([rond(false), rond(true)])(200, 200)).toBe(0);
+      expect(pinceau([rond(true), rond(false)])(200, 200)).toBe(1);
+      expect(pinceau([rond(false)], true)(200, 200)).toBe(0);
+      expect(pinceau([rond(false)], true)(10, 10)).toBe(1);
+    });
+
+    it("gomme sur un dégradé, inversé avant ses tracés", () => {
+      const ciel = compileMask(
+        {
+          shape: { kind: "linear", from: [0.5, 0], to: [0.5, 1] },
+          invert: true,
+          strokes: [rond(true, 50)],
+        },
+        400,
+        400,
+      );
+      // Au centre, le dégradé inversé vaut 0,5 ; la gomme à 50 % en retire la moitié.
+      expect(ciel(200, 200)).toBeCloseTo(0.25, 6);
+      expect(ciel(200, 20)).toBeCloseTo(
+        maskWeight(
+          { shape: { kind: "linear", from: [0.5, 0], to: [0.5, 1] }, invert: true },
+          200,
+          20,
+          400,
+          400,
+        ),
+        12,
+      );
     });
   });
 });

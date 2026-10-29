@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { Mask, MaskShape } from "../store/develop";
+import type { Mask, MaskShape, Stroke } from "../store/develop";
 
 /** Adoucissement d'un dégradé radial sans valeur enregistrée. */
 export const MASK_FEATHER_DEFAULT = 50;
@@ -50,6 +50,117 @@ export function maskWeight(
   return mask.invert ? 1 - w : w;
 }
 
+/** Segment d'un tracé, en pixels de la source. */
+interface Segment {
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+  radius: number;
+  inner: number;
+  /** Boîte englobante, rayon compris. */
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+interface CompiledStroke {
+  segments: Segment[];
+  flow: number;
+  erase: boolean;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/** Tracé ramené en pixels de la source, points trop proches sautés (comme le cœur). */
+function compileStroke(s: Stroke, sw: number, sh: number): CompiledStroke {
+  const radius = Math.max(s.radius * Math.max(sw, sh), 0.5);
+  const inner = 1 - (s.feather ?? MASK_FEATHER_DEFAULT) / 100;
+  const pts = s.points.map(([x, y]): [number, number] => [x * sw, y * sh]);
+  const segments: Segment[] = [];
+  const push = (a: [number, number], b: [number, number]) =>
+    segments.push({
+      ax: a[0],
+      ay: a[1],
+      bx: b[0],
+      by: b[1],
+      radius,
+      inner,
+      x0: Math.min(a[0], b[0]) - radius,
+      y0: Math.min(a[1], b[1]) - radius,
+      x1: Math.max(a[0], b[0]) + radius,
+      y1: Math.max(a[1], b[1]) + radius,
+    });
+  const first = pts[0];
+  if (first) {
+    let last = first;
+    for (const p of pts.slice(1)) {
+      if (Math.hypot(p[0] - last[0], p[1] - last[1]) >= radius * 0.25) {
+        push(last, p);
+        last = p;
+      }
+    }
+    if (segments.length === 0) push(first, first);
+  }
+  return {
+    segments,
+    flow: (s.flow ?? 100) / 100,
+    erase: s.erase ?? false,
+    x0: Math.min(...segments.map((g) => g.x0)),
+    y0: Math.min(...segments.map((g) => g.y0)),
+    x1: Math.max(...segments.map((g) => g.x1)),
+    y1: Math.max(...segments.map((g) => g.y1)),
+  };
+}
+
+/** Effet d'un segment au point (x, y), avant densité. */
+function segmentProfile(g: Segment, x: number, y: number): number {
+  if (x < g.x0 || x > g.x1 || y < g.y0 || y > g.y1) return 0;
+  const [dx, dy] = [g.bx - g.ax, g.by - g.ay];
+  const [px, py] = [x - g.ax, y - g.ay];
+  const len2 = dx * dx + dy * dy;
+  const t = len2 > 0 ? clamp01((px * dx + py * dy) / len2) : 0;
+  const d2 = ((px - t * dx) ** 2 + (py - t * dy) ** 2) / (g.radius * g.radius);
+  if (d2 >= 1) return 0;
+  if (d2 <= g.inner * g.inner) return 1;
+  return 1 - smoothstep((Math.sqrt(d2) - g.inner) / (1 - g.inner));
+}
+
+/**
+ * Poids complet d'un masque, tracés compris, en un point de la source
+ * (pixels) : la forme (inversée pour un dégradé), puis chaque tracé dans
+ * l'ordre (ajout sans dépasser le plein effet, ou gomme), puis l'inversion
+ * d'un pinceau. Miroir de `StrokeGrid::apply` dans le cœur.
+ */
+export function compileMask(
+  mask: Pick<Mask, "shape" | "invert" | "strokes">,
+  sw: number,
+  sh: number,
+): (x: number, y: number) => number {
+  const brush = mask.shape.kind === "brush";
+  const strokes = (mask.strokes ?? [])
+    .filter((s) => s.points.length > 0)
+    .map((s) => compileStroke(s, sw, sh));
+  const shape = { shape: mask.shape, invert: brush ? false : mask.invert };
+  return (x, y) => {
+    let m = maskWeight(shape, x, y, sw, sh);
+    for (const s of strokes) {
+      if (x < s.x0 || x > s.x1 || y < s.y0 || y > s.y1) continue;
+      let v = 0;
+      for (const g of s.segments) {
+        v = Math.max(v, segmentProfile(g, x, y));
+        if (v >= 1) break;
+      }
+      v *= s.flow;
+      m = s.erase ? m * (1 - v) : m + v * (1 - m);
+    }
+    return brush && mask.invert ? 1 - m : m;
+  };
+}
+
 /** « Linéaire 2 » : numéroté parmi les masques de la même forme. */
 export function maskName(t: TFunction, masks: Mask[], index: number): string {
   const kind = masks[index]?.shape.kind ?? "linear";
@@ -72,15 +183,16 @@ export function maskViewPixels(
   width: number,
   height: number,
   toSource: (fx: number, fy: number) => [number, number],
-  mask: Pick<Mask, "shape" | "invert">,
+  mask: Pick<Mask, "shape" | "invert" | "strokes">,
   sw: number,
   sh: number,
 ): Uint8ClampedArray<ArrayBuffer> {
   const out = new Uint8ClampedArray(width * height * 4);
+  const weight = compileMask(mask, sw, sh);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const [sx, sy] = toSource((x + 0.5) / width, (y + 0.5) / height);
-      const w = maskWeight(mask, sx * sw, sy * sh, sw, sh);
+      const w = weight(sx * sw, sy * sh);
       const i = (y * width + x) * 4;
       out[i] = 230;
       out[i + 1] = 40;
