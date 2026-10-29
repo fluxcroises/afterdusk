@@ -672,15 +672,23 @@ mod tests {
             },
             invert: false,
             hidden: false,
-            strokes: Vec::new(),
+            strokes: vec![crate::develop::settings::Stroke {
+                points: vec![[0.4, 0.2], [0.6, 0.25]],
+                radius: 0.03,
+                feather: 50.0,
+                flow: 100.0,
+                erase: true,
+            }],
         });
         let mut target = DevelopSettings::default();
         target.light.exposure = -0.5;
         target.color.vibrance = 20.0;
         let c = |v: &[&str]| v.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
-        // Masques collés : ceux de la photo copiée remplacent ceux de la cible.
+        // Masques collés, tracés compris : ceux de la photo copiée remplacent
+        // ceux de la cible.
         let masked = paste(none, &target, &from, &c(&["masks"])).unwrap();
         assert_eq!(masked.masks, from.masks);
+        assert_eq!(masked.masks[0].strokes.len(), 1);
         assert_eq!(masked.light.exposure, -0.5);
         let cleared = paste(none, &masked, &DevelopSettings::default(), &c(&["masks"])).unwrap();
         assert!(cleared.masks.is_empty());

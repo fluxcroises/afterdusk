@@ -7,7 +7,7 @@ use std::sync::atomic::AtomicBool;
 
 use afterdusk_lib::db;
 use afterdusk_lib::develop::settings::{
-    DevelopSettings, LocalAdjust, Mask, MaskShape, WhiteBalance,
+    DevelopSettings, LocalAdjust, Mask, MaskShape, Stroke, WhiteBalance,
 };
 use afterdusk_lib::develop::store::{self, ORIGINAL};
 use afterdusk_lib::import::{self, ImportOptions};
@@ -127,6 +127,47 @@ fn reglages_en_base_dans_l_historique_et_le_xmp() {
         .unwrap();
     assert!(develop.contains(r#""version":2"#), "{develop}");
     assert_eq!(DevelopSettings::from_json(&develop).unwrap(), masked);
+    // Pinceau et gomme : version 3 dans le XMP, tracés relus à l'identique.
+    let painted = DevelopSettings {
+        masks: vec![
+            Mask {
+                strokes: vec![Stroke {
+                    points: vec![[0.3, 0.2], [0.5, 0.25], [0.7, 0.2]],
+                    radius: 0.04,
+                    feather: 50.0,
+                    flow: 100.0,
+                    erase: true,
+                }],
+                ..ciel.clone()
+            },
+            Mask {
+                shape: MaskShape::Brush,
+                adjust: LocalAdjust {
+                    shadows: 30.0,
+                    ..LocalAdjust::default()
+                },
+                invert: false,
+                hidden: false,
+                strokes: vec![Stroke {
+                    points: vec![[0.5, 0.8]],
+                    radius: 0.1,
+                    feather: 80.0,
+                    flow: 40.0,
+                    erase: false,
+                }],
+            },
+        ],
+        ..saved.clone()
+    };
+    let painted = store::save(&mut conn, media_id, ORIGINAL, painted, "Pinceau").unwrap();
+    flush_pending_xmp(&conn, 10).unwrap();
+    let develop = xmp::read_sidecar(&xmp_path)
+        .unwrap()
+        .unwrap()
+        .develop
+        .unwrap();
+    assert!(develop.contains(r#""version":3"#), "{develop}");
+    assert_eq!(DevelopSettings::from_json(&develop).unwrap(), painted);
     let hidden_only = DevelopSettings {
         masks: vec![Mask {
             hidden: true,

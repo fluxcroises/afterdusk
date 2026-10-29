@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     fn masque_a_sa_place_dans_l_export_recadre_et_reduit() {
-        use crate::develop::settings::{CropRect, LocalAdjust, Mask, MaskShape};
+        use crate::develop::settings::{CropRect, LocalAdjust, Mask, MaskShape, Stroke};
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("gris.png");
         image::RgbImage::from_pixel(600, 400, image::Rgb([128, 128, 128]))
@@ -363,7 +363,7 @@ mod tests {
             right: 1.0,
             bottom: 1.0,
         };
-        s.masks = vec![Mask {
+        let ellipse = Mask {
             shape: MaskShape::Radial {
                 center: [0.5, 0.5],
                 radius: [0.1, 0.15],
@@ -377,8 +377,27 @@ mod tests {
             invert: false,
             hidden: false,
             strokes: Vec::new(),
-        }];
-        for resize in [Resize::Full, Resize::LongSide(150)] {
+        };
+        // Même largeur au pinceau : un rond de rayon 0,1 du côté long (60
+        // pixels) au centre.
+        let rond = Mask {
+            shape: MaskShape::Brush,
+            strokes: vec![Stroke {
+                points: vec![[0.5, 0.5]],
+                radius: 0.1,
+                feather: 0.0,
+                flow: 100.0,
+                erase: false,
+            }],
+            ..ellipse.clone()
+        };
+        for (mask, resize) in [
+            (&ellipse, Resize::Full),
+            (&ellipse, Resize::LongSide(150)),
+            (&rond, Resize::Full),
+            (&rond, Resize::LongSide(150)),
+        ] {
+            s.masks = vec![mask.clone()];
             let options = RenderOptions {
                 resize,
                 sharpen: Sharpen::None,
@@ -393,7 +412,8 @@ mod tests {
             let (first, last) = (f64::from(dark[0]), f64::from(dark[dark.len() - 1] + 1));
             assert!(
                 (first / w - 0.2).abs() < 1.5 / w && (last / w - 0.4667).abs() < 1.5 / w,
-                "{resize:?} : {first}..{last} sur {w}"
+                "{:?} {resize:?} : {first}..{last} sur {w}",
+                mask.shape
             );
             assert_eq!(
                 dark.len(),

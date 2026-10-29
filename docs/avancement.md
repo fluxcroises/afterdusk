@@ -1070,3 +1070,8 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
   - le tampon grandit au besoin (puissance de deux) ; les liaisons du rendu direct et des passes qui le citent sont alors refaites ;
   - `strokes_apply` dans le shader suit `StrokeGrid::apply` du cœur : même profil adouci, même ordre d'ajout et de gomme.
 - Test d'égalité processeur / carte graphique étendu : gomme sur le dégradé linéaire, pinceau à trois tracés (densités 60 et 100, adoucissement, gomme), pinceau inversé ; image entière, région au zoom, réglages globaux, bruit et netteté, géométrie. Égal à un niveau près (RTX 3060 Ti, de 21 à 109 valeurs différentes d'un niveau).
+- Étape 4, tracés dans l'export, les aperçus, le XMP et le copier-coller : aucun code à ajouter, tout passe déjà par `with_masks` et les tracés sont rangés dans les masques. Tests ajoutés :
+  - export recadré, en pleine définition et réduit à 150 px : un rond de pinceau de rayon 0,1 du côté long tombe à la même place que l'ellipse du test des dégradés (20 % à 46,7 % de la largeur) ;
+  - région du zoom identique à l'image entière avec une gomme sur le dégradé et un pinceau, sous rotation, quart de tour, recadrage et netteté ;
+  - XMP en version 3 avec un dégradé gommé et un pinceau, relu à l'identique ;
+  - copier-coller des masques avec leurs tracés.

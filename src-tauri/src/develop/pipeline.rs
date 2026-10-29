@@ -1690,12 +1690,36 @@ mod tests {
             hidden: false,
             strokes: Vec::new(),
         }];
+        // Tracés qui traversent la région : une gomme sur le dégradé, et un
+        // pinceau.
+        let trait_ = |points: Vec<[f64; 2]>, erase: bool| crate::develop::settings::Stroke {
+            points,
+            radius: 0.08,
+            feather: 60.0,
+            flow: 70.0,
+            erase,
+        };
+        s.masks[0].strokes = vec![trait_(vec![[0.2, 0.3], [0.5, 0.45], [0.8, 0.4]], true)];
+        s.masks.push(Mask {
+            shape: MaskShape::Brush,
+            adjust: LocalAdjust {
+                exposure: -0.8,
+                ..LocalAdjust::default()
+            },
+            invert: false,
+            hidden: false,
+            strokes: vec![trait_(vec![[0.3, 0.7], [0.45, 0.5], [0.6, 0.65]], false)],
+        });
         let p = RenderParams::from_settings(&s, D65_WHITE, Clipping::default()).with_masks(
             &s,
             w.into(),
             h.into(),
         );
-        assert!(p.locals.is_some());
+        assert!(
+            p.locals
+                .as_ref()
+                .is_some_and(|l| l.strokes.iter().all(Option::is_some))
+        );
         let whole_src = WorkingImage::from_raw(&raw, w);
         let whole = geometry::transform(&whole_src, &s.geometry);
         let full = render(&whole, &p).rgba;
