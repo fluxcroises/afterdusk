@@ -105,3 +105,11 @@ Consigner machine et résultats dans `docs/avancement.md`, cocher les critères 
 - [x] Masques copiés sur une autre photo par « Copier les réglages… » (case « Masques »), puis collés.
 
 Mac (2026-10-25, application d'essai sous l'identifiant `app.afterdusk.essai`, bibliothèque d'essai) : l'utilisateur a fait les trois essais ci-dessus, tout fonctionne.
+
+## 8. V0.7, pinceau et gomme (ajouté le 2026-10-30)
+
+- [ ] Mesure du rendu avec des tracés, depuis `src-tauri` : `cargo test --release --test perf_v07 -- --ignored --nocapture`, puis la même commande précédée de `AFTERDUSK_GPU=0`. Critère : usage courant sous 100 ms dans les deux cas, cas extrême sous 100 ms avec la carte graphique (PC : usage courant 7 et 90 ms, cas extrême 15 et 213 ms). Si la compilation échoue sur la « stratégie de panique », précéder la commande de `CARGO_PROFILE_RELEASE_PANIC=unwind`.
+- [ ] Pinceau à l'écran : « + Pinceau », exposition du masque, un glissé peint, Alt + glissé gomme (sur Mac : Option), le calque rouge (O) suit les tracés, [ et ] changent la taille.
+- [ ] Gomme sur un dégradé de ciel, avec « Gommer ».
+- [ ] Tracés sur un RAW, un JPEG et un HEIC d'iPhone en portrait : la même zone à l'aperçu, au zoom 100 % et dans l'export.
+- [ ] Masques avec tracés copiés sur une autre photo par « Copier les réglages… » (case « Masques »).

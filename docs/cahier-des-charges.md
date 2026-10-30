@@ -433,7 +433,7 @@ Objectif : peindre un masque à main levée et retirer l'effet d'une zone de n'i
 - [ ] Pinceau avec taille, adoucissement et densité, tracé visible en direct, sur RAW, JPEG et HEIF
 - [ ] Gomme (Alt maintenu) sur tous les masques, dégradés compris
 - [ ] Même rendu à l'aperçu, au zoom 100 %, à l'export et après relecture du XMP ; tracés dans l'historique et le copier-coller des réglages
-- [ ] Retour visuel d'un réglage en moins de 100 ms avec 8 masques dont des tracés de pinceau longs
+- [ ] Retour visuel d'un réglage en moins de 100 ms avec 8 masques dont des tracés de pinceau longs (PC, 95e centile : usage courant 7 ms avec la carte graphique, 90 ms au processeur seul ; cas extrême, vingt longs tracés qui couvrent l'image plusieurs fois, 15 ms avec la carte graphique ; limite connue, choix de l'utilisateur du 2026-10-30 : 213 ms au processeur seul dans ce cas extrême)
 - Masque automatique qui suit les bords, masques du sujet ou du ciel : plus tard.
 
 ### Distribution : en dernier
