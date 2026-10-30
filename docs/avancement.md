@@ -1105,3 +1105,10 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 
 - Correction seule du profil d'interface, à la demande de l'utilisateur, sans le pinceau et la gomme en cours sur `main` : branche `release/0.6.1` partie de l'étiquette `v0.6.0`, avec la correction (`src/store/profile.ts` et son test, inchangés entre la 0.6.0 et la correction), les numéros 0.6.1 et les notes de version (`docs/notes-de-version/0.6.1.md`, reportées ici). Étiquette `v0.6.1` posée sur cette branche ; l'action de publication crée le brouillon, à relire par l'utilisateur.
 - `main` reste en 0.6.0 jusqu'à la V0.7, qui passera en 0.7.0.
+
+### 2026-10-30 : V0.7, mesure de vitesse avec des tracés
+
+- `tests/perf_v07.rs`, sur le modèle de la V0.6 : six RAW à 2048 px, tous les réglages de la photo, quatre pinceaux de trois tracés de 1 500 points et quatre dégradés gommés par deux tracés de 800 points (courbes de Lissajous qui couvrent l'image plusieurs fois, rayon 0,03, densité 70), exposition d'un pinceau glissée sur 40 valeurs, grilles refaites à chaque réglage.
+- RTX 3060 Ti : 95 % des rendus en 13 ms. Processeur seul : 418 ms au départ.
+- Changements pour le processeur, sans effet sur l'égalité avec la carte graphique (tests verts) : points espacés d'un demi-rayon au lieu d'un quart (aussi dans le calque rouge de l'interface), cases de la grille d'un demi-rayon, inverses de la longueur et du rayon au carré et boîte englobante précalculés par segment. 255 puis 239 ms.
+- Le coût restant est inhérent au scénario : environ soixante segments à examiner par pixel. Décision à prendre avec l'utilisateur.

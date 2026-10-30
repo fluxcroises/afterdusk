@@ -98,7 +98,7 @@ function compileStroke(s: Stroke, sw: number, sh: number): CompiledStroke {
   if (first) {
     let last = first;
     for (const p of pts.slice(1)) {
-      if (Math.hypot(p[0] - last[0], p[1] - last[1]) >= radius * 0.25) {
+      if (Math.hypot(p[0] - last[0], p[1] - last[1]) >= radius * 0.5) {
         push(last, p);
         last = p;
       }

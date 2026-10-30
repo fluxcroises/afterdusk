@@ -65,21 +65,57 @@ pub struct Segment {
     /// Indice du tracé dans le masque : les segments d'un même tracé se
     /// suivent dans chaque case.
     pub stroke: u32,
+    /// Précalculs du rendu processeur : direction, inverses de la longueur
+    /// au carré et du rayon au carré, boîte englobante (rayon compris).
+    d: [f64; 2],
+    inv_len2: f64,
+    inv_r2: f64,
+    bbox: [f64; 4],
 }
 
 impl Segment {
+    fn new(
+        a: [f64; 2],
+        b: [f64; 2],
+        radius: f64,
+        inner: f64,
+        flow: f64,
+        erase: bool,
+        stroke: u32,
+    ) -> Self {
+        let d = [b[0] - a[0], b[1] - a[1]];
+        let len2 = d[0] * d[0] + d[1] * d[1];
+        Self {
+            a,
+            b,
+            radius,
+            inner,
+            flow,
+            erase,
+            stroke,
+            d,
+            inv_len2: if len2 > 0.0 { 1.0 / len2 } else { 0.0 },
+            inv_r2: 1.0 / (radius * radius),
+            bbox: [
+                a[0].min(b[0]) - radius,
+                a[1].min(b[1]) - radius,
+                a[0].max(b[0]) + radius,
+                a[1].max(b[1]) + radius,
+            ],
+        }
+    }
+
     /// Effet du tracé au point `p` (avant densité), de 0 à 1.
     fn profile(&self, p: [f64; 2]) -> f64 {
-        let (dx, dy) = (self.b[0] - self.a[0], self.b[1] - self.a[1]);
+        if p[0] < self.bbox[0] || p[1] < self.bbox[1] || p[0] > self.bbox[2] || p[1] > self.bbox[3]
+        {
+            return 0.0;
+        }
+        let [dx, dy] = self.d;
         let (px, py) = (p[0] - self.a[0], p[1] - self.a[1]);
-        let len2 = dx * dx + dy * dy;
-        let t = if len2 > 0.0 {
-            ((px * dx + py * dy) / len2).clamp(0.0, 1.0)
-        } else {
-            0.0
-        };
+        let t = ((px * dx + py * dy) * self.inv_len2).clamp(0.0, 1.0);
         let (ex, ey) = (px - t * dx, py - t * dy);
-        let d2 = (ex * ex + ey * ey) / (self.radius * self.radius);
+        let d2 = (ex * ex + ey * ey) * self.inv_r2;
         if d2 >= 1.0 {
             0.0
         } else if d2 <= self.inner * self.inner {
@@ -127,17 +163,17 @@ impl StrokeGrid {
             let radius = (s.radius * long_side * to_output.scale).max(0.5);
             let inner = 1.0 - s.feather / 100.0;
             let mut push = |a: [f64; 2], b: [f64; 2]| {
-                segments.push(Segment {
+                segments.push(Segment::new(
                     a,
                     b,
                     radius,
                     inner,
-                    flow: s.flow / 100.0,
-                    erase: s.erase,
-                    stroke: k as u32,
-                });
+                    s.flow / 100.0,
+                    s.erase,
+                    k as u32,
+                ));
             };
-            // Points trop proches du précédent (moins d'un quart de rayon)
+            // Points trop proches du précédent (moins d'un demi-rayon)
             // sautés : la ligne brisée garde sa forme.
             let mut points = s
                 .points
@@ -147,7 +183,7 @@ impl StrokeGrid {
             let mut last = first;
             let mut drawn = false;
             for p in points {
-                if (p[0] - last[0]).hypot(p[1] - last[1]) >= radius * 0.25 {
+                if (p[0] - last[0]).hypot(p[1] - last[1]) >= radius * 0.5 {
                     push(last, p);
                     last = p;
                     drawn = true;
@@ -160,11 +196,11 @@ impl StrokeGrid {
         if segments.is_empty() {
             return None;
         }
-        // Grille sur les segments visibles ; une case de la taille du rayon
-        // le plus courant.
+        // Grille sur les segments visibles ; une case d'un demi-rayon le plus
+        // courant : peu de segments à examiner par pixel.
         let mut radii: Vec<f64> = segments.iter().map(|s| s.radius).collect();
         radii.sort_by(f64::total_cmp);
-        let mut cell = radii[radii.len() / 2].clamp(CELL_MIN, CELL_MAX);
+        let mut cell = (radii[radii.len() / 2] * 0.5).clamp(CELL_MIN, CELL_MAX);
         let (x0, y0, x1, y1) = segments.iter().fold(
             (f64::MAX, f64::MAX, f64::MIN, f64::MIN),
             |(x0, y0, x1, y1), s| {
