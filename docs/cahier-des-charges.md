@@ -430,10 +430,10 @@ Objectif : régler une partie de la photo seulement, un ciel, un visage, le sol 
 
 Objectif : peindre un masque à main levée et retirer l'effet d'une zone de n'importe quel masque (choix de l'utilisateur, 2026-10-29 ; décision 0015).
 
-- [ ] Pinceau avec taille, adoucissement et densité, tracé visible en direct, sur RAW, JPEG et HEIF
-- [ ] Gomme (Alt maintenu) sur tous les masques, dégradés compris
-- [ ] Même rendu à l'aperçu, au zoom 100 %, à l'export et après relecture du XMP ; tracés dans l'historique et le copier-coller des réglages
-- [ ] Retour visuel d'un réglage en moins de 100 ms avec 8 masques dont des tracés de pinceau longs (PC, 95e centile : usage courant 7 ms avec la carte graphique, 90 ms au processeur seul ; cas extrême, vingt longs tracés qui couvrent l'image plusieurs fois, 15 ms avec la carte graphique ; limite connue, choix de l'utilisateur du 2026-10-30 : 213 ms au processeur seul dans ce cas extrême)
+- [x] Pinceau avec taille, adoucissement et densité, tracé visible en direct, sur RAW, JPEG et HEIF
+- [x] Gomme (Alt maintenu, Option sur Mac) sur tous les masques, dégradés compris
+- [x] Même rendu à l'aperçu, au zoom 100 %, à l'export et après relecture du XMP ; tracés dans l'historique et le copier-coller des réglages
+- [x] Retour visuel d'un réglage en moins de 100 ms avec 8 masques dont des tracés de pinceau longs (95e centile, usage courant : 7 ms sur PC et 9 ms sur Mac M3 Pro avec la carte graphique, 90 ms et 85 ms au processeur seul ; cas extrême, vingt longs tracés qui couvrent l'image plusieurs fois : 15 et 12 ms avec la carte graphique ; limite connue, choix de l'utilisateur du 2026-10-30 : 213 et 220 ms au processeur seul dans ce cas extrême)
 - Masque automatique qui suit les bords, masques du sujet ou du ciel : plus tard.
 
 ### Distribution : en dernier
