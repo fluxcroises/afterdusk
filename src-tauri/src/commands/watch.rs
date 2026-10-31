@@ -40,10 +40,10 @@ pub struct WatchService {
 }
 
 impl WatchService {
-    /// `reception` : dossier de réception FTP, importé à la fin de chaque
-    /// envoi plutôt que d'après la taille (un envoi Wi-Fi peut marquer des
-    /// pauses).
-    pub fn start(app: AppHandle, reception: PathBuf) -> Self {
+    /// `receptions` : dossiers de réception (FTP, boîtier relié), importés
+    /// fichier par fichier à la fin de chaque réception plutôt que d'après
+    /// la taille (un envoi Wi-Fi peut marquer des pauses).
+    pub fn start(app: AppHandle, receptions: Vec<PathBuf>) -> Self {
         let (sender, receiver) = mpsc::channel::<Message>();
         let events = sender.clone();
         std::thread::spawn(move || {
@@ -66,7 +66,7 @@ impl WatchService {
                         .collect();
                     let watched: Vec<WatchedFolder> = folders
                         .iter()
-                        .filter(|f| f.path != reception)
+                        .filter(|f| !receptions.contains(&f.path))
                         .cloned()
                         .collect();
                     watcher = start_watcher(&watched, events.clone());
@@ -87,7 +87,7 @@ impl WatchService {
                     Ok(Message::Path(path)) => {
                         if let Some(folder) = folders
                             .iter()
-                            .find(|f| f.path != reception && path.starts_with(&f.path))
+                            .find(|f| !receptions.contains(&f.path) && path.starts_with(&f.path))
                             && watch::arrived(folder, &path)
                         {
                             tracker.note(path, Instant::now());
@@ -99,7 +99,7 @@ impl WatchService {
                 let now = Instant::now();
                 if now.duration_since(last_scan) >= RESCAN {
                     last_scan = now;
-                    for folder in folders.iter().filter(|f| f.path != reception) {
+                    for folder in folders.iter().filter(|f| !receptions.contains(&f.path)) {
                         for path in watch::arrivals(folder) {
                             tracker.note(path, now);
                         }
@@ -124,7 +124,7 @@ impl WatchService {
         }
     }
 
-    /// Fichier reçu en entier dans le dossier de réception FTP.
+    /// Fichier reçu en entier dans un dossier de réception.
     pub fn received(&self, path: PathBuf) {
         if let Ok(sender) = self.sender.lock() {
             let _ = sender.send(Message::Received(path));
@@ -163,6 +163,7 @@ fn import_ready(
     tracker: &mut Tracker,
 ) {
     let state = app.state::<AppState>();
+    let tether_reception = crate::tether::reception_dir(&state.data_dir());
     let now = Instant::now();
     for folder in folders {
         let files: Vec<PathBuf> = ready
@@ -180,6 +181,7 @@ fn import_ready(
             continue;
         };
         let queue = app.state::<PreviewQueue>();
+        let sent = files.clone();
         let result = state.connect().ok().map(|mut conn| {
             watch::import_files(&mut conn, folder, files, &cancel, |p| {
                 // Aperçu en priorité : la photo s'affiche dans le tri au plus vite.
@@ -189,6 +191,14 @@ fn import_ready(
             })
         });
         release_slot(app);
+        if let Some(Ok(_)) = &result
+            && folder.path == tether_reception
+            && let Ok(conn) = state.connect()
+        {
+            // L'original reste sur la carte du boîtier : la copie de
+            // réception n'a plus d'usage une fois dans la bibliothèque.
+            let _ = watch::remove_imported(&conn, folder.library_id, &sent);
+        }
         if let Some(Ok(Some(imported))) = result {
             let _ = app.emit(EVENT_IMPORTED, imported);
         }
@@ -198,12 +208,15 @@ fn import_ready(
 #[tauri::command]
 pub async fn watch_folders(state: State<'_, AppState>) -> CommandResult<Vec<WatchedFolder>> {
     let conn = state.connect()?;
-    // Le dossier de réception FTP se règle avec la réception, pas ici.
-    let reception = crate::ftp::reception_dir(&state.data_dir());
+    // Les dossiers de réception se règlent avec leur réception, pas ici.
+    let receptions = [
+        crate::ftp::reception_dir(&state.data_dir()),
+        crate::tether::reception_dir(&state.data_dir()),
+    ];
     blocking(move || {
         Ok(watch::list(&conn)?
             .into_iter()
-            .filter(|f| f.path != reception)
+            .filter(|f| !receptions.contains(&f.path))
             .collect())
     })
     .await

@@ -13,6 +13,13 @@ pub mod session;
 #[cfg(windows)]
 pub mod wpd;
 
+use std::path::{Path, PathBuf};
+
+/// Dossier de réception des boîtiers reliés, dans les données d'Afterdusk.
+pub fn reception_dir(data_dir: &Path) -> PathBuf {
+    data_dir.join("reception-boitier")
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum TetherError {
     #[error("opération PTP {0:04X} refusée : elle n'est pas dans la liste des lectures")]

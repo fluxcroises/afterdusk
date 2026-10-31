@@ -143,11 +143,15 @@ pub fn run() {
                 app.state::<AppState>().db_path.clone(),
             );
             app.manage(commands::devices::DeviceWatch::start(app.handle().clone()));
-            let reception = ftp::reception_dir(&app.state::<AppState>().data_dir());
+            let data_dir = app.state::<AppState>().data_dir();
             app.manage(commands::watch::WatchService::start(
                 app.handle().clone(),
-                reception,
+                vec![
+                    ftp::reception_dir(&data_dir),
+                    tether::reception_dir(&data_dir),
+                ],
             ));
+            app.manage(commands::tether::TetherService::start(app.handle().clone()));
             app.manage(commands::ftp::FtpService::default());
             app.manage(commands::updates::PendingUpdate::default());
             // Réception FTP : démarrée seulement si l'utilisateur l'a activée.
@@ -226,6 +230,9 @@ pub fn run() {
             commands::video::clips_rename,
             commands::video::clips_delete,
             commands::video::clips_export,
+            commands::tether::tether_status,
+            commands::tether::tether_start,
+            commands::tether::tether_stop,
             commands::watch::watch_folders,
             commands::watch::watch_folder_add,
             commands::watch::watch_folder_update,

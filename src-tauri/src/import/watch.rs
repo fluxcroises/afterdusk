@@ -450,6 +450,26 @@ pub fn import_files(
     }))
 }
 
+/// Supprime ceux des `files` qui sont déjà dans la bibliothèque ; rend le
+/// nombre de fichiers supprimés. Réservé aux copies de réception, jamais aux
+/// originaux.
+pub fn remove_imported(
+    conn: &Connection,
+    library_id: i64,
+    files: &[PathBuf],
+) -> Result<usize, ImportError> {
+    let known = known_fingerprints(conn, library_id)?;
+    Ok(files
+        .iter()
+        .filter(|p| {
+            format_of(p)
+                .and_then(|f| scan::describe(p, f).ok())
+                .is_some_and(|d| known.contains(&d.fingerprint))
+        })
+        .filter(|p| std::fs::remove_file(p).is_ok())
+        .count())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
