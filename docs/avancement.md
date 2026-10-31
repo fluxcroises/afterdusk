@@ -1115,3 +1115,8 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 - Choix de l'utilisateur : le critère se mesure avec le rendu de l'application (la carte graphique) ; au processeur seul, le cas extrême est une limite connue. Une mesure « usage courant » est ajoutée (deux pinceaux de trois coups de 300 points, deux dégradés gommés d'un coup de 200 points, quatre dégradés) : 7 ms avec la carte graphique, 90 ms au processeur seul, sous le seuil. Cas extrême : 15 ms avec la carte graphique, 213 ms au processeur seul. Le test ne vérifie le seuil du cas extrême qu'avec la carte graphique.
 - Guide Confluence « Retouches locales (masques) » complété (version 3 de la page) : pinceau, gomme, réglages du pinceau, raccourcis, historique, copier-coller.
 - Reste pour cocher les critères de la V0.7 : la CI verte sous Windows et macOS, et la séance sur le Mac (`docs/verification-mac.md`, section 8).
+
+### 2026-10-31 : version 0.6.1 publiée, fenêtre d'accueil à taille fixe
+
+- Version 0.6.1 publiée par l'utilisateur le 2026-10-30 (profil d'interface gardé au lancement).
+- Fenêtre d'accueil à taille fixe (Jira AFT-23, demande de l'utilisateur) : 1 040 × 700, ni redimensionnable ni agrandissable (`tauri.conf.json` : `resizable` et `maximizable` à faux, ce qui couvre aussi le bouton vert de macOS et le double-clic sur la barre de titre) ; sous Windows, le bouton Agrandir dessiné par l'application est retiré. Test : configuration de la fenêtre, boutons sans Agrandir. Pas encore vu à l'écran.

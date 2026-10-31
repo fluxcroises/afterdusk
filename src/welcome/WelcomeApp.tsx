@@ -195,7 +195,7 @@ function Hero({ highlight }: { highlight: Highlight | null }) {
         <span className="welcome-hero-caption" data-tauri-drag-region>
           {caption}
         </span>
-        {drawsOwnMenus && <WindowControls />}
+        {drawsOwnMenus && <WindowControls maximizable={false} />}
       </div>
       <div className="welcome-hero-bottom" data-tauri-drag-region>
         <div className="welcome-identity">
