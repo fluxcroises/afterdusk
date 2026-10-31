@@ -17,6 +17,7 @@
 
 mod common;
 
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use afterdusk_lib::develop::gpu::GpuRenderer;
@@ -178,9 +179,14 @@ fn percentile(sorted: &[Duration], p: f64) -> Duration {
     sorted[((sorted.len() - 1) as f64 * p).round() as usize]
 }
 
+/// Une mesure à la fois : deux scénarios lancés ensemble se partageraient
+/// les cœurs du processeur et fausseraient les deux.
+static ONE_AT_A_TIME: Mutex<()> = Mutex::new(());
+
 /// 95e centile du rendu des six RAW avec ces réglages, et le moteur utilisé
 /// (vrai : carte graphique).
 fn measure(settings: fn() -> DevelopSettings) -> (Duration, bool) {
+    let _turn = ONE_AT_A_TIME.lock().unwrap_or_else(|e| e.into_inner());
     let gpu = if std::env::var_os("AFTERDUSK_GPU").is_some_and(|v| v == "0") {
         None
     } else {
