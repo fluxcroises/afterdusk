@@ -13,6 +13,7 @@ pub mod library;
 pub mod metadata;
 pub mod pdf;
 pub mod raw;
+pub mod tether;
 pub mod updates;
 pub mod video;
 
