@@ -436,11 +436,11 @@ Objectif : peindre un masque à main levée et retirer l'effet d'une zone de n'i
 - [x] Retour visuel d'un réglage en moins de 100 ms avec 8 masques dont des tracés de pinceau longs (95e centile, usage courant : 7 ms sur PC et 9 ms sur Mac M3 Pro avec la carte graphique, 90 ms et 85 ms au processeur seul ; cas extrême, vingt longs tracés qui couvrent l'image plusieurs fois : 15 et 12 ms avec la carte graphique ; limite connue, choix de l'utilisateur du 2026-10-30 : 213 et 220 ms au processeur seul dans ce cas extrême)
 - Masque automatique qui suit les bords, masques du sujet ou du ciel : plus tard.
 
-### V0.8 : Connexion au boîtier (Windows, Fujifilm X-T50)
+### V0.8 : Connexion au boîtier (Windows, Fujifilm X-H2)
 
-Objectif : une photo déclenchée sur le boîtier relié en USB arrive d'elle-même dans Afterdusk (choix de l'utilisateur, 2026-10-31). D'abord sous Windows, par Windows Portable Devices (sans remplacer le pilote USB), avec le Fujifilm X-T50 de l'utilisateur ; une sonde fixe d'abord la méthode (décision 0016 à venir).
+Objectif : une photo déclenchée sur le boîtier relié en USB arrive d'elle-même dans Afterdusk (choix de l'utilisateur, 2026-10-31). D'abord sous Windows, par Windows Portable Devices (sans remplacer le pilote USB), avec le Fujifilm X-H2 de l'utilisateur ; méthode fixée par la [décision 0016](decisions/0016-connexion-au-boitier.md) : PTP à travers Windows Portable Devices, opérations de lecture seulement, photos laissées sur la carte.
 
-- [ ] Avec un Fujifilm X-T50 relié en USB sous Windows, chaque photo déclenchée arrive dans Afterdusk, copiée et vérifiée, dans l'album de la séance
+- [ ] Avec un Fujifilm X-H2 relié en USB sous Windows, chaque photo déclenchée arrive dans Afterdusk, copiée et vérifiée, dans l'album de la séance
 - [ ] Moins de 5 s entre le déclenchement et l'affichage, en JPEG comme en RAW
 - [ ] Rien n'est écrit ni supprimé sur le boîtier ni sur sa carte, et un débranchement en cours de séance ne perd aucune photo
 - macOS (libgphoto2), autres marques, déclenchement depuis Afterdusk et visée en direct : plus tard.
