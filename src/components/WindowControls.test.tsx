@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import config from "../../src-tauri/tauri.conf.json";
+import macos from "../../src-tauri/tauri.macos.conf.json";
+import windows from "../../src-tauri/tauri.windows.conf.json";
 
 vi.mock("@tauri-apps/api/core", async (original) => ({
   ...(await original<typeof import("@tauri-apps/api/core")>()),
@@ -18,8 +20,14 @@ await i18n.changeLanguage("fr");
 const { WindowControls } = await import("./WindowControls");
 
 describe("fenêtre d'accueil à taille fixe", () => {
-  it("ni agrandie ni redimensionnée (Tauri)", () => {
-    const welcome = config.app.windows.find((w) => w.label === "welcome");
+  // Les fichiers propres à Windows et à macOS remplacent la liste entière des
+  // fenêtres : chacun doit le dire.
+  it.each([
+    ["commune", config],
+    ["Windows", windows],
+    ["macOS", macos],
+  ])("ni agrandie ni redimensionnée (configuration %s)", (_, conf) => {
+    const welcome = conf.app.windows.find((w) => w.label === "welcome");
     expect(welcome).toMatchObject({ resizable: false, maximizable: false });
   });
 

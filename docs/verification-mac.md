@@ -113,3 +113,4 @@ Mac (2026-10-25, application d'essai sous l'identifiant `app.afterdusk.essai`, b
 - [ ] Gomme sur un dégradé de ciel, avec « Gommer ».
 - [ ] Tracés sur un RAW, un JPEG et un HEIC d'iPhone en portrait : la même zone à l'aperçu, au zoom 100 % et dans l'export.
 - [ ] Masques avec tracés copiés sur une autre photo par « Copier les réglages… » (case « Masques »).
+- [ ] Fenêtre d'accueil à taille fixe : bouton vert grisé, ni redimensionnable par les bords, ni agrandie au double-clic sur la barre de titre.
