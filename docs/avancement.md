@@ -1128,3 +1128,7 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 - Mesure avec la carte graphique (Metal) : usage courant 9 ms, cas extrême 12 ms au 95e centile.
 - Mesure au processeur seul faussée : les deux scénarios ont tourné en même temps et se sont partagé les cœurs (162 ms pour l'usage courant, 532 ms pour le cas extrême). Le guide donné à l'utilisateur ne précisait pas `--test-threads 1`, utilisé sur le PC. Le test prend désormais un verrou : une seule mesure à la fois, quelle que soit la commande. Mesure à refaire.
 - Mesure au processeur seul refaite sur le Mac, une mesure à la fois : usage courant 85 ms, cas extrême 220 ms (limite connue). Les quatre critères de la V0.7 sont cochés, avec la CI verte sous Windows et macOS sur le dernier changement de code (16d5e36). **V0.7 terminée.**
+
+### 2026-10-31 (suite) : préparation de la version 0.7.0
+
+- Projet passé en 0.7.0 (`package.json`, `package-lock.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`). Notes de version dans `docs/notes-de-version/0.7.0.md` : pinceau et gomme, fenêtre d'accueil à taille fixe, avertissement sur les versions antérieures qui refusent les photos avec tracés, installation. Étiquette `v0.7.0` posée ; le brouillon est à relire par l'utilisateur.
