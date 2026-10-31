@@ -15,6 +15,7 @@ import { useLayout } from "./store/layout";
 import { useLibrary } from "./store/library";
 import { startSecondarySync } from "./secondary/sync";
 import { useNavigation } from "./store/navigation";
+import { type TetherStatus, useTether } from "./store/tether";
 import { type BackgroundWarning, useWarnings } from "./store/warnings";
 import {
   EVENT_OPEN_MAIN,
@@ -67,6 +68,7 @@ export function useAppEvents(label: WindowLabel): void {
     if (!isTauri()) return;
     void useImport.getState().loadLibraries();
     void useDevices.getState().load();
+    void useTether.getState().load();
     const imp = useImport.getState();
     const subscriptions = [
       // Carte insérée ou retirée (relevé du cœur toutes les secondes).
@@ -104,12 +106,17 @@ export function useAppEvents(label: WindowLabel): void {
       events.onImportFinished(imp.onFinished),
       // Photos arrivées d'un dossier surveillé : ajoutées à la grille, la
       // photo affichée ne change pas.
-      listen<{ libraryId: number; mediaIds: number[] }>("watch-imported", (e) => {
+      listen<{ folderId: number; libraryId: number; mediaIds: number[] }>("watch-imported", (e) => {
         const library = useLibrary.getState();
         if (library.libraryId !== e.payload.libraryId) return;
-        void library.reloadAlbums().then(() => library.reloadMedia());
+        void library
+          .reloadAlbums()
+          .then(() => library.reloadMedia())
+          // Photo d'une séance reliée au boîtier : affichée en grand.
+          .then(() => useTether.getState().imported(e.payload));
         if (useAnalysis.getState().auto) void useAnalysis.getState().run(null);
       }),
+      listen<TetherStatus>("tether-status", (e) => useTether.getState().onStatus(e.payload)),
       listen<{ mediaId: number }>("preview-ready", (e) =>
         useLibrary.getState().previewReady(e.payload.mediaId),
       ),

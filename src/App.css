@@ -5332,3 +5332,21 @@ fieldset > legend.settings-block-title {
   background: color-mix(in srgb, var(--ad-accent) 22%, var(--ad-surface));
   border-color: var(--ad-accent);
 }
+
+/* Séance reliée au boîtier : voyant de connexion, indication après un débranchement. */
+.banner .tether-live {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ad-success);
+}
+
+.tether-banner .tether-hint {
+  color: var(--ad-text-secondary);
+}
+
+.tether-dialog .field-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}

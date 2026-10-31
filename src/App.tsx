@@ -8,6 +8,7 @@ import { AboutDialog } from "./components/AboutDialog";
 import { LocateDialog } from "./components/LocateDialog";
 import { TimeFixDialog } from "./components/TimeFixDialog";
 import { DeviceBanner } from "./components/DeviceBanner";
+import { TetherBanner } from "./components/TetherBanner";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { PerfOverlay } from "./components/PerfOverlay";
@@ -47,6 +48,7 @@ export default function App() {
     <div className="app" data-dropping={dropping || undefined}>
       {!immersive && <TopBar />}
       {!immersive && <DeviceBanner label="main" />}
+      {!immersive && <TetherBanner />}
       {!immersive && <OfflineBanner />}
       {!immersive && <UpdateBanner />}
       <Current />

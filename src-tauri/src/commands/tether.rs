@@ -71,6 +71,8 @@ pub struct TetherStatus {
     pub connected: bool,
     pub library_id: Option<i64>,
     pub album_name: String,
+    /// Dossier de réception : ses imports (`watch-imported`) sont ceux de la séance.
+    pub folder_id: Option<i64>,
     /// Photos reçues pendant la séance.
     pub received: u32,
     /// Place restante sur la carte (estimation du boîtier).
@@ -83,7 +85,11 @@ pub struct TetherStatus {
 }
 
 enum Message {
-    Start { library_id: i64, album_name: String },
+    Start {
+        library_id: i64,
+        album_name: String,
+        folder_id: i64,
+    },
     Stop,
 }
 
@@ -109,12 +115,14 @@ impl TetherService {
                     Ok(Message::Start {
                         library_id,
                         album_name,
+                        folder_id,
                     }) => {
                         current = TetherStatus {
                             camera: current.camera.clone(),
                             active: true,
                             library_id: Some(library_id),
                             album_name,
+                            folder_id: Some(folder_id),
                             ..TetherStatus::default()
                         };
                         last_detect = None;
@@ -224,8 +232,9 @@ pub async fn tether_start(
     let conn = state.connect()?;
     let reception = tether::reception_dir(&state.data_dir());
     let album = album_name.clone();
-    let pending = blocking(move || {
-        watch::ensure_reception(&conn, &reception, library_id, &album, &settings, true)?;
+    let (folder_id, pending) = blocking(move || {
+        let folder_id =
+            watch::ensure_reception(&conn, &reception, library_id, &album, &settings, true)?;
         // Copies d'une séance précédente déjà dans la bibliothèque.
         let leftovers: Vec<PathBuf> = walkdir::WalkDir::new(&reception)
             .into_iter()
@@ -234,10 +243,8 @@ pub async fn tether_start(
             .map(|e| e.into_path())
             .collect();
         watch::remove_imported(&conn, library_id, &leftovers)?;
-        Ok(leftovers
-            .into_iter()
-            .filter(|p| p.exists())
-            .collect::<Vec<_>>())
+        let pending: Vec<PathBuf> = leftovers.into_iter().filter(|p| p.exists()).collect();
+        Ok((folder_id, pending))
     })
     .await?;
     watch_service.reload();
@@ -249,6 +256,7 @@ pub async fn tether_start(
     service.send(Message::Start {
         library_id,
         album_name,
+        folder_id,
     });
     Ok(())
 }
