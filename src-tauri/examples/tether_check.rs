@@ -1,6 +1,6 @@
 //! Essai du transport PTP de Windows avec un vrai boîtier (V0.8, étape 2a) :
 //! fiche d'identité, place restante, puis lecture de la dernière photo de la
-//! carte dans `dossier`. Rien n'est écrit sur le boîtier.
+//! carte dans `dossier` (attendue au besoin). Rien n'est écrit sur le boîtier.
 //!
 //!   cargo run --example tether_check -- <dossier>
 
@@ -39,8 +39,16 @@ fn main() -> Result<(), afterdusk_lib::tether::TetherError> {
     );
     println!("place restante : {} photos", camera.remaining_shots()?);
     println!("changements en attente : {:?}", camera.changes()?);
-    let handles = camera.handles()?;
+    let mut handles = camera.handles()?;
     println!("{} objets sur la carte", handles.len());
+    if handles.is_empty() {
+        println!("déclenche une photo (2 min au plus)");
+        let deadline = Instant::now() + std::time::Duration::from_secs(120);
+        while handles.is_empty() && Instant::now() < deadline {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            handles = camera.handles()?;
+        }
+    }
     let Some(&last) = handles.last() else {
         return Ok(());
     };
