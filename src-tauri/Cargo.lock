@@ -85,6 +85,7 @@ dependencies = [
  "walkdir",
  "wgpu",
  "windows",
+ "windows-core",
  "xmp_toolkit",
 ]
 

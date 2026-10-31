@@ -70,6 +70,7 @@ tauri-plugin-updater = "2"
 # extensions HEIF/HEVC de Microsoft ; ImageIO sous macOS.
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [
+  "Win32_Devices_PortableDevices",
   "Win32_Foundation",
   "Win32_Graphics_Imaging",
   "Win32_System_Com",
@@ -82,6 +83,10 @@ windows = { version = "0.62", features = [
 objc2-core-foundation = "0.3"
 objc2-core-graphics = "0.3"
 objc2-image-io = "0.3"
+
+# Sonde du tethering (examples/tether_probe.rs) : `#[implement]` cite `windows_core`.
+[target.'cfg(windows)'.dev-dependencies]
+windows-core = "0.62"
 
 [dev-dependencies]
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
