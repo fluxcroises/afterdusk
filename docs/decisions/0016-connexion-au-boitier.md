@@ -1,6 +1,6 @@
 # 0016. Connexion au boîtier sous Windows
 
-Date : 2026-10-31 · Statut : **adoptée**, au choix de l'utilisateur, d'après deux sondes avec son Fujifilm X-H2
+Date : 2026-10-31 (complétée le même jour après l'essai du débranchement) · Statut : **adoptée**, au choix de l'utilisateur, d'après deux sondes avec son Fujifilm X-H2
 
 ## Contexte
 
@@ -18,9 +18,10 @@ Ce que les sondes (`examples/tether_probe.rs`, `examples/ptp_probe.rs`) ont mont
 1. **PTP à travers Windows Portable Devices** : pas de pilote remplacé, pas de bibliothèque tierce.
 2. **Droit d'écriture à l'ouverture, opérations de lecture seulement** (accord de l'utilisateur, 2026-10-31) : une liste fermée d'opérations PTP, toutes de lecture (fiche d'identité, mémoires, liste et fiche des objets, lecture d'un objet, valeur d'une propriété), vérifiée par un test. Aucune opération qui écrive ou supprime n'est jamais envoyée.
 3. **Relevé toutes les demi-secondes** de la propriété 0xD212 et de la liste des objets ; chaque nouvel objet est lu, écrit dans la bibliothèque, vérifié par somme de contrôle, puis importé par le chemin habituel dans l'album de la séance.
-4. **Les photos restent sur la carte** : Afterdusk ne fait que les copier. Après un débranchement, les photos de la carte prises pendant la séance et pas encore copiées sont reprises au rebranchement.
-5. **Place restante sur la carte** (D20E) affichée pendant la séance, pour prévenir avant « carte pleine ».
-6. Fujifilm d'abord (le X-H2 de l'utilisateur ; les boîtiers Fujifilm récents partagent ce protocole). macOS (libgphoto2), les autres marques, le déclenchement depuis Afterdusk et la visée en direct viendront plus tard.
+4. **Les photos restent sur la carte** : Afterdusk ne fait que les copier. Chaque photo est copiée dès qu'elle paraît, car le boîtier ne liste que les photos prises depuis le branchement : à chaque rebranchement, sa liste repart de zéro et ses noms de `DSCF0001` (essai du 2026-10-31). Une photo prise câble débranché, ou pas encore copiée au moment d'un débranchement, reste sur la carte mais n'est plus visible par la connexion : Afterdusk le signale au rebranchement et propose de l'importer depuis la carte. Les photos déjà dans la bibliothèque y sont reconnues et ne sont pas importées deux fois.
+5. **Réglage conseillé du boîtier** : profil de connexion « 3: USB TETHER SHOOTING AUTO ». D'après le manuel du X-H2, câble débranché, le boîtier enregistre alors sur la carte ; en « 4: USB TETHER SHOOTING FIXED », il reste en prise de vue reliée et n'enregistre rien.
+6. **Place restante** (D20E) affichée pendant la séance, pour prévenir avant « carte pleine ». C'est une estimation du boîtier : elle est passée de 35 à 38 après un rebranchement, alors que toutes les photos étaient toujours sur la carte.
+7. Fujifilm d'abord (le X-H2 de l'utilisateur ; les boîtiers Fujifilm récents partagent ce protocole). macOS (libgphoto2), les autres marques, le déclenchement depuis Afterdusk et la visée en direct viendront plus tard.
 
 ## Conséquences
 
