@@ -9,6 +9,7 @@
 
 pub mod fake;
 pub mod ptp;
+pub mod session;
 #[cfg(windows)]
 pub mod wpd;
 
@@ -28,4 +29,6 @@ pub enum TetherError {
     Device(String),
     #[error("réception : {0}")]
     Io(#[from] std::io::Error),
+    #[error("photos reçues : {0}")]
+    Sqlite(#[from] rusqlite::Error),
 }
