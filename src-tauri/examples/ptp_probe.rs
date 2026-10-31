@@ -3,7 +3,12 @@
 //! étendues »), sans changer de pilote. Elle ne demande au boîtier que des
 //! opérations de lecture : sa fiche d'identité (opérations, annonces et
 //! propriétés qu'il connaît), ses mémoires et ses objets, la valeur de
-//! propriétés. Aucune opération qui écrive ou supprime n'est envoyée.
+//! propriétés. Aucune opération qui écrive ou supprime n'est envoyée : seules
+//! celles de `ALLOWED` passent.
+//!
+//! Windows n'accepte ces commandes que d'un programme qui a ouvert l'appareil
+//! avec droit d'écriture (accord de l'utilisateur, 2026-10-31) ; ce droit ne
+//! sert à rien d'autre ici.
 //!
 //! Puis, pendant quelques minutes, elle relève toutes les demi-secondes les
 //! objets du boîtier et la propriété 0xD212 que Fujifilm utilise en prise de
@@ -34,7 +39,9 @@ mod probe {
     use windows::Win32::System::Variant::VT_UI4;
     use windows::core::{PCWSTR, PWSTR, Result, w};
 
-    const READ_ONLY: u32 = 0x8000_0000;
+    /// GENERIC_READ | GENERIC_WRITE : exigé par Windows pour toute commande
+    /// PTP, même de lecture.
+    const READ_WRITE: u32 = 0xC000_0000;
     const CHUNK: u32 = 256 * 1024;
 
     // Opérations PTP de lecture (ISO 15740).
@@ -45,6 +52,14 @@ mod probe {
     const GET_DEVICE_PROP_VALUE: u16 = 0x1015;
     /// Propriété Fujifilm des changements en prise de vue reliée.
     const FUJI_EVENTS: u32 = 0xD212;
+    /// Seules opérations envoyées au boîtier : toutes de lecture.
+    const ALLOWED: [u16; 5] = [
+        GET_DEVICE_INFO,
+        GET_STORAGE_IDS,
+        GET_OBJECT_HANDLES,
+        GET_OBJECT_INFO,
+        GET_DEVICE_PROP_VALUE,
+    ];
 
     fn take(p: PWSTR) -> String {
         if p.is_null() {
@@ -149,6 +164,7 @@ mod probe {
 
         /// Opération qui renvoie des données : code de réponse et données.
         fn read(&self, op: u16, params: &[u32]) -> Result<(u32, Vec<u8>)> {
+            assert!(ALLOWED.contains(&op), "opération {op:04X} non autorisée");
             let v = Self::operation(
                 &WPD_COMMAND_MTP_EXT_EXECUTE_COMMAND_WITH_DATA_TO_READ,
                 op,
@@ -230,7 +246,7 @@ mod probe {
                 unsafe { CoCreateInstance(&PortableDeviceFTM, None, CLSCTX_INPROC_SERVER)? };
             unsafe {
                 client.SetStringValue(&WPD_CLIENT_NAME, w!("Afterdusk, sonde PTP"))?;
-                client.SetUnsignedIntegerValue(&WPD_CLIENT_DESIRED_ACCESS, READ_ONLY)?;
+                client.SetUnsignedIntegerValue(&WPD_CLIENT_DESIRED_ACCESS, READ_WRITE)?;
                 device.Open(PCWSTR(pnp_w.as_ptr()), &client)?;
             }
             return Ok(Some((pnp, device)));
