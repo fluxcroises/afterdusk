@@ -106,4 +106,31 @@ describe("séance reliée au boîtier", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByRole("status")).toHaveTextContent("12 photos reçues");
   });
+
+  it("un double clic ne démarre la séance qu'une fois", async () => {
+    vi.mocked(invoke).mockClear();
+    let finish: () => void = () => undefined;
+    vi.mocked(invoke).mockImplementationOnce(
+      () => new Promise((resolve) => (finish = () => resolve(null))),
+    );
+    act(() => useTether.getState().onStatus(idle));
+    render(<TetherBanner />);
+    fireEvent.click(screen.getByRole("button", { name: "Démarrer la séance" }));
+    fireEvent.click(screen.getByRole("button", { name: "Démarrer" }));
+    const confirm = screen.getByRole("button", { name: "Démarrage…" });
+    expect(confirm).toBeDisabled();
+    fireEvent.click(confirm);
+    await act(async () => finish());
+    expect(vi.mocked(invoke).mock.calls.filter(([c]) => c === "tether_start")).toHaveLength(1);
+  });
+
+  it("l'échec d'« Arrêter » s'affiche", async () => {
+    act(() => useTether.getState().onStatus(running));
+    render(<TetherBanner />);
+    vi.mocked(invoke).mockRejectedValueOnce({ code: "internal", detail: "boîtier occupé" });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Arrêter" }));
+    });
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+  });
 });

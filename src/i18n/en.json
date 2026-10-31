@@ -602,6 +602,7 @@
     "noLibrary": "Open a library first to receive the photos.",
     "profile": "On the camera, choose the “USB TETHER SHOOTING AUTO” connection profile: with the cable unplugged, it keeps recording to the card.",
     "confirm": "Start",
+    "confirming": "Starting…",
     "camera": "camera",
     "album": "album “{{album}}”",
     "received_one": "{{count}} photo received",

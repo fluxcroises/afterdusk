@@ -602,6 +602,7 @@
     "noLibrary": "Ouvrez d'abord une bibliothèque pour y recevoir les photos.",
     "profile": "Sur le boîtier, choisissez le profil de connexion « USB TETHER SHOOTING AUTO » : câble débranché, il continue d'enregistrer sur la carte.",
     "confirm": "Démarrer",
+    "confirming": "Démarrage…",
     "camera": "boîtier",
     "album": "album « {{album}} »",
     "received_one": "{{count}} photo reçue",

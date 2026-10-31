@@ -68,6 +68,8 @@ interface TetherState {
   seenLeft: number;
   seenFailed: number;
   starting: boolean;
+  /** Démarrage envoyé au cœur, pas encore confirmé. */
+  busy: boolean;
   showFor: ShowFor;
   error: CommandError | null;
   load: () => Promise<void>;
@@ -126,6 +128,7 @@ export const useTether = create<TetherState>((set, get) => ({
   seenLeft: 0,
   seenFailed: 0,
   starting: false,
+  busy: false,
   showFor: readShowFor(),
   error: null,
 
@@ -151,20 +154,22 @@ export const useTether = create<TetherState>((set, get) => ({
   closeStart: () => set({ starting: false, error: null }),
 
   start: async (libraryId, albumName, backup) => {
+    if (get().busy) return;
+    set({ busy: true, error: null });
     try {
       await invoke("tether_start", {
         libraryId,
         albumName,
         settings: { backup, keywords: [], rights: null },
       });
-      set({ starting: false, error: null });
+      set({ starting: false, busy: false, error: null });
       useNavigation.getState().goTo("cull");
       const library = useLibrary.getState();
       await library.reloadAlbums();
       const album = useLibrary.getState().albums.find((a) => a.name === albumName.trim());
       if (album) await library.showAlbum(album.id);
     } catch (e) {
-      set({ error: toCommandError(e) });
+      set({ busy: false, error: toCommandError(e) });
     }
   },
 

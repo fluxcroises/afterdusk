@@ -28,6 +28,7 @@ export function TetherBanner() {
   const seenLeft = useTether((s) => s.seenLeft);
   const seenFailed = useTether((s) => s.seenFailed);
   const starting = useTether((s) => s.starting);
+  const error = useTether((s) => s.error);
   const st = useTether.getState();
   const camera = status.camera ?? lastCamera;
   const model = camera ? modelOf(camera) : "";
@@ -126,6 +127,10 @@ export function TetherBanner() {
   return (
     <>
       {banner}
+      {/* Échec d'« Arrêter » : la fenêtre de démarrage est fermée, l'erreur s'affiche ici. */}
+      {!starting && (
+        <ErrorBanner error={error} onDismiss={() => useTether.setState({ error: null })} />
+      )}
       {starting && camera && <StartDialog model={modelOf(camera)} />}
     </>
   );
@@ -139,6 +144,7 @@ function StartDialog({ model }: { model: string }) {
   const library = libraries.find((l) => l.id === libraryId) ?? null;
   const showFor = useTether((s) => s.showFor);
   const error = useTether((s) => s.error);
+  const busy = useTether((s) => s.busy);
   const st = useTether.getState();
   const [album, setAlbum] = useState(() =>
     t("tether.defaultAlbum", {
@@ -225,9 +231,10 @@ function StartDialog({ model }: { model: string }) {
           <button
             type="submit"
             className="button button-small button-primary"
-            disabled={!library || album.trim() === ""}
+            disabled={!library || album.trim() === "" || busy}
+            aria-busy={busy || undefined}
           >
-            {t("tether.confirm")}
+            {t(busy ? "tether.confirming" : "tether.confirm")}
           </button>
         </div>
       </form>
