@@ -1799,6 +1799,12 @@ html[data-platform="mac"] .welcome-hero-top {
   border-top: 1px solid var(--ad-border-strong);
 }
 
+/* Logo de Creative Orbit, la famille de logiciels d'Afterdusk : en bas à droite. */
+.welcome-family {
+  height: 16px;
+  margin-left: auto;
+}
+
 /* ---------- Marques sous les miniatures ---------- */
 
 .media-cell-marks {

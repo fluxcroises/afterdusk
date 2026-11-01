@@ -22,6 +22,7 @@ import { formatDay } from "../ui/format";
 import { greetingKey } from "../ui/greeting";
 import { openMain, setWelcomeOnStartup, welcomeOnStartup } from "../windows";
 import defaultPhoto from "../assets/accueil-cabourg.jpg";
+import creativeOrbit from "../assets/creative-orbit.svg";
 import "../App.css";
 
 interface Highlight {
@@ -448,6 +449,12 @@ export function WelcomeApp() {
           />
           {t("home.showOnStartup")}
         </label>
+        <img
+          className="welcome-family"
+          src={creativeOrbit}
+          alt={t("home.familyLogo")}
+          title={t("home.family")}
+        />
       </footer>
       <AppDialog />
     </div>

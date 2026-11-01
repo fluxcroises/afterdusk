@@ -424,6 +424,8 @@
     "interrupted_one": "An import from “{{source}}” was interrupted: {{count}} file left to copy.",
     "interrupted_other": "An import from “{{source}}” was interrupted: {{count}} files left to copy.",
     "showOnStartup": "Show at startup",
+    "familyLogo": "Creative Orbit",
+    "family": "Afterdusk is part of Creative Orbit, a family of software.",
     "lastImportTitle": "Last import · {{source}}",
     "folder": "Folder…",
     "cullThem": "Cull them",
