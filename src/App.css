@@ -2762,12 +2762,26 @@ input[type="radio"] {
 }
 
 /* Logo blanc de Flux Croisés, l'éditeur, sous sa mention. */
+/* Éditeur à gauche, famille de logiciels (Creative Orbit) à droite. */
+.about-logos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ad-space-3);
+  margin-top: var(--ad-space-2);
+}
+
 .about-publisher-logo {
   display: block;
   height: 14px;
   width: auto;
-  margin-top: var(--ad-space-2);
   opacity: 0.85;
+}
+
+.about-family-logo {
+  display: block;
+  height: 16px;
+  width: auto;
 }
 
 /* Composants, licence ou informations système : même hauteur, pour que la

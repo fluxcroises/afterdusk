@@ -2,7 +2,9 @@
   "app": {
     "name": "Afterdusk",
     "noLibrary": "Aucune bibliothèque",
-    "libraryOffline": "{{name}} (hors ligne)"
+    "libraryOffline": "{{name}} (hors ligne)",
+    "familyLogo": "Creative Orbit",
+    "family": "Afterdusk fait partie de Creative Orbit, une famille de logiciels."
   },
   "modules": {
     "label": "Modules",
@@ -424,8 +426,6 @@
     "interrupted_one": "Un import depuis « {{source}} » a été interrompu : {{count}} fichier reste à copier.",
     "interrupted_other": "Un import depuis « {{source}} » a été interrompu : {{count}} fichiers restent à copier.",
     "showOnStartup": "Afficher l'accueil au démarrage",
-    "familyLogo": "Creative Orbit",
-    "family": "Afterdusk fait partie de Creative Orbit, une famille de logiciels.",
     "lastImportTitle": "Dernier import · {{source}}",
     "folder": "Dossier…",
     "cullThem": "Les trier",

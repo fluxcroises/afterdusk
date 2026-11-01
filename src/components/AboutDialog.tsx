@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { type AppInfo, api } from "../api/core";
 import defaultPhoto from "../assets/accueil-cabourg.jpg";
 import publisherLogo from "../assets/logo_horizontal_blanc.png";
+import creativeOrbit from "../assets/creative-orbit.svg";
 import license from "../../LICENSE?raw";
 import { version as packageVersion } from "../../package.json";
 import { systemReport, useAbout } from "../store/about";
@@ -157,7 +158,15 @@ export function AboutDialog() {
                 }}
               />
             </p>
-            <img className="about-publisher-logo" src={publisherLogo} alt="" />
+            <div className="about-logos">
+              <img className="about-publisher-logo" src={publisherLogo} alt="" />
+              <img
+                className="about-family-logo"
+                src={creativeOrbit}
+                alt={t("app.familyLogo")}
+                title={t("app.family")}
+              />
+            </div>
           </header>
           {view === "license" ? (
             <pre className="about-panel about-text" tabIndex={0}>

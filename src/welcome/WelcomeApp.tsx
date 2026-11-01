@@ -452,8 +452,8 @@ export function WelcomeApp() {
         <img
           className="welcome-family"
           src={creativeOrbit}
-          alt={t("home.familyLogo")}
-          title={t("home.family")}
+          alt={t("app.familyLogo")}
+          title={t("app.family")}
         />
       </footer>
       <AppDialog />
