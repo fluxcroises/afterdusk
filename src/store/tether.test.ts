@@ -125,4 +125,15 @@ describe("photo reçue du boîtier", () => {
     expect(useLibrary.getState().view).toBe("grid");
     await vi.waitFor(() => expect(useLibrary.getState().selectedId).toBe(4));
   });
+
+  it("le RAW déjà sélectionné par le rechargement ne relance pas l'affichage", async () => {
+    await useTether.getState().imported({ folderId: 3, libraryId: 1, mediaIds: [1] });
+    vi.advanceTimersByTime(3000);
+    // Comme le rechargement de la grille : le JPEG disparu, son RAW à sa place.
+    useLibrary.setState({ media: [photo(4), photo(2), photo(3, 2)], selectedId: 4 });
+    await useTether.getState().imported({ folderId: 3, libraryId: 1, mediaIds: [4] });
+    vi.advanceTimersByTime(2100);
+    expect(useLibrary.getState().view).toBe("grid");
+    expect(useLibrary.getState().selectedId).toBe(4);
+  });
 });

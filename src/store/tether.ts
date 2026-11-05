@@ -124,7 +124,7 @@ function show(mediaId: number, seconds: ShowFor): void {
     const now = useLibrary.getState();
     const top = shown?.id === mediaId ? shown.top : mediaId;
     release();
-    if (now.view === "loupe" && now.selectedId === mediaId) {
+    if (now.view === "loupe" && (now.selectedId === mediaId || now.selectedId === top)) {
       now.setView("grid");
       // Le JPEG passé sous son RAW : la grille montre la pile par son dessus.
       if (top !== mediaId) void now.select(top);
@@ -224,7 +224,8 @@ export const useTether = create<TetherState>((set, get) => ({
     if (showFor === -1) return;
     // Le RAW du déclenchement déjà montré par son JPEG : l'affichage continue.
     const now = useLibrary.getState();
-    if (shown && now.view === "loupe" && now.selectedId === shown.id) {
+    // Le rechargement a pu sélectionner le RAW à la place de son JPEG.
+    if (shown && now.view === "loupe" && (now.selectedId === shown.id || now.selectedId === id)) {
       const previous = now.media.find((m) => m.id === shown?.id);
       if (shown.id === id || !previous || previous.companionOf === id) {
         shown.top = id;

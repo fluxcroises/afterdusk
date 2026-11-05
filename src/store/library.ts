@@ -465,9 +465,15 @@ export const useLibrary = create<LibraryState>((set, get) => {
     const { libraryId } = get();
     if (libraryId === null) return;
     try {
+      const index = Math.max(
+        0,
+        get().media.findIndex((m) => m.id === get().selectedId),
+      );
       const media = await libraryApi.mediaList(libraryId, query());
       set({ media });
-      const keep = media.find((m) => m.id === get().selectedId) ?? media[0];
+      // Photo disparue (un JPEG passé sous son RAW) : sa voisine, à la même place.
+      const keep =
+        media.find((m) => m.id === get().selectedId) ?? media[Math.min(index, media.length - 1)];
       if (keep) {
         if (keep.id !== get().selectedId) await get().select(keep.id);
         else
