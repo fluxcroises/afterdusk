@@ -78,6 +78,8 @@ interface TetherState {
   closeStart: () => void;
   start: (libraryId: number, albumName: string, backup: boolean) => Promise<void>;
   stop: () => Promise<void>;
+  /** Ouvre l'album de la séance dans Trier. */
+  showAlbum: () => Promise<void>;
   dismiss: () => void;
   acknowledge: () => void;
   setShowFor: (value: ShowFor) => void;
@@ -93,6 +95,14 @@ let stopWatching: (() => void) | undefined;
  * arrive avant son RAW, qui devient ensuite le dessus de la pile.
  */
 let shown: { id: number; top: number } | null = null;
+
+async function showSessionAlbum(albumName: string): Promise<void> {
+  useNavigation.getState().goTo("cull");
+  const library = useLibrary.getState();
+  await library.reloadAlbums();
+  const album = useLibrary.getState().albums.find((a) => a.name === albumName);
+  if (album) await library.showAlbum(album.id);
+}
 
 function release(): void {
   clearTimeout(closing);
@@ -174,11 +184,7 @@ export const useTether = create<TetherState>((set, get) => ({
         settings: { backup, keywords: [], rights: null },
       });
       set({ starting: false, busy: false, error: null });
-      useNavigation.getState().goTo("cull");
-      const library = useLibrary.getState();
-      await library.reloadAlbums();
-      const album = useLibrary.getState().albums.find((a) => a.name === albumName.trim());
-      if (album) await library.showAlbum(album.id);
+      await showSessionAlbum(albumName.trim());
     } catch (e) {
       set({ busy: false, error: toCommandError(e) });
     }
@@ -192,6 +198,8 @@ export const useTether = create<TetherState>((set, get) => ({
       set({ error: toCommandError(e) });
     }
   },
+
+  showAlbum: () => showSessionAlbum(get().status.albumName),
 
   dismiss: () => set((s) => ({ dismissed: s.status.camera })),
 

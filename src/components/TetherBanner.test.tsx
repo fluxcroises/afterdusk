@@ -6,12 +6,18 @@ vi.mock("@tauri-apps/api/core", async (original) => ({
   invoke: vi.fn(async () => null),
 }));
 
+vi.mock("../windows", async (original) => ({
+  ...(await original<typeof import("../windows")>()),
+  openMain: vi.fn(async () => undefined),
+}));
+
 const { invoke } = await import("@tauri-apps/api/core");
+const { openMain } = await import("../windows");
 const { default: i18n } = await import("../i18n");
 await i18n.changeLanguage("fr");
 const { useImport } = await import("../store/import");
 const { useTether } = await import("../store/tether");
-const { TetherBanner } = await import("./TetherBanner");
+const { TetherBanner, WelcomeTetherBanner } = await import("./TetherBanner");
 
 const idle = {
   camera: "FUJIFILM X-H2",
@@ -132,5 +138,44 @@ describe("séance reliée au boîtier", () => {
       fireEvent.click(screen.getByRole("button", { name: "Arrêter" }));
     });
     expect(screen.getByRole("alert")).toBeInTheDocument();
+  });
+
+  describe("sur l'accueil", () => {
+    it("démarre la séance dans la fenêtre principale", () => {
+      act(() => useTether.getState().onStatus(idle));
+      render(<WelcomeTetherBanner />);
+      expect(screen.getByText("FUJIFILM X-H2 relié.")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "Démarrer la séance" }));
+      expect(openMain).toHaveBeenCalledWith({ screen: "cull", tether: "start" });
+      // La fenêtre de démarrage s'ouvre dans la fenêtre principale, pas ici.
+      expect(useTether.getState().starting).toBe(false);
+    });
+
+    it("séance en cours : ouvre son album", () => {
+      act(() => useTether.getState().onStatus(running));
+      render(<WelcomeTetherBanner />);
+      expect(screen.getByText("X-H2 · album « Studio » · 12 photos reçues")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "Afficher l'album" }));
+      expect(openMain).toHaveBeenCalledWith({ screen: "cull", tether: "album" });
+    });
+
+    it("séance en cours, boîtier débranché : l'accueil le dit", () => {
+      act(() => useTether.getState().onStatus(running));
+      act(() => useTether.getState().onStatus({ ...running, camera: null, connected: false }));
+      render(<WelcomeTetherBanner />);
+      expect(screen.getByText(/X-H2 débranché · 12 photos reçues/)).toBeTruthy();
+      expect(screen.getByText(/Rebranchez-le pour continuer la séance/)).toBeTruthy();
+    });
+
+    it("rien sans bibliothèque, ni après « Fermer »", () => {
+      act(() => useTether.getState().onStatus(idle));
+      useImport.setState({ libraryId: null });
+      const { container, rerender } = render(<WelcomeTetherBanner />);
+      expect(container.textContent).toBe("");
+      act(() => useImport.setState({ libraryId: 1 }));
+      rerender(<WelcomeTetherBanner />);
+      fireEvent.click(screen.getByRole("button", { name: "Fermer" }));
+      expect(container.textContent).toBe("");
+    });
   });
 });

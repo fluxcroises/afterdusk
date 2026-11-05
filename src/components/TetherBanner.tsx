@@ -2,19 +2,9 @@ import { Camera, MemoryStick, TriangleAlert, Unplug } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useImport } from "../store/import";
-import { useLibrary } from "../store/library";
-import { useNavigation } from "../store/navigation";
 import { LOW_REMAINING, SHOW_FOR, type ShowFor, modelOf, useTether } from "../store/tether";
+import { openMain } from "../windows";
 import { ErrorBanner } from "./ErrorBanner";
-
-/** Ouvre l'album de la séance dans Trier. */
-async function showSessionAlbum(albumName: string): Promise<void> {
-  useNavigation.getState().goTo("cull");
-  const library = useLibrary.getState();
-  await library.reloadAlbums();
-  const album = useLibrary.getState().albums.find((a) => a.name === albumName);
-  if (album) await library.showAlbum(album.id);
-}
 
 /**
  * Connexion au boîtier : « X-H2 relié · Démarrer la séance », puis l'état de
@@ -109,11 +99,7 @@ export function TetherBanner() {
           )}
         </span>
         {status.connected && (
-          <button
-            type="button"
-            className="button button-small"
-            onClick={() => void showSessionAlbum(status.albumName)}
-          >
+          <button type="button" className="button button-small" onClick={() => void st.showAlbum()}>
             {t("tether.showAlbum")}
           </button>
         )}
@@ -238,6 +224,73 @@ function StartDialog({ model }: { model: string }) {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+/**
+ * Sur l'accueil : boîtier relié ou séance en cours. La séance se démarre et
+ * se suit dans la fenêtre principale, où les photos s'affichent en grand.
+ */
+export function WelcomeTetherBanner() {
+  const { t } = useTranslation();
+  const status = useTether((s) => s.status);
+  const lastCamera = useTether((s) => s.lastCamera);
+  const dismissed = useTether((s) => s.dismissed);
+  const hasLibrary = useImport((s) => s.libraryId !== null);
+  if (!hasLibrary) return null;
+  if (status.active) {
+    // Boîtier débranché pendant la séance : elle attend son retour.
+    const camera = status.camera ?? lastCamera;
+    const model = camera ? modelOf(camera) : "";
+    const unplugged = !!camera && !status.camera;
+    const state = status.connected
+      ? [model, t("tether.album", { album: status.albumName })]
+      : [
+          unplugged
+            ? t("tether.unplugged", { model })
+            : t("tether.connecting", { model: model || t("tether.camera") }),
+        ];
+    return (
+      <div className="banner banner-info welcome-banner tether-banner" role="status">
+        {status.connected ? (
+          <span className="tether-live" aria-hidden="true" />
+        ) : (
+          <Unplug aria-hidden="true" strokeWidth={1.75} />
+        )}
+        <span>
+          {[...state, t("tether.received", { count: status.received })].join(" · ")}
+          {unplugged && <span className="tether-hint"> {t("tether.unpluggedHint")}</span>}
+        </span>
+        <button
+          type="button"
+          className="button button-small"
+          onClick={() => void openMain({ screen: "cull", tether: "album" })}
+        >
+          {t("tether.showAlbum")}
+        </button>
+      </div>
+    );
+  }
+  if (!status.camera || dismissed === status.camera) return null;
+  return (
+    <div className="banner banner-info welcome-banner" role="status">
+      <Camera aria-hidden="true" strokeWidth={1.75} />
+      <span>{t("tether.detected", { camera: status.camera })}</span>
+      <button
+        type="button"
+        className="button button-small button-primary"
+        onClick={() => void openMain({ screen: "cull", tether: "start" })}
+      >
+        {t("tether.start")}
+      </button>
+      <button
+        type="button"
+        className="button button-small"
+        onClick={() => useTether.getState().dismiss()}
+      >
+        {t("import.dismiss")}
+      </button>
     </div>
   );
 }

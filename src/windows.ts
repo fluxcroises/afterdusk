@@ -19,6 +19,8 @@ export interface MainAction {
   resumeImportId?: number;
   /** Fiche du matériel à ouvrir (rappel d'entretien de l'accueil). */
   gearId?: number;
+  /** Séance reliée au boîtier : fenêtre de démarrage, ou album de la séance. */
+  tether?: "start" | "album";
 }
 
 /** Fenêtre courante ; dans un navigateur (développement), `?window=welcome`. */

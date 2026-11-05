@@ -43,6 +43,8 @@ async function applyMainAction(action: MainAction): Promise<void> {
     await imp.scanSource(action.scanPath);
   }
   if (action.resumeImportId !== undefined) await imp.resume(action.resumeImportId);
+  if (action.tether === "start") useTether.getState().openStart();
+  if (action.tether === "album") await useTether.getState().showAlbum();
 }
 
 /** Dossier déposé sur la fenêtre : il devient la source de l'import. */

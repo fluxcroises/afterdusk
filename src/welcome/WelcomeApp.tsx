@@ -10,6 +10,7 @@ import { previewUrl } from "../api/previews";
 import { useAppEvents } from "../appEvents";
 import { DeviceBanner } from "../components/DeviceBanner";
 import { OfflineBanner } from "../components/OfflineBanner";
+import { WelcomeTetherBanner } from "../components/TetherBanner";
 import { Thumbnail } from "../components/Thumbnail";
 import { WindowControls } from "../components/WindowControls";
 import { drawsOwnMenus } from "../platform";
@@ -403,6 +404,7 @@ export function WelcomeApp() {
       <Hero highlight={highlight} />
       <main className="welcome-scroll">
         <DeviceBanner label="welcome" />
+        <WelcomeTetherBanner />
         <OfflineBanner />
         <MaintenanceBanners />
         {resumable.map((r) => (
