@@ -364,3 +364,84 @@ fn migration_relie_les_paires_deja_importees() {
     assert_eq!(heads[0], ("DSC09001.ARW".into(), 2));
     assert_eq!(heads.len(), 4);
 }
+
+fn options(library_id: i64, source: &Path, files: Vec<PathBuf>, album: &str) -> ImportOptions {
+    ImportOptions {
+        library_id,
+        source_path: source.to_path_buf(),
+        source_label: "Carte".into(),
+        files,
+        album_name: album.into(),
+        album_per_day: false,
+        rename: false,
+        backup: false,
+        keywords: vec![],
+        creator: None,
+        rights: None,
+        skip_pair_jpegs: false,
+        client_id: None,
+        session_type_id: None,
+        session_label: String::new(),
+    }
+}
+
+/// JPEG reçu seul (boîtier relié, câble retiré pendant la lecture du RAW),
+/// puis la carte importée : le RAW rejoint son JPEG, dans son album, en pile.
+#[test]
+fn raw_de_la_carte_rejoint_son_jpeg_deja_importe() {
+    let dir = tempfile::tempdir().unwrap();
+    let card = dir.path().join("carte");
+    let received = dir.path().join("reception");
+    fs::create_dir_all(&card).unwrap();
+    fs::create_dir_all(&received).unwrap();
+    fs::copy(
+        common::sample("sony_ilce-7m3.ARW"),
+        card.join("DSC09001.ARW"),
+    )
+    .unwrap();
+    camera_jpeg(
+        &card.join("DSC09001.JPG"),
+        3000,
+        2000,
+        "2018:03:13 16:38:13",
+    );
+    // Même fichier, autre nom : le boîtier relié renumérote.
+    fs::copy(card.join("DSC09001.JPG"), received.join("DSCF0002.jpg")).unwrap();
+
+    let root = dir.path().join("Bibliotheque");
+    fs::create_dir_all(&root).unwrap();
+    let mut conn = db::open(&dir.path().join("afterdusk.db")).unwrap();
+    let lib = library::create_library(&conn, "Photos", &root, None).unwrap();
+    let opts = options(
+        lib.id,
+        &received,
+        vec![received.join("DSCF0002.jpg")],
+        "Séance",
+    );
+    let id = import::plan(&mut conn, &opts).unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+
+    let files = vec![card.join("DSC09001.ARW"), card.join("DSC09001.JPG")];
+    let id = import::plan(&mut conn, &options(lib.id, &card, files, "Carte")).unwrap();
+    import::run(&mut conn, id, &AtomicBool::new(false), |_| {}).unwrap();
+
+    let all = list_media(&conn, lib.id, &MediaQuery::default()).unwrap();
+    assert_eq!(all.len(), 1, "une seule pile, aucun JPEG en double");
+    assert_eq!(all[0].file_name, "DSC09001.ARW");
+    assert_eq!(all[0].stack_size, 2);
+    let albums = media::list_albums(&conn, lib.id).unwrap();
+    assert_eq!(albums.len(), 1, "pas d'album vide de la carte");
+    assert_eq!(albums[0].name, "Séance");
+    // Le RAW est copié dans le dossier du JPEG.
+    let folders: Vec<String> = conn
+        .prepare("SELECT path FROM media ORDER BY id")
+        .unwrap()
+        .query_map([], |r| r.get::<_, String>(0))
+        .unwrap()
+        .map(|p| {
+            let p = p.unwrap();
+            p[..p.rfind('/').unwrap()].to_owned()
+        })
+        .collect();
+    assert_eq!(folders[0], folders[1]);
+}

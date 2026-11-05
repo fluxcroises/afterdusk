@@ -133,8 +133,11 @@ pub fn set(conn: &Connection, settings: &FtpSettings) -> Result<(), FtpError> {
 }
 
 /// Dossier de réception, dans les données d'Afterdusk.
+/// Nom du dossier de réception, dans le dossier de données.
+pub const RECEPTION: &str = "reception-ftp";
+
 pub fn reception_dir(data_dir: &Path) -> PathBuf {
-    data_dir.join("reception-ftp")
+    data_dir.join(RECEPTION)
 }
 
 /// Adresse du réseau local, de la machine elle-même ou de lien local.

@@ -1178,3 +1178,8 @@ Notes de l'utilisateur après un essai sur de vraies photos (JPEG d'un Fujifilm 
 - Constat : l'accueil présente le dernier import comme « reception-boitier » (nom du dossier de réception) au lieu du boîtier.
 - Section « Boîtier relié en USB » publiée sur la page Importer du guide (Confluence), avec l'import de la carte en fin de séance.
 - Critères de la V0.8 cochés au cahier des charges : CI verte sous Windows et macOS (run 42074798457, commit 9fe1dff). Photos reçues et vérifiées dans l'album de la séance avec le X-H2 ; environ 2 s entre le déclenchement et l'affichage (JPEG lu en premier, RAW 3 s plus tard), sous les 5 s ; débranchement en séance sans perte, vérifié jusqu'à l'import de la carte, rien d'écrit sur le boîtier ni sur la carte.
+
+### 2026-11-05 (suite) : deux constats de l'essai du débranchement
+
+- RAW importé depuis la carte avec son JPEG déjà dans la bibliothèque (reçu par le câble sous un autre nom) : à la préparation de l'import, le RAW prend le dossier de ce JPEG, donc son album (un album est un dossier), et la pile se forme à la copie. Seulement si le JPEG est seul, hors de toute pile ; le cas inverse (RAW déjà là, JPEG de la carte) suit la même règle. Plus d'album du jour créé pour ce seul RAW. Test `raw_de_la_carte_rejoint_son_jpeg_deja_importe` (`tests/piles.rs`).
+- Imports des dossiers de réception (boîtier relié et FTP) : la source porte le nom du boîtier lu dans la photo (« X-H2 ») au lieu du dossier interne (« reception-boitier », « reception-ftp »), sur l'accueil comme dans les imports interrompus. Les dossiers surveillés choisis par l'utilisateur gardent leur nom. Vérifié dans `tests/tether.rs`.

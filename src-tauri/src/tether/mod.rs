@@ -17,8 +17,11 @@ pub mod wpd;
 use std::path::{Path, PathBuf};
 
 /// Dossier de réception des boîtiers reliés, dans les données d'Afterdusk.
+/// Nom du dossier de réception, dans le dossier de données.
+pub const RECEPTION: &str = "reception-boitier";
+
 pub fn reception_dir(data_dir: &Path) -> PathBuf {
-    data_dir.join("reception-boitier")
+    data_dir.join(RECEPTION)
 }
 
 #[derive(Debug, thiserror::Error)]

@@ -85,6 +85,17 @@ fn photo_declenchee_importee_dans_l_album_de_la_seance() {
         1
     );
 
+    // L'accueil nomme le boîtier, pas le dossier de réception.
+    let (label, model): (String, String) = conn
+        .query_row(
+            "SELECT i.source_label, g.model FROM imports i
+               JOIN media m ON m.import_id = i.id JOIN gear g ON g.id = m.camera_id",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(label, model);
+
     // Copie de réception retirée une fois la photo dans la bibliothèque.
     assert_eq!(watch::remove_imported(&conn, lib.id, &received).unwrap(), 1);
     assert!(!received[0].exists());

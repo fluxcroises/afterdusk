@@ -412,11 +412,27 @@ pub fn import_files(
         return Ok(None);
     }
     let s = &folder.settings;
-    let label = folder
+    let name = folder
         .path
         .file_name()
         .map_or_else(|| folder.path.to_string_lossy(), |n| n.to_string_lossy())
         .into_owned();
+    // Réception du boîtier relié ou FTP : le boîtier parle mieux que le nom
+    // du dossier interne (« reception-boitier »).
+    let label = if [crate::tether::RECEPTION, crate::ftp::RECEPTION].contains(&name.as_str()) {
+        fresh
+            .iter()
+            .find_map(|p| {
+                let camera = scan::describe(p, format_of(p)?)
+                    .ok()?
+                    .metadata
+                    .camera_label();
+                (!camera.is_empty()).then_some(camera)
+            })
+            .unwrap_or(name)
+    } else {
+        name
+    };
     let options = ImportOptions {
         library_id: folder.library_id,
         source_path: folder.path.clone(),

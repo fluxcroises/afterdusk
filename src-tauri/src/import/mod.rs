@@ -338,6 +338,18 @@ pub fn plan(conn: &mut Connection, options: &ImportOptions) -> Result<i64, Impor
             };
             names.push(name);
         }
+        // RAW dont le JPEG est déjà là (reçu du boîtier relié, par exemple) :
+        // il le rejoint dans son dossier, donc dans son album, pour former la pile.
+        if !fresh.is_empty() && fresh.len() < shot.len() {
+            for &i in shot.iter().filter(|i| !fresh.contains(i)) {
+                if let Some(existing) =
+                    lone_media(&tx, lib.id, &files[i].fingerprint)?.map(|(_, folder)| folder)
+                {
+                    folder = existing;
+                    break;
+                }
+            }
+        }
         // Un même suffixe -2, -3… pour toute la paire, qui garde un nom commun.
         let mut targets = unique_targets(&lib.root_path, &folder, &names, &mut taken).into_iter();
         let mut item_ids = Vec::new();
@@ -576,17 +588,31 @@ pub fn run(
 /// Pile RAW + JPEG : dès que les deux fichiers d'une paire sont en base, le
 /// compagnon passe sous le RAW.
 fn link_pair(conn: &Connection, item_id: i64, media_id: i64) -> Result<(), ImportError> {
-    let partner: Option<i64> = conn
+    let partner: Option<(String, Option<i64>, String)> = conn
         .query_row(
-            "SELECT p.media_id FROM import_items i JOIN import_items p ON p.id = i.pair_item_id
-             WHERE i.id = ?1 AND p.status = 'done'",
+            "SELECT p.status, p.media_id, p.fingerprint
+               FROM import_items i JOIN import_items p ON p.id = i.pair_item_id
+              WHERE i.id = ?1",
             [item_id],
-            |r| r.get(0),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
         )
-        .optional()?
-        .flatten();
-    let Some(partner) = partner else {
-        return Ok(());
+        .optional()?;
+    let partner = match partner {
+        Some((status, Some(id), _)) if status == "done" => id,
+        // Compagnon déjà dans la bibliothèque : la pile se forme avec lui,
+        // s'il est seul et dans le même album (même dossier, choisi au plan).
+        Some((status, _, fingerprint)) if status == "duplicate" => {
+            let (library_id, album_id): (i64, Option<i64>) = conn.query_row(
+                "SELECT library_id, album_id FROM media WHERE id = ?1",
+                [media_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )?;
+            match lone_media(conn, library_id, &fingerprint)? {
+                Some((id, _)) if album_of(conn, id)? == album_id => id,
+                _ => return Ok(()),
+            }
+        }
+        _ => return Ok(()),
     };
     let is_raw = |id: i64| -> Result<bool, ImportError> {
         let path: String =
@@ -600,6 +626,34 @@ fn link_pair(conn: &Connection, item_id: i64, media_id: i64) -> Result<(), Impor
     };
     pairs::link(conn, raw, companion)?;
     Ok(())
+}
+
+/// Photo de la bibliothèque à cette empreinte, hors de toute pile, et le
+/// dossier de son album.
+fn lone_media(
+    conn: &Connection,
+    library_id: i64,
+    fingerprint: &str,
+) -> Result<Option<(i64, String)>, ImportError> {
+    Ok(conn
+        .query_row(
+            "SELECT m.id, a.folder FROM media m JOIN albums a ON a.id = m.album_id
+              WHERE m.library_id = ?1 AND m.fingerprint = ?2 AND m.state = 'normal'
+                AND m.companion_of IS NULL
+                AND NOT EXISTS (SELECT 1 FROM media c WHERE c.companion_of = m.id)
+              ORDER BY m.id LIMIT 1",
+            params![library_id, fingerprint],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?)
+}
+
+fn album_of(conn: &Connection, media_id: i64) -> Result<Option<i64>, ImportError> {
+    Ok(conn.query_row(
+        "SELECT album_id FROM media WHERE id = ?1",
+        [media_id],
+        |r| r.get(0),
+    )?)
 }
 
 fn stop(
