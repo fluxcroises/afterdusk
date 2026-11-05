@@ -440,9 +440,9 @@ Objectif : peindre un masque à main levée et retirer l'effet d'une zone de n'i
 
 Objectif : une photo déclenchée sur le boîtier relié en USB arrive d'elle-même dans Afterdusk (choix de l'utilisateur, 2026-10-31). D'abord sous Windows, par Windows Portable Devices (sans remplacer le pilote USB), avec le Fujifilm X-H2 de l'utilisateur ; méthode fixée par la [décision 0016](decisions/0016-connexion-au-boitier.md) : PTP à travers Windows Portable Devices, opérations de lecture seulement, photos laissées sur la carte.
 
-- [ ] Avec un Fujifilm X-H2 relié en USB sous Windows, chaque photo déclenchée arrive dans Afterdusk, copiée et vérifiée, dans l'album de la séance
-- [ ] Moins de 5 s entre le déclenchement et l'affichage, en JPEG comme en RAW
-- [ ] Rien n'est écrit ni supprimé sur le boîtier ni sur sa carte, et un débranchement en cours de séance ne perd aucune photo
+- [x] Avec un Fujifilm X-H2 relié en USB sous Windows, chaque photo déclenchée arrive dans Afterdusk, copiée et vérifiée, dans l'album de la séance
+- [x] Moins de 5 s entre le déclenchement et l'affichage, en JPEG comme en RAW
+- [x] Rien n'est écrit ni supprimé sur le boîtier ni sur sa carte, et un débranchement en cours de séance ne perd aucune photo
 - macOS (libgphoto2), autres marques, déclenchement depuis Afterdusk et visée en direct : plus tard.
 
 ### Distribution : en dernier
