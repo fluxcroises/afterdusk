@@ -200,6 +200,12 @@ fn import_ready(
             let _ = watch::remove_imported(&conn, folder.library_id, &sent);
         }
         if let Some(Ok(Some(imported))) = result {
+            if folder.path == tether_reception
+                && let Ok(conn) = state.connect()
+            {
+                // RAW et JPEG d'un déclenchement du boîtier, arrivés à part.
+                let _ = crate::tether::stack::link_shots(&conn, &imported.media_ids);
+            }
             let _ = app.emit(EVENT_IMPORTED, imported);
         }
     }

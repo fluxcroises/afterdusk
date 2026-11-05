@@ -18,6 +18,7 @@ use serde::Serialize;
 use super::TetherError;
 use super::ptp::{Camera, FUJI_REMAINING_SHOTS, ObjectInfo, Transport};
 use crate::db::now_utc;
+use crate::metadata::media::{MediaFormat, format_of};
 
 /// Essais de lecture d'une photo avant de la laisser sur la carte.
 const ATTEMPTS: u8 = 3;
@@ -135,6 +136,17 @@ impl<T: Transport> Session<T> {
     /// connexion.
     pub fn poll(&mut self, conn: &Connection) -> Result<Vec<Update>, TetherError> {
         let mut updates = Vec::new();
+        self.poll_with(conn, |u| updates.push(u))?;
+        Ok(updates)
+    }
+
+    /// Comme `poll`, mais chaque nouvelle est rendue dès qu'elle est connue :
+    /// le JPEG d'un déclenchement part à l'import pendant que son RAW se lit.
+    pub fn poll_with(
+        &mut self,
+        conn: &Connection,
+        mut emit: impl FnMut(Update),
+    ) -> Result<(), TetherError> {
         if !self.started {
             self.started = true;
             // Changements d'avant la séance : déjà comptés dans la place lue.
@@ -142,7 +154,7 @@ impl<T: Transport> Session<T> {
                 self.camera.changes()?;
             }
             if let Ok(shots) = self.camera.remaining_shots() {
-                updates.push(Update::Remaining { shots });
+                emit(Update::Remaining { shots });
             }
         } else if self.reports_changes
             && let Some((_, shots)) = self
@@ -151,23 +163,26 @@ impl<T: Transport> Session<T> {
                 .into_iter()
                 .rfind(|(code, _)| u32::from(*code) == FUJI_REMAINING_SHOTS)
         {
-            updates.push(Update::Remaining { shots });
+            emit(Update::Remaining { shots });
         }
 
         let handles = self.camera.handles()?;
-        let fresh: Vec<u32> = handles
-            .iter()
-            .filter(|h| !self.done.contains(h))
-            .copied()
-            .collect();
-        self.waiting = fresh.len();
-        for handle in fresh {
+        let mut fresh = Vec::new();
+        for handle in handles {
+            if self.done.contains(&handle) {
+                continue;
+            }
             let info = self.camera.object(handle)?;
             if info.format == ObjectInfo::FOLDER || self.already_received(conn, &info)? {
                 self.done.insert(handle);
-                self.waiting -= 1;
-                continue;
+            } else {
+                fresh.push((handle, info));
             }
+        }
+        // Le JPEG (17 Mo) avant le RAW (83 Mo) : la photo s'affiche plus tôt.
+        fresh.sort_by_key(|(_, info)| format_of(Path::new(&info.name)) == Some(MediaFormat::Raw));
+        self.waiting = fresh.len();
+        for (handle, info) in fresh {
             std::fs::create_dir_all(&self.dir)?;
             let target = self.dir.join(&info.name);
             match self.camera.download(handle, &info, &target) {
@@ -175,7 +190,7 @@ impl<T: Transport> Session<T> {
                     self.record(conn, &info, size)?;
                     self.done.insert(handle);
                     self.waiting -= 1;
-                    updates.push(Update::Received { path: target, size });
+                    emit(Update::Received { path: target, size });
                 }
                 Err(TetherError::Disconnected) => return Err(TetherError::Disconnected),
                 Err(e) => {
@@ -184,7 +199,7 @@ impl<T: Transport> Session<T> {
                     if *tries >= ATTEMPTS {
                         self.done.insert(handle);
                         self.waiting -= 1;
-                        updates.push(Update::Failed {
+                        emit(Update::Failed {
                             name: info.name.clone(),
                             error: e.to_string(),
                         });
@@ -192,7 +207,7 @@ impl<T: Transport> Session<T> {
                 }
             }
         }
-        Ok(updates)
+        Ok(())
     }
 }
 
@@ -231,8 +246,9 @@ mod tests {
         fake.shoot("DSCF0002.jpg", vec![2; 1000]);
         let updates = session.poll(&conn).unwrap();
         assert_eq!(updates[0], Update::Remaining { shots: 28 });
-        assert_eq!(received(&updates), vec!["DSCF0001.raf", "DSCF0002.jpg"]);
-        let Update::Received { path, size } = &updates[1] else {
+        // Le JPEG d'abord : il s'affiche pendant que le RAW se lit.
+        assert_eq!(received(&updates), vec!["DSCF0002.jpg", "DSCF0001.raf"]);
+        let Update::Received { path, size } = &updates[2] else {
             panic!("photo attendue");
         };
         assert_eq!(*size, 4000);

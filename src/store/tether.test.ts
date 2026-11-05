@@ -113,4 +113,16 @@ describe("photo reçue du boîtier", () => {
     expect(modelOf("FUJIFILM X-H2")).toBe("X-H2");
     expect(modelOf("X-H2")).toBe("X-H2");
   });
+
+  it("le RAW arrivé après son JPEG ne relance pas l'affichage", async () => {
+    await useTether.getState().imported({ folderId: 3, libraryId: 1, mediaIds: [1] });
+    vi.advanceTimersByTime(3000);
+    // Le JPEG (1) passe sous son RAW (4) et quitte la grille repliée.
+    useLibrary.setState({ media: [photo(4), photo(2), photo(3, 2)] });
+    await useTether.getState().imported({ folderId: 3, libraryId: 1, mediaIds: [4] });
+    expect(useLibrary.getState().selectedId).toBe(1);
+    vi.advanceTimersByTime(2100);
+    expect(useLibrary.getState().view).toBe("grid");
+    await vi.waitFor(() => expect(useLibrary.getState().selectedId).toBe(4));
+  });
 });

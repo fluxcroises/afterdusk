@@ -10,6 +10,7 @@
 pub mod fake;
 pub mod ptp;
 pub mod session;
+pub mod stack;
 #[cfg(windows)]
 pub mod wpd;
 

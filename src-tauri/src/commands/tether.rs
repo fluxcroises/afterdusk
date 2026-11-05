@@ -155,26 +155,30 @@ impl TetherService {
                     if db.is_none() {
                         db = app.state::<AppState>().connect().ok();
                     }
+                    let watch = app.state::<WatchService>();
+                    let mut updates = Vec::new();
                     let polled = match db.as_ref() {
-                        Some(conn) => s.poll(conn),
+                        // Chaque photo part à l'import dès qu'elle est reçue.
+                        Some(conn) => s.poll_with(conn, |update| {
+                            if let Update::Received { path, .. } = &update {
+                                watch.received(path.clone());
+                            }
+                            updates.push(update);
+                        }),
                         None => Err(TetherError::Device("base inaccessible".to_owned())),
                     };
-                    match polled {
-                        Ok(updates) => {
-                            for update in updates {
-                                match update {
-                                    Update::Received { path, .. } => {
-                                        current.received += 1;
-                                        app.state::<WatchService>().received(path);
-                                    }
-                                    Update::Remaining { shots } => current.remaining = Some(shots),
-                                    Update::Failed { name, error } => {
-                                        eprintln!("afterdusk : {name} illisible : {error}");
-                                        current.failed.push(name);
-                                    }
-                                }
+                    for update in updates {
+                        match update {
+                            Update::Received { .. } => current.received += 1,
+                            Update::Remaining { shots } => current.remaining = Some(shots),
+                            Update::Failed { name, error } => {
+                                eprintln!("afterdusk : {name} illisible : {error}");
+                                current.failed.push(name);
                             }
                         }
+                    }
+                    match polled {
+                        Ok(()) => {}
                         Err(e) => {
                             eprintln!("afterdusk : connexion au boîtier perdue : {e}");
                             current.left_on_card += s.waiting() as u32;
@@ -243,6 +247,16 @@ pub async fn tether_start(
             .map(|e| e.into_path())
             .collect();
         watch::remove_imported(&conn, library_id, &leftovers)?;
+        // Dossiers des connexions passées, vidés par les imports.
+        for dir in walkdir::WalkDir::new(&reception)
+            .min_depth(1)
+            .contents_first(true)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|e| e.file_type().is_dir())
+        {
+            let _ = std::fs::remove_dir(dir.path());
+        }
         let pending: Vec<PathBuf> = leftovers.into_iter().filter(|p| p.exists()).collect();
         Ok((folder_id, pending))
     })

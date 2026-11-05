@@ -35,7 +35,7 @@ pub struct Candidate<'a> {
     pub captured_at: Option<&'a str>,
 }
 
-fn is_companion(path: &Path) -> bool {
+pub fn is_companion(path: &Path) -> bool {
     path.extension()
         .map(|e| e.to_string_lossy().to_lowercase())
         .is_some_and(|e| COMPANION_EXTENSIONS.contains(&e.as_str()))

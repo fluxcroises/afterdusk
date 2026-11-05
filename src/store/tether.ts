@@ -88,6 +88,11 @@ interface TetherState {
 /** Affichage en grand en cours : fermeture prévue, sauf si l'utilisateur s'en sert. */
 let closing: ReturnType<typeof setTimeout> | undefined;
 let stopWatching: (() => void) | undefined;
+/**
+ * Photo montrée en grand, et le dessus de sa pile : le JPEG d'un déclenchement
+ * arrive avant son RAW, qui devient ensuite le dessus de la pile.
+ */
+let shown: { id: number; top: number } | null = null;
 
 function release(): void {
   clearTimeout(closing);
@@ -99,6 +104,7 @@ function release(): void {
 /** Montre la photo en grand, puis revient à la grille après `seconds`. */
 function show(mediaId: number, seconds: ShowFor): void {
   release();
+  shown = { id: mediaId, top: mediaId };
   const library = useLibrary.getState();
   library.setZoom(null);
   library.setView("loupe");
@@ -116,8 +122,13 @@ function show(mediaId: number, seconds: ShowFor): void {
   };
   closing = setTimeout(() => {
     const now = useLibrary.getState();
+    const top = shown?.id === mediaId ? shown.top : mediaId;
     release();
-    if (now.view === "loupe" && now.selectedId === mediaId) now.setView("grid");
+    if (now.view === "loupe" && now.selectedId === mediaId) {
+      now.setView("grid");
+      // Le JPEG passé sous son RAW : la grille montre la pile par son dessus.
+      if (top !== mediaId) void now.select(top);
+    }
   }, seconds * 1000);
 }
 
@@ -211,6 +222,15 @@ export const useTether = create<TetherState>((set, get) => ({
     // RAW + JPEG : la pile s'affiche par son fichier du dessus.
     const id = media ? stackTop(media) : last;
     if (showFor === -1) return;
+    // Le RAW du déclenchement déjà montré par son JPEG : l'affichage continue.
+    const now = useLibrary.getState();
+    if (shown && now.view === "loupe" && now.selectedId === shown.id) {
+      const previous = now.media.find((m) => m.id === shown?.id);
+      if (shown.id === id || !previous || previous.companionOf === id) {
+        shown.top = id;
+        return;
+      }
+    }
     await useLibrary.getState().select(id);
     show(id, showFor);
   },
